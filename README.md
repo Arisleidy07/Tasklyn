@@ -1,37 +1,93 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TASKLYN
+
+Professional task management for teams. Create shared lists, assign tasks, control permissions, and track who completes every action.
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS v4
+- **State:** Zustand
+- **Animations:** Framer Motion
+- **Icons:** Lucide React
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── (app)/              # Authenticated routes (sidebar layout)
+│   │   ├── dashboard/      # Dashboard — personal & shared lists
+│   │   └── lists/[id]/     # List detail — tasks, members, sharing
+│   ├── invite/[token]/     # Invitation accept/reject page
+│   ├── layout.tsx          # Root layout
+│   └── page.tsx            # Login / landing page
+├── components/
+│   ├── layout/             # Sidebar, Header, AppLayout
+│   ├── lists/              # ListCard, CreateListModal
+│   ├── members/            # MembersPanel (roles, invite links)
+│   ├── shared/             # Logo
+│   ├── tasks/              # TaskItem, CreateTaskForm
+│   └── ui/                 # Button, Modal, Badge, Avatar, Input, Select, etc.
+├── lib/
+│   ├── permissions.ts      # Role & plan permission checks
+│   └── utils.ts            # Helpers (generateId, formatDate, cn, etc.)
+├── stores/
+│   ├── authStore.ts        # Auth state (demo user, ready for Firebase)
+│   ├── invitationStore.ts  # Invitation tokens & links
+│   ├── listStore.ts        # Lists CRUD & member management
+│   └── taskStore.ts        # Tasks CRUD, completion tracking, history
+└── types/
+    └── index.ts            # All TypeScript interfaces & plan limits
+```
 
-## Learn More
+## Features
 
-To learn more about Next.js, take a look at the following resources:
+- **Task Lists** — Create personal or shared lists
+- **Role-Based Permissions** — Owner, Editor, Viewer with strict access control
+- **Task Completion Tracking** — Records exactly who completed each task
+- **Activity History** — Full audit trail per task (created, edited, completed, reopened)
+- **Invite via Link** — Generate shareable `/invite/[token]` links
+- **Members Panel** — View members, change roles, remove users (owner only)
+- **Plan System** — FREE/PRO tiers with feature gates (list limits, member limits)
+- **Modern UI** — Minimalist SaaS design with smooth animations
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Permission Rules
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Action            | Owner | Editor | Viewer |
+| ----------------- | ----- | ------ | ------ |
+| View tasks        | Yes   | Yes    | Yes    |
+| Create/edit tasks | Yes   | Yes    | No     |
+| Complete tasks    | Yes   | No     | No     |
+| Delete tasks      | Yes   | No     | No     |
+| Invite members    | Yes   | No     | No     |
+| Change roles      | Yes   | No     | No     |
+| Remove members    | Yes   | No     | No     |
+| Delete list       | Yes   | No     | No     |
 
-## Deploy on Vercel
+## Firebase Integration (Prepared)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The app is architecturally ready for Firebase:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# Tasklyn
+- **Auth store** has `login`/`logout` methods ready to wrap `signInWithPopup`
+- **User type** matches Firebase Auth user profile shape
+- **Stores** are structured for easy migration to Firestore collections
+- **Invitation tokens** map directly to a Firestore `invitations` collection
+
+## Deployment
+
+```bash
+npm run build    # Production build
+npm start        # Start production server
+```
+
+Ready for deployment on Vercel, Netlify, or any Node.js hosting.
