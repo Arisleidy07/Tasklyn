@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,11 +14,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TASKLYN — Task Management for Teams",
+  title: "TASKLYN",
   description:
-    "Professional task management with shared lists, role-based permissions, and real-time collaboration. Built for teams that ship.",
+    "Gestión de tareas profesional con listas compartidas y colaboración en tiempo real.",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/T.PNG",
   },
 };
 
@@ -28,11 +29,11 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="es"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full font-sans bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100">
-        {children}
+      <body className="min-h-full font-sans bg-white text-gray-900">
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

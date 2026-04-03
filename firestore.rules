@@ -1,0 +1,148 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // Helper Functions
+    // ============================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+    
+    function isListMember(listId) {
+      let list = get(/databases/$(database)/documents/lists/$(listId)).data;
+      return list.members.hasAny([request.auth.uid]);
+    }
+    
+    function getListRole(listId) {
+      let list = get(/databases/$(database)/documents/lists/$(listId)).data;
+      let member = list.members.firstWhere(m, m.userId == request.auth.uid);
+      return member != null ? member.role : null;
+    }
+    
+    function isListOwner(listId) {
+      return getListRole(listId) == 'owner';
+    }
+    
+    function isListEditor(listId) {
+      return getListRole(listId) in ['owner', 'editor'];
+    }
+    
+    // ============================================
+    // Users Collection
+    // ============================================
+    
+    match /users/{userId} {
+      // Allow read if authenticated
+      allow read: if isAuthenticated();
+      
+      // Allow create if it's the authenticated user's own document
+      allow create: if isOwner(userId)
+        && request.resource.data.id == userId
+        && request.resource.data.plan in ['FREE', 'PRO'];
+      
+      // Allow update if it's the user's own document
+      allow update: if isOwner(userId)
+        && (!request.resource.data.diff(resource.data).affectedKeys()
+            .hasAny(['id', 'createdAt']));
+      
+      // No delete allowed
+      allow delete: if false;
+    }
+    
+    // ============================================
+    // Lists Collection
+    // ============================================
+    
+    match /lists/{listId} {
+      // Allow read if user is a member
+      allow read: if isAuthenticated()
+        && resource.data.members.hasAny([request.auth.uid]);
+      
+      // Allow create if authenticated (creator becomes owner)
+      allow create: if isAuthenticated()
+        && request.resource.data.members.hasAll([{ 
+          userId: request.auth.uid, 
+          role: 'owner',
+          joinedAt: request.time
+        }]);
+      
+      // Allow update based on role
+      allow update: if isAuthenticated()
+        && isListMember(listId)
+        && (
+          // Owners can update anything
+          isListOwner(listId)
+          ||
+          // Editors can update name/description only
+          (isListEditor(listId)
+            && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['name', 'description', 'updatedAt']))
+        );
+      
+      // Allow delete only by owner
+      allow delete: if isAuthenticated()
+        && isListOwner(listId);
+    }
+    
+    // ============================================
+    // Tasks Collection
+    // ============================================
+    
+    match /tasks/{taskId} {
+      // Allow read if user is a member of the list
+      allow read: if isAuthenticated()
+        && get(/databases/$(database)/documents/lists/$(resource.data.listId))
+          .data.members.hasAny([request.auth.uid]);
+      
+      // Allow create if user has edit permission
+      allow create: if isAuthenticated()
+        && isListEditor(resource.data.listId);
+      
+      // Allow update based on list role
+      allow update: if isAuthenticated()
+        && isListEditor(resource.data.listId);
+      
+      // Allow delete only by task creator or list owner
+      allow delete: if isAuthenticated()
+        && (
+          resource.data.createdBy == request.auth.uid
+          || isListOwner(resource.data.listId)
+        );
+    }
+    
+    // ============================================
+    // Invitations Collection
+    // ============================================
+    
+    match /invitations/{invitationId} {
+      // Allow read by anyone (needed for invite acceptance)
+      // In production, you might want to restrict this
+      allow read: if true;
+      
+      // Allow create by list members with editor+ role
+      allow create: if isAuthenticated()
+        && isListEditor(request.resource.data.listId);
+      
+      // Allow update (for acceptance) by authenticated user
+      allow update: if isAuthenticated();
+      
+      // Allow delete by list owner or invitation creator
+      allow delete: if isAuthenticated()
+        && (
+          resource.data.invitedBy == request.auth.uid
+          || isListOwner(resource.data.listId)
+        );
+    }
+    
+  }
+}

@@ -6,32 +6,16 @@ import { useAuthStore } from "@/stores/authStore";
 import Logo from "@/components/shared/Logo";
 import Button from "@/components/ui/Button";
 import { motion } from "framer-motion";
-import { Zap, ListTodo, Users, Shield, Share2 } from "lucide-react";
+import {
+  CheckCircle2,
+  ArrowRight,
+  ListTodo,
+  Users,
+  Shield,
+  Zap,
+} from "lucide-react";
 
-const features = [
-  {
-    icon: ListTodo,
-    title: "Organized Lists",
-    desc: "Create personal and shared task lists with ease.",
-  },
-  {
-    icon: Users,
-    title: "Team Collaboration",
-    desc: "Invite members and collaborate in real time.",
-  },
-  {
-    icon: Shield,
-    title: "Role Permissions",
-    desc: "Owner, editor, and viewer roles for full control.",
-  },
-  {
-    icon: Share2,
-    title: "Share via Link",
-    desc: "Generate unique invite links to share lists.",
-  },
-];
-
-export default function LoginPage() {
+export default function LandingPage() {
   const router = useRouter();
   const { isAuthenticated, login, isLoading } = useAuthStore();
 
@@ -41,115 +25,242 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router]);
 
-  const handleLogin = () => {
-    login();
-    // The useEffect above will redirect once isAuthenticated flips
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-50 via-white to-violet-50 dark:from-zinc-950 dark:via-zinc-950 dark:to-violet-950/20 flex flex-col">
-      {/* Nav */}
-      <header className="w-full border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/60 dark:bg-zinc-950/60 backdrop-blur-lg">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+    <div className="min-h-screen bg-white">
+      {/* Header simple */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <Logo size="md" />
-          <Button onClick={handleLogin} isLoading={isLoading} size="sm">
-            Sign in
+          <Button onClick={login} isLoading={isLoading} size="sm">
+            Iniciar sesión
           </Button>
         </div>
       </header>
 
-      {/* Hero */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-20">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="text-center max-w-2xl mx-auto"
-        >
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 text-xs font-medium mb-6">
-            <Zap size={12} />
-            Professional task management for teams
+      {/* Hero Section - Estilo minimalista */}
+      <section className="pt-32 pb-20 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            {/* Logo grande */}
+            <div className="flex justify-center mb-8">
+              <Logo size="xl" showText={false} />
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 tracking-tight mb-6">
+              Organiza tus tareas.
+              <br />
+              <span className="text-blue-600">Simplifica tu vida.</span>
+            </h1>
+
+            <p className="text-lg text-gray-600 mb-8 max-w-xl mx-auto">
+              TASKLYN te ayuda a gestionar tus proyectos, colaborar con tu
+              equipo y completar tu trabajo más rápido.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button
+                onClick={login}
+                isLoading={isLoading}
+                size="lg"
+                icon={<ArrowRight size={18} />}
+              >
+                Comenzar gratis
+              </Button>
+              <p className="text-sm text-gray-500">
+                Gratis para siempre. Sin tarjeta de crédito.
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Preview - Mockup simple */}
+      <section className="pb-20 px-6">
+        <div className="max-w-4xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="relative"
+          >
+            <div className="bg-gray-50 rounded-2xl border border-gray-200 p-4 shadow-xl">
+              <div className="bg-white rounded-xl overflow-hidden">
+                {/* Mock UI simple */}
+                <div className="flex h-[280px]">
+                  <div className="w-56 bg-gray-50 border-r border-gray-100 p-4 hidden sm:block">
+                    <div className="flex items-center gap-2 mb-6">
+                      <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
+                        <CheckCircle2 size={16} className="text-white" />
+                      </div>
+                      <span className="font-semibold text-gray-900">
+                        TASKLYN
+                      </span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">
+                        Dashboard
+                      </div>
+                      <div className="px-3 py-2 text-gray-500 rounded-lg text-sm">
+                        Mis Listas
+                      </div>
+                      <div className="px-3 py-2 text-gray-500 rounded-lg text-sm">
+                        Compartidas
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex-1 p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="font-semibold text-gray-900">
+                        Mis Tareas
+                      </h3>
+                      <div className="w-24 h-8 bg-blue-600 rounded-lg" />
+                    </div>
+                    <div className="space-y-2">
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100"
+                        >
+                          <div className="w-5 h-5 rounded-full border-2 border-blue-500" />
+                          <div className="flex-1 h-3 bg-gray-200 rounded" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Features - Grid simple */}
+      <section className="py-20 bg-gray-50/50 border-y border-gray-100">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="flex gap-4"
+            >
+              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <ListTodo size={24} className="text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">
+                  Listas ilimitadas
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Crea todas las listas que necesites para organizar tu trabajo
+                  personal y profesional.
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="flex gap-4"
+            >
+              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <Users size={24} className="text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">
+                  Trabajo en equipo
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Colabora en tiempo real con tu equipo. Comparte listas y
+                  asigna tareas fácilmente.
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="flex gap-4"
+            >
+              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <Shield size={24} className="text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">
+                  Control total
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Define quién puede ver, editar o administrar cada lista con
+                  permisos granulares.
+                </p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="flex gap-4"
+            >
+              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <Zap size={24} className="text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-1">
+                  Rápido y simple
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Interfaz limpia y rápida. Sin complicaciones. Empieza a
+                  trabajar en segundos.
+                </p>
+              </div>
+            </motion.div>
           </div>
+        </div>
+      </section>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100 leading-[1.1]">
-            Manage tasks.{" "}
-            <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              Ship faster.
-            </span>
-          </h1>
-
-          <p className="mt-6 text-lg text-zinc-600 dark:text-zinc-400 max-w-lg mx-auto leading-relaxed">
-            Create shared lists, assign tasks, control permissions, and track
-            who completes every action. Built for teams that move fast.
-          </p>
-
-          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+      {/* CTA Final */}
+      <section className="py-20 px-6">
+        <div className="max-w-2xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              ¿Listo para ser más productivo?
+            </h2>
+            <p className="text-gray-600 mb-8">
+              Únete a miles de personas que usan TASKLYN para organizar su vida.
+            </p>
             <Button
-              onClick={handleLogin}
+              onClick={login}
               isLoading={isLoading}
               size="lg"
-              icon={
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
-                    fill="#4285F4"
-                  />
-                  <path
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    fill="#34A853"
-                  />
-                  <path
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    fill="#FBBC05"
-                  />
-                  <path
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    fill="#EA4335"
-                  />
-                </svg>
-              }
+              icon={<ArrowRight size={18} />}
             >
-              Continue with Google
+              Crear cuenta gratis
             </Button>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
+      </section>
 
-        {/* Features */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mt-24 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto w-full"
-        >
-          {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.3 + i * 0.1 }}
-              className="p-5 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-sm hover:border-violet-200 dark:hover:border-violet-500/30 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-300"
-            >
-              <div className="w-9 h-9 rounded-xl bg-violet-100 dark:bg-violet-500/10 flex items-center justify-center text-violet-600 dark:text-violet-400 mb-3">
-                <f.icon size={18} />
-              </div>
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                {f.title}
-              </h3>
-              <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-                {f.desc}
-              </p>
-            </motion.div>
-          ))}
-        </motion.div>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-zinc-200/50 dark:border-zinc-800/50 py-6">
-        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between text-xs text-zinc-400">
-          <span>
-            &copy; {new Date().getFullYear()} TASKLYN. All rights reserved.
-          </span>
-          <span>Built for production</span>
+      {/* Footer simple */}
+      <footer className="border-t border-gray-100 py-8 px-6">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Logo size="sm" />
+          <p className="text-sm text-gray-500">
+            © {new Date().getFullYear()} TASKLYN. Todos los derechos reservados.
+          </p>
         </div>
       </footer>
     </div>

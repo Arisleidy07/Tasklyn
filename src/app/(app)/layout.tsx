@@ -1,9 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/authStore';
-import AppLayout from '@/components/layout/AppLayout';
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/authStore";
+import { useListStore } from "@/stores/listStore";
+import AppLayout from "@/components/layout/AppLayout";
 
 export default function AuthenticatedLayout({
   children,
@@ -11,18 +12,29 @@ export default function AuthenticatedLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isAuthReady, user } = useAuthStore();
+  const { subscribeToLists, unsubscribeFromLists } = useListStore();
 
   useEffect(() => {
-    if (!isAuthenticated && !isLoading) {
-      router.push('/');
+    if (isAuthReady && !isAuthenticated) {
+      router.push("/");
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isAuthReady, router]);
 
-  if (!isAuthenticated) {
+  // Subscribe to lists when user is authenticated
+  useEffect(() => {
+    if (user?.id) {
+      subscribeToLists(user.id);
+      return () => {
+        unsubscribeFromLists();
+      };
+    }
+  }, [user?.id, subscribeToLists, unsubscribeFromLists]);
+
+  if (!isAuthReady || !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-        <div className="animate-spin h-8 w-8 border-2 border-violet-600 border-t-transparent rounded-full" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full" />
       </div>
     );
   }

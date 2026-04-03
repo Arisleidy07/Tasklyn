@@ -40,9 +40,9 @@ const roleOptions: { value: string; label: string }[] = [
   { value: "viewer", label: "Viewer" },
 ];
 
-const roleBadgeVariant: Record<MemberRole, "violet" | "blue" | "default"> = {
-  owner: "violet",
-  editor: "blue",
+const roleBadgeVariant: Record<MemberRole, "blue" | "sky" | "default"> = {
+  owner: "blue",
+  editor: "sky",
   viewer: "default",
 };
 
@@ -86,18 +86,18 @@ function InlineNameEditor({
         onKeyDown={handleKeyDown}
         onBlur={() => onSave(value)}
         placeholder={originalName}
-        className="flex-1 min-w-0 h-7 px-2 rounded-md border border-violet-300 dark:border-violet-500/40 bg-white dark:bg-zinc-800 text-sm text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+        className="flex-1 min-w-0 h-7 px-2 rounded-md border border-blue-300 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
       />
       <button
         type="submit"
-        className="p-1 rounded-md text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors cursor-pointer"
+        className="p-1 rounded-md text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer"
       >
         <Check size={14} />
       </button>
       <button
         type="button"
         onClick={onCancel}
-        className="p-1 rounded-md text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+        className="p-1 rounded-md text-gray-400 hover:bg-gray-100 transition-colors cursor-pointer"
       >
         <XIcon size={14} />
       </button>
@@ -127,8 +127,8 @@ export default function MembersPanel({
   const canRemove = canRemoveMembers(myRole);
   const canInvite = canInviteMembers(myRole);
 
-  const handleGenerateLink = () => {
-    const invitation = createInvitation(list.id, user.id, "viewer");
+  const handleGenerateLink = async () => {
+    const invitation = await createInvitation(list.id, user.id, "viewer");
     const link = `${window.location.origin}/invite/${invitation.token}`;
     setInviteLink(link);
   };
@@ -170,9 +170,7 @@ export default function MembersPanel({
         {canInvite && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Invite link
-              </p>
+              <p className="text-sm font-medium text-gray-700">Invite link</p>
               <Button
                 size="sm"
                 variant="outline"
@@ -184,7 +182,7 @@ export default function MembersPanel({
             </div>
             {inviteLink && (
               <div className="flex items-center gap-2">
-                <div className="flex-1 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 rounded-lg text-xs text-zinc-600 dark:text-zinc-400 truncate font-mono">
+                <div className="flex-1 px-3 py-2 bg-gray-50 rounded-lg text-xs text-gray-600 truncate font-mono">
                   {inviteLink}
                 </div>
                 <Button
@@ -202,7 +200,7 @@ export default function MembersPanel({
 
         {/* Members list */}
         <div className="space-y-2">
-          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <p className="text-sm font-medium text-gray-700">
             Members ({list.members.length})
           </p>
           <div className="space-y-1">
@@ -216,7 +214,7 @@ export default function MembersPanel({
               return (
                 <div
                   key={member.userId}
-                  className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                  className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors"
                 >
                   <Avatar name={displayName} size="sm" />
 
@@ -235,14 +233,14 @@ export default function MembersPanel({
                   ) : (
                     <div className="flex-1 min-w-0 flex items-center gap-1.5">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+                        <p className="text-sm font-medium text-gray-900 truncate">
                           {displayName}
                           {isSelf && (
-                            <span className="text-zinc-400 ml-1">(you)</span>
+                            <span className="text-gray-400 ml-1">(you)</span>
                           )}
                         </p>
                         {hasCustomName && (
-                          <p className="text-[11px] text-zinc-400 truncate">
+                          <p className="text-[11px] text-gray-400 truncate">
                             Original:{" "}
                             {originalNames[member.userId] || "Unknown"}
                           </p>
@@ -251,7 +249,7 @@ export default function MembersPanel({
                       {isOwner && !isOwnerMember && (
                         <button
                           onClick={() => setEditingUserId(member.userId)}
-                          className="flex-shrink-0 p-1 rounded-md text-zinc-300 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors cursor-pointer"
+                          className="flex-shrink-0 p-1 rounded-md text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer"
                           title="Edit display name for this list"
                         >
                           <Pencil size={12} />
@@ -264,7 +262,7 @@ export default function MembersPanel({
                   {!isEditing && (
                     <>
                       {isOwnerMember ? (
-                        <Badge variant="violet">
+                        <Badge variant="blue">
                           <Shield size={10} className="mr-1" />
                           Owner
                         </Badge>
@@ -281,7 +279,7 @@ export default function MembersPanel({
                           {canRemove && (
                             <button
                               onClick={() => handleRemoveMember(member.userId)}
-                              className="p-1.5 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
                             >
                               <Trash2 size={14} />
                             </button>

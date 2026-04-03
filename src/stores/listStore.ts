@@ -1,12 +1,24 @@
 "use client";
 
 import { create } from "zustand";
-import { TaskList, ListMember, ListType, MemberRole } from "@/types";
-import { generateId } from "@/lib/utils";
+import {
+  subscribeToUserLists,
+  createList as createListInDb,
+  updateList as updateListInDb,
+  deleteList as deleteListInDb,
+  addListMember,
+  removeListMember,
+  updateMemberRole,
+  setCustomName,
+} from "@/lib/firestore";
+import type { TaskList, ListMember, MemberRole, ListType } from "@/types";
+import { Unsubscribe } from "firebase/firestore";
 
 interface ListState {
   lists: TaskList[];
   activeListId: string | null;
+  isLoading: boolean;
+  unsubscribe: Unsubscribe | null;
   setActiveList: (id: string | null) => void;
   getList: (id: string) => TaskList | undefined;
   getUserLists: (userId: string) => TaskList[];
@@ -17,23 +29,39 @@ interface ListState {
     owner: string,
     type: ListType,
     description?: string,
-  ) => TaskList;
+  ) => Promise<TaskList>;
   updateList: (
     id: string,
     updates: Partial<Pick<TaskList, "name" | "description">>,
-  ) => void;
-  deleteList: (id: string) => void;
-  addMember: (listId: string, userId: string, role: MemberRole) => void;
-  removeMember: (listId: string, userId: string) => void;
-  updateMemberRole: (listId: string, userId: string, role: MemberRole) => void;
-  setCustomName: (listId: string, userId: string, customName: string) => void;
+  ) => Promise<void>;
+  deleteList: (id: string) => Promise<void>;
+  addMember: (
+    listId: string,
+    userId: string,
+    role: MemberRole,
+  ) => Promise<void>;
+  removeMember: (listId: string, userId: string) => Promise<void>;
+  updateMemberRole: (
+    listId: string,
+    userId: string,
+    role: MemberRole,
+  ) => Promise<void>;
+  setCustomName: (
+    listId: string,
+    userId: string,
+    customName: string,
+  ) => Promise<void>;
   getDisplayName: (listId: string, userId: string, fallback: string) => string;
   isMember: (listId: string, userId: string) => boolean;
+  subscribeToLists: (userId: string) => void;
+  unsubscribeFromLists: () => void;
 }
 
 export const useListStore = create<ListState>((set, get) => ({
   lists: [],
   activeListId: null,
+  isLoading: false,
+  unsubscribe: null,
 
   setActiveList: (id) => set({ activeListId: id }),
 
@@ -53,100 +81,87 @@ export const useListStore = create<ListState>((set, get) => ({
       (l) => l.type === "shared" && l.members.some((m) => m.userId === userId),
     ),
 
-  createList: (name, owner, type, description) => {
-    const newList: TaskList = {
-      id: generateId(),
+  createList: async (name, owner, type, description) => {
+    const newListData = {
       name,
       owner,
       type,
-      description,
+      description: description || "",
       members: [
-        { userId: owner, role: "owner", joinedAt: new Date().toISOString() },
-      ],
+        {
+          userId: owner,
+          role: "owner" as MemberRole,
+          joinedAt: new Date().toISOString(),
+        },
+      ] as ListMember[],
       customNames: {},
+    };
+
+    const id = await createListInDb(newListData);
+
+    // Return optimistic list
+    const newList: TaskList = {
+      id,
+      ...newListData,
       createdAt: new Date().toISOString(),
     };
-    set((state) => ({ lists: [...state.lists, newList] }));
+
     return newList;
   },
 
-  updateList: (id, updates) => {
-    set((state) => ({
-      lists: state.lists.map((l) => (l.id === id ? { ...l, ...updates } : l)),
-    }));
+  updateList: async (id, updates) => {
+    await updateListInDb(id, updates);
   },
 
-  deleteList: (id) => {
+  deleteList: async (id) => {
+    await deleteListInDb(id);
     set((state) => ({
       lists: state.lists.filter((l) => l.id !== id),
       activeListId: state.activeListId === id ? null : state.activeListId,
     }));
   },
 
-  addMember: (listId, userId, role) => {
-    set((state) => ({
-      lists: state.lists.map((l) => {
-        if (l.id !== listId) return l;
-        if (l.members.some((m) => m.userId === userId)) return l;
-        const newMember: ListMember = {
-          userId,
-          role,
-          joinedAt: new Date().toISOString(),
-        };
-        return {
-          ...l,
-          members: [...l.members, newMember],
-          type: "shared" as const,
-        };
-      }),
-    }));
+  addMember: async (listId, userId, role) => {
+    await addListMember(listId, userId, role);
   },
 
-  removeMember: (listId, userId) => {
-    set((state) => ({
-      lists: state.lists.map((l) => {
-        if (l.id !== listId) return l;
-        return { ...l, members: l.members.filter((m) => m.userId !== userId) };
-      }),
-    }));
+  removeMember: async (listId, userId) => {
+    await removeListMember(listId, userId);
   },
 
-  updateMemberRole: (listId, userId, role) => {
-    set((state) => ({
-      lists: state.lists.map((l) => {
-        if (l.id !== listId) return l;
-        return {
-          ...l,
-          members: l.members.map((m) =>
-            m.userId === userId ? { ...m, role } : m,
-          ),
-        };
-      }),
-    }));
+  updateMemberRole: async (listId, userId, role) => {
+    await updateMemberRole(listId, userId, role);
   },
 
-  setCustomName: (listId, userId, customName) => {
-    set((state) => ({
-      lists: state.lists.map((l) => {
-        if (l.id !== listId) return l;
-        const updated = { ...l.customNames };
-        if (customName.trim()) {
-          updated[userId] = customName.trim();
-        } else {
-          delete updated[userId];
-        }
-        return { ...l, customNames: updated };
-      }),
-    }));
+  setCustomName: async (listId, userId, customName) => {
+    await setCustomName(listId, userId, customName);
   },
 
   getDisplayName: (listId, userId, fallback) => {
     const list = get().lists.find((l) => l.id === listId);
-    return list?.customNames[userId] || fallback;
+    return list?.customNames?.[userId] || fallback;
   },
 
   isMember: (listId, userId) => {
     const list = get().lists.find((l) => l.id === listId);
     return list?.members.some((m) => m.userId === userId) ?? false;
+  },
+
+  subscribeToLists: (userId) => {
+    // Unsubscribe from existing listener
+    get().unsubscribe?.();
+
+    set({ isLoading: true });
+
+    const unsubscribe = subscribeToUserLists(userId, (lists) => {
+      set({ lists, isLoading: false });
+    });
+
+    set({ unsubscribe });
+  },
+
+  unsubscribeFromLists: () => {
+    get().unsubscribe?.();
+    set({ unsubscribe: null, lists: [] });
   },
 }));

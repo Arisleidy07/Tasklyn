@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React, { useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ModalProps {
   isOpen: boolean;
@@ -11,13 +11,13 @@ interface ModalProps {
   title?: string;
   description?: string;
   children: React.ReactNode;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
 }
 
 const sizeMap = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
+  sm: "max-w-sm",
+  md: "max-w-md",
+  lg: "max-w-lg",
 };
 
 export default function Modal({
@@ -26,23 +26,23 @@ export default function Modal({
   title,
   description,
   children,
-  size = 'md',
+  size = "md",
 }: ModalProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     },
-    [onClose]
+    [onClose],
   );
 
   useEffect(() => {
     if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
+      document.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
     }
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
     };
   }, [isOpen, handleKeyDown]);
 
@@ -59,28 +59,28 @@ export default function Modal({
             onClick={onClose}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              'relative w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-800',
-              sizeMap[size]
+              "relative w-full bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden",
+              sizeMap[size],
             )}
           >
             {title && (
               <div className="flex items-start justify-between px-6 pt-6 pb-2">
                 <div>
-                  <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+                  <h2 className="text-lg font-semibold text-gray-900">
                     {title}
                   </h2>
                   {description && (
-                    <p className="mt-1 text-sm text-zinc-500">{description}</p>
+                    <p className="mt-1 text-sm text-gray-500">{description}</p>
                   )}
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
                 >
                   <X size={18} />
                 </button>

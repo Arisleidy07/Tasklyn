@@ -1,13 +1,11 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Task, MemberRole } from '@/types';
-import { useTaskStore } from '@/stores/taskStore';
-import { useAuthStore } from '@/stores/authStore';
-import { canCompleteTask, canEditTask, canDeleteTask } from '@/lib/permissions';
-import Badge from '@/components/ui/Badge';
-import Button from '@/components/ui/Button';
-import { motion } from 'framer-motion';
+import React, { useState } from "react";
+import { Task, MemberRole } from "@/types";
+import { useTaskStore } from "@/stores/taskStore";
+import { useAuthStore } from "@/stores/authStore";
+import { canCompleteTask, canDeleteTask, canEditTask } from "@/lib/permissions";
+import { motion } from "framer-motion";
 import {
   CheckCircle2,
   Circle,
@@ -17,8 +15,8 @@ import {
   ChevronDown,
   ChevronUp,
   History,
-} from 'lucide-react';
-import { cn, formatDateTime, timeAgo } from '@/lib/utils';
+} from "lucide-react";
+import { cn, timeAgo } from "@/lib/utils";
 
 interface TaskItemProps {
   task: Task;
@@ -31,12 +29,13 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
   const { user } = useAuthStore();
   const { completeTask, uncompleteTask, deleteTask } = useTaskStore();
 
-  const isCompleted = task.status === 'completed';
+  const isCompleted = task.status === "completed";
   const canComplete = canCompleteTask(role);
   const canEdit = canEditTask(role);
   const canDelete = canDeleteTask(role);
 
-  const getUserName = (userId: string) => memberNames[userId] || 'Unknown User';
+  const getUserName = (userId: string) =>
+    memberNames[userId] || "Usuario desconocido";
 
   const handleToggleComplete = () => {
     if (!user || !canComplete) return;
@@ -59,10 +58,10 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -8 }}
       className={cn(
-        'group rounded-xl border transition-all duration-200',
+        "group rounded-xl border transition-all duration-200 overflow-hidden",
         isCompleted
-          ? 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-500/20 dark:bg-emerald-500/5'
-          : 'border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900 hover:border-zinc-300 dark:hover:border-zinc-700'
+          ? "border-blue-200 bg-blue-50/30"
+          : "border-gray-200 bg-white hover:border-gray-300",
       )}
     >
       <div className="flex items-start gap-3 p-4">
@@ -71,11 +70,19 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
           onClick={handleToggleComplete}
           disabled={!canComplete}
           className={cn(
-            'mt-0.5 flex-shrink-0 transition-colors cursor-pointer',
-            canComplete ? 'hover:text-violet-600' : 'cursor-not-allowed opacity-50',
-            isCompleted ? 'text-emerald-500' : 'text-zinc-300 dark:text-zinc-600'
+            "mt-0.5 flex-shrink-0 transition-colors cursor-pointer",
+            canComplete
+              ? "hover:text-blue-600"
+              : "cursor-not-allowed opacity-50",
+            isCompleted ? "text-blue-600" : "text-gray-300",
           )}
-          title={canComplete ? (isCompleted ? 'Reopen task' : 'Complete task') : 'Only the owner can complete tasks'}
+          title={
+            canComplete
+              ? isCompleted
+                ? "Reabrir tarea"
+                : "Completar tarea"
+              : "Solo el propietario puede completar tareas"
+          }
         >
           {isCompleted ? <CheckCircle2 size={20} /> : <Circle size={20} />}
         </button>
@@ -86,31 +93,31 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
             <div className="flex-1 min-w-0">
               <p
                 className={cn(
-                  'text-sm font-medium transition-colors',
-                  isCompleted
-                    ? 'text-zinc-400 line-through dark:text-zinc-500'
-                    : 'text-zinc-900 dark:text-zinc-100'
+                  "text-sm font-medium transition-colors",
+                  isCompleted ? "text-gray-400 line-through" : "text-gray-900",
                 )}
               >
                 {task.title}
               </p>
               {task.description && (
-                <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{task.description}</p>
+                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                  {task.description}
+                </p>
               )}
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
               <button
                 onClick={() => setExpanded(!expanded)}
-                className="p-1 rounded-md text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
               {canDelete && (
                 <button
                   onClick={handleDelete}
-                  className="p-1 rounded-md text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
                 >
                   <Trash2 size={14} />
                 </button>
@@ -119,21 +126,22 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
           </div>
 
           {/* Meta */}
-          <div className="flex items-center flex-wrap gap-2 mt-2">
-            <span className="flex items-center gap-1 text-[11px] text-zinc-400">
+          <div className="flex items-center flex-wrap gap-3 mt-3">
+            <span className="flex items-center gap-1 text-[11px] text-gray-400">
               <Clock size={10} />
               {timeAgo(task.createdAt)}
             </span>
             {task.assignedTo && (
-              <span className="flex items-center gap-1 text-[11px] text-zinc-400">
+              <span className="flex items-center gap-1 text-[11px] text-gray-400">
                 <User size={10} />
                 {getUserName(task.assignedTo)}
               </span>
             )}
             {isCompleted && task.completedBy && (
-              <Badge variant="success">
-                Completed by: {getUserName(task.completedBy)}
-              </Badge>
+              <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                <CheckCircle2 size={8} />
+                Completado por {getUserName(task.completedBy)}
+              </span>
             )}
           </div>
         </div>
@@ -143,25 +151,30 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
       {expanded && (
         <motion.div
           initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
+          animate={{ height: "auto", opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          className="border-t border-zinc-100 dark:border-zinc-800"
+          className="border-t border-gray-100"
         >
           <div className="p-4 pt-3">
-            <p className="flex items-center gap-1.5 text-xs font-medium text-zinc-500 mb-2">
+            <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-3">
               <History size={12} />
-              Activity
+              Actividad
             </p>
-            <div className="space-y-1.5">
-              {task.history.map((entry) => (
-                <div key={entry.id} className="flex items-start gap-2 text-[11px] text-zinc-500">
-                  <div className="w-1 h-1 rounded-full bg-zinc-300 mt-1.5 flex-shrink-0" />
-                  <span>
-                    <span className="font-medium text-zinc-700 dark:text-zinc-300">
+            <div className="space-y-2">
+              {task.history.slice(-5).map((entry) => (
+                <div
+                  key={entry.id}
+                  className="flex items-start gap-2 text-[11px] text-gray-500"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5 flex-shrink-0" />
+                  <span className="leading-relaxed">
+                    <span className="font-medium text-gray-700">
                       {getUserName(entry.performedBy)}
-                    </span>{' '}
+                    </span>{" "}
                     {entry.details || entry.action}
-                    <span className="text-zinc-400 ml-1">{timeAgo(entry.performedAt)}</span>
+                    <span className="text-gray-400 ml-1">
+                      · {timeAgo(entry.performedAt)}
+                    </span>
                   </span>
                 </div>
               ))}

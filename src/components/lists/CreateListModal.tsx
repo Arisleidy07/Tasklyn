@@ -1,24 +1,27 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Modal from '@/components/ui/Modal';
-import Input from '@/components/ui/Input';
-import Button from '@/components/ui/Button';
-import { useListStore } from '@/stores/listStore';
-import { useAuthStore } from '@/stores/authStore';
-import { ListType } from '@/types';
-import { canCreateMoreLists } from '@/lib/permissions';
-import { List, Lock } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState } from "react";
+import Modal from "@/components/ui/Modal";
+import Input from "@/components/ui/Input";
+import Button from "@/components/ui/Button";
+import { useListStore } from "@/stores/listStore";
+import { useAuthStore } from "@/stores/authStore";
+import { ListType } from "@/types";
+import { canCreateMoreLists } from "@/lib/permissions";
+import { List, Lock } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface CreateListModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function CreateListModal({ isOpen, onClose }: CreateListModalProps) {
-  const [name, setName] = useState('');
-  const [type, setType] = useState<ListType>('personal');
+export default function CreateListModal({
+  isOpen,
+  onClose,
+}: CreateListModalProps) {
+  const [name, setName] = useState("");
+  const [type, setType] = useState<ListType>("personal");
   const { user } = useAuthStore();
   const { createList, getUserLists } = useListStore();
 
@@ -32,13 +35,18 @@ export default function CreateListModal({ isOpen, onClose }: CreateListModalProp
     }
 
     createList(name.trim(), user.id, type);
-    setName('');
-    setType('personal');
+    setName("");
+    setType("personal");
     onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create new list" description="Organize your tasks in a dedicated list.">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Create new list"
+      description="Organize your tasks in a dedicated list."
+    >
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
           label="List name"
@@ -49,44 +57,64 @@ export default function CreateListModal({ isOpen, onClose }: CreateListModalProp
         />
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          <label className="block text-sm font-medium text-gray-700">
             Type
           </label>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => setType('personal')}
+              onClick={() => setType("personal")}
               className={cn(
-                'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer',
-                type === 'personal'
-                  ? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10'
-                  : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300'
+                "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer",
+                type === "personal"
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-200 hover:border-gray-300",
               )}
             >
-              <Lock size={20} className={type === 'personal' ? 'text-violet-600' : 'text-zinc-400'} />
+              <Lock
+                size={20}
+                className={
+                  type === "personal" ? "text-blue-600" : "text-gray-400"
+                }
+              />
               <div>
-                <p className={cn('text-sm font-medium', type === 'personal' ? 'text-violet-700 dark:text-violet-400' : 'text-zinc-700 dark:text-zinc-300')}>
+                <p
+                  className={cn(
+                    "text-sm font-medium",
+                    type === "personal" ? "text-blue-700" : "text-gray-700",
+                  )}
+                >
                   Personal
                 </p>
-                <p className="text-[11px] text-zinc-500 mt-0.5">Only you</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">Only you</p>
               </div>
             </button>
             <button
               type="button"
-              onClick={() => setType('shared')}
+              onClick={() => setType("shared")}
               className={cn(
-                'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer',
-                type === 'shared'
-                  ? 'border-violet-500 bg-violet-50 dark:bg-violet-500/10'
-                  : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300'
+                "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer",
+                type === "shared"
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-200 hover:border-gray-300",
               )}
             >
-              <List size={20} className={type === 'shared' ? 'text-violet-600' : 'text-zinc-400'} />
+              <List
+                size={20}
+                className={
+                  type === "shared" ? "text-blue-600" : "text-gray-400"
+                }
+              />
               <div>
-                <p className={cn('text-sm font-medium', type === 'shared' ? 'text-violet-700 dark:text-violet-400' : 'text-zinc-700 dark:text-zinc-300')}>
+                <p
+                  className={cn(
+                    "text-sm font-medium",
+                    type === "shared" ? "text-blue-700" : "text-gray-700",
+                  )}
+                >
                   Shared
                 </p>
-                <p className="text-[11px] text-zinc-500 mt-0.5">Collaborate</p>
+                <p className="text-[11px] text-gray-500 mt-0.5">Collaborate</p>
               </div>
             </button>
           </div>

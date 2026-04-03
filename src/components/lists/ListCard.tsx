@@ -1,14 +1,19 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { TaskList } from '@/types';
-import { useTaskStore } from '@/stores/taskStore';
-import Badge from '@/components/ui/Badge';
-import Avatar from '@/components/ui/Avatar';
-import { useAuthStore } from '@/stores/authStore';
-import { Users, CheckCircle2, Circle, ArrowRight } from 'lucide-react';
-import { formatDate, cn } from '@/lib/utils';
+import React, { useMemo } from "react";
+import Link from "next/link";
+import { TaskList } from "@/types";
+import { useTaskStore } from "@/stores/taskStore";
+import { useAuthStore } from "@/stores/authStore";
+import {
+  Users,
+  CheckCircle2,
+  ArrowUpRight,
+  Lock,
+  Share2,
+  Clock,
+} from "lucide-react";
+import { formatDate, cn } from "@/lib/utils";
 
 interface ListCardProps {
   list: TaskList;
@@ -16,61 +21,102 @@ interface ListCardProps {
 
 export default function ListCard({ list }: ListCardProps) {
   const { user } = useAuthStore();
-  const tasks = useTaskStore((s) => s.getTasksByList(list.id));
-  const completedCount = tasks.filter((t) => t.status === 'completed').length;
-  const totalCount = tasks.length;
+  const { tasks } = useTaskStore();
+
+  const listTasks = useMemo(() => {
+    return tasks.filter((t) => t.listId === list.id);
+  }, [tasks, list.id]);
+
+  const completedCount = listTasks.filter(
+    (t) => t.status === "completed",
+  ).length;
+  const totalCount = listTasks.length;
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+  const pendingCount = totalCount - completedCount;
 
   const isOwner = list.owner === user?.id;
 
   return (
-    <Link href={`/lists/${list.id}`} className="group block">
-      <div className="relative p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-violet-300 dark:hover:border-violet-500/40 hover:shadow-lg hover:shadow-violet-500/5 transition-all duration-200">
+    <Link
+      href={`/lists/${list.id}`}
+      className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-2xl"
+    >
+      <div className="relative p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-400 hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300">
         {/* Header */}
-        <div className="flex items-start justify-between mb-3">
+        <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate group-hover:text-violet-700 dark:group-hover:text-violet-400 transition-colors">
-              {list.name}
-            </h3>
-            <p className="text-xs text-zinc-500 mt-0.5">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-[15px] font-semibold text-gray-900 truncate group-hover:text-blue-700 transition-colors">
+                {list.name}
+              </h3>
+              <ArrowUpRight
+                size={14}
+                className="text-gray-300 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all flex-shrink-0"
+              />
+            </div>
+            <p className="text-xs text-gray-400 flex items-center gap-1.5">
+              <Clock size={10} />
               {formatDate(list.createdAt)}
             </p>
           </div>
-          <div className="flex items-center gap-1.5">
-            <Badge variant={list.type === 'shared' ? 'blue' : 'default'}>
-              {list.type === 'shared' ? 'Shared' : 'Personal'}
-            </Badge>
-            {isOwner && <Badge variant="violet">Owner</Badge>}
+          <div
+            className={cn(
+              "flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0",
+              list.type === "shared"
+                ? "bg-blue-50 text-blue-600"
+                : "bg-gray-100 text-gray-500",
+            )}
+          >
+            {list.type === "shared" ? <Share2 size={14} /> : <Lock size={14} />}
+          </div>
+        </div>
+
+        {/* Task count */}
+        <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-1.5 text-sm">
+            <span className="font-semibold text-gray-900">{pendingCount}</span>
+            <span className="text-gray-500 text-xs">pending</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-sm">
+            <CheckCircle2 size={14} className="text-blue-500" />
+            <span className="font-semibold text-gray-900">
+              {completedCount}
+            </span>
+            <span className="text-gray-500 text-xs">done</span>
           </div>
         </div>
 
         {/* Progress */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between text-xs text-zinc-500 mb-1.5">
-            <span className="flex items-center gap-1">
-              <CheckCircle2 size={12} />
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-gray-500">
               {completedCount}/{totalCount} tasks
             </span>
-            <span>{totalCount > 0 ? Math.round(progress) : 0}%</span>
+            <span className="font-medium text-gray-700">
+              {totalCount > 0 ? Math.round(progress) : 0}%
+            </span>
           </div>
-          <div className="h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full transition-all duration-500"
+              className="h-full bg-blue-500 rounded-full transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-            <Users size={12} />
-            <span>{list.members.length} member{list.members.length !== 1 ? 's' : ''}</span>
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-1.5">
+            <Users size={12} className="text-gray-400" />
+            <span className="text-xs text-gray-500">
+              {list.members.length} member{list.members.length !== 1 ? "s" : ""}
+            </span>
           </div>
-          <ArrowRight
-            size={14}
-            className="text-zinc-300 group-hover:text-violet-500 group-hover:translate-x-0.5 transition-all"
-          />
+          {isOwner && (
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+              Owner
+            </span>
+          )}
         </div>
       </div>
     </Link>

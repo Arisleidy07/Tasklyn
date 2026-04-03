@@ -1,52 +1,135 @@
-'use client';
+"use client";
 
-import { create } from 'zustand';
-import { User } from '@/types';
-import { generateId } from '@/lib/utils';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser,
+} from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
+import { createUser, getUser, subscribeToUser } from "@/lib/firestore";
+import type { User } from "@/types";
 
 interface AuthState {
   user: User | null;
+  firebaseUser: FirebaseUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: () => void;
-  logout: () => void;
+  isAuthReady: boolean;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
   updateUser: (updates: Partial<User>) => void;
 }
 
-// Demo user for development — will be replaced by Firebase Auth
-const DEMO_USER: User = {
-  id: 'user-1',
-  name: 'Alex Rivera',
-  email: 'alex@tasklyn.app',
-  photoURL: '',
-  plan: 'FREE',
+// Convert Firebase user to our User type
+const firebaseToUser = (firebaseUser: FirebaseUser): User => ({
+  id: firebaseUser.uid,
+  name: firebaseUser.displayName || "Anonymous",
+  email: firebaseUser.email || "",
+  photoURL: firebaseUser.photoURL || "",
+  plan: "FREE",
   createdAt: new Date().toISOString(),
-};
+});
 
-export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
-  isAuthenticated: false,
-  isLoading: false,
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      firebaseUser: null,
+      isAuthenticated: false,
+      isLoading: false,
+      isAuthReady: false,
 
-  login: () => {
-    set({ isLoading: true });
-    // Simulate Google login delay
-    setTimeout(() => {
-      set({
-        user: { ...DEMO_USER, id: generateId() },
+      login: async () => {
+        set({ isLoading: true });
+        try {
+          const result = await signInWithPopup(auth, googleProvider);
+          const firebaseUser = result.user;
+
+          // Check if user exists in Firestore
+          let user = await getUser(firebaseUser.uid);
+
+          // If new user, create in Firestore
+          if (!user) {
+            user = firebaseToUser(firebaseUser);
+            await createUser(user);
+          }
+
+          set({
+            user,
+            firebaseUser,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        } catch (error) {
+          console.error("Login error:", error);
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      logout: async () => {
+        try {
+          await signOut(auth);
+          set({
+            user: null,
+            firebaseUser: null,
+            isAuthenticated: false,
+          });
+        } catch (error) {
+          console.error("Logout error:", error);
+          throw error;
+        }
+      },
+
+      updateUser: (updates) => {
+        set((state) => ({
+          user: state.user ? { ...state.user, ...updates } : null,
+        }));
+      },
+    }),
+    {
+      name: "auth-storage",
+      partialize: (state) => ({ user: state.user }),
+    },
+  ),
+);
+
+// Initialize auth state listener
+export const initAuthListener = () => {
+  onAuthStateChanged(auth, async (firebaseUser) => {
+    if (firebaseUser) {
+      let user = await getUser(firebaseUser.uid);
+
+      if (!user) {
+        user = firebaseToUser(firebaseUser);
+        await createUser(user);
+      }
+
+      useAuthStore.setState({
+        user,
+        firebaseUser,
         isAuthenticated: true,
+        isAuthReady: true,
         isLoading: false,
       });
-    }, 800);
-  },
 
-  logout: () => {
-    set({ user: null, isAuthenticated: false });
-  },
-
-  updateUser: (updates) => {
-    set((state) => ({
-      user: state.user ? { ...state.user, ...updates } : null,
-    }));
-  },
-}));
+      subscribeToUser(firebaseUser.uid, (updatedUser) => {
+        if (updatedUser) {
+          useAuthStore.setState({ user: updatedUser });
+        }
+      });
+    } else {
+      useAuthStore.setState({
+        user: null,
+        firebaseUser: null,
+        isAuthenticated: false,
+        isAuthReady: true,
+        isLoading: false,
+      });
+    }
+  });
+};
