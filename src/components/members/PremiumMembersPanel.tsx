@@ -156,13 +156,14 @@ export default function PremiumMembersPanel({
     setIsSending(true);
     setInviteError(null);
     try {
-      const result = await sendEmailInvitation(
-        inviteEmail.trim(),
-        list.id,
-        list.name,
-        user.name || user.email || "Un miembro",
-        inviteRole,
-      );
+      const result = await sendEmailInvitation({
+        email: inviteEmail.trim(),
+        listId: list.id,
+        listName: list.name,
+        inviterName: user.name || user.email || "Un miembro",
+        role: inviteRole,
+        invitedBy: user.id,
+      });
       setInviteSent({ email: inviteEmail.trim(), notified: result.notified });
       setInviteEmail("");
     } catch (error) {
