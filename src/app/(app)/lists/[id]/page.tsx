@@ -5,45 +5,25 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
-import { useInvitationStore } from "@/stores/invitationStore";
 import Header from "@/components/layout/Header";
 import TaskItem from "@/components/tasks/TaskItem";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
-import Avatar from "@/components/ui/Avatar";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
+import MembersPanel from "@/components/members/MembersPanel";
 import {
   Plus,
-  ArrowLeft,
   Users,
   Share2,
   Trash2,
-  Settings,
   CheckCircle2,
   Clock,
-  X,
-  Copy,
-  Check,
-  UserCog,
   AlertCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { TaskList, MemberRole } from "@/types";
-
-const ROLES: { value: MemberRole; label: string; desc: string }[] = [
-  {
-    value: "editor",
-    label: "Editor",
-    desc: "Puede añadir, editar y completar tareas",
-  },
-  {
-    value: "viewer",
-    label: "Lector",
-    desc: "Solo puede ver tareas y marcar sus propias completadas",
-  },
-];
+import type { MemberRole } from "@/types";
 
 export default function ListDetailPage() {
   const params = useParams();
@@ -51,33 +31,14 @@ export default function ListDetailPage() {
   const listId = params.id as string;
 
   const { user } = useAuthStore();
-  const {
-    getList,
-    deleteList,
-    addMember,
-    removeMember,
-    updateMemberRole,
-    setCustomName,
-    getDisplayName,
-  } = useListStore();
+  const { getList, deleteList, getDisplayName } = useListStore();
   const { getTasksByList, subscribeToList, unsubscribeFromList, createTask } =
     useTaskStore();
-  const { createInvitation, deleteInvitation, getInvitationsByList } =
-    useInvitationStore();
-
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
   const [showAddTask, setShowAddTask] = useState(false);
-  const [showInvite, setShowInvite] = useState(false);
-  const [showMembers, setShowMembers] = useState(false);
+  const [showMembersPanel, setShowMembersPanel] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [invitations, setInvitations] = useState<
-    Awaited<ReturnType<typeof getInvitationsByList>>
-  >([]);
-  const [copiedToken, setCopiedToken] = useState<string | null>(null);
-  const [customNameEdit, setCustomNameEdit] = useState<Record<string, string>>(
-    {},
-  );
 
   const list = getList(listId);
   const tasks = getTasksByList(listId);
@@ -91,13 +52,6 @@ export default function ListDetailPage() {
       };
     }
   }, [listId, subscribeToList, unsubscribeFromList]);
-
-  // Load invitations
-  useEffect(() => {
-    if (listId) {
-      getInvitationsByList(listId).then(setInvitations);
-    }
-  }, [listId, getInvitationsByList]);
 
   if (!user || !list) {
     return (
@@ -130,36 +84,6 @@ export default function ListDetailPage() {
     router.push("/dashboard");
   };
 
-  const handleCreateInvite = async (role: MemberRole) => {
-    const invitation = await createInvitation(listId, user.id, role);
-    setInvitations((prev) => [...prev, invitation]);
-  };
-
-  const handleDeleteInvite = async (id: string) => {
-    await deleteInvitation(id);
-    setInvitations((prev) => prev.filter((i) => i.id !== id));
-  };
-
-  const copyInviteLink = (token: string) => {
-    const baseUrl = window.location.origin;
-    const link = `${baseUrl}/invite/${token}`;
-    navigator.clipboard.writeText(link);
-    setCopiedToken(token);
-    setTimeout(() => setCopiedToken(null), 2000);
-  };
-
-  const handleSaveCustomName = async (userId: string) => {
-    const name = customNameEdit[userId];
-    if (name !== undefined) {
-      await setCustomName(listId, userId, name);
-      setCustomNameEdit((prev) => {
-        const next = { ...prev };
-        delete next[userId];
-        return next;
-      });
-    }
-  };
-
   const handleAddTask = async () => {
     if (!newTaskTitle.trim() || !user) return;
     await createTask({
@@ -181,24 +105,23 @@ export default function ListDetailPage() {
         }
         actions={
           <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowMembersPanel(true)}
+              icon={<Users size={16} />}
+            >
+              Miembros
+            </Button>
             {canEdit && (
               <Button
                 size="sm"
-                variant="ghost"
-                onClick={() => setShowInvite(true)}
+                onClick={() => setShowMembersPanel(true)}
                 icon={<Share2 size={16} />}
               >
                 Invitar
               </Button>
             )}
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowMembers(true)}
-              icon={<Users size={16} />}
-            >
-              Miembros
-            </Button>
             {isOwner && (
               <Button
                 size="sm"
@@ -355,142 +278,30 @@ export default function ListDetailPage() {
         </div>
       </Modal>
 
-      {/* Modal Invitar */}
-      <Modal
-        isOpen={showInvite}
-        onClose={() => setShowInvite(false)}
-        title="Invitar miembros"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-gray-500">
-            Crea un enlace de invitación para compartir esta lista con otros.
-          </p>
-          <div className="space-y-2">
-            {ROLES.map((role) => (
-              <button
-                key={role.value}
-                onClick={() => handleCreateInvite(role.value)}
-                className="w-full p-3 rounded-lg border border-gray-200 hover:border-blue-300 text-left transition-colors"
-              >
-                <p className="font-medium text-sm">{role.label}</p>
-                <p className="text-xs text-gray-500">{role.desc}</p>
-              </button>
-            ))}
-          </div>
-          {invitations.length > 0 && (
-            <div className="border-t border-gray-200 pt-4">
-              <p className="text-xs font-medium uppercase tracking-wider text-gray-500 mb-3">
-                Invitaciones activas
-              </p>
-              <div className="space-y-2">
-                {invitations.map((inv) => (
-                  <div
-                    key={inv.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div>
-                      <Badge>{inv.defaultRole}</Badge>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Expira{" "}
-                        {new Date(inv.expiresAt).toLocaleDateString("es-ES")}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => copyInviteLink(inv.token)}
-                        className="p-2 rounded-lg hover:bg-white transition-colors"
-                        title="Copiar enlace"
-                      >
-                        {copiedToken === inv.token ? (
-                          <Check size={16} className="text-blue-500" />
-                        ) : (
-                          <Copy size={16} />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleDeleteInvite(inv.id)}
-                        className="p-2 rounded-lg hover:bg-white text-red-500 transition-colors"
-                        title="Eliminar invitación"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </Modal>
-
-      {/* Modal Miembros */}
-      <Modal
-        isOpen={showMembers}
-        onClose={() => setShowMembers(false)}
-        title="Miembros de la lista"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-gray-500">
-            {list.members.length} miembro{list.members.length !== 1 ? "s" : ""}{" "}
-            en esta lista.
-          </p>
-          <div className="space-y-2">
-            {list.members.map((member) => {
-              const displayName = getDisplayName(
-                listId,
-                member.userId,
-                member.userId === user.id ? "Tú" : member.userId.slice(0, 8),
-              );
-              return (
-                <div
-                  key={member.userId}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar name={displayName} size="sm" />
-                    <div>
-                      <p className="font-medium text-sm">{displayName}</p>
-                      <Badge
-                        variant={member.role === "owner" ? "blue" : "default"}
-                      >
-                        {member.role}
-                      </Badge>
-                    </div>
-                  </div>
-                  {isOwner && member.userId !== user.id && (
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={member.role}
-                        onChange={(e) =>
-                          updateMemberRole(
-                            listId,
-                            member.userId,
-                            e.target.value as MemberRole,
-                          )
-                        }
-                        className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white"
-                      >
-                        {ROLES.map((r) => (
-                          <option key={r.value} value={r.value}>
-                            {r.label}
-                          </option>
-                        ))}
-                        <option value="owner">Owner</option>
-                      </select>
-                      <button
-                        onClick={() => removeMember(listId, member.userId)}
-                        className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </Modal>
+      {/* Panel de miembros e invitaciones */}
+      <MembersPanel
+        list={list}
+        memberNames={list.members.reduce(
+          (acc, m) => {
+            acc[m.userId] = getDisplayName(
+              listId,
+              m.userId,
+              m.userId === user.id ? "Tú" : m.userId.slice(0, 8),
+            );
+            return acc;
+          },
+          {} as Record<string, string>,
+        )}
+        originalNames={list.members.reduce(
+          (acc, m) => {
+            acc[m.userId] = m.userId === user.id ? "Tú" : m.userId.slice(0, 8);
+            return acc;
+          },
+          {} as Record<string, string>,
+        )}
+        isOpen={showMembersPanel}
+        onClose={() => setShowMembersPanel(false)}
+      />
 
       {/* Confirmar Eliminación */}
       <Modal

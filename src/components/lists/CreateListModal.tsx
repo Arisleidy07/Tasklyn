@@ -44,13 +44,13 @@ export default function CreateListModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Create new list"
-      description="Organize your tasks in a dedicated list."
+      title="Nueva lista"
+      description="Organiza tus tareas en una lista dedicada."
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
-          label="List name"
-          placeholder="e.g. Project Alpha, Shopping, Q4 Goals..."
+          label="Nombre de la lista"
+          placeholder="Ej. Proyecto Alpha, Compras, Objetivos Q4..."
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoFocus
@@ -58,63 +58,77 @@ export default function CreateListModal({
 
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
-            Type
+            Tipo de lista
           </label>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setType("personal")}
               className={cn(
-                "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer",
+                "flex flex-col items-center gap-2.5 p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer",
                 type === "personal"
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-300",
+                  ? "border-blue-500 bg-blue-50 shadow-sm shadow-blue-100"
+                  : "border-gray-200 hover:border-blue-200 hover:bg-gray-50",
               )}
             >
-              <Lock
-                size={20}
-                className={
-                  type === "personal" ? "text-blue-600" : "text-gray-400"
-                }
-              />
-              <div>
+              <div
+                className={cn(
+                  "w-9 h-9 rounded-xl flex items-center justify-center",
+                  type === "personal" ? "bg-blue-100" : "bg-gray-100",
+                )}
+              >
+                <Lock
+                  size={18}
+                  className={
+                    type === "personal" ? "text-blue-600" : "text-gray-400"
+                  }
+                />
+              </div>
+              <div className="text-center">
                 <p
                   className={cn(
-                    "text-sm font-medium",
+                    "text-sm font-semibold",
                     type === "personal" ? "text-blue-700" : "text-gray-700",
                   )}
                 >
                   Personal
                 </p>
-                <p className="text-[11px] text-gray-500 mt-0.5">Only you</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Solo tú</p>
               </div>
             </button>
             <button
               type="button"
               onClick={() => setType("shared")}
               className={cn(
-                "flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer",
+                "flex flex-col items-center gap-2.5 p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer",
                 type === "shared"
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-gray-300",
+                  ? "border-blue-500 bg-blue-50 shadow-sm shadow-blue-100"
+                  : "border-gray-200 hover:border-blue-200 hover:bg-gray-50",
               )}
             >
-              <List
-                size={20}
-                className={
-                  type === "shared" ? "text-blue-600" : "text-gray-400"
-                }
-              />
-              <div>
+              <div
+                className={cn(
+                  "w-9 h-9 rounded-xl flex items-center justify-center",
+                  type === "shared" ? "bg-blue-100" : "bg-gray-100",
+                )}
+              >
+                <List
+                  size={18}
+                  className={
+                    type === "shared" ? "text-blue-600" : "text-gray-400"
+                  }
+                />
+              </div>
+              <div className="text-center">
                 <p
                   className={cn(
-                    "text-sm font-medium",
+                    "text-sm font-semibold",
                     type === "shared" ? "text-blue-700" : "text-gray-700",
                   )}
                 >
-                  Shared
+                  Compartida
                 </p>
-                <p className="text-[11px] text-gray-500 mt-0.5">Collaborate</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Colaborar</p>
               </div>
             </button>
           </div>
@@ -122,10 +136,10 @@ export default function CreateListModal({
 
         <div className="flex justify-end gap-2 pt-2">
           <Button type="button" variant="ghost" onClick={onClose}>
-            Cancel
+            Cancelar
           </Button>
           <Button type="submit" disabled={!name.trim()}>
-            Create list
+            Crear lista
           </Button>
         </div>
       </form>

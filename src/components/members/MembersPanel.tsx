@@ -18,14 +18,17 @@ import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
 import {
   Trash2,
-  Link2,
-  Copy,
   Check,
   Shield,
   Pencil,
   X as XIcon,
+  Mail,
+  Send,
+  UserPlus,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface MembersPanelProps {
   list: TaskList;
@@ -114,10 +117,16 @@ export default function MembersPanel({
 }: MembersPanelProps) {
   const { user } = useAuthStore();
   const { updateMemberRole, removeMember, setCustomName } = useListStore();
-  const { createInvitation } = useInvitationStore();
-  const [copied, setCopied] = useState(false);
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const { sendEmailInvitation } = useInvitationStore();
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<MemberRole>("viewer");
+  const [isSending, setIsSending] = useState(false);
+  const [inviteSent, setInviteSent] = useState<{
+    email: string;
+    notified: boolean;
+  } | null>(null);
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
   if (!user) return null;
 
@@ -127,20 +136,40 @@ export default function MembersPanel({
   const canRemove = canRemoveMembers(myRole);
   const canInvite = canInviteMembers(myRole);
 
-  const handleGenerateLink = async () => {
-    const invitation = await createInvitation(list.id, user.id, "viewer");
-    const link = `${window.location.origin}/invite/${invitation.token}`;
-    setInviteLink(link);
-  };
+  const handleSendInvitation = async () => {
+    if (!inviteEmail.trim()) return;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(inviteEmail.trim())) {
+      setInviteError("Ingresa un correo electrónico válido.");
+      return;
+    }
+    const alreadyMember = list.members.some(
+      (m) => memberNames[m.userId]?.toLowerCase() === inviteEmail.toLowerCase(),
+    );
+    if (alreadyMember) {
+      setInviteError("Este usuario ya es miembro de la lista.");
+      return;
+    }
 
-  const handleCopyLink = async () => {
-    if (!inviteLink) return;
+    setIsSending(true);
+    setInviteError(null);
     try {
-      await navigator.clipboard.writeText(inviteLink);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      const result = await sendEmailInvitation({
+        listId: list.id,
+        listName: list.name,
+        invitedBy: user.id,
+        inviterName: user.name,
+        email: inviteEmail.trim(),
+        role: inviteRole,
+      });
+      setInviteSent({ email: inviteEmail.trim(), notified: result.notified });
+      setInviteEmail("");
+      setInviteRole("viewer");
+      setTimeout(() => setInviteSent(null), 5000);
     } catch {
-      // Fallback
+      setInviteError("No se pudo enviar la invitación. Intenta de nuevo.");
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -161,47 +190,96 @@ export default function MembersPanel({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Members"
-      description={`Manage who has access to "${list.name}"`}
+      title="Miembros"
+      description={`Gestiona quién tiene acceso a "${list.name}"`}
       size="md"
     >
       <div className="space-y-5">
-        {/* Invite section */}
+        {/* Email invite section */}
         {canInvite && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-700">Invite link</p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleGenerateLink}
-                icon={<Link2 size={14} />}
-              >
-                Generate link
-              </Button>
+          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 space-y-3">
+            <div className="flex items-center gap-2 mb-1">
+              <UserPlus size={15} className="text-blue-600" />
+              <p className="text-sm font-semibold text-gray-800">
+                Invitar por correo
+              </p>
             </div>
-            {inviteLink && (
+
+            <div className="space-y-2">
+              <div className="relative">
+                <Mail
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => {
+                    setInviteEmail(e.target.value);
+                    setInviteError(null);
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendInvitation()}
+                  placeholder="correo@ejemplo.com"
+                  className="w-full h-9 pl-9 pr-3 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
+                />
+              </div>
+
               <div className="flex items-center gap-2">
-                <div className="flex-1 px-3 py-2 bg-gray-50 rounded-lg text-xs text-gray-600 truncate font-mono">
-                  {inviteLink}
-                </div>
+                <Select
+                  options={roleOptions}
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as MemberRole)}
+                  className="!h-9 !text-sm flex-1"
+                />
                 <Button
                   size="sm"
-                  variant={copied ? "primary" : "outline"}
-                  onClick={handleCopyLink}
-                  icon={copied ? <Check size={14} /> : <Copy size={14} />}
+                  onClick={handleSendInvitation}
+                  isLoading={isSending}
+                  icon={<Send size={13} />}
+                  className="h-9 px-4"
                 >
-                  {copied ? "Copied!" : "Copy"}
+                  Enviar invitación
                 </Button>
               </div>
-            )}
+            </div>
+
+            <AnimatePresence>
+              {inviteError && (
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="text-xs text-red-500 flex items-center gap-1"
+                >
+                  {inviteError}
+                </motion.p>
+              )}
+              {inviteSent && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="flex items-center gap-2 p-2.5 rounded-lg bg-green-50 border border-green-200"
+                >
+                  <CheckCircle2
+                    size={14}
+                    className="text-green-600 flex-shrink-0"
+                  />
+                  <p className="text-xs text-green-700">
+                    {inviteSent.notified
+                      ? `Notificación enviada a ${inviteSent.email} dentro de TASKLYN.`
+                      : `Correo de invitación enviado a ${inviteSent.email}.`}
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
         {/* Members list */}
         <div className="space-y-2">
           <p className="text-sm font-medium text-gray-700">
-            Members ({list.members.length})
+            Miembros ({list.members.length})
           </p>
           <div className="space-y-1">
             {list.members.map((member) => {

@@ -88,6 +88,7 @@ export interface Invitation {
   token: string;
   listId: string;
   invitedBy: string; // userId
+  invitedEmail?: string; // email of invited user (for email-based invitations)
   createdAt: string;
   expiresAt: string;
   defaultRole: MemberRole;

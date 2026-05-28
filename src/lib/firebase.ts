@@ -1,9 +1,9 @@
 // ============================================
 // TASKLYN — Firebase Configuration
 // ============================================
-import { initializeApp, getApps } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { initializeFirestore, getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -17,11 +17,24 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase (prevent duplicate initialization in dev hot-reload)
-const app =
-  getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+// Use initializeFirestore with long-polling auto-detection to prevent
+// the Firebase watch-stream "INTERNAL ASSERTION FAILED: Unexpected state (ID: ca9)
+// CONTEXT: {ve:-1}" bug which occurs on WebSocket race conditions.
+// try/catch guards against Next.js hot-reload calling initializeFirestore twice.
+export const db = (() => {
+  try {
+    return initializeFirestore(app, {
+      experimentalAutoDetectLongPolling: true,
+    });
+  } catch {
+    return getFirestore(app);
+  }
+})();
+
 export const googleProvider = new GoogleAuthProvider();
 
 export default app;

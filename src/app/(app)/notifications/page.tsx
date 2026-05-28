@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useNotificationStore } from "@/stores/notificationStore";
+import { useListStore } from "@/stores/listStore";
 import Header from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
@@ -15,9 +16,11 @@ import {
   ListTodo,
   UserPlus,
   Share2,
+  Check,
+  X,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { NotificationType } from "@/types";
+import type { MemberRole, NotificationType } from "@/types";
 
 const typeConfig: Record<
   NotificationType,
@@ -54,10 +57,38 @@ export default function NotificationsPage() {
   const { user } = useAuthStore();
   const { notifications, unreadCount, markRead, markAllRead, remove } =
     useNotificationStore();
+  const { addMember } = useListStore();
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   if (!user) return null;
 
   const handleMarkAll = () => markAllRead(user.id);
+
+  const handleAcceptInvitation = async (
+    notifId: string,
+    data: Record<string, string>,
+  ) => {
+    setProcessingId(notifId);
+    try {
+      await addMember(
+        data.listId,
+        user.id,
+        (data.role as MemberRole) || "viewer",
+      );
+      await remove(notifId);
+    } catch {
+      setProcessingId(null);
+    }
+  };
+
+  const handleDeclineInvitation = async (notifId: string) => {
+    setProcessingId(notifId);
+    try {
+      await remove(notifId);
+    } catch {
+      setProcessingId(null);
+    }
+  };
 
   return (
     <>
@@ -134,18 +165,48 @@ export default function NotificationsPage() {
                       <p className="text-[11px] text-gray-400 mt-1.5">
                         {timeAgo(notif.createdAt)}
                       </p>
+
+                      {/* Accept / Decline for invitations */}
+                      {notif.type === "invitation" && notif.data?.listId && (
+                        <div className="flex items-center gap-2 mt-3">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAcceptInvitation(notif.id, notif.data!);
+                            }}
+                            disabled={processingId === notif.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60"
+                          >
+                            <Check size={12} />
+                            Aceptar
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeclineInvitation(notif.id);
+                            }}
+                            disabled={processingId === notif.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors disabled:opacity-60"
+                          >
+                            <X size={12} />
+                            Rechazar
+                          </button>
+                        </div>
+                      )}
                     </div>
 
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        remove(notif.id);
-                      }}
-                      className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
-                      title="Eliminar"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    {notif.type !== "invitation" && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          remove(notif.id);
+                        }}
+                        className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </motion.div>
                 );
               })}

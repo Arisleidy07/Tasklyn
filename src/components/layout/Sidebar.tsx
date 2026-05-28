@@ -24,6 +24,7 @@ import Avatar from "@/components/ui/Avatar";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import CreateListModal from "@/components/lists/CreateListModal";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export default function Sidebar() {
@@ -123,38 +124,44 @@ export default function Sidebar() {
             {mainNav.map((item) => {
               const active = isActive(item.href);
               return (
-                <Link
+                <motion.div
                   key={item.name}
-                  href={item.href}
-                  title={collapsed ? item.name : undefined}
-                  className={cn(
-                    "relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200",
-                    active
-                      ? "bg-blue-600 text-white shadow-sm shadow-blue-600/25"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                    collapsed && "justify-center px-0",
-                  )}
+                  whileHover={{ x: active ? 0 : 2 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 >
-                  <item.icon size={18} className="flex-shrink-0" />
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1">{item.name}</span>
-                      {"badge" in item &&
-                        item.badge !== undefined &&
-                        item.badge > 0 && (
-                          <span className="text-[11px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1 bg-red-500 text-white">
-                            {item.badge > 9 ? "9+" : item.badge}
-                          </span>
-                        )}
-                    </>
-                  )}
-                  {collapsed &&
-                    "badge" in item &&
-                    item.badge !== undefined &&
-                    item.badge > 0 && (
-                      <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-500" />
+                  <Link
+                    href={item.href}
+                    title={collapsed ? item.name : undefined}
+                    className={cn(
+                      "relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200",
+                      active
+                        ? "bg-blue-600 text-white shadow-sm shadow-blue-600/25"
+                        : "text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-sm",
+                      collapsed && "justify-center px-0",
                     )}
-                </Link>
+                  >
+                    <item.icon size={18} className="flex-shrink-0" />
+                    {!collapsed && (
+                      <>
+                        <span className="flex-1">{item.name}</span>
+                        {"badge" in item &&
+                          item.badge !== undefined &&
+                          item.badge > 0 && (
+                            <span className="text-[11px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1 bg-red-500 text-white">
+                              {item.badge > 9 ? "9+" : item.badge}
+                            </span>
+                          )}
+                      </>
+                    )}
+                    {collapsed &&
+                      "badge" in item &&
+                      item.badge !== undefined &&
+                      item.badge > 0 && (
+                        <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-500" />
+                      )}
+                  </Link>
+                </motion.div>
               );
             })}
           </div>
@@ -169,37 +176,43 @@ export default function Sidebar() {
             {listNav.map((item) => {
               const active = isActive(item.href);
               return (
-                <Link
+                <motion.div
                   key={item.name}
-                  href={item.href}
-                  title={collapsed ? item.name : undefined}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200",
-                    active
-                      ? "bg-blue-600 text-white shadow-sm shadow-blue-600/25"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
-                    collapsed && "justify-center px-0",
-                  )}
+                  whileHover={{ x: active ? 0 : 2 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 >
-                  <item.icon size={18} className="flex-shrink-0" />
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1">{item.name}</span>
-                      {item.count !== undefined && (
-                        <span
-                          className={cn(
-                            "text-[11px] font-semibold min-w-[20px] h-5 flex items-center justify-center rounded-md px-1.5",
-                            active
-                              ? "bg-white/20 text-white"
-                              : "bg-gray-200 text-gray-600",
-                          )}
-                        >
-                          {item.count}
-                        </span>
-                      )}
-                    </>
-                  )}
-                </Link>
+                  <Link
+                    href={item.href}
+                    title={collapsed ? item.name : undefined}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200",
+                      active
+                        ? "bg-blue-600 text-white shadow-sm shadow-blue-600/25"
+                        : "text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-sm",
+                      collapsed && "justify-center px-0",
+                    )}
+                  >
+                    <item.icon size={18} className="flex-shrink-0" />
+                    {!collapsed && (
+                      <>
+                        <span className="flex-1">{item.name}</span>
+                        {item.count !== undefined && (
+                          <span
+                            className={cn(
+                              "text-[11px] font-semibold min-w-[20px] h-5 flex items-center justify-center rounded-md px-1.5",
+                              active
+                                ? "bg-white/20 text-white"
+                                : "bg-gray-200 text-gray-600",
+                            )}
+                          >
+                            {item.count}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </Link>
+                </motion.div>
               );
             })}
 

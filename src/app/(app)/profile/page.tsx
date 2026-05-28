@@ -88,22 +88,13 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero banner */}
-      <div className="h-40 md:h-52 bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-4 right-12 w-40 h-40 rounded-full bg-white" />
-          <div className="absolute -bottom-8 left-8 w-56 h-56 rounded-full bg-white" />
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 md:px-8 -mt-16 pb-20 md:pb-12">
-        {/* Avatar + nombre flotando sobre el banner */}
+      <div className="max-w-4xl mx-auto px-4 md:px-8 pt-6 md:pt-8 pb-20 md:pb-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6"
         >
-          <div className="px-6 md:px-8 pt-6 pb-6">
+          <div className="px-6 md:px-8 pt-8 pb-6">
             <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-6">
               <Avatar
                 name={user.name}

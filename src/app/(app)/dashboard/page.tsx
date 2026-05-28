@@ -121,8 +121,16 @@ export default function DashboardPage() {
                 key={stat.label}
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06, duration: 0.4 }}
-                className="group relative p-5 rounded-xl border border-gray-200 bg-white hover:shadow-md hover:shadow-gray-200/50 transition-all duration-300"
+                whileHover={{
+                  y: -4,
+                  boxShadow: "0 16px 40px -12px rgba(59,130,246,0.18)",
+                }}
+                transition={{
+                  delay: i * 0.06,
+                  duration: 0.35,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className="group relative p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-200 transition-colors duration-200"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div

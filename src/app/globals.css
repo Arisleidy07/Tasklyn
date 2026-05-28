@@ -209,3 +209,153 @@ select {
 .animate-progress-bar {
   animation: progress-bar 0.8s ease-out both;
 }
+
+/* ============================================
+   PREMIUM VISUAL EFFECTS
+   ============================================ */
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    transform: translateY(-24px) translateX(12px);
+  }
+  66% {
+    transform: translateY(-10px) translateX(-8px);
+  }
+}
+
+@keyframes float-slow-reverse {
+  0%,
+  100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  33% {
+    transform: translateY(16px) translateX(-14px);
+  }
+  66% {
+    transform: translateY(24px) translateX(8px);
+  }
+}
+
+@keyframes float-gentle {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes glow-drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.12;
+  }
+  25% {
+    transform: translate(30px, -20px) scale(1.05);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translate(-20px, -40px) scale(0.95);
+    opacity: 0.15;
+  }
+  75% {
+    transform: translate(-30px, 10px) scale(1.02);
+    opacity: 0.18;
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.12;
+  }
+}
+
+@keyframes particle-rise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-80px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 12s ease-in-out infinite;
+}
+
+.animate-float-slow-reverse {
+  animation: float-slow-reverse 15s ease-in-out infinite;
+}
+
+.animate-float-gentle {
+  animation: float-gentle 8s ease-in-out infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+.animate-glow-drift {
+  animation: glow-drift 20s ease-in-out infinite;
+}
+
+.animate-glow-drift-2 {
+  animation: glow-drift 28s ease-in-out infinite reverse;
+}
+
+.animate-glow-drift-3 {
+  animation: glow-drift 22s ease-in-out 6s infinite;
+}
+
+.animate-particle-rise {
+  animation: particle-rise 4s ease-out infinite;
+}
+
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 6s ease infinite;
+}
+
+/* Premium glass effect */
+.glass-premium {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Mesh gradient background for sections */
+.bg-mesh-blue {
+  background-color: #f0f7ff;
+  background-image:
+    radial-gradient(at 20% 20%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
+    radial-gradient(at 80% 10%, rgba(37, 99, 235, 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(96, 165, 250, 0.1) 0px, transparent 50%);
+}

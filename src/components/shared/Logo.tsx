@@ -31,6 +31,7 @@ export default function Logo({
         width={s.icon}
         height={s.icon}
         className="rounded-2xl object-contain"
+        style={{ width: s.icon, height: s.icon }}
         priority
       />
       {showText && (

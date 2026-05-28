@@ -14,7 +14,6 @@ import {
   onSnapshot,
   query,
   where,
-  orderBy,
   serverTimestamp,
   Timestamp,
   writeBatch,
@@ -37,9 +36,16 @@ import type {
 // Helpers
 // ============================================
 
-const toDate = (timestamp: Timestamp | null | undefined): string => {
+const toDate = (timestamp: unknown): string => {
   if (!timestamp) return new Date().toISOString();
-  return timestamp.toDate().toISOString();
+  if (typeof timestamp === "string") return timestamp;
+  if (timestamp instanceof Date) return timestamp.toISOString();
+  if (typeof (timestamp as Timestamp).toDate === "function")
+    return (timestamp as Timestamp).toDate().toISOString();
+  const raw = timestamp as { seconds?: number; nanoseconds?: number };
+  if (typeof raw.seconds === "number")
+    return new Date(raw.seconds * 1000).toISOString();
+  return new Date().toISOString();
 };
 
 const withTimestamps = <T extends Record<string, unknown>>(
@@ -71,6 +77,19 @@ export const getUser = async (userId: string): Promise<User | null> => {
   return {
     ...data,
     id: snap.id,
+    createdAt: toDate(data.createdAt),
+  } as User;
+};
+
+export const getUserByEmail = async (email: string): Promise<User | null> => {
+  const q = query(usersCollection, where("email", "==", email));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const docSnap = snap.docs[0];
+  const data = docSnap.data();
+  return {
+    ...data,
+    id: docSnap.id,
     createdAt: toDate(data.createdAt),
   } as User;
 };
@@ -325,11 +344,7 @@ export const subscribeToListTasks = (
   listId: string,
   callback: (tasks: Task[]) => void,
 ): Unsubscribe => {
-  const q = query(
-    tasksCollection,
-    where("listId", "==", listId),
-    orderBy("createdAt", "desc"),
-  );
+  const q = query(tasksCollection, where("listId", "==", listId));
 
   return onSnapshot(q, (snap) => {
     const tasks = snap.docs.map((doc) => {
@@ -348,6 +363,10 @@ export const subscribeToListTasks = (
         })),
       } as Task;
     });
+    tasks.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
     callback(tasks);
   });
 };
@@ -501,11 +520,7 @@ export const subscribeToNotifications = (
   userId: string,
   callback: (notifications: Notification[]) => void,
 ): Unsubscribe => {
-  const q = query(
-    notificationsCollection,
-    where("userId", "==", userId),
-    orderBy("createdAt", "desc"),
-  );
+  const q = query(notificationsCollection, where("userId", "==", userId));
   return onSnapshot(q, (snap) => {
     const notifications = snap.docs.map((d) => {
       const data = d.data();
@@ -515,6 +530,10 @@ export const subscribeToNotifications = (
         createdAt: toDate(data.createdAt),
       } as Notification;
     });
+    notifications.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
     callback(notifications);
   });
 };

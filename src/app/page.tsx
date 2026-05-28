@@ -26,8 +26,8 @@ export default function LandingPage() {
   }, [isAuthenticated, router]);
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header simple */}
+    <div className="min-h-screen bg-white overflow-x-hidden">
+      {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <Logo size="md" />
@@ -37,9 +37,25 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section - Estilo minimalista */}
-      <section className="pt-32 pb-20 px-6">
-        <div className="max-w-3xl mx-auto text-center">
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-20 px-6 overflow-hidden">
+        {/* Premium background — mesh gradient */}
+        <div className="absolute inset-0 bg-mesh-blue pointer-events-none" />
+
+        {/* Floating blue circles */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="animate-glow-drift absolute top-[8%] left-[10%] w-72 h-72 rounded-full bg-blue-500/10 blur-3xl" />
+          <div className="animate-glow-drift-2 absolute top-[20%] right-[8%] w-96 h-96 rounded-full bg-blue-400/8 blur-3xl" />
+          <div className="animate-glow-drift-3 absolute bottom-[10%] left-[35%] w-64 h-64 rounded-full bg-blue-600/10 blur-3xl" />
+          {/* Small floating orbs */}
+          <div className="animate-float-slow absolute top-[25%] left-[18%] w-4 h-4 rounded-full bg-blue-400/30" />
+          <div className="animate-float-slow-reverse absolute top-[40%] right-[20%] w-3 h-3 rounded-full bg-blue-500/25" />
+          <div className="animate-float-gentle absolute top-[60%] left-[55%] w-2 h-2 rounded-full bg-blue-400/40" />
+          <div className="animate-float-slow absolute top-[15%] right-[35%] w-2 h-2 rounded-full bg-blue-300/35" />
+          <div className="animate-float-slow-reverse absolute bottom-[25%] left-[25%] w-3 h-3 rounded-full bg-blue-500/30" />
+        </div>
+
+        <div className="relative max-w-3xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -229,8 +245,13 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Final */}
-      <section className="py-20 px-6">
-        <div className="max-w-2xl mx-auto text-center">
+      <section className="relative py-20 px-6 overflow-hidden">
+        <div className="absolute inset-0 bg-mesh-blue pointer-events-none" />
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="animate-glow-drift absolute top-[10%] right-[15%] w-64 h-64 rounded-full bg-blue-500/8 blur-3xl" />
+          <div className="animate-glow-drift-2 absolute bottom-[5%] left-[10%] w-80 h-80 rounded-full bg-blue-400/6 blur-3xl" />
+        </div>
+        <div className="relative max-w-2xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

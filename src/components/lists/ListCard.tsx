@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { TaskList } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -41,7 +42,14 @@ export default function ListCard({ list }: ListCardProps) {
       href={`/lists/${list.id}`}
       className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-2xl"
     >
-      <div className="relative p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-400 hover:shadow-lg hover:shadow-gray-200/50 transition-all duration-300">
+      <motion.div
+        whileHover={{
+          y: -3,
+          boxShadow: "0 12px 40px -12px rgba(59,130,246,0.25)",
+        }}
+        transition={{ type: "spring", stiffness: 300, damping: 24 }}
+        className="relative p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-300 transition-colors duration-200"
+      >
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1 min-w-0">
@@ -75,14 +83,14 @@ export default function ListCard({ list }: ListCardProps) {
         <div className="flex items-center gap-4 mb-4">
           <div className="flex items-center gap-1.5 text-sm">
             <span className="font-semibold text-gray-900">{pendingCount}</span>
-            <span className="text-gray-500 text-xs">pending</span>
+            <span className="text-gray-500 text-xs">pendientes</span>
           </div>
           <div className="flex items-center gap-1.5 text-sm">
             <CheckCircle2 size={14} className="text-blue-500" />
             <span className="font-semibold text-gray-900">
               {completedCount}
             </span>
-            <span className="text-gray-500 text-xs">done</span>
+            <span className="text-gray-500 text-xs">hechas</span>
           </div>
         </div>
 
@@ -90,7 +98,7 @@ export default function ListCard({ list }: ListCardProps) {
         <div className="space-y-2">
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-500">
-              {completedCount}/{totalCount} tasks
+              {completedCount}/{totalCount} tareas
             </span>
             <span className="font-medium text-gray-700">
               {totalCount > 0 ? Math.round(progress) : 0}%
@@ -109,7 +117,8 @@ export default function ListCard({ list }: ListCardProps) {
           <div className="flex items-center gap-1.5">
             <Users size={12} className="text-gray-400" />
             <span className="text-xs text-gray-500">
-              {list.members.length} member{list.members.length !== 1 ? "s" : ""}
+              {list.members.length} miembro
+              {list.members.length !== 1 ? "s" : ""}
             </span>
           </div>
           {isOwner && (
@@ -118,7 +127,7 @@ export default function ListCard({ list }: ListCardProps) {
             </span>
           )}
         </div>
-      </div>
+      </motion.div>
     </Link>
   );
 }
