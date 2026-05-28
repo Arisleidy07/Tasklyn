@@ -194,36 +194,53 @@ export default function PremiumMembersPanel({
       description={`Invita y gestiona el acceso a "${list.name}"`}
       size="xl"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 px-2 sm:px-0">
         {/* Left Section - Info & Explanation */}
-        <div className="lg:col-span-1 space-y-6">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-100">
+        <div className="lg:col-span-1 space-y-4 lg:space-y-6">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl lg:rounded-2xl p-4 lg:p-6 border border-blue-100">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
                 <Share2 size={20} className="text-white" />
               </div>
               <div>
                 <h3 className="font-semibold text-gray-900">Compartir lista</h3>
-                <p className="text-sm text-gray-600">Colaboración en tiempo real</p>
+                <p className="text-sm text-gray-600">
+                  Colaboración en tiempo real
+                </p>
               </div>
             </div>
-            
+
             <div className="space-y-3 text-sm text-gray-700">
               <p className="leading-relaxed">
                 Invita a personas a colaborar en esta lista. Cada miembro podrá:
               </p>
               <ul className="space-y-2">
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
-                  <span><strong>Editor:</strong> Crear y editar tareas</span>
+                  <CheckCircle2
+                    size={16}
+                    className="text-green-500 mt-0.5 flex-shrink-0"
+                  />
+                  <span>
+                    <strong>Editor:</strong> Crear y editar tareas
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
-                  <span><strong>Viewer:</strong> Solo ver tareas</span>
+                  <CheckCircle2
+                    size={16}
+                    className="text-green-500 mt-0.5 flex-shrink-0"
+                  />
+                  <span>
+                    <strong>Viewer:</strong> Solo ver tareas
+                  </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle2 size={16} className="text-green-500 mt-0.5 flex-shrink-0" />
-                  <span><strong>Owner:</strong> Control total</span>
+                  <CheckCircle2
+                    size={16}
+                    className="text-green-500 mt-0.5 flex-shrink-0"
+                  />
+                  <span>
+                    <strong>Owner:</strong> Control total
+                  </span>
                 </li>
               </ul>
             </div>
@@ -235,8 +252,8 @@ export default function PremiumMembersPanel({
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Tipo de lista</span>
-                <Badge variant={list.type === 'shared' ? 'blue' : 'default'}>
-                  {list.type === 'shared' ? 'Compartida' : 'Personal'}
+                <Badge variant={list.type === "shared" ? "blue" : "default"}>
+                  {list.type === "shared" ? "Compartida" : "Personal"}
                 </Badge>
               </div>
               <div className="flex justify-between items-center">
@@ -247,26 +264,28 @@ export default function PremiumMembersPanel({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Tu rol</span>
-                <Badge variant={roleBadgeVariant[myRole]}>
-                  {myRole}
-                </Badge>
+                <Badge variant={roleBadgeVariant[myRole]}>{myRole}</Badge>
               </div>
             </div>
           </div>
         </div>
 
         {/* Main Section - Invite Form & Members */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 lg:space-y-6">
           {/* Email invite section */}
           {canInvite && (
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+            <div className="bg-white rounded-xl lg:rounded-2xl border border-gray-200 p-4 lg:p-6 shadow-sm">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                   <UserPlus size={18} className="text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">Invitar por correo</h3>
-                  <p className="text-sm text-gray-600">Envía una invitación directa</p>
+                  <h3 className="font-semibold text-gray-900">
+                    Invitar por correo
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Envía una invitación directa
+                  </p>
                 </div>
               </div>
 
@@ -283,7 +302,9 @@ export default function PremiumMembersPanel({
                       setInviteEmail(e.target.value);
                       setInviteError(null);
                     }}
-                    onKeyDown={(e) => e.key === "Enter" && handleSendInvitation()}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleSendInvitation()
+                    }
                     placeholder="correo@ejemplo.com"
                     className="w-full h-12 pl-12 pr-4 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
                   />
@@ -293,7 +314,9 @@ export default function PremiumMembersPanel({
                   <Select
                     options={roleOptions}
                     value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value as MemberRole)}
+                    onChange={(e) =>
+                      setInviteRole(e.target.value as MemberRole)
+                    }
                     className="!h-12 !text-sm flex-1"
                   />
                   <Button
@@ -348,7 +371,7 @@ export default function PremiumMembersPanel({
           )}
 
           {/* Members list */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+          <div className="bg-white rounded-xl lg:rounded-2xl border border-gray-200 p-4 lg:p-6 shadow-sm">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -357,7 +380,8 @@ export default function PremiumMembersPanel({
                 <div>
                   <h3 className="font-semibold text-gray-900">Miembros</h3>
                   <p className="text-sm text-gray-600">
-                    {list.members.length} {list.members.length === 1 ? 'persona' : 'personas'}
+                    {list.members.length}{" "}
+                    {list.members.length === 1 ? "persona" : "personas"}
                   </p>
                 </div>
               </div>
@@ -385,7 +409,9 @@ export default function PremiumMembersPanel({
                         <InlineNameEditor
                           currentName={memberNames[member.userId] || ""}
                           originalName={originalNames[member.userId] || ""}
-                          onSave={(name) => handleSaveCustomName(member.userId, name)}
+                          onSave={(name) =>
+                            handleSaveCustomName(member.userId, name)
+                          }
                           onCancel={() => setEditingUserId(null)}
                         />
                       ) : (
@@ -410,9 +436,7 @@ export default function PremiumMembersPanel({
                     </div>
 
                     <div className="flex items-center gap-3">
-                      {isOwnerMember && (
-                        <Badge variant="blue">Owner</Badge>
-                      )}
+                      {isOwnerMember && <Badge variant="blue">Owner</Badge>}
                       {canManageRoles && !isOwnerMember && (
                         <Select
                           options={roleOptions}

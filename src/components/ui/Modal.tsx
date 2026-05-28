@@ -15,10 +15,10 @@ interface ModalProps {
 }
 
 const sizeMap = {
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-lg",
-  xl: "max-w-4xl",
+  sm: "max-w-sm md:max-w-md",
+  md: "max-w-md md:max-w-lg",
+  lg: "max-w-lg md:max-w-xl",
+  xl: "max-w-4xl md:max-w-5xl lg:max-w-6xl",
 };
 
 export default function Modal({
@@ -50,13 +50,13 @@ export default function Modal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 md:p-6">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-md"
+            className="absolute inset-0 bg-black/70 backdrop-blur-lg"
             onClick={onClose}
           />
           <motion.div
@@ -65,8 +65,9 @@ export default function Modal({
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              "relative w-full bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden",
+              "relative w-full bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden max-h-[90vh] overflow-y-auto",
               sizeMap[size],
+              "mx-4 sm:mx-auto",
             )}
           >
             {title && (
