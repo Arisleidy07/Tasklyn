@@ -12,7 +12,7 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
-import MembersPanel from "@/components/members/MembersPanel";
+import PremiumMembersPanel from "@/components/members/PremiumMembersPanel";
 import {
   Plus,
   Users,
@@ -279,7 +279,7 @@ export default function ListDetailPage() {
       </Modal>
 
       {/* Panel de miembros e invitaciones */}
-      <MembersPanel
+      <PremiumMembersPanel
         list={list}
         memberNames={list.members.reduce(
           (acc, m) => {
