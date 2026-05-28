@@ -19,6 +19,7 @@ interface NotificationStore {
   markRead: (id: string) => Promise<void>;
   markAllRead: (userId: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  archive: (id: string) => Promise<void>;
   create: (params: {
     userId: string;
     type: NotificationType;
@@ -69,6 +70,11 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
   remove: async (id: string) => {
     await deleteNotification(id);
+  },
+
+  archive: async (id: string) => {
+    // Archive is just marking as read for now, could add archived field later
+    await markNotificationRead(id);
   },
 
   create: async ({ userId, type, title, body, data }) => {

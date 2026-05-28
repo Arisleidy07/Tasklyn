@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useListStore } from "@/stores/listStore";
+import { useInvitationStore } from "@/stores/invitationStore";
 import Header from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
@@ -18,6 +19,7 @@ import {
   Share2,
   Check,
   X,
+  Archive,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MemberRole, NotificationType } from "@/types";
@@ -55,9 +57,10 @@ function timeAgo(dateStr: string): string {
 
 export default function NotificationsPage() {
   const { user } = useAuthStore();
-  const { notifications, unreadCount, markRead, markAllRead, remove } =
+  const { notifications, unreadCount, markRead, markAllRead, remove, archive } =
     useNotificationStore();
   const { addMember } = useListStore();
+  const { getInvitation, acceptInvitation } = useInvitationStore();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   if (!user) return null;
@@ -70,22 +73,48 @@ export default function NotificationsPage() {
   ) => {
     setProcessingId(notifId);
     try {
-      await addMember(
-        data.listId,
-        user.id,
-        (data.role as MemberRole) || "viewer",
-      );
+      // Get the invitation using the token
+      const invitation = await getInvitation(data.token);
+      if (!invitation) {
+        console.error("Invitation not found");
+        setProcessingId(null);
+        return;
+      }
+
+      // Accept the invitation (this adds the member to the list)
+      await acceptInvitation(invitation, user.id);
+
+      // Remove the notification
       await remove(notifId);
-    } catch {
+    } catch (error) {
+      console.error("Error accepting invitation:", error);
+    } finally {
       setProcessingId(null);
     }
   };
 
-  const handleDeclineInvitation = async (notifId: string) => {
+  const handleDeclineInvitation = async (
+    notifId: string,
+    data?: Record<string, string>,
+  ) => {
     setProcessingId(notifId);
     try {
+      // If we have invitation data, also delete the invitation
+      if (data?.token) {
+        const invitation = await getInvitation(data.token);
+        if (invitation) {
+          // Delete the invitation from database
+          await fetch(`/api/invitations/${invitation.id}`, {
+            method: "DELETE",
+          }).catch(() => {}); // Ignore errors, notification removal is priority
+        }
+      }
+
+      // Remove the notification
       await remove(notifId);
-    } catch {
+    } catch (error) {
+      console.error("Error declining invitation:", error);
+    } finally {
       setProcessingId(null);
     }
   };
@@ -195,7 +224,7 @@ export default function NotificationsPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeclineInvitation(notif.id);
+                              handleDeclineInvitation(notif.id, notif.data);
                             }}
                             disabled={processingId === notif.id}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors disabled:opacity-60"
@@ -208,16 +237,28 @@ export default function NotificationsPage() {
                     </div>
 
                     {notif.type !== "invitation" && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          remove(notif.id);
-                        }}
-                        className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
-                        title="Eliminar"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            archive(notif.id);
+                          }}
+                          className="p-1.5 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors flex-shrink-0"
+                          title="Archivar"
+                        >
+                          <Archive size={14} />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            remove(notif.id);
+                          }}
+                          className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                          title="Eliminar"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     )}
                   </motion.div>
                 );
