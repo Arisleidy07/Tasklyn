@@ -265,7 +265,9 @@ export default function PremiumMembersPanel({
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-600">Tu rol</span>
-                <Badge variant={roleBadgeVariant[myRole]}>{myRole}</Badge>
+                <Badge variant={myRole ? roleBadgeVariant[myRole] : "default"}>
+                  {myRole || "Sin rol"}
+                </Badge>
               </div>
             </div>
           </div>
