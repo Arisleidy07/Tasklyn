@@ -70,15 +70,24 @@ service cloud.firestore {
       
       // Allow update based on role
       allow update: if isAuthenticated()
-        && isListMember(listId)
         && (
-          // Owners can update anything
-          isListOwner(listId)
-          ||
-          // Editors can update name/description only
-          (isListEditor(listId)
+          // Special case: User accepting invitation (adding themselves to the list)
+          (request.auth.uid in request.resource.data.memberIds
+            && request.auth.uid not in resource.data.memberIds
             && request.resource.data.diff(resource.data).affectedKeys()
-              .hasOnly(['name', 'description', 'updatedAt']))
+              .hasOnly(['members', 'memberIds', 'type', 'updatedAt']))
+          ||
+          // Regular updates: User must already be a member
+          (isListMember(listId)
+            && (
+              // Owners can update anything
+              isListOwner(listId)
+              ||
+              // Editors can update name/description only
+              (isListEditor(listId)
+                && request.resource.data.diff(resource.data).affectedKeys()
+                  .hasOnly(['name', 'description', 'updatedAt']))
+            ))
         );
       
       // Allow delete only by owner
