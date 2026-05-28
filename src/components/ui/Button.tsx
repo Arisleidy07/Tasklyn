@@ -25,9 +25,9 @@ const variantStyles: Record<ButtonVariant, string> = {
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: "h-8 px-3 text-xs gap-1.5 rounded-lg font-medium",
-  md: "h-9 px-4 text-sm gap-2 rounded-lg font-medium",
-  lg: "h-11 px-6 text-sm gap-2 rounded-xl font-semibold",
+  sm: "h-9 sm:h-8 px-3 sm:px-3 text-xs gap-1.5 rounded-lg font-medium min-h-[36px] sm:min-h-[32px]",
+  md: "h-10 sm:h-9 px-4 text-sm gap-2 rounded-lg font-medium min-h-[40px] sm:min-h-[36px]",
+  lg: "h-12 sm:h-11 px-6 text-sm gap-2 rounded-xl font-semibold min-h-[48px] sm:min-h-[44px]",
 };
 
 export default function Button({
@@ -46,7 +46,7 @@ export default function Button({
       whileTap={{ scale: disabled || isLoading ? 1 : 0.97 }}
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className={cn(
-        "inline-flex items-center justify-center transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer rounded-lg",
+        "inline-flex items-center justify-center transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer",
         variantStyles[variant],
         size === "lg" ? "rounded-xl" : "rounded-lg",
         sizeStyles[size],

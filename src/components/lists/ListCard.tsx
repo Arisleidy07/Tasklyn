@@ -44,11 +44,12 @@ export default function ListCard({ list }: ListCardProps) {
     >
       <motion.div
         whileHover={{
-          y: -3,
-          boxShadow: "0 12px 40px -12px rgba(59,130,246,0.25)",
+          y: -2,
+          boxShadow: "0 8px 32px -8px rgba(59,130,246,0.25)",
         }}
-        transition={{ type: "spring", stiffness: 300, damping: 24 }}
-        className="relative p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-300 transition-colors duration-200"
+        whileTap={{ scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        className="relative p-4 sm:p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-300 transition-colors duration-200"
       >
         {/* Header */}
         <div className="flex items-start justify-between mb-4">

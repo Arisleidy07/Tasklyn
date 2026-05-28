@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
+import Header from "./header";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
@@ -87,45 +88,54 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 md:px-8 pt-6 md:pt-8 pb-20 md:pb-12">
+    <>
+      <Header />
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 md:pt-8 pb-20 sm:pb-20 md:pb-12 safe-top safe-bottom">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6"
         >
-          <div className="px-6 md:px-8 pt-8 pb-6">
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-6">
-              <Avatar
-                name={user.name}
-                photoURL={user.photoURL}
-                size="xl"
-                className="w-20 h-20 md:w-24 md:h-24 text-2xl ring-4 ring-white shadow-lg flex-shrink-0"
-              />
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
+          <div className="px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6">
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="flex justify-center sm:justify-start">
+                <Avatar
+                  name={user.name}
+                  photoURL={user.photoURL}
+                  size="xl"
+                  className="w-20 h-20 sm:w-24 sm:h-24 md:w-24 md:h-24 text-2xl ring-4 ring-white shadow-lg flex-shrink-0"
+                />
+              </div>
+              <div className="text-center sm:text-left flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center sm:gap-2 mb-2">
+                  <h1 className="text-2xl sm:text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
                     {user.name}
                   </h1>
-                  <Badge variant={user.plan === "PRO" ? "blue" : "default"}>
-                    {user.plan === "PRO" ? "PRO" : "Gratis"}
-                  </Badge>
+                  <div className="flex justify-center sm:justify-start">
+                    <Badge variant={user.plan === "PRO" ? "blue" : "default"}>
+                      {user.plan === "PRO" ? "PRO" : "Gratis"}
+                    </Badge>
+                  </div>
                 </div>
-                <p className="text-gray-500 flex items-center gap-1.5 text-sm">
-                  <Mail size={13} />
-                  {user.email}
-                </p>
-                <p className="text-gray-400 flex items-center gap-1.5 text-xs mt-1">
+                <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1.5 text-sm text-gray-500">
+                  <div className="flex items-center gap-1.5">
+                    <Mail size={13} />
+                    {user.email}
+                  </div>
+                </div>
+                <p className="text-gray-400 flex items-center justify-center sm:justify-start gap-1.5 text-xs mt-1">
                   <Calendar size={12} />
                   Miembro desde {joinDate}
                 </p>
               </div>
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
                 {user.plan === "FREE" && (
                   <Button
                     size="sm"
                     variant="outline"
                     icon={<Crown size={14} />}
+                    className="w-full sm:w-auto"
                   >
                     Actualizar a PRO
                   </Button>
@@ -134,7 +144,7 @@ export default function ProfilePage() {
                   size="sm"
                   variant="ghost"
                   onClick={handleLogout}
-                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                  className="w-full sm:w-auto text-red-500 hover:text-red-600 hover:bg-red-50"
                   icon={<LogOut size={14} />}
                 >
                   Salir
@@ -144,7 +154,7 @@ export default function ProfilePage() {
 
             {/* Stats row */}
             <motion.div
-              className="grid grid-cols-2 md:grid-cols-4 gap-3"
+              className="grid grid-cols-2 gap-3 sm:gap-4"
               initial="hidden"
               animate="visible"
               variants={{
@@ -165,14 +175,16 @@ export default function ProfilePage() {
                     y: -2,
                     boxShadow: "0 4px 16px -4px rgba(59,130,246,0.12)",
                   }}
-                  className="p-4 rounded-xl bg-gray-50 border border-gray-100 transition-colors hover:border-blue-100"
+                  className="p-3 sm:p-4 rounded-xl bg-gray-50 border border-gray-100 transition-colors hover:border-blue-100"
                 >
                   <div
                     className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mb-2`}
                   >
                     <s.icon size={16} className={s.color} />
                   </div>
-                  <p className="text-2xl font-bold text-gray-900">{s.value}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                    {s.value}
+                  </p>
                   <p className="text-xs text-gray-500 mt-0.5 leading-tight">
                     {s.label}
                   </p>
@@ -183,7 +195,7 @@ export default function ProfilePage() {
 
           {/* Barra de progreso de tareas */}
           {userTasks.length > 0 && (
-            <div className="px-6 md:px-8 py-4 border-t border-gray-100 bg-gray-50/50">
+            <div className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 border-t border-gray-100 bg-gray-50/50">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-gray-500 flex items-center gap-1">
                   <TrendingUp size={12} />
@@ -204,13 +216,13 @@ export default function ProfilePage() {
         </motion.div>
 
         {/* Secciones inferiores */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Mis listas */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6"
+            className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6"
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
@@ -257,7 +269,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6"
+            className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6"
           >
             <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-4">
               <Shield size={16} className="text-blue-600" />
@@ -326,6 +338,6 @@ export default function ProfilePage() {
           </motion.div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

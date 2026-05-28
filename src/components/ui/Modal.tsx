@@ -15,10 +15,10 @@ interface ModalProps {
 }
 
 const sizeMap = {
-  sm: "max-w-sm md:max-w-md",
-  md: "max-w-md md:max-w-lg",
-  lg: "max-w-lg md:max-w-xl",
-  xl: "max-w-4xl md:max-w-5xl lg:max-w-6xl",
+  sm: "w-full max-w-sm md:max-w-md",
+  md: "w-full max-w-md md:max-w-lg",
+  lg: "w-full max-w-lg md:max-w-xl",
+  xl: "w-full max-w-4xl md:max-w-5xl lg:max-w-6xl",
 };
 
 export default function Modal({
@@ -50,7 +50,7 @@ export default function Modal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 md:p-6">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 md:p-8">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -65,13 +65,13 @@ export default function Modal({
             exit={{ opacity: 0, scale: 0.96, y: 8 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              "relative w-full bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden max-h-[90vh] overflow-y-auto",
+              "relative w-full bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden max-h-[90vh] max-h-[85dvh] sm:max-h-[90vh] overflow-y-auto",
               sizeMap[size],
               "mx-4 sm:mx-auto",
             )}
           >
             {title && (
-              <div className="flex items-start justify-between px-6 pt-6 pb-2">
+              <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sticky top-0 bg-white z-10">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900">
                     {title}
@@ -82,13 +82,13 @@ export default function Modal({
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center"
                 >
-                  <X size={18} />
+                  <X size={20} />
                 </button>
               </div>
             )}
-            <div className="px-6 pb-6 pt-2">{children}</div>
+            <div className="px-4 sm:px-6 pb-4 sm:pb-6 pt-2">{children}</div>
           </motion.div>
         </div>
       )}

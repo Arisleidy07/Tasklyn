@@ -110,6 +110,7 @@ export default function DashboardPage() {
               ? `Tienes ${sharedLists.length} lista${sharedLists.length === 1 ? "" : "s"} compartida${sharedLists.length === 1 ? "" : "s"}`
               : `Bienvenido de nuevo, ${user.name.split(" ")[0]}. Aquí está tu resumen.`
         }
+        showMenuButton={true}
         actions={
           <Button
             onClick={() => setShowCreateModal(true)}
@@ -121,10 +122,10 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="p-4 md:p-8 space-y-8 md:space-y-10 max-w-[1200px] mx-auto">
+      <div className="p-3 sm:p-4 md:p-8 space-y-6 sm:space-y-8 md:space-y-10 max-w-[1200px] mx-auto safe-top safe-bottom">
         {/* Stats - solo mostrar en vista general */}
         {!view && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {stats.map((stat, i) => (
               <motion.div
                 key={stat.label}
@@ -139,13 +140,13 @@ export default function DashboardPage() {
                   duration: 0.35,
                   ease: [0.16, 1, 0.3, 1],
                 }}
-                className="group relative p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-200 transition-colors duration-200"
+                className="group relative p-3 sm:p-4 lg:p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-200 transition-colors duration-200"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div
-                    className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center ${stat.text}`}
+                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl ${stat.bg} flex items-center justify-center ${stat.text}`}
                   >
-                    <stat.icon size={18} />
+                    <stat.icon size={14} />
                   </div>
                   {stat.label === "Completed" && userTasks.length > 0 && (
                     <span className="flex items-center gap-1 text-xs font-medium text-blue-600">
@@ -154,7 +155,7 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-2xl font-bold text-gray-900 tracking-tight">
+                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">
                   {stat.value}
                 </p>
                 <p className="text-xs text-gray-500 font-medium mt-0.5">
@@ -212,7 +213,7 @@ export default function DashboardPage() {
                 }
               />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {personalLists.map((list, i) => (
                   <motion.div
                     key={list.id}
@@ -276,7 +277,7 @@ export default function DashboardPage() {
                 }
               />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {sharedLists.map((list, i) => (
                   <motion.div
                     key={list.id}

@@ -35,6 +35,30 @@ body {
   padding-right: env(safe-area-inset-right);
 }
 
+.safe-all {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Safe area margin helpers */
+.mt-safe-top {
+  margin-top: env(safe-area-inset-top);
+}
+
+.mb-safe-bottom {
+  margin-bottom: env(safe-area-inset-bottom);
+}
+
+.ml-safe-left {
+  margin-left: env(safe-area-inset-left);
+}
+
+.mr-safe-right {
+  margin-right: env(safe-area-inset-right);
+}
+
 /* Prevent auto-zoom on input focus in iOS */
 input,
 textarea,
@@ -62,6 +86,11 @@ select {
 @media (display-mode: standalone) {
   body {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Ensure mobile nav respects safe area */
+  .mobile-nav-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 16px);
   }
 }
 
@@ -125,14 +154,64 @@ select {
   }
 }
 
-@keyframes scale-in {
+@keyframes slide-in-right {
   from {
     opacity: 0;
-    transform: scale(0.96);
+    transform: translateX(12px);
   }
   to {
     opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
     transform: scale(1);
+  }
+}
+
+@keyframes fade-scale {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-up-fade {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-once {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
   }
 }
 
@@ -173,8 +252,24 @@ select {
   animation: slide-in-left 0.3s ease-out both;
 }
 
-.animate-scale-in {
-  animation: scale-in 0.3s ease-out both;
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out both;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.5s ease-out both;
+}
+
+.animate-fade-scale {
+  animation: fade-scale 0.25s ease-out both;
+}
+
+.animate-slide-up-fade {
+  animation: slide-up-fade 0.4s ease-out both;
+}
+
+.animate-pulse-once {
+  animation: pulse-once 0.3s ease-in-out;
 }
 
 .animate-shimmer {
@@ -337,11 +432,96 @@ select {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-/* Mesh gradient background for sections */
-.bg-mesh-blue {
-  background-color: #f0f7ff;
-  background-image:
-    radial-gradient(at 20% 20%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
-    radial-gradient(at 80% 10%, rgba(37, 99, 235, 0.08) 0px, transparent 50%),
-    radial-gradient(at 50% 80%, rgba(96, 165, 250, 0.1) 0px, transparent 50%);
+/* Mobile-specific animations */
+@media (max-width: 768px) {
+  .animate-mobile-slide {
+    animation: slide-up-fade 0.3s ease-out both;
+  }
+
+  .animate-mobile-fade {
+    animation: fade-in 0.25s ease-out both;
+  }
+
+  /* Reduce motion for better performance on mobile */
+  .animate-reduced-motion {
+    animation-duration: 0.2s !important;
+  }
+
+  /* Smooth transitions for mobile interactions */
+  .mobile-transition {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Enhanced touch feedback */
+@media (hover: none) and (pointer: coarse) {
+  .mobile-touch-feedback:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+    transition: all 0.1s ease-out;
+  }
+
+  .mobile-ripple {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mobile-ripple::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition:
+      width 0.3s,
+      height 0.3s;
+  }
+
+  .mobile-ripple:active::after {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+/* Performance optimizations for mobile */
+@media (max-width: 768px) {
+  /* Reduce animations on low-end devices */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Optimize images for mobile */
+  img {
+    content-visibility: auto;
+    contain-intrinsic-size: 400px 300px;
+  }
+
+  /* Improve scroll performance */
+  .scroll-optimized {
+    -webkit-overflow-scrolling: touch;
+    will-change: scroll-position;
+  }
+
+  /* Hardware acceleration for animations */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform, opacity;
+  }
+
+  /* Reduce paint complexity */
+  .mobile-optimized {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    perspective: 1000;
+  }
 }

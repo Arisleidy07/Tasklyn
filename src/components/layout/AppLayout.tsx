@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Sidebar from "./Sidebar";
+import MobileSidebar from "./MobileSidebar";
 import MobileNav from "./MobileNav";
 import { useUIStore } from "@/stores/uiStore";
 
@@ -36,6 +37,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <div className="hidden md:block">
         <Sidebar />
       </div>
+
+      {/* Mobile Sidebar Drawer */}
+      <MobileSidebar />
 
       {/* Main content */}
       <main

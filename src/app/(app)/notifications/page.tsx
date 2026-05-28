@@ -173,6 +173,7 @@ export default function NotificationsPage() {
         description={
           unreadCount > 0 ? `${unreadCount} sin leer` : "Todo al día"
         }
+        showMenuButton={true}
         actions={
           unreadCount > 0 ? (
             <Button
@@ -187,7 +188,7 @@ export default function NotificationsPage() {
         }
       />
 
-      <div className="p-4 md:p-8 max-w-3xl mx-auto space-y-8">
+      <div className="p-3 sm:p-4 md:p-8 max-w-3xl mx-auto space-y-6 sm:space-y-8 safe-top safe-bottom">
         {/* Pending Invitations */}
         {pendingNotifications.length > 0 && (
           <section>
@@ -217,7 +218,7 @@ export default function NotificationsPage() {
                       y: -1,
                       boxShadow: "0 6px 24px -4px rgba(0,0,0,0.08)",
                     }}
-                    className={`flex items-start gap-4 p-4 rounded-xl border transition-colors cursor-pointer ${
+                    className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-colors cursor-pointer ${
                       notif.read
                         ? "bg-white border-gray-200"
                         : "bg-blue-50/50 border-blue-200"
@@ -225,9 +226,9 @@ export default function NotificationsPage() {
                     onClick={() => !notif.read && markRead(notif.id)}
                   >
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.bg}`}
+                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.bg}`}
                     >
-                      <Icon size={18} className={cfg.color} />
+                      <Icon size={14} className={cfg.color} />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -254,14 +255,14 @@ export default function NotificationsPage() {
 
                       {/* Accept / Decline for invitations */}
                       {notif.type === "invitation" && notif.data?.listId && (
-                        <div className="flex items-center gap-2 mt-3">
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-3">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handleAcceptInvitation(notif.id, notif.data!);
                             }}
                             disabled={processingId === notif.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60"
+                            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60 min-h-[36px]"
                           >
                             <Check size={12} />
                             Aceptar
@@ -272,7 +273,7 @@ export default function NotificationsPage() {
                               handleDeclineInvitation(notif.id, notif.data);
                             }}
                             disabled={processingId === notif.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors disabled:opacity-60"
+                            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors disabled:opacity-60 min-h-[36px]"
                           >
                             <X size={12} />
                             Rechazar
@@ -288,7 +289,7 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             archive(notif.id);
                           }}
-                          className="p-1.5 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors flex-shrink-0"
+                          className="p-2 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
                           title="Archivar"
                         >
                           <Archive size={14} />
@@ -298,7 +299,7 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             remove(notif.id);
                           }}
-                          className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                          className="p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
                           title="Eliminar"
                         >
                           <Trash2 size={14} />
@@ -342,7 +343,7 @@ export default function NotificationsPage() {
                         y: -1,
                         boxShadow: "0 6px 24px -4px rgba(0,0,0,0.08)",
                       }}
-                      className={`flex items-start gap-4 p-4 rounded-xl border transition-colors cursor-pointer ${
+                      className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-colors cursor-pointer ${
                         notif.read
                           ? "bg-white border-gray-200"
                           : "bg-blue-50/50 border-blue-200"
@@ -350,9 +351,9 @@ export default function NotificationsPage() {
                       onClick={() => !notif.read && markRead(notif.id)}
                     >
                       <div
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.bg}`}
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.bg}`}
                       >
-                        <Icon size={18} className={cfg.color} />
+                        <Icon size={14} className={cfg.color} />
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -384,7 +385,7 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             archive(notif.id);
                           }}
-                          className="p-1.5 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors flex-shrink-0"
+                          className="p-2 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
                           title="Archivar"
                         >
                           <Archive size={14} />
@@ -394,7 +395,7 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             remove(notif.id);
                           }}
-                          className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                          className="p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
                           title="Eliminar"
                         >
                           <Trash2 size={14} />
