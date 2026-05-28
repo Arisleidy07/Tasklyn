@@ -78,6 +78,7 @@ export interface Notification {
   title: string;
   body: string;
   read: boolean;
+  status?: "pending" | "accepted" | "rejected" | "archived";
   createdAt: string;
   data?: Record<string, string>;
 }

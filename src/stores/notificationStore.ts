@@ -6,6 +6,8 @@ import {
   deleteNotification,
   createNotification,
 } from "@/lib/firestore";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import type { Notification, NotificationType } from "@/types";
 
 interface NotificationStore {
@@ -20,6 +22,10 @@ interface NotificationStore {
   markAllRead: (userId: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
   archive: (id: string) => Promise<void>;
+  setStatus: (
+    id: string,
+    status: "accepted" | "rejected" | "archived",
+  ) => Promise<void>;
   create: (params: {
     userId: string;
     type: NotificationType;
@@ -73,8 +79,14 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   },
 
   archive: async (id: string) => {
-    // Archive is just marking as read for now, could add archived field later
-    await markNotificationRead(id);
+    const { setStatus } = get();
+    await setStatus(id, "archived");
+  },
+
+  setStatus: async (id: string, status) => {
+    // Update notification status in Firestore
+    const notifRef = doc(db, "notifications", id);
+    await updateDoc(notifRef, { status, updatedAt: serverTimestamp() });
   },
 
   create: async ({ userId, type, title, body, data }) => {
