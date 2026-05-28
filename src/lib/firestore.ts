@@ -112,8 +112,10 @@ export const createList = async (
   list: Omit<TaskList, "id" | "createdAt">,
 ): Promise<string> => {
   const listRef = doc(listsCollection);
+  const memberIds = list.members.map((m) => m.userId);
   await setDoc(listRef, {
     ...list,
+    memberIds,
     createdAt: serverTimestamp(),
   });
   return listRef.id;
@@ -186,10 +188,13 @@ export const addListMember = async (
     joinedAt: new Date().toISOString(),
   });
 
+  const memberIds = members.map((m) => m.userId);
+
   await updateDoc(
     listRef,
     withTimestamps({
       members,
+      memberIds,
       type: "shared",
     }),
   );
@@ -208,7 +213,9 @@ export const removeListMember = async (
     (m: ListMember) => m.userId !== userId,
   );
 
-  await updateDoc(listRef, withTimestamps({ members }));
+  const memberIds = members.map((m) => m.userId);
+
+  await updateDoc(listRef, withTimestamps({ members, memberIds }));
 };
 
 export const updateMemberRole = async (
@@ -256,26 +263,20 @@ export const subscribeToUserLists = (
 ): Unsubscribe => {
   const q = query(
     listsCollection,
-    where("members", "array-contains", { userId }),
+    where("memberIds", "array-contains", userId),
   );
 
-  // Firestore can't query by array-contains on objects directly
-  // So we query all and filter client-side (for now, until we add a membersById field)
-  return onSnapshot(listsCollection, (snap) => {
-    const lists = snap.docs
-      .map((doc) => {
-        const data = doc.data();
-        const members: ListMember[] = data.members || [];
-        if (!members.some((m) => m.userId === userId)) return null;
-        return {
-          ...data,
-          id: doc.id,
-          createdAt: toDate(data.createdAt),
-          members,
-          customNames: data.customNames || {},
-        } as TaskList;
-      })
-      .filter(Boolean) as TaskList[];
+  return onSnapshot(q, (snap) => {
+    const lists = snap.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: doc.id,
+        createdAt: toDate(data.createdAt),
+        members: data.members || [],
+        customNames: data.customNames || {},
+      } as TaskList;
+    });
     callback(lists);
   });
 };
@@ -438,8 +439,10 @@ export const acceptInvitation = async (
       role: invitation.defaultRole,
       joinedAt: new Date().toISOString(),
     });
+    const memberIds = members.map((m) => m.userId);
     batch.update(listRef, {
       members,
+      memberIds,
       type: "shared",
       updatedAt: serverTimestamp(),
     });
