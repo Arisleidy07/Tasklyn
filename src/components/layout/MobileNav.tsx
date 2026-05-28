@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard,
   FolderOpen,
@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 
 export default function MobileNav() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const view = searchParams.get("view");
   const { unreadCount } = useNotificationStore();
 
   const items = [
@@ -26,15 +28,15 @@ export default function MobileNav() {
   ];
 
   const isActive = (href: string) => {
-    if (href === "/dashboard" && !href.includes("?")) {
-      return pathname === "/dashboard";
+    if (href === "/dashboard") {
+      // "Panel" activo solo cuando no hay parámetro view
+      return pathname === "/dashboard" && !view;
     }
-    if (href.includes("?view=personal")) {
-      return (
-        pathname === "/dashboard" &&
-        typeof window !== "undefined" &&
-        window.location.search.includes("view=personal")
-      );
+    if (href === "/dashboard?view=personal") {
+      return pathname === "/dashboard" && view === "personal";
+    }
+    if (href === "/dashboard?view=shared") {
+      return pathname === "/dashboard" && view === "shared";
     }
     return pathname === href || pathname?.startsWith(href + "/");
   };
@@ -53,7 +55,7 @@ export default function MobileNav() {
               href={item.href}
               className={cn(
                 "flex flex-col items-center justify-center gap-0.5 flex-1 h-full relative transition-colors",
-                active ? "text-blue-600" : "text-gray-400"
+                active ? "text-blue-600" : "text-gray-400",
               )}
             >
               <div className="relative">
@@ -67,7 +69,7 @@ export default function MobileNav() {
               <span
                 className={cn(
                   "text-[10px] font-medium",
-                  active ? "text-blue-600" : "text-gray-400"
+                  active ? "text-blue-600" : "text-gray-400",
                 )}
               >
                 {item.name}

@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard,
   LogOut,
@@ -29,6 +29,8 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const { getUserLists, getPersonalLists, getSharedLists } = useListStore();
+  const searchParams = useSearchParams();
+  const view = searchParams.get("view");
   const [collapsed, setCollapsed] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { unreadCount } = useNotificationStore();
@@ -40,12 +42,14 @@ export default function Sidebar() {
   const sharedLists = getSharedLists(user.id);
 
   const isActive = (href: string) => {
-    if (href.includes("?")) {
-      return (
-        pathname === "/dashboard" &&
-        typeof window !== "undefined" &&
-        window.location.search.includes(href.split("?")[1])
-      );
+    if (href === "/dashboard") {
+      return pathname === "/dashboard" && !view;
+    }
+    if (href === "/dashboard?view=personal") {
+      return pathname === "/dashboard" && view === "personal";
+    }
+    if (href === "/dashboard?view=shared") {
+      return pathname === "/dashboard" && view === "shared";
     }
     return pathname === href || pathname?.startsWith(href + "/");
   };
