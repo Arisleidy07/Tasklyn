@@ -56,12 +56,14 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
+      exit={{ opacity: 0, y: -8, scale: 0.97 }}
+      whileHover={{ y: -1, boxShadow: "0 4px 16px -4px rgba(0,0,0,0.07)" }}
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "group rounded-xl border transition-all duration-200 overflow-hidden",
+        "group rounded-xl border transition-colors overflow-hidden",
         isCompleted
           ? "border-blue-200 bg-blue-50/30"
-          : "border-gray-200 bg-white hover:border-gray-300",
+          : "border-gray-200 bg-white hover:border-blue-200",
       )}
     >
       <div className="flex items-start gap-3 p-4">

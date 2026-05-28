@@ -87,8 +87,15 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 md:px-8 pt-6 md:pt-8 pb-20 md:pb-12">
+    <div className="min-h-screen bg-gray-50 relative">
+      {/* Subtle background accent */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+        aria-hidden
+      >
+        <div className="absolute -top-20 right-0 w-[420px] h-[420px] rounded-full bg-blue-100/25 blur-3xl" />
+      </div>
+      <div className="relative z-10 max-w-4xl mx-auto px-4 md:px-8 pt-6 md:pt-8 pb-20 md:pb-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -143,14 +150,29 @@ export default function ProfilePage() {
             </div>
 
             {/* Stats row */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {stats.map((s, i) => (
+            <motion.div
+              className="grid grid-cols-2 md:grid-cols-4 gap-3"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                visible: {
+                  transition: { staggerChildren: 0.07, delayChildren: 0.1 },
+                },
+              }}
+            >
+              {stats.map((s) => (
                 <motion.div
                   key={s.label}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.06 }}
-                  className="p-4 rounded-xl bg-gray-50 border border-gray-100"
+                  variants={{
+                    hidden: { opacity: 0, y: 10 },
+                    visible: { opacity: 1, y: 0 },
+                  }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  whileHover={{
+                    y: -2,
+                    boxShadow: "0 4px 16px -4px rgba(59,130,246,0.12)",
+                  }}
+                  className="p-4 rounded-xl bg-gray-50 border border-gray-100 transition-colors hover:border-blue-100"
                 >
                   <div
                     className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mb-2`}
@@ -163,7 +185,7 @@ export default function ProfilePage() {
                   </p>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
 
           {/* Barra de progreso de tareas */}

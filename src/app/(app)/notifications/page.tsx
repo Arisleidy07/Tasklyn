@@ -119,7 +119,12 @@ export default function NotificationsPage() {
             description="Aquí aparecerán tus alertas de tareas, invitaciones y más."
           />
         ) : (
-          <div className="space-y-2">
+          <motion.div
+            className="space-y-2"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
+          >
             <AnimatePresence mode="popLayout">
               {notifications.map((notif) => {
                 const cfg = typeConfig[notif.type];
@@ -128,9 +133,16 @@ export default function NotificationsPage() {
                   <motion.div
                     key={notif.id}
                     layout
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.96 }}
+                    variants={{
+                      hidden: { opacity: 0, y: 14, scale: 0.98 },
+                      visible: { opacity: 1, y: 0, scale: 1 },
+                    }}
+                    exit={{ opacity: 0, x: -16, scale: 0.96 }}
+                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    whileHover={{
+                      y: -1,
+                      boxShadow: "0 6px 24px -4px rgba(0,0,0,0.08)",
+                    }}
                     className={`flex items-start gap-4 p-4 rounded-xl border transition-colors cursor-pointer ${
                       notif.read
                         ? "bg-white border-gray-200"
@@ -211,7 +223,7 @@ export default function NotificationsPage() {
                 );
               })}
             </AnimatePresence>
-          </div>
+          </motion.div>
         )}
       </div>
     </>

@@ -112,7 +112,16 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="p-4 md:p-8 space-y-8 md:space-y-10 max-w-[1200px] mx-auto">
+      {/* Subtle premium mesh background */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+        aria-hidden
+      >
+        <div className="absolute -top-32 right-0 w-[500px] h-[500px] rounded-full bg-blue-100/30 blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] rounded-full bg-blue-50/40 blur-3xl" />
+      </div>
+
+      <div className="relative z-10 p-4 md:p-8 space-y-8 md:space-y-10 max-w-[1200px] mx-auto">
         {/* Stats - solo mostrar en vista general */}
         {!view && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
