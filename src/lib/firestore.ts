@@ -280,22 +280,44 @@ export const subscribeToUserLists = (
   userId: string,
   callback: (lists: TaskList[]) => void,
 ): Unsubscribe => {
+  console.log("👂 Setting up subscription for user lists:", userId);
   const q = query(
     listsCollection,
     where("memberIds", "array-contains", userId),
   );
 
   return onSnapshot(q, (snap) => {
+    console.log("📦 User lists snapshot received:", {
+      docCount: snap.docs.length,
+      userId,
+      metadata: snap.metadata,
+    });
+
     const lists = snap.docs.map((doc) => {
       const data = doc.data();
-      return {
+      const list = {
         ...data,
         id: doc.id,
         createdAt: toDate(data.createdAt),
         members: data.members || [],
         customNames: data.customNames || {},
       } as TaskList;
+
+      console.log("📋 List in subscription:", {
+        id: list.id,
+        name: list.name,
+        type: list.type,
+        memberCount: list.members.length,
+        memberIds: data.memberIds,
+      });
+
+      return list;
     });
+
+    console.log(
+      "🚀 Calling callback with lists:",
+      lists.map((l) => ({ id: l.id, name: l.name, type: l.type })),
+    );
     callback(lists);
   });
 };
@@ -442,6 +464,11 @@ export const acceptInvitation = async (
   invitation: Invitation,
   userId: string,
 ): Promise<void> => {
+  console.log("🚀 acceptInvitation called:", {
+    invitationId: invitation.id,
+    userId,
+    listId: invitation.listId,
+  });
   const batch = writeBatch(db);
 
   // Add member to list
@@ -451,6 +478,13 @@ export const acceptInvitation = async (
 
   const listData = listSnap.data();
   const members: ListMember[] = listData.members || [];
+  const currentMemberIds = listData.memberIds || [];
+
+  console.log("📋 Current list state:", {
+    listName: listData.name,
+    currentMembers: members.length,
+    currentMemberIds: currentMemberIds.length,
+  });
 
   if (!members.some((m) => m.userId === userId)) {
     members.push({
@@ -459,18 +493,30 @@ export const acceptInvitation = async (
       joinedAt: new Date().toISOString(),
     });
     const memberIds = members.map((m) => m.userId);
+
+    console.log("➕ Adding member:", {
+      userId,
+      role: invitation.defaultRole,
+      newMemberIds: memberIds,
+      totalMembers: members.length,
+    });
+
     batch.update(listRef, {
       members,
       memberIds,
       type: "shared",
       updatedAt: serverTimestamp(),
     });
+  } else {
+    console.log("⚠️ User already a member of this list");
   }
 
   // Delete invitation
+  console.log("🗑️ Deleting invitation:", invitation.id);
   batch.delete(doc(db, "invitations", invitation.id));
 
   await batch.commit();
+  console.log("✅ Batch committed successfully - list should now be shared");
 };
 
 // ============================================

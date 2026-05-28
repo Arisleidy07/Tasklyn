@@ -151,10 +151,28 @@ export const useListStore = create<ListState>((set, get) => ({
     // Unsubscribe from existing listener
     get().unsubscribe?.();
 
+    console.log("🔔 listStore: Setting up subscription for userId:", userId);
     set({ isLoading: true });
 
     const unsubscribe = subscribeToUserLists(userId, (lists) => {
+      console.log("📥 listStore: Received lists update:", {
+        totalLists: lists.length,
+        sharedLists: lists.filter((l) => l.type === "shared").length,
+        personalLists: lists.filter((l) => l.type === "personal").length,
+        listIds: lists.map((l) => l.id),
+      });
+
       set({ lists, isLoading: false });
+
+      // Log shared lists specifically
+      const sharedLists = lists.filter(
+        (l) =>
+          l.type === "shared" && l.members.some((m) => m.userId === userId),
+      );
+      console.log(
+        "🤝 Shared lists for user:",
+        sharedLists.map((l) => ({ id: l.id, name: l.name })),
+      );
     });
 
     set({ unsubscribe });
