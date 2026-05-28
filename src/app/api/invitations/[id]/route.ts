@@ -3,16 +3,17 @@ import { deleteInvitation } from "@/lib/firestore";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    await deleteInvitation(params.id);
+    const { id } = await params;
+    await deleteInvitation(id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting invitation:", error);
     return NextResponse.json(
       { error: "Failed to delete invitation" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
