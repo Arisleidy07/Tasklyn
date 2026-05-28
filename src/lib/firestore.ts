@@ -291,6 +291,8 @@ export const subscribeToUserLists = (
       docCount: snap.docs.length,
       userId,
       metadata: snap.metadata,
+      hasPendingWrites: snap.metadata.hasPendingWrites,
+      fromCache: snap.metadata.fromCache,
     });
 
     const lists = snap.docs.map((doc) => {
@@ -309,11 +311,20 @@ export const subscribeToUserLists = (
         type: list.type,
         memberCount: list.members.length,
         memberIds: data.memberIds,
+        isUserMember: data.memberIds?.includes(userId),
+        userInMembers: list.members.some((m) => m.userId === userId),
       });
 
       return list;
     });
 
+    const sharedLists = lists.filter(
+      (l) => l.type === "shared" && l.members.some((m) => m.userId === userId),
+    );
+    console.log(
+      "🤝 Shared lists for this user:",
+      sharedLists.map((l) => ({ id: l.id, name: l.name })),
+    );
     console.log(
       "🚀 Calling callback with lists:",
       lists.map((l) => ({ id: l.id, name: l.name, type: l.type })),
@@ -501,22 +512,57 @@ export const acceptInvitation = async (
       totalMembers: members.length,
     });
 
-    batch.update(listRef, {
+    const updateData = {
       members,
       memberIds,
       type: "shared",
       updatedAt: serverTimestamp(),
+    };
+
+    console.log("📝 Updating list with data:", {
+      listId: invitation.listId,
+      updateData: {
+        ...updateData,
+        updatedAt: "[serverTimestamp]",
+      },
     });
+
+    batch.update(listRef, updateData);
   } else {
     console.log("⚠️ User already a member of this list");
+    console.log(
+      "🔍 Existing members:",
+      members.map((m) => ({ userId: m.userId, role: m.role })),
+    );
   }
 
   // Delete invitation
   console.log("🗑️ Deleting invitation:", invitation.id);
   batch.delete(doc(db, "invitations", invitation.id));
 
+  console.log("🔄 Committing batch operations...");
   await batch.commit();
   console.log("✅ Batch committed successfully - list should now be shared");
+
+  // Verify the update by reading the document again
+  console.log("🔍 Verifying update by reading list document...");
+  const updatedListSnap = await getDoc(listRef);
+  if (updatedListSnap.exists()) {
+    const updatedData = updatedListSnap.data();
+    console.log("📋 Updated list state:", {
+      name: updatedData.name,
+      type: updatedData.type,
+      memberCount: updatedData.members?.length || 0,
+      memberIdsCount: updatedData.memberIds?.length || 0,
+      memberIds: updatedData.memberIds,
+      members: updatedData.members?.map((m: any) => ({
+        userId: m.userId,
+        role: m.role,
+      })),
+    });
+  } else {
+    console.error("❌ List document not found after update!");
+  }
 };
 
 // ============================================

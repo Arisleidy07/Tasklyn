@@ -109,18 +109,30 @@ export default function NotificationsPage() {
       }
 
       // Accept the invitation (this adds the member to the list) FIRST
-      console.log("Accepting invitation for user:", user.id);
-      await acceptInvitation(invitation, user.id);
-      console.log("Invitation accepted successfully - Firebase updated");
+      console.log("🔄 Starting invitation acceptance process...");
+      console.log("👤 User ID:", user.id);
+      console.log("📋 Invitation details:", {
+        id: invitation.id,
+        listId: invitation.listId,
+        defaultRole: invitation.defaultRole,
+        invitedBy: invitation.invitedBy,
+      });
 
-      // Small delay to allow Firestore realtime propagation
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      console.log("⏱️ Delay completed - waiting for realtime update");
+      await acceptInvitation(invitation, user.id);
+      console.log("✅ Invitation accepted successfully - Firebase updated");
+
+      // Wait for Firestore realtime propagation
+      console.log("⏱️ Waiting for Firestore realtime propagation...");
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Increased delay
+      console.log("⏱️ Delay completed - should have triggered realtime update");
 
       // Then update notification status to accepted
-      console.log("Updating notification status to accepted");
+      console.log("🔄 Updating notification status to accepted");
       await setStatus(notifId, "accepted");
-      console.log("Notification status updated");
+      console.log("✅ Notification status updated");
+
+      // Final verification
+      console.log("🔍 Invitation acceptance process completed");
     } catch (error) {
       console.error("Error accepting invitation:", error);
     } finally {
