@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useUIStore } from "@/stores/uiStore";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
@@ -31,7 +32,7 @@ export default function Sidebar() {
   const { getUserLists, getPersonalLists, getSharedLists } = useListStore();
   const searchParams = useSearchParams();
   const view = searchParams.get("view");
-  const [collapsed, setCollapsed] = useState(false);
+  const { sidebarCollapsed: collapsed, toggleSidebar } = useUIStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { unreadCount } = useNotificationStore();
 
@@ -94,7 +95,7 @@ export default function Sidebar() {
           </Link>
           {!collapsed && (
             <button
-              onClick={() => setCollapsed(!collapsed)}
+              onClick={toggleSidebar}
               className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <ChevronLeft size={16} />
@@ -102,7 +103,7 @@ export default function Sidebar() {
           )}
           {collapsed && (
             <button
-              onClick={() => setCollapsed(!collapsed)}
+              onClick={toggleSidebar}
               className="absolute -right-3 top-5 w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center text-gray-400 hover:text-gray-600 shadow-sm cursor-pointer transition-colors z-40"
             >
               <ChevronRight size={12} />

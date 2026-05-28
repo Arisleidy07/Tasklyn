@@ -24,8 +24,12 @@ const typeConfig: Record<
   { icon: React.ElementType; color: string; bg: string }
 > = {
   invitation: { icon: UserPlus, color: "text-blue-600", bg: "bg-blue-50" },
-  task_assigned: { icon: ListTodo, color: "text-purple-600", bg: "bg-purple-50" },
-  task_completed: { icon: CheckCircle2, color: "text-green-600", bg: "bg-green-50" },
+  task_assigned: { icon: ListTodo, color: "text-blue-600", bg: "bg-blue-50" },
+  task_completed: {
+    icon: CheckCircle2,
+    color: "text-green-600",
+    bg: "bg-green-50",
+  },
   member_joined: { icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
   list_shared: { icon: Share2, color: "text-orange-600", bg: "bg-orange-50" },
 };
@@ -60,9 +64,7 @@ export default function NotificationsPage() {
       <Header
         title="Notificaciones"
         description={
-          unreadCount > 0
-            ? `${unreadCount} sin leer`
-            : "Todo al día"
+          unreadCount > 0 ? `${unreadCount} sin leer` : "Todo al día"
         }
         actions={
           unreadCount > 0 ? (
@@ -78,7 +80,7 @@ export default function NotificationsPage() {
         }
       />
 
-      <div className="p-4 md:p-6 max-w-2xl">
+      <div className="p-4 md:p-8 max-w-3xl mx-auto">
         {notifications.length === 0 ? (
           <EmptyState
             icon={<Bell size={32} />}

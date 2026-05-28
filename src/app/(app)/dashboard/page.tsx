@@ -112,7 +112,7 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="p-4 md:p-8 space-y-8 md:space-y-10 max-w-[1200px]">
+      <div className="p-4 md:p-8 space-y-8 md:space-y-10 max-w-[1200px] mx-auto">
         {/* Stats - solo mostrar en vista general */}
         {!view && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

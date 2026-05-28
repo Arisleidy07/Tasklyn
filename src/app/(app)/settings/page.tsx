@@ -33,10 +33,12 @@ export default function SettingsPage() {
 
   const personalListsCount = lists.filter((l) => l.owner === user.id).length;
   const sharedListsCount = lists.filter(
-    (l) => l.owner !== user.id && l.members.some((m) => m.userId === user.id)
+    (l) =>
+      l.owner !== user.id &&
+      l.members.some((m: { userId: string }) => m.userId === user.id),
   ).length;
   const totalTasks = tasks.filter((t) =>
-    lists.some((l) => l.id === t.listId)
+    lists.some((l) => l.id === t.listId),
   ).length;
 
   return (
@@ -46,7 +48,7 @@ export default function SettingsPage() {
         description="Personaliza tu experiencia en TASKLYN"
       />
 
-      <div className="p-6 max-w-3xl">
+      <div className="p-4 md:p-8 max-w-3xl mx-auto">
         {/* Plan actual */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -162,9 +164,7 @@ export default function SettingsPage() {
                 <Globe size={18} className="text-gray-500" />
                 <div>
                   <p className="font-medium text-sm text-gray-900">Idioma</p>
-                  <p className="text-xs text-gray-500">
-                    Idioma de la interfaz
-                  </p>
+                  <p className="text-xs text-gray-500">Idioma de la interfaz</p>
                 </div>
               </div>
               <Badge variant="blue">Español</Badge>

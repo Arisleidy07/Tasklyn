@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
-import Header from "@/components/layout/Header";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
@@ -16,8 +15,15 @@ import {
   Crown,
   Shield,
   CheckCircle2,
+  FolderOpen,
+  Users,
+  Clock,
+  TrendingUp,
+  Settings,
+  ChevronRight,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -35,10 +41,8 @@ export default function ProfilePage() {
   const joinDate = new Date(user.createdAt).toLocaleDateString("es-ES", {
     year: "numeric",
     month: "long",
-    day: "numeric",
   });
 
-  // Estadísticas
   const createdLists = lists.filter((l) => l.owner === user.id);
   const sharedLists = lists.filter(
     (l) => l.owner !== user.id && l.members.some((m) => m.userId === user.id),
@@ -46,181 +50,276 @@ export default function ProfilePage() {
   const userTasks = tasks.filter((t) => lists.some((l) => l.id === t.listId));
   const completedTasks = userTasks.filter((t) => t.status === "completed");
   const pendingTasks = userTasks.filter((t) => t.status === "pending");
+  const completionRate =
+    userTasks.length > 0
+      ? Math.round((completedTasks.length / userTasks.length) * 100)
+      : 0;
+
+  const stats = [
+    {
+      label: "Listas creadas",
+      value: createdLists.length,
+      icon: FolderOpen,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+    },
+    {
+      label: "Listas compartidas",
+      value: sharedLists.length,
+      icon: Users,
+      color: "text-gray-600",
+      bg: "bg-gray-100",
+    },
+    {
+      label: "Tareas completadas",
+      value: completedTasks.length,
+      icon: CheckCircle2,
+      color: "text-blue-600",
+      bg: "bg-blue-50",
+    },
+    {
+      label: "Tareas pendientes",
+      value: pendingTasks.length,
+      icon: Clock,
+      color: "text-gray-600",
+      bg: "bg-gray-100",
+    },
+  ];
 
   return (
-    <>
-      <Header
-        title="Perfil"
-        description="Gestiona la configuración de tu cuenta"
-      />
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero banner */}
+      <div className="h-40 md:h-52 bg-gradient-to-br from-blue-600 via-blue-500 to-blue-700 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-4 right-12 w-40 h-40 rounded-full bg-white" />
+          <div className="absolute -bottom-8 left-8 w-56 h-56 rounded-full bg-white" />
+        </div>
+      </div>
 
-      <div className="p-6 max-w-2xl">
-        {/* Profile Card */}
+      <div className="max-w-4xl mx-auto px-4 md:px-8 -mt-16 pb-20 md:pb-12">
+        {/* Avatar + nombre flotando sobre el banner */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+          className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6"
         >
-          {/* Cover */}
-          <div className="h-32 bg-gradient-to-r from-blue-600 to-blue-500" />
-
-          {/* Avatar & Info */}
-          <div className="px-6 pb-6">
-            <div className="relative -mt-16 mb-4">
+          <div className="px-6 md:px-8 pt-6 pb-6">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-6">
               <Avatar
                 name={user.name}
                 photoURL={user.photoURL}
                 size="xl"
-                className="w-32 h-32 text-3xl ring-4 ring-white"
+                className="w-20 h-20 md:w-24 md:h-24 text-2xl ring-4 ring-white shadow-lg flex-shrink-0"
               />
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
+                    {user.name}
+                  </h1>
+                  <Badge variant={user.plan === "PRO" ? "blue" : "default"}>
+                    {user.plan === "PRO" ? "PRO" : "Gratis"}
+                  </Badge>
+                </div>
+                <p className="text-gray-500 flex items-center gap-1.5 text-sm">
+                  <Mail size={13} />
+                  {user.email}
+                </p>
+                <p className="text-gray-400 flex items-center gap-1.5 text-xs mt-1">
+                  <Calendar size={12} />
+                  Miembro desde {joinDate}
+                </p>
+              </div>
+              <div className="flex gap-2 flex-shrink-0">
+                {user.plan === "FREE" && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    icon={<Crown size={14} />}
+                  >
+                    Actualizar a PRO
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleLogout}
+                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                  icon={<LogOut size={14} />}
+                >
+                  Salir
+                </Button>
+              </div>
             </div>
 
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {user.name}
-                </h1>
-                <Badge variant={user.plan === "PRO" ? "blue" : "default"}>
-                  {user.plan}
+            {/* Stats row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {stats.map((s, i) => (
+                <motion.div
+                  key={s.label}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.06 }}
+                  className="p-4 rounded-xl bg-gray-50 border border-gray-100"
+                >
+                  <div
+                    className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mb-2`}
+                  >
+                    <s.icon size={16} className={s.color} />
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">{s.value}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 leading-tight">
+                    {s.label}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          {/* Barra de progreso de tareas */}
+          {userTasks.length > 0 && (
+            <div className="px-6 md:px-8 py-4 border-t border-gray-100 bg-gray-50/50">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                  <TrendingUp size={12} />
+                  Progreso general de tareas
+                </span>
+                <span className="text-xs font-bold text-blue-600">
+                  {completionRate}%
+                </span>
+              </div>
+              <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 rounded-full transition-all duration-700"
+                  style={{ width: `${completionRate}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </motion.div>
+
+        {/* Secciones inferiores */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Mis listas */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <FolderOpen size={16} className="text-blue-600" />
+                Mis listas recientes
+              </h2>
+              <Link
+                href="/dashboard?view=personal"
+                className="text-xs text-blue-600 hover:underline flex items-center gap-0.5"
+              >
+                Ver todas <ChevronRight size={12} />
+              </Link>
+            </div>
+            {createdLists.length === 0 ? (
+              <p className="text-sm text-gray-400 text-center py-4">
+                Sin listas todavía
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {createdLists.slice(0, 4).map((list) => (
+                  <Link
+                    key={list.id}
+                    href={`/lists/${list.id}`}
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                      <FolderOpen size={14} className="text-blue-600" />
+                    </div>
+                    <span className="text-sm text-gray-700 font-medium truncate flex-1 group-hover:text-gray-900">
+                      {list.name}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {list.members.length} miembro
+                      {list.members.length !== 1 ? "s" : ""}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </motion.div>
+
+          {/* Cuenta y plan */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6"
+          >
+            <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-4">
+              <Shield size={16} className="text-blue-600" />
+              Cuenta
+            </h2>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <Mail size={14} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-700">
+                      Correo electrónico
+                    </p>
+                    <p className="text-xs text-gray-500 truncate max-w-[160px]">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+                <CheckCircle2
+                  size={14}
+                  className="text-blue-500 flex-shrink-0"
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <Crown size={14} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-gray-700">
+                      Plan actual
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {user.plan === "PRO"
+                        ? "Acceso ilimitado"
+                        : "5 listas · 20 tareas"}
+                    </p>
+                  </div>
+                </div>
+                <Badge
+                  variant={user.plan === "PRO" ? "blue" : "default"}
+                  className="text-[10px]"
+                >
+                  {user.plan === "PRO" ? "PRO" : "Gratis"}
                 </Badge>
               </div>
-              <p className="text-gray-500 flex items-center gap-2">
-                <Mail size={14} />
-                {user.email}
-              </p>
-            </div>
 
-            {/* Estadísticas */}
-            <div className="grid grid-cols-2 gap-4 mt-6 p-4 bg-gray-50 rounded-xl">
-              <div className="text-center">
-                <p className="text-sm text-gray-500">Miembro desde</p>
-                <p className="font-medium text-gray-900 flex items-center justify-center gap-2 mt-1">
-                  <Calendar size={14} className="text-gray-400" />
-                  {joinDate}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-gray-500">Plan</p>
-                <p className="font-medium text-gray-900 flex items-center justify-center gap-2 mt-1">
-                  {user.plan === "PRO" ? (
-                    <>
-                      <Crown size={14} className="text-blue-500" />
-                      PRO
-                    </>
-                  ) : (
-                    <>
-                      <Shield size={14} className="text-gray-400" />
-                      Gratis
-                    </>
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {/* Estadísticas de listas y tareas */}
-            <div className="grid grid-cols-4 gap-3 mt-4">
-              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <p className="text-xl font-bold text-blue-600">
-                  {createdLists.length}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Listas creadas</p>
-              </div>
-              <div className="text-center p-3 bg-purple-50 rounded-lg">
-                <p className="text-xl font-bold text-purple-600">
-                  {sharedLists.length}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Listas compartidas</p>
-              </div>
-              <div className="text-center p-3 bg-green-50 rounded-lg">
-                <p className="text-xl font-bold text-green-600">
-                  {completedTasks.length}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Tareas completadas</p>
-              </div>
-              <div className="text-center p-3 bg-orange-50 rounded-lg">
-                <p className="text-xl font-bold text-orange-600">
-                  {pendingTasks.length}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Tareas pendientes</p>
-              </div>
-            </div>
-
-            {/* Acciones */}
-            <div className="flex gap-3 mt-6">
-              {user.plan === "FREE" && (
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  icon={<Crown size={16} />}
-                  onClick={() => {}}
-                >
-                  Actualizar a PRO
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                onClick={handleLogout}
-                className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                icon={<LogOut size={16} />}
+              <Link
+                href="/settings"
+                className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
               >
-                Cerrar sesión
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Settings */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mt-6 bg-white rounded-xl border border-gray-200 shadow-sm p-6"
-        >
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            Configuración de la cuenta
-          </h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <Mail size={18} className="text-blue-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm text-gray-900">
-                    Correo electrónico
-                  </p>
-                  <p className="text-xs text-gray-500">{user.email}</p>
-                </div>
-              </div>
-              <CheckCircle2 size={16} className="text-blue-500" />
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <Crown size={18} className="text-blue-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm text-gray-900">Plan</p>
-                  <p className="text-xs text-gray-500">
-                    {user.plan} —{" "}
-                    {user.plan === "PRO"
-                      ? "Acceso ilimitado"
-                      : "5 listas, 20 tareas por lista"}
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <Settings size={14} className="text-gray-500" />
+                  </div>
+                  <p className="text-xs font-medium text-gray-700">
+                    Configuración
                   </p>
                 </div>
-              </div>
-              {user.plan === "PRO" ? (
-                <Badge variant="blue">Activo</Badge>
-              ) : (
-                <Button size="sm" variant="ghost">
-                  Actualizar
-                </Button>
-              )}
+                <ChevronRight size={14} className="text-gray-400" />
+              </Link>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
