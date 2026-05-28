@@ -20,6 +20,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-x-hidden">
+      {/* Premium animated background */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+        aria-hidden
+      >
+        <div className="animate-glow-drift absolute top-[10%] right-[5%] w-96 h-96 rounded-full bg-blue-500/8 blur-3xl" />
+        <div className="animate-glow-drift-2 absolute bottom-[15%] left-[8%] w-80 h-80 rounded-full bg-blue-400/6 blur-3xl" />
+        <div className="animate-float-slow absolute top-[25%] left-[12%] w-3 h-3 rounded-full bg-blue-400/25" />
+        <div className="animate-float-slow-reverse absolute top-[40%] right-[15%] w-2 h-2 rounded-full bg-blue-500/20" />
+        <div className="animate-float-gentle absolute bottom-[30%] right-[25%] w-2 h-2 rounded-full bg-blue-300/30" />
+      </div>
+
       {/* Sidebar — hidden on mobile */}
       <div className="hidden md:block">
         <Sidebar />
@@ -27,7 +39,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main content */}
       <main
-        className="min-h-screen transition-[margin-left] duration-300 ease-in-out pb-16 md:pb-0"
+        className="relative z-10 min-h-screen transition-[margin-left] duration-300 ease-in-out pb-16 md:pb-0"
         style={
           mounted
             ? { marginLeft: sidebarCollapsed ? "72px" : "264px" }
