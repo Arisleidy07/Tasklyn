@@ -95,21 +95,28 @@ export default function NotificationsPage() {
     notifId: string,
     data: Record<string, string>,
   ) => {
+    console.log("Accepting invitation:", { notifId, data });
     setProcessingId(notifId);
     try {
       // Get the invitation using the token
+      console.log("Getting invitation with token:", data.token);
       const invitation = await getInvitation(data.token);
+      console.log("Invitation found:", invitation);
       if (!invitation) {
         console.error("Invitation not found");
         setProcessingId(null);
         return;
       }
 
-      // Accept the invitation (this adds the member to the list)
-      await acceptInvitation(invitation, user.id);
-
-      // Update notification status to accepted
+      // Update notification status to accepted first
+      console.log("Updating notification status to accepted");
       await setStatus(notifId, "accepted");
+      console.log("Notification status updated");
+
+      // Accept the invitation (this adds the member to the list)
+      console.log("Accepting invitation for user:", user.id);
+      await acceptInvitation(invitation, user.id);
+      console.log("Invitation accepted successfully");
     } catch (error) {
       console.error("Error accepting invitation:", error);
     } finally {

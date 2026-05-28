@@ -90,6 +90,14 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   },
 
   create: async ({ userId, type, title, body, data }) => {
-    await createNotification({ userId, type, title, body, read: false, data });
+    await createNotification({
+      userId,
+      type,
+      title,
+      body,
+      read: false,
+      status: "pending",
+      data,
+    });
   },
 }));
