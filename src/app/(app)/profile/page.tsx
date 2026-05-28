@@ -87,15 +87,8 @@ export default function ProfilePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
-      {/* Subtle background accent */}
-      <div
-        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
-        aria-hidden
-      >
-        <div className="absolute -top-20 right-0 w-[420px] h-[420px] rounded-full bg-blue-100/25 blur-3xl" />
-      </div>
-      <div className="relative z-10 max-w-4xl mx-auto px-4 md:px-8 pt-6 md:pt-8 pb-20 md:pb-12">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 md:px-8 pt-6 md:pt-8 pb-20 md:pb-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

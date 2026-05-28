@@ -27,7 +27,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main content */}
       <main
-        className="relative z-10 min-h-screen transition-all duration-300 ease-in-out pb-16 md:pb-0"
+        className="min-h-screen transition-[margin-left] duration-300 ease-in-out pb-16 md:pb-0"
         style={
           mounted
             ? { marginLeft: sidebarCollapsed ? "72px" : "264px" }
@@ -36,9 +36,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
       >
         <motion.div
           key="page"
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
         >
           {children}
         </motion.div>
