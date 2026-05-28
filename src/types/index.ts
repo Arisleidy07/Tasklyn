@@ -63,6 +63,25 @@ export interface TaskList {
   description?: string;
 }
 
+// ---- Notification ----
+export type NotificationType =
+  | "invitation"
+  | "task_assigned"
+  | "task_completed"
+  | "member_joined"
+  | "list_shared";
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  read: boolean;
+  createdAt: string;
+  data?: Record<string, string>;
+}
+
 // ---- Invitation ----
 export interface Invitation {
   id: string;

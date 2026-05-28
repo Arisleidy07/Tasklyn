@@ -23,7 +23,15 @@ import {
   Unsubscribe,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import type { User, TaskList, Task, Invitation, ListMember, MemberRole } from "@/types";
+import type {
+  User,
+  TaskList,
+  Task,
+  Invitation,
+  ListMember,
+  MemberRole,
+  Notification,
+} from "@/types";
 
 // ============================================
 // Helpers
@@ -34,7 +42,9 @@ const toDate = (timestamp: Timestamp | null | undefined): string => {
   return timestamp.toDate().toISOString();
 };
 
-const withTimestamps = <T extends Record<string, unknown>>(data: T): T & { updatedAt: ReturnType<typeof serverTimestamp> } => ({
+const withTimestamps = <T extends Record<string, unknown>>(
+  data: T,
+): T & { updatedAt: ReturnType<typeof serverTimestamp> } => ({
   ...data,
   updatedAt: serverTimestamp(),
 });
@@ -65,12 +75,18 @@ export const getUser = async (userId: string): Promise<User | null> => {
   } as User;
 };
 
-export const updateUser = async (userId: string, updates: Partial<User>): Promise<void> => {
+export const updateUser = async (
+  userId: string,
+  updates: Partial<User>,
+): Promise<void> => {
   const userRef = doc(db, "users", userId);
   await updateDoc(userRef, withTimestamps(updates));
 };
 
-export const subscribeToUser = (userId: string, callback: (user: User | null) => void): Unsubscribe => {
+export const subscribeToUser = (
+  userId: string,
+  callback: (user: User | null) => void,
+): Unsubscribe => {
   const userRef = doc(db, "users", userId);
   return onSnapshot(userRef, (snap) => {
     if (!snap.exists()) {
@@ -92,7 +108,9 @@ export const subscribeToUser = (userId: string, callback: (user: User | null) =>
 
 export const listsCollection = collection(db, "lists");
 
-export const createList = async (list: Omit<TaskList, "id" | "createdAt">): Promise<string> => {
+export const createList = async (
+  list: Omit<TaskList, "id" | "createdAt">,
+): Promise<string> => {
   const listRef = doc(listsCollection);
   await setDoc(listRef, {
     ...list,
@@ -115,7 +133,10 @@ export const getList = async (listId: string): Promise<TaskList | null> => {
   } as TaskList;
 };
 
-export const updateList = async (listId: string, updates: Partial<TaskList>): Promise<void> => {
+export const updateList = async (
+  listId: string,
+  updates: Partial<TaskList>,
+): Promise<void> => {
   const listRef = doc(db, "lists", listId);
   const { id, createdAt, ...rest } = updates;
   await updateDoc(listRef, withTimestamps(rest));
@@ -123,92 +144,121 @@ export const updateList = async (listId: string, updates: Partial<TaskList>): Pr
 
 export const deleteList = async (listId: string): Promise<void> => {
   // Delete all tasks in the list first
-  const tasksQuery = query(collection(db, "tasks"), where("listId", "==", listId));
+  const tasksQuery = query(
+    collection(db, "tasks"),
+    where("listId", "==", listId),
+  );
   const tasksSnap = await getDocs(tasksQuery);
   const batch = writeBatch(db);
   tasksSnap.docs.forEach((doc) => batch.delete(doc.ref));
-  
+
   // Delete all invitations for this list
-  const invitesQuery = query(collection(db, "invitations"), where("listId", "==", listId));
+  const invitesQuery = query(
+    collection(db, "invitations"),
+    where("listId", "==", listId),
+  );
   const invitesSnap = await getDocs(invitesQuery);
   invitesSnap.docs.forEach((doc) => batch.delete(doc.ref));
-  
+
   // Delete the list
   batch.delete(doc(db, "lists", listId));
-  
+
   await batch.commit();
 };
 
-export const addListMember = async (listId: string, userId: string, role: MemberRole): Promise<void> => {
+export const addListMember = async (
+  listId: string,
+  userId: string,
+  role: MemberRole,
+): Promise<void> => {
   const listRef = doc(db, "lists", listId);
   const listSnap = await getDoc(listRef);
   if (!listSnap.exists()) throw new Error("List not found");
-  
+
   const data = listSnap.data();
   const members: ListMember[] = data.members || [];
-  
+
   if (members.some((m) => m.userId === userId)) return; // Already member
-  
+
   members.push({
     userId,
     role,
     joinedAt: new Date().toISOString(),
   });
-  
-  await updateDoc(listRef, withTimestamps({
-    members,
-    type: "shared",
-  }));
+
+  await updateDoc(
+    listRef,
+    withTimestamps({
+      members,
+      type: "shared",
+    }),
+  );
 };
 
-export const removeListMember = async (listId: string, userId: string): Promise<void> => {
+export const removeListMember = async (
+  listId: string,
+  userId: string,
+): Promise<void> => {
   const listRef = doc(db, "lists", listId);
   const listSnap = await getDoc(listRef);
   if (!listSnap.exists()) throw new Error("List not found");
-  
+
   const data = listSnap.data();
-  const members: ListMember[] = (data.members || []).filter((m: ListMember) => m.userId !== userId);
-  
+  const members: ListMember[] = (data.members || []).filter(
+    (m: ListMember) => m.userId !== userId,
+  );
+
   await updateDoc(listRef, withTimestamps({ members }));
 };
 
-export const updateMemberRole = async (listId: string, userId: string, role: MemberRole): Promise<void> => {
+export const updateMemberRole = async (
+  listId: string,
+  userId: string,
+  role: MemberRole,
+): Promise<void> => {
   const listRef = doc(db, "lists", listId);
   const listSnap = await getDoc(listRef);
   if (!listSnap.exists()) throw new Error("List not found");
-  
+
   const data = listSnap.data();
   const members: ListMember[] = (data.members || []).map((m: ListMember) =>
-    m.userId === userId ? { ...m, role } : m
+    m.userId === userId ? { ...m, role } : m,
   );
-  
+
   await updateDoc(listRef, withTimestamps({ members }));
 };
 
-export const setCustomName = async (listId: string, userId: string, customName: string): Promise<void> => {
+export const setCustomName = async (
+  listId: string,
+  userId: string,
+  customName: string,
+): Promise<void> => {
   const listRef = doc(db, "lists", listId);
   const listSnap = await getDoc(listRef);
   if (!listSnap.exists()) throw new Error("List not found");
-  
+
   const data = listSnap.data();
   const customNames = { ...(data.customNames || {}) };
-  
+
   if (customName.trim()) {
     customNames[userId] = customName.trim();
   } else {
     delete customNames[userId];
   }
-  
+
   await updateDoc(listRef, withTimestamps({ customNames }));
 };
 
 // Subscribe to all lists for a user (real-time)
-export const subscribeToUserLists = (userId: string, callback: (lists: TaskList[]) => void): Unsubscribe => {
+export const subscribeToUserLists = (
+  userId: string,
+  callback: (lists: TaskList[]) => void,
+): Unsubscribe => {
   const q = query(
     listsCollection,
-    where("members", "array-contains", { userId })
+    where("members", "array-contains", { userId }),
   );
-  
+
   // Firestore can't query by array-contains on objects directly
   // So we query all and filter client-side (for now, until we add a membersById field)
   return onSnapshot(listsCollection, (snap) => {
@@ -236,7 +286,9 @@ export const subscribeToUserLists = (userId: string, callback: (lists: TaskList[
 
 export const tasksCollection = collection(db, "tasks");
 
-export const createTask = async (task: Omit<Task, "id" | "createdAt">): Promise<string> => {
+export const createTask = async (
+  task: Omit<Task, "id" | "createdAt">,
+): Promise<string> => {
   const taskRef = doc(tasksCollection);
   await setDoc(taskRef, {
     ...task,
@@ -246,7 +298,10 @@ export const createTask = async (task: Omit<Task, "id" | "createdAt">): Promise<
   return taskRef.id;
 };
 
-export const updateTask = async (taskId: string, updates: Partial<Task>): Promise<void> => {
+export const updateTask = async (
+  taskId: string,
+  updates: Partial<Task>,
+): Promise<void> => {
   const taskRef = doc(db, "tasks", taskId);
   const { id, createdAt, ...rest } = updates;
   await updateDoc(taskRef, withTimestamps(rest));
@@ -265,13 +320,16 @@ export const deleteTasksByList = async (listId: string): Promise<void> => {
 };
 
 // Subscribe to tasks for a list (real-time)
-export const subscribeToListTasks = (listId: string, callback: (tasks: Task[]) => void): Unsubscribe => {
+export const subscribeToListTasks = (
+  listId: string,
+  callback: (tasks: Task[]) => void,
+): Unsubscribe => {
   const q = query(
     tasksCollection,
     where("listId", "==", listId),
-    orderBy("createdAt", "desc")
+    orderBy("createdAt", "desc"),
   );
-  
+
   return onSnapshot(q, (snap) => {
     const tasks = snap.docs.map((doc) => {
       const data = doc.data();
@@ -282,7 +340,10 @@ export const subscribeToListTasks = (listId: string, callback: (tasks: Task[]) =
         completedAt: data.completedAt ? toDate(data.completedAt) : null,
         history: (data.history || []).map((h: DocumentData) => ({
           ...h,
-          performedAt: typeof h.performedAt === "string" ? h.performedAt : toDate(h.performedAt),
+          performedAt:
+            typeof h.performedAt === "string"
+              ? h.performedAt
+              : toDate(h.performedAt),
         })),
       } as Task;
     });
@@ -296,7 +357,9 @@ export const subscribeToListTasks = (listId: string, callback: (tasks: Task[]) =
 
 export const invitationsCollection = collection(db, "invitations");
 
-export const createInvitation = async (invitation: Omit<Invitation, "id" | "createdAt">): Promise<string> => {
+export const createInvitation = async (
+  invitation: Omit<Invitation, "id" | "createdAt">,
+): Promise<string> => {
   const inviteRef = doc(invitationsCollection);
   await setDoc(inviteRef, {
     ...invitation,
@@ -305,7 +368,9 @@ export const createInvitation = async (invitation: Omit<Invitation, "id" | "crea
   return inviteRef.id;
 };
 
-export const getInvitationByToken = async (token: string): Promise<Invitation | null> => {
+export const getInvitationByToken = async (
+  token: string,
+): Promise<Invitation | null> => {
   const q = query(invitationsCollection, where("token", "==", token));
   const snap = await getDocs(q);
   if (snap.empty) return null;
@@ -319,7 +384,9 @@ export const getInvitationByToken = async (token: string): Promise<Invitation | 
   } as Invitation;
 };
 
-export const getInvitationsByList = async (listId: string): Promise<Invitation[]> => {
+export const getInvitationsByList = async (
+  listId: string,
+): Promise<Invitation[]> => {
   const q = query(invitationsCollection, where("listId", "==", listId));
   const snap = await getDocs(q);
   return snap.docs.map((doc) => {
@@ -337,7 +404,9 @@ export const deleteInvitation = async (invitationId: string): Promise<void> => {
   await deleteDoc(doc(db, "invitations", invitationId));
 };
 
-export const deleteInvitationsByList = async (listId: string): Promise<void> => {
+export const deleteInvitationsByList = async (
+  listId: string,
+): Promise<void> => {
   const q = query(invitationsCollection, where("listId", "==", listId));
   const snap = await getDocs(q);
   const batch = writeBatch(db);
@@ -349,28 +418,100 @@ export const deleteInvitationsByList = async (listId: string): Promise<void> => 
 // BATCH OPERATIONS
 // ============================================
 
-export const acceptInvitation = async (invitation: Invitation, userId: string): Promise<void> => {
+export const acceptInvitation = async (
+  invitation: Invitation,
+  userId: string,
+): Promise<void> => {
   const batch = writeBatch(db);
-  
+
   // Add member to list
   const listRef = doc(db, "lists", invitation.listId);
   const listSnap = await getDoc(listRef);
   if (!listSnap.exists()) throw new Error("List not found");
-  
+
   const listData = listSnap.data();
   const members: ListMember[] = listData.members || [];
-  
+
   if (!members.some((m) => m.userId === userId)) {
     members.push({
       userId,
       role: invitation.defaultRole,
       joinedAt: new Date().toISOString(),
     });
-    batch.update(listRef, { members, type: "shared", updatedAt: serverTimestamp() });
+    batch.update(listRef, {
+      members,
+      type: "shared",
+      updatedAt: serverTimestamp(),
+    });
   }
-  
+
   // Delete invitation
   batch.delete(doc(db, "invitations", invitation.id));
-  
+
   await batch.commit();
+};
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+export const notificationsCollection = collection(db, "notifications");
+
+export const createNotification = async (
+  notification: Omit<Notification, "id" | "createdAt">,
+): Promise<string> => {
+  const ref = doc(notificationsCollection);
+  await setDoc(ref, {
+    ...notification,
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
+export const markNotificationRead = async (
+  notificationId: string,
+): Promise<void> => {
+  await updateDoc(doc(db, "notifications", notificationId), { read: true });
+};
+
+export const markAllNotificationsRead = async (
+  userId: string,
+): Promise<void> => {
+  const q = query(
+    notificationsCollection,
+    where("userId", "==", userId),
+    where("read", "==", false),
+  );
+  const snap = await getDocs(q);
+  const batch = writeBatch(db);
+  snap.docs.forEach((d) => batch.update(d.ref, { read: true }));
+  await batch.commit();
+};
+
+export const deleteNotification = async (
+  notificationId: string,
+): Promise<void> => {
+  await deleteDoc(doc(db, "notifications", notificationId));
+};
+
+export const subscribeToNotifications = (
+  userId: string,
+  callback: (notifications: Notification[]) => void,
+): Unsubscribe => {
+  const q = query(
+    notificationsCollection,
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc"),
+  );
+  return onSnapshot(q, (snap) => {
+    const notifications = snap.docs.map((d) => {
+      const data = d.data();
+      return {
+        ...data,
+        id: d.id,
+        createdAt: toDate(data.createdAt),
+      } as Notification;
+    });
+    callback(notifications);
+  });
 };

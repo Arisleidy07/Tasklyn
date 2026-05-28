@@ -15,7 +15,9 @@ import {
   ChevronRight,
   Sparkles,
   User,
+  Bell,
 } from "lucide-react";
+import { useNotificationStore } from "@/stores/notificationStore";
 import Logo from "@/components/shared/Logo";
 import Avatar from "@/components/ui/Avatar";
 import { useAuthStore } from "@/stores/authStore";
@@ -29,6 +31,7 @@ export default function Sidebar() {
   const { getUserLists, getPersonalLists, getSharedLists } = useListStore();
   const [collapsed, setCollapsed] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const { unreadCount } = useNotificationStore();
 
   if (!user) return null;
 
@@ -49,6 +52,12 @@ export default function Sidebar() {
 
   const mainNav = [
     { name: "Panel de control", href: "/dashboard", icon: LayoutDashboard },
+    {
+      name: "Notificaciones",
+      href: "/notifications",
+      icon: Bell,
+      badge: unreadCount,
+    },
   ];
 
   const listNav = [
@@ -114,7 +123,7 @@ export default function Sidebar() {
                   href={item.href}
                   title={collapsed ? item.name : undefined}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200",
+                    "relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200",
                     active
                       ? "bg-blue-600 text-white shadow-sm shadow-blue-600/25"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
@@ -122,7 +131,24 @@ export default function Sidebar() {
                   )}
                 >
                   <item.icon size={18} className="flex-shrink-0" />
-                  {!collapsed && <span className="flex-1">{item.name}</span>}
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1">{item.name}</span>
+                      {"badge" in item &&
+                        item.badge !== undefined &&
+                        item.badge > 0 && (
+                          <span className="text-[11px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1 bg-red-500 text-white">
+                            {item.badge > 9 ? "9+" : item.badge}
+                          </span>
+                        )}
+                    </>
+                  )}
+                  {collapsed &&
+                    "badge" in item &&
+                    item.badge !== undefined &&
+                    item.badge > 0 && (
+                      <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-500" />
+                    )}
                 </Link>
               );
             })}

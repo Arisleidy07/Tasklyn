@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
+import { useNotificationStore } from "@/stores/notificationStore";
 import AppLayout from "@/components/layout/AppLayout";
 
 export default function AuthenticatedLayout({
@@ -14,6 +15,8 @@ export default function AuthenticatedLayout({
   const router = useRouter();
   const { isAuthenticated, isAuthReady, user } = useAuthStore();
   const { subscribeToLists, unsubscribeFromLists } = useListStore();
+  const { subscribe: subscribeNotifs, unsubscribe: unsubscribeNotifs } =
+    useNotificationStore();
 
   useEffect(() => {
     if (isAuthReady && !isAuthenticated) {
@@ -30,6 +33,16 @@ export default function AuthenticatedLayout({
       };
     }
   }, [user?.id, subscribeToLists, unsubscribeFromLists]);
+
+  // Subscribe to notifications
+  useEffect(() => {
+    if (user?.id) {
+      subscribeNotifs(user.id);
+      return () => {
+        unsubscribeNotifs();
+      };
+    }
+  }, [user?.id, subscribeNotifs, unsubscribeNotifs]);
 
   if (!isAuthReady || !isAuthenticated) {
     return (
