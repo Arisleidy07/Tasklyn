@@ -168,7 +168,9 @@ export default function NotificationsPage() {
         {/* Pending Invitations */}
         {pendingNotifications.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Invitaciones Pendientes</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+              Invitaciones Pendientes
+            </h3>
             <motion.div
               className="space-y-2"
               initial="hidden"
@@ -290,7 +292,9 @@ export default function NotificationsPage() {
         {/* Other Notifications */}
         {otherNotifications.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">Otras Notificaciones</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+              Otras Notificaciones
+            </h3>
             <motion.div
               className="space-y-2"
               initial="hidden"
@@ -384,16 +388,25 @@ export default function NotificationsPage() {
         {/* Accepted Invitations */}
         {acceptedNotifications.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold text-green-700 mb-3">Invitaciones Aceptadas</h3>
+            <h3 className="text-sm font-semibold text-green-700 mb-3">
+              Invitaciones Aceptadas
+            </h3>
             <div className="space-y-2">
               {acceptedNotifications.map((notif) => (
-                <div key={notif.id} className="flex items-start gap-4 p-4 rounded-xl border border-green-200 bg-green-50/30">
+                <div
+                  key={notif.id}
+                  className="flex items-start gap-4 p-4 rounded-xl border border-green-200 bg-green-50/30"
+                >
                   <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
                     <CheckCircle2 size={18} className="text-green-600" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-green-800">{notif.title}</p>
-                    <p className="text-xs text-green-600 mt-1">Ya tienes acceso a este espacio</p>
+                    <p className="text-sm font-semibold text-green-800">
+                      {notif.title}
+                    </p>
+                    <p className="text-xs text-green-600 mt-1">
+                      Ya tienes acceso a este espacio
+                    </p>
                   </div>
                 </div>
               ))}
@@ -404,16 +417,23 @@ export default function NotificationsPage() {
         {/* Rejected Invitations */}
         {rejectedNotifications.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold text-gray-600 mb-3">Invitaciones Rechazadas</h3>
+            <h3 className="text-sm font-semibold text-gray-600 mb-3">
+              Invitaciones Rechazadas
+            </h3>
             <div className="space-y-2">
               {rejectedNotifications.map((notif) => (
-                <div key={notif.id} className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 bg-gray-50/50">
+                <div
+                  key={notif.id}
+                  className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 bg-gray-50/50"
+                >
                   <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
                     <X size={18} className="text-gray-500" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-600">{notif.title}</p>
-                    <p className="text-xs text-gray-500 mt-1">Rechazaste esta invitación</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Rechazaste esta invitación
+                    </p>
                   </div>
                   <button
                     onClick={() => remove(notif.id)}
@@ -428,79 +448,16 @@ export default function NotificationsPage() {
         )}
 
         {/* Empty State */}
-        {pendingNotifications.length === 0 && otherNotifications.length === 0 && acceptedNotifications.length === 0 && rejectedNotifications.length === 0 && (
-          <EmptyState
-            icon={<Bell size={32} />}
-            title="Sin notificaciones"
-            description="Aquí aparecerán tus alertas de tareas, invitaciones y más."
-          />
-        )}
-                      <p className="text-xs text-gray-500 mt-0.5 leading-snug">
-                        {notif.body}
-                      </p>
-                      <p className="text-[11px] text-gray-400 mt-1.5">
-                        {timeAgo(notif.createdAt)}
-                      </p>
-
-                      {/* Accept / Decline for invitations */}
-                      {notif.type === "invitation" && notif.data?.listId && (
-                        <div className="flex items-center gap-2 mt-3">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAcceptInvitation(notif.id, notif.data!);
-                            }}
-                            disabled={processingId === notif.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60"
-                          >
-                            <Check size={12} />
-                            Aceptar
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeclineInvitation(notif.id, notif.data);
-                            }}
-                            disabled={processingId === notif.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors disabled:opacity-60"
-                          >
-                            <X size={12} />
-                            Rechazar
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {notif.type !== "invitation" && (
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            archive(notif.id);
-                          }}
-                          className="p-1.5 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors flex-shrink-0"
-                          title="Archivar"
-                        >
-                          <Archive size={14} />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            remove(notif.id);
-                          }}
-                          className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </motion.div>
-        )}
+        {pendingNotifications.length === 0 &&
+          otherNotifications.length === 0 &&
+          acceptedNotifications.length === 0 &&
+          rejectedNotifications.length === 0 && (
+            <EmptyState
+              icon={<Bell size={32} />}
+              title="Sin notificaciones"
+              description="Aquí aparecerán tus alertas de tareas, invitaciones y más."
+            />
+          )}
       </div>
     </>
   );
