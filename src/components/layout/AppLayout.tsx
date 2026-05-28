@@ -20,13 +20,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-x-hidden">
-      {/* Premium ambient background — subtle floating orbs */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="animate-glow-drift absolute top-[5%] left-[20%] w-[480px] h-[480px] rounded-full bg-blue-500/5 blur-3xl" />
-        <div className="animate-glow-drift-2 absolute top-[40%] right-[5%] w-[360px] h-[360px] rounded-full bg-blue-400/5 blur-3xl" />
-        <div className="animate-glow-drift-3 absolute bottom-[10%] left-[40%] w-[300px] h-[300px] rounded-full bg-blue-600/4 blur-3xl" />
-      </div>
-
       {/* Sidebar — hidden on mobile */}
       <div className="hidden md:block">
         <Sidebar />
