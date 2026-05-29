@@ -10,6 +10,14 @@ import {
   getUserByEmail,
   createNotification,
 } from "@/lib/firestore";
+import {
+  notifyInvitationAccepted,
+  notifyInvitationRejected,
+} from "@/lib/notify";
+import {
+  showInAppNotification,
+  playNotificationSound,
+} from "@/lib/notifications";
 import type { Invitation, MemberRole } from "@/types";
 
 interface SendEmailInviteParams {
@@ -35,7 +43,16 @@ interface InvitationState {
     params: SendEmailInviteParams,
   ) => Promise<{ notified: boolean }>;
   deleteInvitation: (id: string) => Promise<void>;
-  acceptInvitation: (invitation: Invitation, userId: string) => Promise<void>;
+  acceptInvitation: (
+    invitation: Invitation,
+    userId: string,
+    accepterName?: string,
+  ) => Promise<void>;
+  rejectInvitation: (
+    invitation: Invitation,
+    userId: string,
+    rejecterName?: string,
+  ) => Promise<void>;
 }
 
 export const useInvitationStore = create<InvitationState>((set, get) => ({
@@ -111,6 +128,11 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
           invitedBy,
         },
       });
+      playNotificationSound();
+      showInAppNotification(
+        `${inviterName} te invitó a "${listName}"`,
+        "Toca para ver la invitación",
+      );
       return { notified: true };
     }
 
@@ -133,7 +155,27 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
     await deleteInvitationInDb(id);
   },
 
-  acceptInvitation: async (invitation, userId) => {
+  acceptInvitation: async (invitation, userId, accepterName) => {
     await acceptInvitationInDb(invitation, userId);
+    if (accepterName) {
+      await notifyInvitationAccepted(
+        invitation.invitedBy,
+        invitation.listId,
+        accepterName,
+        invitation.listId,
+      );
+    }
+  },
+
+  rejectInvitation: async (invitation, _userId, rejecterName) => {
+    await deleteInvitationInDb(invitation.id);
+    if (rejecterName) {
+      await notifyInvitationRejected(
+        invitation.invitedBy,
+        invitation.listId,
+        rejecterName,
+        invitation.listId,
+      );
+    }
   },
 }));

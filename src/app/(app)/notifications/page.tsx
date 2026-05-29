@@ -68,7 +68,7 @@ export default function NotificationsPage() {
     archive,
     setStatus,
   } = useNotificationStore();
-  const { getInvitation, acceptInvitation, deleteInvitation } =
+  const { getInvitation, acceptInvitation, rejectInvitation } =
     useInvitationStore();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -105,8 +105,8 @@ export default function NotificationsPage() {
         return;
       }
 
-      // Add user to list + delete invitation (sequential, correct permissions)
-      await acceptInvitation(invitation, user.id);
+      // Add user to list + notify inviter
+      await acceptInvitation(invitation, user.id, user.name);
 
       // Mark notification as accepted and read atomically
       await setStatus(notifId, "accepted");
@@ -124,11 +124,10 @@ export default function NotificationsPage() {
   ) => {
     setProcessingId(notifId);
     try {
-      // Delete the invitation document directly
       if (data?.token) {
         const invitation = await getInvitation(data.token);
         if (invitation) {
-          await deleteInvitation(invitation.id);
+          await rejectInvitation(invitation, user.id, user.name);
         }
       }
 

@@ -14,6 +14,7 @@ import TaskOptionsBar from "./TaskOptionsBar";
 import DueDatePicker from "./pickers/DueDatePicker";
 import ReminderPicker from "./pickers/ReminderPicker";
 import RecurrencePicker from "./pickers/RecurrencePicker";
+import { notifyMentionsFromText } from "@/lib/notify";
 import {
   CheckCircle2,
   Circle,
@@ -90,7 +91,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
     if (isCompleted) {
       uncompleteTask(task.id, user.id);
     } else {
-      completeTask(task.id, user.id);
+      completeTask(task.id, user.id, user.name);
     }
   };
 
@@ -124,7 +125,20 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
           recurrence: editRecurrence,
         },
         user.id,
+        user.name,
       );
+
+      // Check for @mentions and notify
+      const textToCheck = `${editTitle} ${editDescription}`;
+      await notifyMentionsFromText(
+        textToCheck,
+        editTitle.trim(),
+        user.name,
+        task.id,
+        task.listId,
+        memberNames,
+      );
+
       setShowEditModal(false);
     } catch (err) {
       console.error("Error updating task:", err);

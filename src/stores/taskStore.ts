@@ -15,6 +15,11 @@ import type {
   TaskReminder,
 } from "@/types";
 import { Unsubscribe } from "firebase/firestore";
+import {
+  notifyTaskCompleted,
+  notifyTaskAssigned,
+  notifyTaskEdited,
+} from "@/lib/notify";
 
 interface TaskState {
   tasks: Task[];
@@ -52,11 +57,16 @@ interface TaskState {
       >
     >,
     performedBy: string,
+    performerName?: string,
   ) => Promise<void>;
   generateNextRecurringTask: (task: Task) => Promise<Task | null>;
   archiveTask: (id: string, archivedBy: string) => Promise<void>;
   unarchiveTask: (id: string, performedBy: string) => Promise<void>;
-  completeTask: (id: string, completedBy: string) => Promise<void>;
+  completeTask: (
+    id: string,
+    completedBy: string,
+    completerName?: string,
+  ) => Promise<void>;
   uncompleteTask: (id: string, performedBy: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   subscribeToList: (listId: string) => void;
@@ -233,7 +243,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     } as Task;
   },
 
-  updateTask: async (id, updates, performedBy) => {
+  updateTask: async (id, updates, performedBy, performerName) => {
     const task = get().tasks.find((t) => t.id === id);
     if (!task) return;
 
@@ -328,6 +338,40 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       ...updates,
       history: [...task.history, ...entries],
     });
+
+    // Notify assigned user
+    if (
+      updates.assignedTo &&
+      updates.assignedTo !== task.assignedTo &&
+      updates.assignedTo !== performedBy &&
+      performerName
+    ) {
+      notifyTaskAssigned(
+        updates.assignedTo,
+        task.title,
+        performerName,
+        task.id,
+        task.listId,
+      );
+    }
+
+    // Notify task creator when task is edited (if not the creator editing)
+    if (
+      performerName &&
+      performedBy !== task.createdBy &&
+      (updates.title ||
+        updates.description ||
+        updates.dueDate ||
+        updates.location)
+    ) {
+      notifyTaskEdited(
+        task.createdBy,
+        task.title,
+        performerName,
+        task.id,
+        task.listId,
+      );
+    }
   },
 
   archiveTask: async (id, archivedBy) => {
@@ -362,7 +406,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     });
   },
 
-  completeTask: async (id, completedBy) => {
+  completeTask: async (id, completedBy, completerName) => {
     const task = get().tasks.find((t) => t.id === id);
     if (!task) return;
 
@@ -379,6 +423,17 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         createHistoryEntry("completed", completedBy, "Tarea completada"),
       ],
     });
+
+    // Notify task creator (if not the creator completing it)
+    if (completerName && completedBy !== task.createdBy) {
+      notifyTaskCompleted(
+        task.createdBy,
+        task.title,
+        completerName,
+        task.id,
+        task.listId,
+      );
+    }
 
     // Auto-generate next recurring task
     if (task.recurrence) {

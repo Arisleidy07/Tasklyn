@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import Sidebar from "./Sidebar";
 import MobileSidebar from "./MobileSidebar";
 import MobileNav from "./MobileNav";
+import ToastOverlay from "@/components/ui/ToastOverlay";
+import { useNotificationEngine } from "@/hooks/useNotificationEngine";
 import { useUIStore } from "@/stores/uiStore";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +15,7 @@ interface AppLayoutProps {
 }
 
 export default function AppLayout({ children }: AppLayoutProps) {
+  useNotificationEngine();
   const { sidebarCollapsed } = useUIStore();
   const [mounted, setMounted] = useState(false);
 
@@ -82,6 +85,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* Bottom nav — visible only on mobile */}
       <MobileNav />
+
+      {/* In-app toast notifications */}
+      <ToastOverlay />
     </div>
   );
 }
