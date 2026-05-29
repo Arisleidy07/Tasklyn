@@ -432,6 +432,15 @@ select {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+/* Mesh gradient background for sections */
+.bg-mesh-blue {
+  background-color: #f0f7ff;
+  background-image:
+    radial-gradient(at 20% 20%, rgba(59, 130, 246, 0.12) 0px, transparent 50%),
+    radial-gradient(at 80% 10%, rgba(37, 99, 235, 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(96, 165, 250, 0.1) 0px, transparent 50%);
+}
+
 /* Mobile-specific animations */
 @media (max-width: 768px) {
   .animate-mobile-slide {
