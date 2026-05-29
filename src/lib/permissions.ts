@@ -22,7 +22,7 @@ export function canDeleteTask(role: MemberRole | null): boolean {
 }
 
 export function canInviteMembers(role: MemberRole | null): boolean {
-  return role === "owner";
+  return role === "owner" || role === "editor";
 }
 
 export function canRemoveMembers(role: MemberRole | null): boolean {
@@ -34,7 +34,7 @@ export function canChangeRoles(role: MemberRole | null): boolean {
 }
 
 export function canShareList(role: MemberRole | null): boolean {
-  return role === "owner";
+  return role === "owner" || role === "editor";
 }
 
 export function canDeleteList(role: MemberRole | null): boolean {

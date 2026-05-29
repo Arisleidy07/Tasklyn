@@ -16,7 +16,12 @@ import {
   ChevronUp,
   History,
 } from "lucide-react";
-import { cn, timeAgo } from "@/lib/utils";
+import {
+  cn,
+  timeAgo,
+  formatActivityDateTime,
+  linkifyPhoneNumbers,
+} from "@/lib/utils";
 
 interface TaskItemProps {
   task: Task;
@@ -98,13 +103,17 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                   "text-sm font-medium transition-colors",
                   isCompleted ? "text-gray-400 line-through" : "text-gray-900",
                 )}
-              >
-                {task.title}
-              </p>
+                dangerouslySetInnerHTML={{
+                  __html: linkifyPhoneNumbers(task.title),
+                }}
+              />
               {task.description && (
-                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                  {task.description}
-                </p>
+                <p
+                  className="text-xs text-gray-500 mt-1 line-clamp-2"
+                  dangerouslySetInnerHTML={{
+                    __html: linkifyPhoneNumbers(task.description),
+                  }}
+                />
               )}
             </div>
 
@@ -142,7 +151,8 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
             {isCompleted && task.completedBy && (
               <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
                 <CheckCircle2 size={8} />
-                Completado por {getUserName(task.completedBy)}
+                Completado por {getUserName(task.completedBy)} •{" "}
+                {formatActivityDateTime(task.completedAt || task.createdAt)}
               </span>
             )}
           </div>
@@ -175,7 +185,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                     </span>{" "}
                     {entry.details || entry.action}
                     <span className="text-gray-400 ml-1">
-                      · {timeAgo(entry.performedAt)}
+                      · {formatActivityDateTime(entry.performedAt)}
                     </span>
                   </span>
                 </div>

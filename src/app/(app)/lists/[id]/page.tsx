@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { canInviteMembers, canShareList } from "@/lib/permissions";
 
 export default function ListDetailPage() {
   const params = useParams();
@@ -118,6 +119,8 @@ export default function ListDetailPage() {
   const userMember = list.members.find((m) => m.userId === user.id);
   const isOwner = userMember?.role === "owner";
   const canEdit = isOwner || userMember?.role === "editor";
+  const canInvite = canInviteMembers(userMember?.role ?? null);
+  const canShare = canShareList(userMember?.role ?? null);
 
   const pendingCount = tasks.filter((t) => t.status === "pending").length;
   const completedCount = tasks.filter((t) => t.status === "completed").length;
@@ -175,8 +178,8 @@ export default function ListDetailPage() {
                 <span className="hidden sm:inline">Editar</span>
               </Button>
             )}
-            {/* Compartir — owner only */}
-            {isOwner && (
+            {/* Compartir — owner + editor */}
+            {canShare && (
               <Button
                 size="sm"
                 variant="ghost"

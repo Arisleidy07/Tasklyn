@@ -6,6 +6,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { updateUser as updateUserInFirestore } from "@/lib/firestore";
+import { uploadProfilePhoto, prepareImageFile } from "@/lib/storage";
 import ProfileHeader from "./header";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
@@ -26,9 +27,13 @@ import {
   Settings,
   ChevronRight,
   Edit2,
+  Upload,
+  Camera,
+  X,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -39,6 +44,8 @@ export default function ProfilePage() {
   const [editName, setEditName] = useState("");
   const [editPhotoURL, setEditPhotoURL] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
   if (!user) return null;
 
@@ -51,6 +58,33 @@ export default function ProfilePage() {
     setEditName(user.name);
     setEditPhotoURL(user.photoURL || "");
     setShowEditProfile(true);
+  };
+
+  const handlePhotoUpload = async (file: File) => {
+    if (!file) return;
+    setIsUploadingPhoto(true);
+    try {
+      const preparedFile = await prepareImageFile(file);
+      const downloadURL = await uploadProfilePhoto(user.id, preparedFile);
+      setEditPhotoURL(downloadURL);
+    } catch (error) {
+      console.error("Error uploading photo:", error);
+      alert(error instanceof Error ? error.message : "Error al subir la foto");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handlePhotoUpload(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files[0];
+    if (file) handlePhotoUpload(file);
   };
 
   const handleSaveProfile = async () => {
@@ -397,25 +431,113 @@ export default function ProfilePage() {
             onKeyDown={(e) => e.key === "Enter" && handleSaveProfile()}
             autoFocus
           />
-          <Input
-            label="URL de foto de perfil"
-            placeholder="https://example.com/avatar.png"
-            value={editPhotoURL}
-            onChange={(e) => setEditPhotoURL(e.target.value)}
-          />
-          {editPhotoURL && (
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-              <img
-                src={editPhotoURL}
-                alt="Vista previa"
-                className="w-12 h-12 rounded-full object-cover border border-gray-200"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
+
+          {/* Photo Upload Area */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700 block">
+              Foto de perfil
+            </label>
+
+            {/* Drag & Drop Upload Area */}
+            <div
+              className={cn(
+                "relative border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer",
+                dragActive
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-300 hover:border-gray-400 bg-gray-50/50",
+                isUploadingPhoto && "opacity-50 pointer-events-none",
+              )}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                setDragActive(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                setDragActive(false);
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop}
+            >
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                disabled={isUploadingPhoto}
               />
-              <p className="text-xs text-gray-500">Vista previa de tu foto</p>
+
+              {isUploadingPhoto ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="animate-spin h-6 w-6 border-2 border-blue-600 border-t-transparent rounded-full" />
+                  <p className="text-sm text-gray-600">Subiendo foto...</p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                    <Upload size={20} className="text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-700 font-medium">
+                      Arrastra una imagen aquí
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      o haz clic para seleccionar
+                    </p>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    JPG, PNG o GIF • Máx. 5MB
+                  </p>
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Preview */}
+            {editPhotoURL && (
+              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                <img
+                  src={editPhotoURL}
+                  alt="Vista previa"
+                  className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+                <div className="flex-1">
+                  <p className="text-xs text-gray-700 font-medium">
+                    Vista previa
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Tu nueva foto de perfil
+                  </p>
+                </div>
+                <button
+                  onClick={() => setEditPhotoURL("")}
+                  className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
+            {/* URL fallback */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-2 bg-white text-gray-500">
+                  o usa una URL
+                </span>
+              </div>
+            </div>
+            <Input
+              placeholder="https://example.com/avatar.png"
+              value={editPhotoURL}
+              onChange={(e) => setEditPhotoURL(e.target.value)}
+              className="text-xs"
+            />
+          </div>
+
           <div className="flex gap-3">
             <Button
               variant="ghost"
