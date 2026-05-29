@@ -6,7 +6,7 @@ import { getToken, onMessage } from "firebase/messaging";
 import { messaging } from "./firebase";
 
 const VAPID_KEY =
-  "BNj2Udq_8jF4k4q9d3q2m1n0b9v8c7x6z5a4s3d2f1g0h9j8k7l6m5n4o3p2q1r0s";
+  "BPlmmRi9JsNjHhdxoIu6bn-ssMSIBMeutlDUpcbsIgICzTknmQAmtXSTITFzaEMExkQDJ4_refPDf3DkJh6uXyg";
 
 // ── Toast in-app queue ──
 let toastQueue: Array<{ title: string; body: string; id: number }> = [];
