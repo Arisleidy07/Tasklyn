@@ -49,6 +49,8 @@ export interface Task {
   createdAt: string;
   completedAt: string | null;
   history: TaskHistoryEntry[];
+  phoneNumbers?: string[]; // Array of phone numbers
+  location?: string; // Location/address or Google Maps link
 }
 
 // ---- TaskList ----

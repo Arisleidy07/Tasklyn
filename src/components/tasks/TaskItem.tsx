@@ -15,12 +15,16 @@ import {
   ChevronDown,
   ChevronUp,
   History,
+  Phone,
+  MapPin,
+  FileText,
 } from "lucide-react";
 import {
   cn,
   timeAgo,
   formatActivityDateTime,
   linkifyPhoneNumbers,
+  linkifyLocation,
 } from "@/lib/utils";
 
 interface TaskItemProps {
@@ -97,23 +101,73 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <p
-                className={cn(
-                  "text-sm font-medium transition-colors",
-                  isCompleted ? "text-gray-400 line-through" : "text-gray-900",
-                )}
-                dangerouslySetInnerHTML={{
-                  __html: linkifyPhoneNumbers(task.title),
-                }}
-              />
-              {task.description && (
+            <div className="flex-1 min-w-0 space-y-2">
+              {/* Tarea */}
+              <div className="flex items-start gap-2">
+                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5">
+                  Tarea:
+                </span>
                 <p
-                  className="text-xs text-gray-500 mt-1 line-clamp-2"
+                  className={cn(
+                    "text-sm font-medium transition-colors flex-1",
+                    isCompleted
+                      ? "text-gray-400 line-through"
+                      : "text-gray-900",
+                  )}
                   dangerouslySetInnerHTML={{
-                    __html: linkifyPhoneNumbers(task.description),
+                    __html: linkifyPhoneNumbers(task.title),
                   }}
                 />
+              </div>
+
+              {/* Teléfonos */}
+              {task.phoneNumbers && task.phoneNumbers.length > 0 && (
+                <div className="flex items-start gap-2">
+                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                    <Phone size={10} />
+                    Teléfonos:
+                  </span>
+                  <span
+                    className="text-sm text-gray-600 flex-1"
+                    dangerouslySetInnerHTML={{
+                      __html: task.phoneNumbers
+                        .map((phone) => linkifyPhoneNumbers(phone))
+                        .join(' <span class="text-gray-300">•</span> '),
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Ubicación */}
+              {task.location && (
+                <div className="flex items-start gap-2">
+                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                    <MapPin size={10} />
+                    Ubicación:
+                  </span>
+                  <span
+                    className="text-sm text-gray-600 flex-1"
+                    dangerouslySetInnerHTML={{
+                      __html: linkifyLocation(task.location),
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Descripción */}
+              {task.description && (
+                <div className="flex items-start gap-2">
+                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                    <FileText size={10} />
+                    Descripción:
+                  </span>
+                  <p
+                    className="text-sm text-gray-600 flex-1"
+                    dangerouslySetInnerHTML={{
+                      __html: linkifyPhoneNumbers(task.description),
+                    }}
+                  />
+                </div>
               )}
             </div>
 

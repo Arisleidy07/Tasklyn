@@ -86,9 +86,28 @@ export function linkifyPhoneNumbers(text: string): string {
   const phoneRegex =
     /(?:(?:\+?1[-.\s]?)?(?:\(?([0-9]{3})\)?[-.\s]?)?([0-9]{3})[-.\s]?([0-9]{4}))/g;
 
-  return text.replace(phoneRegex, (match, areaCode, prefix, line) => {
+  return text.replace(phoneRegex, (match) => {
     // Clean the number for tel: link (remove all non-digits, keep + if present)
     const cleanNumber = match.replace(/[^\d+]/g, "");
-    return `<a href="tel:${cleanNumber}" class="text-blue-600 hover:text-blue-800 underline decoration-1 underline-offset-2 hover:decoration-2 transition-colors font-medium">${match}</a>`;
+    return `<a href="tel:${cleanNumber}" class="text-blue-600 hover:text-blue-700 transition-colors font-medium no-underline hover:underline">${match}</a>`;
   });
+}
+
+/**
+ * Convert a location/address into a Google Maps link
+ * If it's already a URL, makes it clickable
+ * Otherwise, creates a Google Maps search URL
+ */
+export function linkifyLocation(location: string): string {
+  if (!location.trim()) return "";
+
+  // Check if it's already a URL (Google Maps or any other)
+  if (location.startsWith("http://") || location.startsWith("https://")) {
+    return `<a href="${location}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-700 transition-colors font-medium no-underline hover:underline">${location}</a>`;
+  }
+
+  // Create Google Maps search URL for addresses
+  const encodedLocation = encodeURIComponent(location);
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
+  return `<a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-700 transition-colors font-medium no-underline hover:underline">${location}</a>`;
 }

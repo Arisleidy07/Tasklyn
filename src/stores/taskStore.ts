@@ -22,6 +22,8 @@ interface TaskState {
     description?: string;
     createdBy: string;
     assignedTo?: string | null;
+    location?: string;
+    phoneNumbers?: string[];
   }) => Promise<Task>;
   updateTask: (
     id: string,
@@ -59,7 +61,15 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
   getTask: (id) => get().tasks.find((t) => t.id === id),
 
-  createTask: async ({ listId, title, description, createdBy, assignedTo }) => {
+  createTask: async ({
+    listId,
+    title,
+    description,
+    createdBy,
+    assignedTo,
+    location,
+    phoneNumbers,
+  }) => {
     const newTaskData = {
       listId,
       title,
@@ -69,6 +79,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       createdBy,
       completedBy: null,
       completedAt: null,
+      location: location || undefined,
+      phoneNumbers: phoneNumbers || undefined,
       history: [
         createHistoryEntry("created", createdBy, `Task "${title}" created`),
       ],

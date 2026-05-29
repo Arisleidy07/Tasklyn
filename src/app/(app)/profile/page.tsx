@@ -1,18 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { updateUser as updateUserInFirestore } from "@/lib/firestore";
-import { uploadProfilePhoto, prepareImageFile } from "@/lib/storage";
+import {
+  uploadProfilePhoto,
+  prepareImageFile,
+  deleteProfilePhoto,
+} from "@/lib/storage";
 import ProfileHeader from "./header";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
-import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
+import PhotoCropperModal from "@/components/profile/PhotoCropperModal";
 import {
   Mail,
   Calendar,
@@ -28,10 +32,14 @@ import {
   ChevronRight,
   Edit2,
   Upload,
-  Camera,
   X,
+  Check,
+  Camera,
+  Trash2,
+  User,
+  Sparkles,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +54,8 @@ export default function ProfilePage() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!user) return null;
 
@@ -60,31 +70,59 @@ export default function ProfilePage() {
     setShowEditProfile(true);
   };
 
-  const handlePhotoUpload = async (file: File) => {
-    if (!file) return;
-    setIsUploadingPhoto(true);
-    try {
-      const preparedFile = await prepareImageFile(file);
-      const downloadURL = await uploadProfilePhoto(user.id, preparedFile);
-      setEditPhotoURL(downloadURL);
-    } catch (error) {
-      console.error("Error uploading photo:", error);
-      alert(error instanceof Error ? error.message : "Error al subir la foto");
-    } finally {
-      setIsUploadingPhoto(false);
-    }
-  };
-
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) handlePhotoUpload(file);
+    if (file) handleImageSelect(file);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
     const file = e.dataTransfer.files[0];
-    if (file) handlePhotoUpload(file);
+    if (file) handleImageSelect(file);
+  };
+
+  const handleImageSelect = async (file: File) => {
+    try {
+      await prepareImageFile(file);
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCropImageSrc(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      alert(
+        error instanceof Error ? error.message : "Error al procesar la imagen",
+      );
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    setIsUploadingPhoto(true);
+    try {
+      const downloadURL = await uploadProfilePhoto(
+        user.id,
+        croppedBlob,
+        `avatar-${Date.now()}.jpg`,
+      );
+      setEditPhotoURL(downloadURL);
+      setCropImageSrc(null);
+    } catch (error) {
+      console.error("Error uploading cropped photo:", error);
+      alert("Error al subir la foto recortada");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleDeletePhoto = async () => {
+    if (user.photoURL) {
+      await deleteProfilePhoto(user.photoURL);
+    }
+    setEditPhotoURL("");
+    const updates = { photoURL: "" };
+    await updateUserInFirestore(user.id, updates);
+    updateUser(updates);
   };
 
   const handleSaveProfile = async () => {
@@ -415,148 +453,236 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-      {/* Edit Profile Modal */}
-      <Modal
-        isOpen={showEditProfile}
-        onClose={() => setShowEditProfile(false)}
-        title="Editar perfil"
-        description="Actualiza tu nombre y foto de perfil"
-      >
-        <div className="space-y-4">
-          <Input
-            label="Nombre"
-            placeholder="Tu nombre"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSaveProfile()}
-            autoFocus
-          />
+      {/* Photo Cropper Modal */}
+      <PhotoCropperModal
+        imageSrc={cropImageSrc || ""}
+        isOpen={!!cropImageSrc}
+        onClose={() => setCropImageSrc(null)}
+        onCropComplete={handleCropComplete}
+        onDelete={editPhotoURL ? handleDeletePhoto : undefined}
+      />
 
-          {/* Photo Upload Area */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 block">
-              Foto de perfil
-            </label>
-
-            {/* Drag & Drop Upload Area */}
-            <div
-              className={cn(
-                "relative border-2 border-dashed rounded-xl p-6 text-center transition-colors cursor-pointer",
-                dragActive
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-300 hover:border-gray-400 bg-gray-50/50",
-                isUploadingPhoto && "opacity-50 pointer-events-none",
-              )}
-              onDragEnter={(e) => {
-                e.preventDefault();
-                setDragActive(true);
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault();
-                setDragActive(false);
-              }}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
-            >
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                disabled={isUploadingPhoto}
-              />
-
-              {isUploadingPhoto ? (
-                <div className="flex flex-col items-center gap-2">
-                  <div className="animate-spin h-6 w-6 border-2 border-blue-600 border-t-transparent rounded-full" />
-                  <p className="text-sm text-gray-600">Subiendo foto...</p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-                    <Upload size={20} className="text-gray-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-700 font-medium">
-                      Arrastra una imagen aquí
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      o haz clic para seleccionar
-                    </p>
-                  </div>
-                  <p className="text-xs text-gray-400">
-                    JPG, PNG o GIF • Máx. 5MB
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Preview */}
-            {editPhotoURL && (
-              <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                <img
-                  src={editPhotoURL}
-                  alt="Vista previa"
-                  className="w-12 h-12 rounded-full object-cover border border-gray-200"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-                <div className="flex-1">
-                  <p className="text-xs text-gray-700 font-medium">
-                    Vista previa
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Tu nueva foto de perfil
-                  </p>
-                </div>
-                <button
-                  onClick={() => setEditPhotoURL("")}
-                  className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            )}
-
-            {/* URL fallback */}
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="px-2 bg-white text-gray-500">
-                  o usa una URL
-                </span>
-              </div>
-            </div>
-            <Input
-              placeholder="https://example.com/avatar.png"
-              value={editPhotoURL}
-              onChange={(e) => setEditPhotoURL(e.target.value)}
-              className="text-xs"
-            />
-          </div>
-
-          <div className="flex gap-3">
-            <Button
-              variant="ghost"
+      {/* Premium Edit Profile Modal */}
+      <AnimatePresence>
+        {showEditProfile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[99999] flex items-center justify-center"
+          >
+            {/* Premium Backdrop with Gradient */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-blue-900/70 to-indigo-900/80 backdrop-blur-xl"
               onClick={() => setShowEditProfile(false)}
-              className="flex-1"
+            />
+
+            {/* Premium Modal Container */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className={cn(
+                "relative z-10 w-full max-w-md mx-4",
+                "bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden",
+                "border border-white/20",
+                "flex flex-col max-h-[90vh]",
+              )}
             >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleSaveProfile}
-              isLoading={isSavingProfile}
-              disabled={!editName.trim()}
-              className="flex-1"
-            >
-              Guardar cambios
-            </Button>
-          </div>
-        </div>
-      </Modal>
+              {/* Premium Header with Gradient */}
+              <div className="relative px-6 py-5 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700">
+                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImEiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0id2hpdGUiIHN0b3Atb3BhY2l0eT0iMC4xIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSJ0cmFuc3BhcmVudCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjYSkiLz48L3N2Zz4=')] opacity-50" />
+
+                <button
+                  onClick={() => setShowEditProfile(false)}
+                  className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
+
+                <div className="relative flex flex-col items-center text-center">
+                  <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 ring-4 ring-white/10">
+                    {editPhotoURL ? (
+                      <img
+                        src={editPhotoURL}
+                        alt="Avatar preview"
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    ) : (
+                      <User size={28} className="text-white" />
+                    )}
+                  </div>
+                  <h2 className="text-xl font-bold text-white">
+                    Editar perfil
+                  </h2>
+                  <p className="text-sm text-blue-100 mt-1">
+                    Personaliza tu información
+                  </p>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                {/* Name Input */}
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Sparkles size={14} className="text-blue-500" />
+                    Nombre completo
+                  </label>
+                  <Input
+                    placeholder="Tu nombre"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveProfile()}
+                    autoFocus
+                    className="text-base"
+                  />
+                </div>
+
+                {/* Photo Section */}
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Camera size={14} className="text-blue-500" />
+                    Foto de perfil
+                  </label>
+
+                  {/* Current Photo Preview */}
+                  {editPhotoURL && (
+                    <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+                      <div className="relative">
+                        <img
+                          src={editPhotoURL}
+                          alt="Current avatar"
+                          className="w-16 h-16 rounded-full object-cover ring-2 ring-white shadow-lg"
+                        />
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                          <Check size={12} className="text-white" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          Foto actual
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Esta es tu foto de perfil visible para todos
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleDeletePhoto}
+                        className="p-2 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
+                        title="Eliminar foto"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Upload Area */}
+                  <div
+                    className={cn(
+                      "relative border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer group",
+                      dragActive
+                        ? "border-blue-500 bg-blue-50 scale-[1.02]"
+                        : "border-gray-300 hover:border-blue-400 hover:bg-blue-50/30",
+                      isUploadingPhoto && "opacity-60 pointer-events-none",
+                    )}
+                    onDragEnter={(e) => {
+                      e.preventDefault();
+                      setDragActive(true);
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      setDragActive(false);
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      disabled={isUploadingPhoto}
+                    />
+
+                    {isUploadingPhoto ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="relative">
+                          <div className="w-12 h-12 rounded-full border-3 border-blue-200 border-t-blue-600 animate-spin" />
+                        </div>
+                        <p className="text-sm font-medium text-gray-700">
+                          Procesando imagen...
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Upload size={24} className="text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700">
+                            {editPhotoURL
+                              ? "Cambiar foto"
+                              : "Subir foto de perfil"}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Arrastra, pega o haz clic para seleccionar
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] px-2 py-1 bg-gray-100 rounded-full text-gray-500">
+                            JPG
+                          </span>
+                          <span className="text-[10px] px-2 py-1 bg-gray-100 rounded-full text-gray-500">
+                            PNG
+                          </span>
+                          <span className="text-[10px] px-2 py-1 bg-gray-100 rounded-full text-gray-500">
+                            Máx. 5MB
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Mobile Camera Hint */}
+                  <p className="text-xs text-gray-400 text-center">
+                    Compatible con cámara del teléfono, galería y desktop
+                  </p>
+                </div>
+              </div>
+
+              {/* Actions Footer */}
+              <div className="p-6 pt-4 border-t border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
+                <div className="flex gap-3">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowEditProfile(false)}
+                    className="flex-1 h-11"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleSaveProfile}
+                    isLoading={isSavingProfile}
+                    disabled={!editName.trim()}
+                    className="flex-1 h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                    icon={<Check size={16} />}
+                  >
+                    Guardar cambios
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }
