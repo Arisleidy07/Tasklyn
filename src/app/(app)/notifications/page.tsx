@@ -19,6 +19,7 @@ import {
   Check,
   X,
   Archive,
+  Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MemberRole, NotificationType } from "@/types";
@@ -36,6 +37,8 @@ const typeConfig: Record<
   },
   member_joined: { icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
   list_shared: { icon: Share2, color: "text-orange-600", bg: "bg-orange-50" },
+  reminder: { icon: Bell, color: "text-amber-600", bg: "bg-amber-50" },
+  due_soon: { icon: Clock, color: "text-red-600", bg: "bg-red-50" },
 };
 
 function timeAgo(dateStr: string): string {
