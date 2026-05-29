@@ -80,8 +80,11 @@ export function formatActivityDateTime(dateString: string): string {
 /**
  * Detect and convert phone numbers to clickable tel: links
  * Supports various formats: 8095551234, (809) 555-1234, +1-809-555-1234
+ * Premium styling - modern blue links without underline
  */
 export function linkifyPhoneNumbers(text: string): string {
+  if (!text) return "";
+
   // Phone number regex - matches various formats
   const phoneRegex =
     /(?:(?:\+?1[-.\s]?)?(?:\(?([0-9]{3})\)?[-.\s]?)?([0-9]{3})[-.\s]?([0-9]{4}))/g;
@@ -89,7 +92,7 @@ export function linkifyPhoneNumbers(text: string): string {
   return text.replace(phoneRegex, (match) => {
     // Clean the number for tel: link (remove all non-digits, keep + if present)
     const cleanNumber = match.replace(/[^\d+]/g, "");
-    return `<a href="tel:${cleanNumber}" class="text-blue-600 hover:text-blue-700 transition-colors font-medium no-underline hover:underline">${match}</a>`;
+    return `<a href="tel:${cleanNumber}" class="text-blue-600 hover:text-blue-800 transition-colors font-medium no-underline hover:no-underline">${match}</a>`;
   });
 }
 
@@ -97,17 +100,18 @@ export function linkifyPhoneNumbers(text: string): string {
  * Convert a location/address into a Google Maps link
  * If it's already a URL, makes it clickable
  * Otherwise, creates a Google Maps search URL
+ * Premium styling - modern blue links
  */
 export function linkifyLocation(location: string): string {
-  if (!location.trim()) return "";
+  if (!location || !location.trim()) return "";
 
   // Check if it's already a URL (Google Maps or any other)
   if (location.startsWith("http://") || location.startsWith("https://")) {
-    return `<a href="${location}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-700 transition-colors font-medium no-underline hover:underline">${location}</a>`;
+    return `<a href="${location}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 transition-colors font-medium no-underline hover:no-underline">${location}</a>`;
   }
 
   // Create Google Maps search URL for addresses
   const encodedLocation = encodeURIComponent(location);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
-  return `<a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-700 transition-colors font-medium no-underline hover:underline">${location}</a>`;
+  return `<a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 transition-colors font-medium no-underline hover:no-underline">${location}</a>`;
 }

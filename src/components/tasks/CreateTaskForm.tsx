@@ -6,7 +6,12 @@ import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
+import type { Task } from "@/types";
 import { Plus, X, Phone, MapPin, FileText } from "lucide-react";
+import TaskOptionsBar from "./TaskOptionsBar";
+import DueDatePicker from "./pickers/DueDatePicker";
+import ReminderPicker from "./pickers/ReminderPicker";
+import RecurrencePicker from "./pickers/RecurrencePicker";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface CreateTaskFormProps {
@@ -23,6 +28,17 @@ export default function CreateTaskForm({
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>([""]);
+  const [dueDate, setDueDate] = useState<string | null>(null);
+  const [dueTime, setDueTime] = useState<string | null>(null);
+  const [reminders, setReminders] = useState<
+    { id: string; at: string; sent: boolean }[]
+  >([]);
+  const [recurrence, setRecurrence] = useState<Task["recurrence"]>(null);
+
+  const [showReminderPicker, setShowReminderPicker] = useState(false);
+  const [showDueDatePicker, setShowDueDatePicker] = useState(false);
+  const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
+
   const { user } = useAuthStore();
   const { createTask } = useTaskStore();
 
@@ -54,12 +70,20 @@ export default function CreateTaskForm({
       createdBy: user.id,
       location: location.trim() || undefined,
       phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
+      dueDate,
+      dueTime,
+      reminders: reminders.length > 0 ? reminders : undefined,
+      recurrence,
     });
 
     setTitle("");
     setDescription("");
     setLocation("");
     setPhoneNumbers([""]);
+    setDueDate(null);
+    setDueTime(null);
+    setReminders([]);
+    setRecurrence(null);
     setIsOpen(false);
     onCreated?.();
   };
@@ -175,6 +199,39 @@ export default function CreateTaskForm({
           />
         </div>
 
+        {/* Options Bar */}
+        <TaskOptionsBar
+          dueDate={dueDate}
+          dueTime={dueTime}
+          reminders={reminders}
+          recurrence={recurrence}
+          onReminderClick={() => setShowReminderPicker(true)}
+          onDueDateClick={() => setShowDueDatePicker(true)}
+          onRecurrenceClick={() => setShowRecurrencePicker(true)}
+        />
+
+        {/* Pickers */}
+        <ReminderPicker
+          isOpen={showReminderPicker}
+          onClose={() => setShowReminderPicker(false)}
+          onSelect={(r) => setReminders(r)}
+          currentReminders={reminders}
+          taskDueDate={dueDate}
+          taskDueTime={dueTime}
+        />
+        <DueDatePicker
+          isOpen={showDueDatePicker}
+          onClose={() => setShowDueDatePicker(false)}
+          onSelect={(d) => setDueDate(d)}
+          selectedDate={dueDate}
+        />
+        <RecurrencePicker
+          isOpen={showRecurrencePicker}
+          onClose={() => setShowRecurrencePicker(false)}
+          onSelect={(r) => setRecurrence(r)}
+          currentRecurrence={recurrence}
+        />
+
         {/* Actions */}
         <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
           <Button
@@ -187,6 +244,10 @@ export default function CreateTaskForm({
               setDescription("");
               setLocation("");
               setPhoneNumbers([""]);
+              setDueDate(null);
+              setDueTime(null);
+              setReminders([]);
+              setRecurrence(null);
             }}
           >
             Cancelar

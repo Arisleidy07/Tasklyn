@@ -8,6 +8,7 @@ import { useTaskStore } from "@/stores/taskStore";
 import { useMemberProfiles } from "@/lib/useMemberProfiles";
 import Header from "@/components/layout/Header";
 import TaskItem from "@/components/tasks/TaskItem";
+import ArchivedTaskItem from "@/components/tasks/ArchivedTaskItem";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
@@ -23,7 +24,15 @@ import {
   AlertCircle,
   Settings2,
   Users,
+  Phone,
+  MapPin,
+  FileText,
+  X,
+  Archive,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
+import Textarea from "@/components/ui/Textarea";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { canInviteMembers, canShareList } from "@/lib/permissions";
@@ -45,7 +54,11 @@ export default function ListDetailPage() {
     "details",
   );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskDescription, setNewTaskDescription] = useState("");
+  const [newTaskLocation, setNewTaskLocation] = useState("");
+  const [newTaskPhones, setNewTaskPhones] = useState<string[]>([""]);
 
   const list = getList(listId);
   const tasks = getTasksByList(listId);
@@ -78,18 +91,26 @@ export default function ListDetailPage() {
   // Subscribe to real-time Firestore profiles for all referenced users
   const memberProfiles = useMemberProfiles(allProfileIds);
 
+  // Active tasks only (exclude archived)
+  const activeTasks = useMemo(() => {
+    return tasks.filter((t) => t.status !== "archived");
+  }, [tasks]);
+
+  const archivedTasks = useMemo(() => {
+    return tasks.filter((t) => t.status === "archived");
+  }, [tasks]);
+
   // All useMemo hooks must be before any conditional returns
   const filteredTasks = useMemo(() => {
-    if (!tasks) return [];
     switch (filter) {
       case "pending":
-        return tasks.filter((t) => t.status === "pending");
+        return activeTasks.filter((t) => t.status === "pending");
       case "completed":
-        return tasks.filter((t) => t.status === "completed");
+        return activeTasks.filter((t) => t.status === "completed");
       default:
-        return tasks;
+        return activeTasks;
     }
-  }, [tasks, filter]);
+  }, [activeTasks, filter]);
 
   // Build memberNames using real Firestore profiles (with custom name fallback)
   const memberNames = useMemo(() => {
@@ -122,8 +143,11 @@ export default function ListDetailPage() {
   const canInvite = canInviteMembers(userMember?.role ?? null);
   const canShare = canShareList(userMember?.role ?? null);
 
-  const pendingCount = tasks.filter((t) => t.status === "pending").length;
-  const completedCount = tasks.filter((t) => t.status === "completed").length;
+  const pendingCount = activeTasks.filter((t) => t.status === "pending").length;
+  const completedCount = activeTasks.filter(
+    (t) => t.status === "completed",
+  ).length;
+  const archivedCount = archivedTasks.length;
 
   const handleDeleteList = async () => {
     await deleteList(listId);
@@ -132,13 +156,39 @@ export default function ListDetailPage() {
 
   const handleAddTask = async () => {
     if (!newTaskTitle.trim() || !user) return;
+
+    // Filter out empty phone numbers
+    const validPhones = newTaskPhones.filter((p) => p.trim());
+
     await createTask({
       listId,
       title: newTaskTitle.trim(),
+      description: newTaskDescription.trim(),
+      location: newTaskLocation.trim() || undefined,
+      phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
       createdBy: user.id,
     });
+
+    // Reset form
     setNewTaskTitle("");
+    setNewTaskDescription("");
+    setNewTaskLocation("");
+    setNewTaskPhones([""]);
     setShowAddTask(false);
+  };
+
+  const handleAddPhone = () => {
+    setNewTaskPhones([...newTaskPhones, ""]);
+  };
+
+  const handleRemovePhone = (index: number) => {
+    setNewTaskPhones(newTaskPhones.filter((_, i) => i !== index));
+  };
+
+  const handlePhoneChange = (index: number, value: string) => {
+    const newPhones = [...newTaskPhones];
+    newPhones[index] = value;
+    setNewTaskPhones(newPhones);
   };
 
   return (
@@ -211,7 +261,7 @@ export default function ListDetailPage() {
             {
               key: "all" as const,
               label: "Todas",
-              count: tasks.length,
+              count: activeTasks.length,
               Icon: null,
             },
             {
@@ -308,42 +358,187 @@ export default function ListDetailPage() {
             />
           )}
         </div>
+
+        {/* Archivados Section */}
+        {archivedCount > 0 && (
+          <div className="mt-8">
+            <button
+              onClick={() => setShowArchived(!showArchived)}
+              className="flex items-center gap-2 w-full text-left group"
+            >
+              <div className="flex items-center gap-2 flex-1">
+                <Archive size={16} className="text-gray-400" />
+                <h3 className="text-sm font-semibold text-gray-700">
+                  Archivados
+                </h3>
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-200 text-gray-500">
+                  {archivedCount}
+                </span>
+              </div>
+              <ChevronDown
+                size={14}
+                className={cn(
+                  "text-gray-400 transition-transform",
+                  showArchived && "rotate-180",
+                )}
+              />
+            </button>
+            <AnimatePresence>
+              {showArchived && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="space-y-2 pt-3">
+                    <AnimatePresence mode="popLayout">
+                      {archivedTasks.map((task) => (
+                        <ArchivedTaskItem
+                          key={task.id}
+                          task={task}
+                          role={userMember?.role || null}
+                          memberNames={memberNames}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
-      {/* Modal Añadir Tarea */}
+      {/* Modal Añadir Tarea - PREMIUM */}
       <Modal
         isOpen={showAddTask}
-        onClose={() => setShowAddTask(false)}
+        onClose={() => {
+          setShowAddTask(false);
+          // Reset form on close
+          setNewTaskTitle("");
+          setNewTaskDescription("");
+          setNewTaskLocation("");
+          setNewTaskPhones([""]);
+        }}
         title="Añadir nueva tarea"
       >
-        <div className="space-y-4">
-          <Input
-            label="Título de la tarea"
-            placeholder="¿Qué necesitas hacer?"
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                handleAddTask();
-              }
-            }}
-            autoFocus
-          />
-          <div className="flex gap-3">
+        <div className="space-y-5">
+          {/* Título de la tarea */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+              <span className="w-4 h-4 rounded bg-gray-100 flex items-center justify-center text-[10px]">
+                1
+              </span>
+              Título de la tarea
+            </label>
+            <Input
+              placeholder="Ej: Instalar router principal"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              autoFocus
+              className="h-11"
+            />
+          </div>
+
+          {/* Teléfonos dinámicos */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+              <Phone size={12} className="text-gray-400" />
+              Teléfonos de contacto
+            </label>
+            <AnimatePresence mode="popLayout">
+              {newTaskPhones.map((phone, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10, height: 0 }}
+                  className="flex items-center gap-2"
+                >
+                  <Input
+                    type="tel"
+                    placeholder={`Teléfono ${index + 1}`}
+                    value={phone}
+                    onChange={(e) => handlePhoneChange(index, e.target.value)}
+                    className="text-sm flex-1"
+                  />
+                  {newTaskPhones.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhone(index)}
+                      className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            <button
+              type="button"
+              onClick={handleAddPhone}
+              className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors mt-1"
+            >
+              <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center">
+                <Plus size={12} />
+              </div>
+              Agregar otro teléfono
+            </button>
+          </div>
+
+          {/* Ubicación */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+              <MapPin size={12} className="text-gray-400" />
+              Ubicación / Dirección
+            </label>
+            <Input
+              placeholder="Dirección o enlace de Google Maps"
+              value={newTaskLocation}
+              onChange={(e) => setNewTaskLocation(e.target.value)}
+              className="text-sm"
+            />
+          </div>
+
+          {/* Descripción */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+              <FileText size={12} className="text-gray-400" />
+              Descripción
+            </label>
+            <Textarea
+              placeholder="Detalles adicionales de la tarea..."
+              value={newTaskDescription}
+              onChange={(e) => setNewTaskDescription(e.target.value)}
+              rows={3}
+              className="text-sm resize-none"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-2 border-t border-gray-100">
             <Button
               variant="ghost"
-              onClick={() => setShowAddTask(false)}
-              className="flex-1"
+              onClick={() => {
+                setShowAddTask(false);
+                setNewTaskTitle("");
+                setNewTaskDescription("");
+                setNewTaskLocation("");
+                setNewTaskPhones([""]);
+              }}
+              className="flex-1 h-11"
             >
               Cancelar
             </Button>
             <Button
               onClick={handleAddTask}
               disabled={!newTaskTitle.trim()}
-              className="flex-1"
+              className="flex-1 h-11"
               icon={<Plus size={16} />}
             >
-              Añadir
+              Crear tarea
             </Button>
           </div>
         </div>

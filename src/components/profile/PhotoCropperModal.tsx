@@ -3,8 +3,8 @@
 import React, { useState, useCallback, useEffect } from "react";
 import Cropper from "react-easy-crop";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ZoomIn, ZoomOut, Check, Trash2, User } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { X, ZoomIn, ZoomOut, Check, Trash2, User, Move } from "lucide-react";
+import { createPortal } from "react-dom";
 
 interface PhotoCropperModalProps {
   imageSrc: string;
@@ -31,6 +31,22 @@ export default function PhotoCropperModal({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Reset state when opening
+  useEffect(() => {
+    if (isOpen) {
+      setCrop({ x: 0, y: 0 });
+      setZoom(1);
+      setCroppedAreaPixels(null);
+      setPreviewUrl(null);
+    }
+  }, [isOpen, imageSrc]);
 
   const onCropCompleteCallback = useCallback(
     (_: Area, croppedAreaPixels: Area) => {
@@ -46,8 +62,8 @@ export default function PhotoCropperModal({
     }
   }, [croppedAreaPixels, imageSrc]);
 
-  const handleZoomIn = () => setZoom((z) => Math.min(z + 0.1, 3));
-  const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 1));
+  const handleZoomIn = () => setZoom((z) => Math.min(z + 0.2, 3));
+  const handleZoomOut = () => setZoom((z) => Math.max(z - 0.2, 1));
 
   const createCroppedImage = async (): Promise<Blob> => {
     if (!croppedAreaPixels) throw new Error("No crop area selected");
@@ -74,203 +90,212 @@ export default function PhotoCropperModal({
     onClose();
   };
 
-  if (!isOpen) return null;
+  // Prevent body scroll when open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
-  return (
+  if (!mounted || !isOpen) return null;
+
+  const content = (
     <AnimatePresence>
       {isOpen && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100000] flex items-center justify-center"
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-[2147483647] flex flex-col"
+          style={{ isolation: "isolate" }}
         >
-          {/* Dark overlay - ENCIMA DE TODO */}
+          {/* Fullscreen dark overlay - ABSOLUTE BLACK */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/80"
+            className="absolute inset-0 bg-black"
             onClick={onClose}
           />
 
-          {/* Main Container */}
+          {/* Header - Floating */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className={cn(
-              "relative z-10 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-5xl",
-              "md:rounded-2xl overflow-hidden",
-              "flex flex-col md:flex-row bg-white",
-            )}
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="relative z-10 flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4"
           >
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
-            >
-              <X size={20} />
-            </button>
-
-            {/* Left side - Cropper */}
-            <div className="relative flex-1 min-h-[50vh] md:min-h-[500px] bg-gray-900">
-              <Cropper
-                image={imageSrc}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={onCropCompleteCallback}
-                cropShape="round"
-                showGrid={false}
-                style={{
-                  containerStyle: {
-                    background: "#111827",
-                  },
-                  cropAreaStyle: {
-                    border: "2px solid white",
-                    boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.7)",
-                  },
-                }}
-              />
-
-              {/* Zoom Controls - floating */}
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/60 rounded-full px-4 py-2">
-                <button
-                  onClick={handleZoomOut}
-                  className="p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
-                  disabled={zoom <= 1}
-                >
-                  <ZoomOut size={18} />
-                </button>
-                <span className="text-sm text-white/90 font-medium min-w-[50px] text-center">
-                  {Math.round(zoom * 100)}%
-                </span>
-                <button
-                  onClick={handleZoomIn}
-                  className="p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
-                  disabled={zoom >= 3}
-                >
-                  <ZoomIn size={18} />
-                </button>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                <Move size={16} className="text-white/70" />
               </div>
-            </div>
-
-            {/* Right side - Preview & Controls */}
-            <div className="w-full md:w-[320px] bg-white flex flex-col">
-              {/* Header */}
-              <div className="px-6 py-4 border-b border-gray-100">
-                <h3 className="text-base font-semibold text-gray-900">
+              <div>
+                <h2 className="text-white font-semibold text-sm sm:text-base">
                   Ajustar foto
-                </h3>
-                <p className="text-sm text-gray-500 mt-0.5">
-                  Mueve y haz zoom para ajustar
+                </h2>
+                <p className="text-white/50 text-xs hidden sm:block">
+                  Arrastra y haz zoom para ajustar
                 </p>
               </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 sm:p-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            >
+              <X size={18} className="sm:w-5 sm:h-5" />
+            </button>
+          </motion.div>
 
-              {/* Preview Section */}
-              <div className="flex-1 p-6">
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
-                      Vista previa
-                    </p>
-                    <div className="flex justify-center">
-                      <div className="relative">
-                        {previewUrl ? (
-                          <img
-                            src={previewUrl}
-                            alt="Preview"
-                            className="w-32 h-32 rounded-full object-cover ring-4 ring-gray-100"
-                          />
-                        ) : (
-                          <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center ring-4 ring-gray-50">
-                            <User size={40} className="text-gray-300" />
-                          </div>
-                        )}
-                        <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-white">
-                          <Check size={14} className="text-white" />
-                        </div>
-                      </div>
+          {/* Main Cropper Area */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="relative flex-1 min-h-0"
+          >
+            <Cropper
+              image={imageSrc}
+              crop={crop}
+              zoom={zoom}
+              aspect={1}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={onCropCompleteCallback}
+              cropShape="round"
+              showGrid={true}
+              style={{
+                containerStyle: {
+                  background: "#000000",
+                  width: "100%",
+                  height: "100%",
+                },
+                cropAreaStyle: {
+                  border: "3px solid rgba(255, 255, 255, 0.9)",
+                  boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.6)",
+                },
+                mediaStyle: {
+                  transition: "transform 0.1s ease-out",
+                },
+              }}
+            />
+
+            {/* Zoom Controls - Bottom Center */}
+            <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/70 backdrop-blur-md rounded-full px-3 py-2 sm:px-4 sm:py-2.5 border border-white/10">
+              <button
+                onClick={handleZoomOut}
+                disabled={zoom <= 1}
+                className="p-2 sm:p-2.5 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
+              >
+                <ZoomOut size={16} className="sm:w-[18px] sm:h-[18px]" />
+              </button>
+              <span className="text-xs sm:text-sm text-white/90 font-medium min-w-[40px] sm:min-w-[50px] text-center">
+                {Math.round(zoom * 100)}%
+              </span>
+              <button
+                onClick={handleZoomIn}
+                disabled={zoom >= 3}
+                className="p-2 sm:p-2.5 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
+              >
+                <ZoomIn size={16} className="sm:w-[18px] sm:h-[18px]" />
+              </button>
+            </div>
+
+            {/* Preview Circle - Bottom Right on Desktop */}
+            <div className="hidden md:flex absolute bottom-6 right-6 flex-col items-center gap-3">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-white/20 bg-gray-800">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User size={28} className="text-gray-500" />
                     </div>
-                    <p className="text-xs text-gray-400 text-center mt-3">
-                      Así se verá tu foto de perfil
-                    </p>
-                  </div>
+                  )}
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-black">
+                  <Check size={12} className="text-white" />
+                </div>
+              </div>
+              <span className="text-[10px] text-white/50 uppercase tracking-wider">
+                Preview
+              </span>
+            </div>
+          </motion.div>
 
-                  {/* Current photo */}
-                  {currentPhotoURL && (
-                    <div className="pt-4 border-t border-gray-100">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
-                        Foto actual
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={currentPhotoURL}
-                          alt="Current"
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-600">
-                            Se reemplazará al guardar
-                          </p>
-                        </div>
-                      </div>
+          {/* Bottom Actions Panel */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="relative z-10 bg-gradient-to-t from-black via-black/95 to-transparent"
+          >
+            {/* Mobile Preview */}
+            <div className="md:hidden flex justify-center pt-4 pb-2">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full overflow-hidden ring-3 ring-white/20 bg-gray-800">
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User size={24} className="text-gray-500" />
                     </div>
                   )}
                 </div>
               </div>
+            </div>
 
-              {/* Actions */}
-              <div className="p-6 border-t border-gray-100 space-y-3">
+            {/* Action Buttons */}
+            <div className="px-4 py-4 sm:px-6 sm:py-5 flex items-center justify-between gap-4">
+              {onDelete && currentPhotoURL && (
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center gap-2 px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors text-sm font-medium"
+                >
+                  <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  <span className="hidden sm:inline">Eliminar</span>
+                </button>
+              )}
+
+              <div className="flex-1" />
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition-colors text-sm font-medium"
+                >
+                  Cancelar
+                </button>
                 <button
                   onClick={handleSave}
-                  disabled={isProcessing}
-                  className={cn(
-                    "w-full flex items-center justify-center gap-2 px-4 py-3",
-                    "bg-gray-900 hover:bg-gray-800 text-white rounded-xl",
-                    "text-sm font-medium transition-colors",
-                    "disabled:opacity-50 disabled:cursor-not-allowed",
-                  )}
+                  disabled={isProcessing || !previewUrl}
+                  className="flex items-center gap-2 px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-white text-black hover:bg-white/90 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-white/10"
                 >
                   {isProcessing ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Guardando...
+                      <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                      <span>Guardando...</span>
                     </>
                   ) : (
                     <>
-                      <Check size={16} />
-                      Guardar foto
+                      <Check size={16} className="sm:w-[18px] sm:h-[18px]" />
+                      <span>Guardar</span>
                     </>
                   )}
-                </button>
-
-                {onDelete && (
-                  <button
-                    onClick={handleDelete}
-                    className={cn(
-                      "w-full flex items-center justify-center gap-2 px-4 py-3",
-                      "text-red-600 hover:bg-red-50 rounded-xl",
-                      "text-sm font-medium transition-colors",
-                    )}
-                  >
-                    <Trash2 size={16} />
-                    Eliminar foto
-                  </button>
-                )}
-
-                <button
-                  onClick={onClose}
-                  className={cn(
-                    "w-full px-4 py-3 text-gray-500 hover:text-gray-700",
-                    "text-sm font-medium transition-colors",
-                  )}
-                >
-                  Cancelar
                 </button>
               </div>
             </div>
@@ -279,6 +304,8 @@ export default function PhotoCropperModal({
       )}
     </AnimatePresence>
   );
+
+  return createPortal(content, document.body);
 }
 
 // Generate preview URL from crop area

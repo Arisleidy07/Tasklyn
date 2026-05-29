@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
@@ -58,6 +59,11 @@ export default function ProfilePage() {
   const [dragActive, setDragActive] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (!user) return null;
 
@@ -502,155 +508,173 @@ export default function ProfilePage() {
         currentPhotoURL={editPhotoURL}
       />
 
-      {/* Edit Profile Modal - DISEÑO MINIMALISTA EJECUTIVO */}
-      <AnimatePresence>
-        {showEditProfile && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[99990] flex items-center justify-center p-4"
-          >
-            {/* Simple dark overlay - NO blur exagerado */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/50"
-              onClick={() => setShowEditProfile(false)}
-            />
-
-            {/* Clean modal - estilo Linear/Stripe */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 10 }}
-              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className={cn(
-                "relative z-10 w-full max-w-[420px]",
-                "bg-white rounded-2xl shadow-xl overflow-hidden",
-                "flex flex-col max-h-[85vh]",
-              )}
-            >
-              {/* Clean header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h2 className="text-base font-semibold text-gray-900">
-                  Editar perfil
-                </h2>
-                <button
+      {/* Edit Profile Modal - DISEÑO PREMIUM MINIMALISTA */}
+      {mounted &&
+        showEditProfile &&
+        !cropImageSrc &&
+        createPortal(
+          <AnimatePresence>
+            {showEditProfile && !cropImageSrc && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[99990] flex items-center justify-center p-4"
+              >
+                {/* Overlay elegante - sutil */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-gray-950/40 backdrop-blur-sm"
                   onClick={() => setShowEditProfile(false)}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </div>
+                />
 
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-5">
-                {/* Photo - Top centered */}
-                <div className="flex flex-col items-center">
-                  <div className="relative">
-                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                      {editPhotoURL ? (
-                        <img
-                          src={editPhotoURL}
-                          alt="Profile"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User size={32} className="text-gray-400" />
-                      )}
-                    </div>
+                {/* Modal premium - estilo Linear/Notion */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                  className={cn(
+                    "relative z-10 w-full max-w-[400px]",
+                    "bg-white rounded-2xl shadow-2xl overflow-hidden",
+                    "border border-gray-100",
+                    "flex flex-col max-h-[90vh]",
+                  )}
+                >
+                  {/* Header minimalista */}
+                  <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                    <h2 className="text-base font-semibold text-gray-900 tracking-tight">
+                      Editar perfil
+                    </h2>
                     <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="absolute -bottom-1 -right-1 w-7 h-7 bg-gray-900 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
+                      onClick={() => setShowEditProfile(false)}
+                      className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                     >
-                      <Camera size={14} />
+                      <X size={18} />
                     </button>
                   </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                  <p className="text-xs text-gray-500 mt-2">
-                    {editPhotoURL ? "Cambiar foto" : "Agregar foto"}
-                  </p>
-                </div>
 
-                {/* Name Input */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-700">
-                    Nombre
-                  </label>
-                  <Input
-                    placeholder="Tu nombre completo"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSaveProfile()}
-                    autoFocus
-                    className="h-11"
-                  />
-                </div>
+                  {/* Content - espaciado premium */}
+                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    {/* Photo Section - elegante */}
+                    <div className="flex flex-col items-center">
+                      <div className="relative group">
+                        <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden ring-4 ring-gray-50 group-hover:ring-gray-100 transition-all">
+                          {editPhotoURL ? (
+                            <img
+                              src={editPhotoURL}
+                              alt="Profile"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User size={36} className="text-gray-300" />
+                          )}
+                        </div>
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="absolute -bottom-1 -right-1 w-8 h-8 bg-gray-900 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+                        >
+                          <Camera size={14} />
+                        </button>
+                      </div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                      <p className="text-xs text-gray-500 mt-3 font-medium">
+                        {editPhotoURL
+                          ? "Cambiar foto de perfil"
+                          : "Agregar foto de perfil"}
+                      </p>
 
-                {/* Email (read only) */}
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-gray-700">
-                    Correo electrónico
-                  </label>
-                  <div className="h-11 px-3 flex items-center bg-gray-50 rounded-lg text-sm text-gray-500 border border-gray-200">
-                    {user.email}
+                      {/* Eliminar foto */}
+                      {editPhotoURL && (
+                        <button
+                          onClick={handleDeletePhoto}
+                          className="mt-2 text-xs text-red-500 hover:text-red-600 font-medium transition-colors flex items-center gap-1"
+                        >
+                          <Trash2 size={12} />
+                          Eliminar foto
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Divider */}
+                    <div className="h-px bg-gray-100" />
+
+                    {/* Name Input - limpio */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Nombre completo
+                      </label>
+                      <Input
+                        placeholder="Tu nombre"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" && handleSaveProfile()
+                        }
+                        autoFocus
+                        className="h-11 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                      />
+                    </div>
+
+                    {/* Email (read only) - sutil */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-500">
+                        Correo electrónico
+                      </label>
+                      <div className="h-11 px-3 flex items-center bg-gray-100 rounded-lg text-sm text-gray-500 border border-transparent">
+                        {user.email}
+                      </div>
+                      <p className="text-[11px] text-gray-400">
+                        El correo no se puede cambiar
+                      </p>
+                    </div>
                   </div>
-                </div>
 
-                {/* Delete photo link */}
-                {editPhotoURL && (
-                  <button
-                    onClick={handleDeletePhoto}
-                    className="text-sm text-red-600 hover:text-red-700 font-medium transition-colors"
-                  >
-                    Eliminar foto de perfil
-                  </button>
-                )}
-              </div>
-
-              {/* Actions */}
-              <div className="p-5 pt-4 border-t border-gray-100 bg-gray-50/50">
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setShowEditProfile(false)}
-                    className="flex-1 h-10 px-4 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={!editName.trim() || isSavingProfile}
-                    className={cn(
-                      "flex-1 h-10 px-4 rounded-lg text-sm font-medium text-white transition-colors",
-                      !editName.trim() || isSavingProfile
-                        ? "bg-gray-300 cursor-not-allowed"
-                        : "bg-gray-900 hover:bg-gray-800",
-                    )}
-                  >
-                    {isSavingProfile ? (
-                      <span className="flex items-center justify-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Guardando...
-                      </span>
-                    ) : (
-                      "Guardar cambios"
-                    )}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
+                  {/* Actions - modernas */}
+                  <div className="p-6 pt-4 border-t border-gray-100 bg-gray-50/50">
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setShowEditProfile(false)}
+                        className="flex-1 h-11 px-4 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleSaveProfile}
+                        disabled={!editName.trim() || isSavingProfile}
+                        className={cn(
+                          "flex-1 h-11 px-4 rounded-xl text-sm font-medium text-white transition-all",
+                          !editName.trim() || isSavingProfile
+                            ? "bg-gray-300 cursor-not-allowed"
+                            : "bg-gray-900 hover:bg-gray-800 hover:shadow-lg active:scale-[0.98]",
+                        )}
+                      >
+                        {isSavingProfile ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Guardando...
+                          </span>
+                        ) : (
+                          "Guardar cambios"
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
         )}
-      </AnimatePresence>
     </>
   );
 }

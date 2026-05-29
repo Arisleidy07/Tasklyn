@@ -5,7 +5,15 @@ import { Task, MemberRole } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import { canCompleteTask, canDeleteTask, canEditTask } from "@/lib/permissions";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import Modal from "@/components/ui/Modal";
+import Input from "@/components/ui/Input";
+import Textarea from "@/components/ui/Textarea";
+import Button from "@/components/ui/Button";
+import TaskOptionsBar from "./TaskOptionsBar";
+import DueDatePicker from "./pickers/DueDatePicker";
+import ReminderPicker from "./pickers/ReminderPicker";
+import RecurrencePicker from "./pickers/RecurrencePicker";
 import {
   CheckCircle2,
   Circle,
@@ -18,6 +26,14 @@ import {
   Phone,
   MapPin,
   FileText,
+  Edit2,
+  Archive,
+  Plus,
+  X,
+  AlertTriangle,
+  Bell,
+  CalendarDays,
+  Repeat,
 } from "lucide-react";
 import {
   cn,
@@ -35,8 +51,31 @@ interface TaskItemProps {
 
 export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
   const [expanded, setExpanded] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Edit form state
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [editPhones, setEditPhones] = useState<string[]>([""]);
+  const [editDueDate, setEditDueDate] = useState<string | null>(null);
+  const [editDueTime, setEditDueTime] = useState<string | null>(null);
+  const [editReminders, setEditReminders] = useState<
+    { id: string; at: string; sent: boolean }[]
+  >([]);
+  const [editRecurrence, setEditRecurrence] =
+    useState<Task["recurrence"]>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  // Picker visibility
+  const [showReminderPicker, setShowReminderPicker] = useState(false);
+  const [showDueDatePicker, setShowDueDatePicker] = useState(false);
+  const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
+
   const { user } = useAuthStore();
-  const { completeTask, uncompleteTask, deleteTask } = useTaskStore();
+  const { completeTask, uncompleteTask, deleteTask, updateTask, archiveTask } =
+    useTaskStore();
 
   const isCompleted = task.status === "completed";
   const canComplete = canCompleteTask(role);
@@ -55,199 +94,541 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
     }
   };
 
-  const handleDelete = () => {
-    if (!canDelete) return;
+  const handleOpenEdit = () => {
+    setEditTitle(task.title);
+    setEditDescription(task.description || "");
+    setEditLocation(task.location || "");
+    setEditPhones(task.phoneNumbers?.length ? [...task.phoneNumbers] : [""]);
+    setEditDueDate(task.dueDate || null);
+    setEditDueTime(task.dueTime || null);
+    setEditReminders(task.reminders || []);
+    setEditRecurrence(task.recurrence || null);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editTitle.trim() || !user) return;
+    setIsSavingEdit(true);
+    try {
+      const validPhones = editPhones.filter((p) => p.trim());
+      await updateTask(
+        task.id,
+        {
+          title: editTitle.trim(),
+          description: editDescription.trim(),
+          location: editLocation.trim() || undefined,
+          phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
+          dueDate: editDueDate,
+          dueTime: editDueTime,
+          reminders: editReminders.length > 0 ? editReminders : undefined,
+          recurrence: editRecurrence,
+        },
+        user.id,
+      );
+      setShowEditModal(false);
+    } catch (err) {
+      console.error("Error updating task:", err);
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  const handleArchive = () => {
+    if (!user) return;
+    archiveTask(task.id, user.id);
+  };
+
+  const handleConfirmDelete = () => {
     deleteTask(task.id);
+    setShowDeleteConfirm(false);
+  };
+
+  const handleAddPhone = () => setEditPhones([...editPhones, ""]);
+
+  const handleRemovePhone = (index: number) =>
+    setEditPhones(editPhones.filter((_, i) => i !== index));
+
+  const handlePhoneChange = (index: number, value: string) => {
+    const updated = [...editPhones];
+    updated[index] = value;
+    setEditPhones(updated);
   };
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8, scale: 0.97 }}
-      whileHover={{ y: -1, boxShadow: "0 4px 16px -4px rgba(0,0,0,0.07)" }}
-      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className={cn(
-        "group rounded-xl border transition-colors overflow-hidden",
-        isCompleted
-          ? "border-blue-200 bg-blue-50/30"
-          : "border-gray-200 bg-white hover:border-blue-200",
-      )}
-    >
-      <div className="flex items-start gap-3 p-4">
-        {/* Checkbox */}
-        <button
-          onClick={handleToggleComplete}
-          disabled={!canComplete}
-          className={cn(
-            "mt-0.5 flex-shrink-0 transition-colors cursor-pointer",
-            canComplete
-              ? "hover:text-blue-600"
-              : "cursor-not-allowed opacity-50",
-            isCompleted ? "text-blue-600" : "text-gray-300",
-          )}
-          title={
-            canComplete
-              ? isCompleted
-                ? "Reabrir tarea"
-                : "Completar tarea"
-              : "Sin permiso para completar tareas"
-          }
-        >
-          {isCompleted ? <CheckCircle2 size={20} /> : <Circle size={20} />}
-        </button>
+    <>
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -8, scale: 0.97 }}
+        whileHover={{ y: -1, boxShadow: "0 4px 16px -4px rgba(0,0,0,0.07)" }}
+        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        className={cn(
+          "group rounded-xl border transition-colors overflow-hidden",
+          isCompleted
+            ? "border-blue-200 bg-blue-50/30"
+            : "border-gray-200 bg-white hover:border-blue-200",
+        )}
+      >
+        <div className="flex items-start gap-3 p-4">
+          {/* Checkbox */}
+          <button
+            onClick={handleToggleComplete}
+            disabled={!canComplete}
+            className={cn(
+              "mt-0.5 flex-shrink-0 transition-colors cursor-pointer",
+              canComplete
+                ? "hover:text-blue-600"
+                : "cursor-not-allowed opacity-50",
+              isCompleted ? "text-blue-600" : "text-gray-300",
+            )}
+            title={
+              canComplete
+                ? isCompleted
+                  ? "Reabrir tarea"
+                  : "Completar tarea"
+                : "Sin permiso para completar tareas"
+            }
+          >
+            {isCompleted ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+          </button>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0 space-y-2">
-              {/* Tarea */}
-              <div className="flex items-start gap-2">
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5">
-                  Tarea:
-                </span>
-                <p
-                  className={cn(
-                    "text-sm font-medium transition-colors flex-1",
-                    isCompleted
-                      ? "text-gray-400 line-through"
-                      : "text-gray-900",
-                  )}
-                  dangerouslySetInnerHTML={{
-                    __html: linkifyPhoneNumbers(task.title),
-                  }}
-                />
-              </div>
-
-              {/* Teléfonos */}
-              {task.phoneNumbers && task.phoneNumbers.length > 0 && (
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0 space-y-2">
+                {/* Tarea */}
                 <div className="flex items-start gap-2">
-                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
-                    <Phone size={10} />
-                    Teléfonos:
-                  </span>
-                  <span
-                    className="text-sm text-gray-600 flex-1"
-                    dangerouslySetInnerHTML={{
-                      __html: task.phoneNumbers
-                        .map((phone) => linkifyPhoneNumbers(phone))
-                        .join(' <span class="text-gray-300">•</span> '),
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Ubicación */}
-              {task.location && (
-                <div className="flex items-start gap-2">
-                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
-                    <MapPin size={10} />
-                    Ubicación:
-                  </span>
-                  <span
-                    className="text-sm text-gray-600 flex-1"
-                    dangerouslySetInnerHTML={{
-                      __html: linkifyLocation(task.location),
-                    }}
-                  />
-                </div>
-              )}
-
-              {/* Descripción */}
-              {task.description && (
-                <div className="flex items-start gap-2">
-                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
-                    <FileText size={10} />
-                    Descripción:
+                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5">
+                    Tarea
                   </span>
                   <p
-                    className="text-sm text-gray-600 flex-1"
+                    className={cn(
+                      "text-sm font-medium transition-colors flex-1 leading-relaxed",
+                      isCompleted
+                        ? "text-gray-400 line-through"
+                        : "text-gray-900",
+                    )}
                     dangerouslySetInnerHTML={{
-                      __html: linkifyPhoneNumbers(task.description),
+                      __html: linkifyPhoneNumbers(task.title),
                     }}
                   />
                 </div>
-              )}
-            </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
-              <button
-                onClick={() => setExpanded(!expanded)}
-                className="p-2 sm:p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center active:scale-90"
-              >
-                {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-              {canDelete && (
+                {/* Teléfonos */}
+                {task.phoneNumbers && task.phoneNumbers.length > 0 && (
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                      <Phone size={10} className="text-blue-500" />
+                      Teléfonos
+                    </span>
+                    <span
+                      className="text-sm flex-1 leading-relaxed"
+                      dangerouslySetInnerHTML={{
+                        __html: task.phoneNumbers
+                          .map((phone) => linkifyPhoneNumbers(phone))
+                          .join(' <span class="text-gray-300 mx-1">•</span> '),
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Ubicación */}
+                {task.location && (
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                      <MapPin size={10} className="text-blue-500" />
+                      Ubicación
+                    </span>
+                    <span
+                      className="text-sm flex-1 leading-relaxed"
+                      dangerouslySetInnerHTML={{
+                        __html: linkifyLocation(task.location),
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Descripción */}
+                {task.description && (
+                  <div className="flex items-start gap-2">
+                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                      <FileText size={10} className="text-gray-400" />
+                      Descripción
+                    </span>
+                    <p
+                      className="text-sm text-gray-700 flex-1 leading-relaxed"
+                      dangerouslySetInnerHTML={{
+                        __html: linkifyPhoneNumbers(task.description),
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
+                {canEdit && (
+                  <button
+                    onClick={handleOpenEdit}
+                    className="p-2 sm:p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center active:scale-90"
+                    title="Editar tarea"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                )}
+                {canEdit && (
+                  <button
+                    onClick={handleArchive}
+                    className="p-2 sm:p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center active:scale-90"
+                    title="Archivar tarea"
+                  >
+                    <Archive size={14} />
+                  </button>
+                )}
                 <button
-                  onClick={handleDelete}
-                  className="p-2 sm:p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center active:scale-90"
+                  onClick={() => setExpanded(!expanded)}
+                  className="p-2 sm:p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center active:scale-90"
+                  title="Ver actividad"
                 >
-                  <Trash2 size={14} />
+                  {expanded ? (
+                    <ChevronUp size={14} />
+                  ) : (
+                    <ChevronDown size={14} />
+                  )}
                 </button>
+                {canDelete && (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="p-2 sm:p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center active:scale-90"
+                    title="Eliminar tarea"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Meta */}
+            <div className="flex items-center flex-wrap gap-3 mt-3">
+              <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                <Clock size={10} />
+                {timeAgo(task.createdAt)}
+              </span>
+              {task.assignedTo && (
+                <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                  <User size={10} />
+                  {getUserName(task.assignedTo)}
+                </span>
+              )}
+              {isCompleted && task.completedBy && (
+                <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                  <CheckCircle2 size={8} />
+                  Completado por {getUserName(task.completedBy)} •{" "}
+                  {formatActivityDateTime(task.completedAt || task.createdAt)}
+                </span>
+              )}
+              {/* Due date badge */}
+              {task.dueDate && !isCompleted && (
+                <DueDateBadge dueDate={task.dueDate} dueTime={task.dueTime} />
+              )}
+              {/* Reminder badge */}
+              {task.reminders && task.reminders.length > 0 && !isCompleted && (
+                <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+                  <Bell size={8} />
+                  Recordatorio
+                </span>
+              )}
+              {/* Recurrence badge */}
+              {task.recurrence && (
+                <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-600">
+                  <Repeat size={8} />
+                  {getRecurrenceShortLabel(task.recurrence)}
+                </span>
               )}
             </div>
-          </div>
-
-          {/* Meta */}
-          <div className="flex items-center flex-wrap gap-3 mt-3">
-            <span className="flex items-center gap-1 text-[11px] text-gray-400">
-              <Clock size={10} />
-              {timeAgo(task.createdAt)}
-            </span>
-            {task.assignedTo && (
-              <span className="flex items-center gap-1 text-[11px] text-gray-400">
-                <User size={10} />
-                {getUserName(task.assignedTo)}
-              </span>
-            )}
-            {isCompleted && task.completedBy && (
-              <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                <CheckCircle2 size={8} />
-                Completado por {getUserName(task.completedBy)} •{" "}
-                {formatActivityDateTime(task.completedAt || task.createdAt)}
-              </span>
-            )}
           </div>
         </div>
-      </div>
 
-      {/* Expanded: History */}
-      {expanded && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          className="border-t border-gray-100"
-        >
-          <div className="p-4 pt-3">
-            <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-3">
-              <History size={12} />
-              Actividad
-            </p>
-            <div className="space-y-2">
-              {task.history.slice(-5).map((entry) => (
-                <div
-                  key={entry.id}
-                  className="flex items-start gap-2 text-[11px] text-gray-500"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5 flex-shrink-0" />
-                  <span className="leading-relaxed">
-                    <span className="font-medium text-gray-700">
-                      {getUserName(entry.performedBy)}
-                    </span>{" "}
-                    {entry.details || entry.action}
-                    <span className="text-gray-400 ml-1">
-                      · {formatActivityDateTime(entry.performedAt)}
+        {/* Expanded: History */}
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-gray-100"
+          >
+            <div className="p-4 pt-3">
+              <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-3">
+                <History size={12} />
+                Actividad
+              </p>
+              <div className="space-y-2">
+                {task.history.slice(-8).map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="flex items-start gap-2 text-[11px] text-gray-500"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5 flex-shrink-0" />
+                    <span className="leading-relaxed">
+                      <span className="font-semibold text-gray-700">
+                        {getUserName(entry.performedBy)}
+                      </span>{" "}
+                      {entry.details || entry.action}
+                      <span className="text-gray-400 ml-1">
+                        · {formatActivityDateTime(entry.performedAt)}
+                      </span>
                     </span>
-                  </span>
-                </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </motion.div>
+
+      {/* ── Edit Modal ── */}
+      <Modal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Editar tarea"
+      >
+        <div className="space-y-5">
+          {/* Título */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+              Título de la tarea
+            </label>
+            <Input
+              placeholder="Título de la tarea"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              autoFocus
+              className="h-11"
+            />
+          </div>
+
+          {/* Teléfonos dinámicos */}
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+              <Phone size={12} className="text-gray-400" />
+              Teléfonos de contacto
+            </label>
+            <AnimatePresence mode="popLayout">
+              {editPhones.map((phone, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 10, height: 0 }}
+                  className="flex items-center gap-2"
+                >
+                  <Input
+                    type="tel"
+                    placeholder={`Teléfono ${index + 1}`}
+                    value={phone}
+                    onChange={(e) => handlePhoneChange(index, e.target.value)}
+                    className="flex-1"
+                  />
+                  {editPhones.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhone(index)}
+                      className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </motion.div>
               ))}
+            </AnimatePresence>
+            <button
+              type="button"
+              onClick={handleAddPhone}
+              className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center">
+                <Plus size={12} />
+              </div>
+              Agregar teléfono
+            </button>
+          </div>
+
+          {/* Ubicación */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+              <MapPin size={12} className="text-gray-400" />
+              Ubicación / Dirección
+            </label>
+            <Input
+              placeholder="Dirección o enlace de Google Maps"
+              value={editLocation}
+              onChange={(e) => setEditLocation(e.target.value)}
+            />
+          </div>
+
+          {/* Descripción */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
+              <FileText size={12} className="text-gray-400" />
+              Descripción
+            </label>
+            <Textarea
+              placeholder="Detalles adicionales de la tarea..."
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              rows={3}
+              className="resize-none"
+            />
+          </div>
+
+          {/* Options Bar */}
+          <div className="pt-1">
+            <TaskOptionsBar
+              dueDate={editDueDate}
+              dueTime={editDueTime}
+              reminders={editReminders}
+              recurrence={editRecurrence}
+              onReminderClick={() => setShowReminderPicker(true)}
+              onDueDateClick={() => setShowDueDatePicker(true)}
+              onRecurrenceClick={() => setShowRecurrencePicker(true)}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-2 border-t border-gray-100">
+            <Button
+              variant="ghost"
+              onClick={() => setShowEditModal(false)}
+              className="flex-1 h-11"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={!editTitle.trim() || isSavingEdit}
+              isLoading={isSavingEdit}
+              className="flex-1 h-11"
+            >
+              Guardar cambios
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Pickers */}
+      <ReminderPicker
+        isOpen={showReminderPicker}
+        onClose={() => setShowReminderPicker(false)}
+        onSelect={(r) => setEditReminders(r)}
+        currentReminders={editReminders}
+        taskDueDate={editDueDate}
+        taskDueTime={editDueTime}
+      />
+      <DueDatePicker
+        isOpen={showDueDatePicker}
+        onClose={() => setShowDueDatePicker(false)}
+        onSelect={(d) => setEditDueDate(d)}
+        selectedDate={editDueDate}
+      />
+      <RecurrencePicker
+        isOpen={showRecurrencePicker}
+        onClose={() => setShowRecurrencePicker(false)}
+        onSelect={(r) => setEditRecurrence(r)}
+        currentRecurrence={editRecurrence}
+      />
+
+      {/* ── Delete Confirmation Modal ── */}
+      <Modal
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        title="Eliminar tarea"
+      >
+        <div className="space-y-4">
+          <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-100">
+            <AlertTriangle
+              size={18}
+              className="text-red-500 flex-shrink-0 mt-0.5"
+            />
+            <div>
+              <p className="text-sm font-semibold text-red-800">
+                Esta acción es permanente
+              </p>
+              <p className="text-sm text-red-600 mt-0.5 leading-relaxed">
+                ¿Estás seguro de que deseas eliminar esta tarea? No podrás
+                recuperarla.
+              </p>
             </div>
           </div>
-        </motion.div>
-      )}
-    </motion.div>
+          <p className="text-sm text-gray-600 font-medium line-clamp-2 px-1">
+            &quot;{task.title}&quot;
+          </p>
+          <div className="flex gap-3 pt-1">
+            <Button
+              variant="ghost"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleConfirmDelete}
+              className="flex-1"
+            >
+              Eliminar definitivamente
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </>
   );
+}
+
+// ---- Helper Components & Functions ----
+
+function DueDateBadge({
+  dueDate,
+  dueTime,
+}: {
+  dueDate: string;
+  dueTime?: string | null;
+}) {
+  const now = new Date();
+  const due = new Date(dueDate + (dueTime ? `T${dueTime}` : "T23:59:59"));
+  const diffHours = (due.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+  let bgClass = "bg-gray-100 text-gray-600";
+  let label = dueTime ? `${dueDate} · ${dueTime}` : dueDate;
+
+  if (diffHours < 0) {
+    bgClass = "bg-red-50 text-red-600";
+    label = "Vencida";
+  } else if (diffHours <= 24) {
+    bgClass = "bg-amber-50 text-amber-700";
+    label = dueTime ? `Hoy · ${dueTime}` : "Vence hoy";
+  } else if (diffHours <= 48) {
+    label = "Mañana";
+  }
+
+  return (
+    <span
+      className={`flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${bgClass}`}
+    >
+      <CalendarDays size={8} />
+      {label}
+    </span>
+  );
+}
+
+function getRecurrenceShortLabel(rec: NonNullable<Task["recurrence"]>): string {
+  const labels: Record<string, string> = {
+    daily: "Diario",
+    weekdays: "Laboral",
+    weekly: "Semanal",
+    monthly: "Mensual",
+    yearly: "Anual",
+    custom: "Custom",
+  };
+  return labels[rec.type] || "Repetir";
 }

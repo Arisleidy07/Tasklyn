@@ -6,9 +6,36 @@ export type Plan = "FREE" | "PRO";
 
 export type MemberRole = "owner" | "editor" | "viewer";
 
-export type TaskStatus = "pending" | "completed";
+export type TaskStatus = "pending" | "completed" | "archived";
 
 export type ListType = "personal" | "shared";
+
+// ---- Recurrence ----
+export type RecurrenceType =
+  | "daily"
+  | "weekdays"
+  | "weekly"
+  | "monthly"
+  | "yearly"
+  | "custom";
+
+export interface RecurrenceConfig {
+  type: RecurrenceType;
+  interval?: number; // every N days/weeks/months
+  daysOfWeek?: number[]; // 0=Sunday, 1=Monday ... 6=Saturday
+  endDate?: string | null;
+  occurrences?: number | null;
+}
+
+// ---- Reminder ----
+export interface TaskReminder {
+  id: string;
+  at: string; // ISO datetime
+  sent: boolean;
+}
+
+// ---- Due Date Status ----
+export type DueStatus = "overdue" | "dueSoon" | "upcoming" | "noDue";
 
 // ---- User ----
 export interface User {
@@ -43,14 +70,23 @@ export interface Task {
   title: string;
   description: string;
   status: TaskStatus;
-  assignedTo: string | null; // userId or null
-  createdBy: string; // userId
-  completedBy: string | null; // userId - CRITICAL: tracks who completed
+  assignedTo: string | null;
+  createdBy: string;
+  completedBy: string | null;
   createdAt: string;
   completedAt: string | null;
   history: TaskHistoryEntry[];
-  phoneNumbers?: string[]; // Array of phone numbers
-  location?: string; // Location/address or Google Maps link
+  phoneNumbers?: string[];
+  location?: string;
+  archivedAt?: string | null;
+  archivedBy?: string | null;
+  // ---- NEW: Due Date & Reminder & Recurrence ----
+  dueDate?: string | null; // ISO date string (YYYY-MM-DD)
+  dueTime?: string | null; // HH:mm
+  reminders?: TaskReminder[];
+  recurrence?: RecurrenceConfig | null;
+  parentTaskId?: string | null; // for generated recurring tasks
+  completedCount?: number; // how many times this recurring task has been completed
 }
 
 // ---- TaskList ----
@@ -71,7 +107,9 @@ export type NotificationType =
   | "task_assigned"
   | "task_completed"
   | "member_joined"
-  | "list_shared";
+  | "list_shared"
+  | "reminder"
+  | "due_soon";
 
 export interface Notification {
   id: string;

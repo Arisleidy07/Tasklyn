@@ -5,6 +5,7 @@ import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { initializeFirestore, getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getMessaging } from "firebase/messaging";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -39,5 +40,8 @@ export const db = (() => {
 export const storage = getStorage(app);
 
 export const googleProvider = new GoogleAuthProvider();
+
+export const messaging =
+  typeof window !== "undefined" ? getMessaging(app) : null;
 
 export default app;
