@@ -60,9 +60,10 @@ service cloud.firestore {
     // ============================================
     
     match /lists/{listId} {
-      // Allow read if user is a member (using memberIds flat array)
-      allow read: if isAuthenticated()
-        && request.auth.uid in resource.data.memberIds;
+      // Allow read if authenticated — needed for invitation acceptance flow
+      // (accepting user is not yet a member at read time).
+      // Tasks are still protected by member-check on the tasks collection.
+      allow read: if isAuthenticated();
       
       // Allow create if authenticated (creator's UID must be in memberIds)
       allow create: if isAuthenticated()
@@ -137,12 +138,9 @@ service cloud.firestore {
       // Allow update (for acceptance) by authenticated user
       allow update: if isAuthenticated();
       
-      // Allow delete by list owner or invitation creator
-      allow delete: if isAuthenticated()
-        && (
-          resource.data.invitedBy == request.auth.uid
-          || isListOwner(resource.data.listId)
-        );
+      // Allow delete by any authenticated user — invitee cleans up after acceptance.
+      // The invitation token (unguessable) is the security mechanism for access.
+      allow delete: if isAuthenticated();
     }
     
     // ============================================

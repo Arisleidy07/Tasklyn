@@ -101,6 +101,7 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
         title: `${inviterName} te invitó a "${listName}"`,
         body: `Serás añadido como ${role === "editor" ? "Editor" : "Viewer"}.`,
         read: false,
+        status: "pending",
         data: {
           listId,
           listName,

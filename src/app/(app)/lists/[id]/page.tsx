@@ -103,46 +103,74 @@ export default function ListDetailPage() {
           list.description ||
           `${list.members.length} miembro${list.members.length !== 1 ? "s" : ""}`
         }
+        showMenuButton={true}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <button
+              onClick={() => setShowMembersPanel(true)}
+              className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center sm:hidden"
+              title="Miembros"
+            >
+              <Users size={20} />
+            </button>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => setShowMembersPanel(true)}
               icon={<Users size={16} />}
+              className="hidden sm:flex"
             >
               Miembros
             </Button>
             {canEdit && (
-              <Button
-                size="sm"
-                onClick={() => setShowMembersPanel(true)}
-                icon={<Share2 size={16} />}
-              >
-                Invitar
-              </Button>
+              <>
+                <button
+                  onClick={() => setShowMembersPanel(true)}
+                  className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center sm:hidden"
+                  title="Invitar"
+                >
+                  <Share2 size={18} />
+                </button>
+                <Button
+                  size="sm"
+                  onClick={() => setShowMembersPanel(true)}
+                  icon={<Share2 size={16} />}
+                  className="hidden sm:flex"
+                >
+                  Invitar
+                </Button>
+              </>
             )}
             {isOwner && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setShowDeleteConfirm(true)}
-                icon={<Trash2 size={16} />}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                Eliminar
-              </Button>
+              <>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="p-2 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center sm:hidden"
+                  title="Eliminar lista"
+                >
+                  <Trash2 size={18} />
+                </button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  icon={<Trash2 size={16} />}
+                  className="hidden sm:flex text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  Eliminar
+                </Button>
+              </>
             )}
           </div>
         }
       />
 
-      <div className="p-6 max-w-4xl">
+      <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto pb-6">
         {/* Filtros */}
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-2 mb-6 overflow-x-auto scrollbar-none">
           <button
             onClick={() => setFilter("all")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] ${
               filter === "all"
                 ? "bg-blue-100 text-blue-700"
                 : "text-gray-600 hover:bg-gray-100"
@@ -152,7 +180,7 @@ export default function ListDetailPage() {
           </button>
           <button
             onClick={() => setFilter("pending")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] ${
               filter === "pending"
                 ? "bg-gray-100 text-gray-700"
                 : "text-gray-600 hover:bg-gray-100"
@@ -163,7 +191,7 @@ export default function ListDetailPage() {
           </button>
           <button
             onClick={() => setFilter("completed")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] ${
               filter === "completed"
                 ? "bg-blue-100 text-blue-700"
                 : "text-gray-600 hover:bg-gray-100"

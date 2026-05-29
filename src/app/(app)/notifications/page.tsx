@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useNotificationStore } from "@/stores/notificationStore";
-import { useListStore } from "@/stores/listStore";
 import { useInvitationStore } from "@/stores/invitationStore";
 import Header from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
@@ -66,8 +65,8 @@ export default function NotificationsPage() {
     archive,
     setStatus,
   } = useNotificationStore();
-  const { addMember } = useListStore();
-  const { getInvitation, acceptInvitation } = useInvitationStore();
+  const { getInvitation, acceptInvitation, deleteInvitation } =
+    useInvitationStore();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   if (!user) return null;
@@ -95,44 +94,20 @@ export default function NotificationsPage() {
     notifId: string,
     data: Record<string, string>,
   ) => {
-    console.log("Accepting invitation:", { notifId, data });
     setProcessingId(notifId);
     try {
-      // Get the invitation using the token
-      console.log("Getting invitation with token:", data.token);
       const invitation = await getInvitation(data.token);
-      console.log("Invitation found:", invitation);
       if (!invitation) {
-        console.error("Invitation not found");
         setProcessingId(null);
         return;
       }
 
-      // Accept the invitation (this adds the member to the list) FIRST
-      console.log("🔄 Starting invitation acceptance process...");
-      console.log("👤 User ID:", user.id);
-      console.log("📋 Invitation details:", {
-        id: invitation.id,
-        listId: invitation.listId,
-        defaultRole: invitation.defaultRole,
-        invitedBy: invitation.invitedBy,
-      });
-
+      // Add user to list + delete invitation (sequential, correct permissions)
       await acceptInvitation(invitation, user.id);
-      console.log("✅ Invitation accepted successfully - Firebase updated");
 
-      // Wait for Firestore realtime propagation
-      console.log("⏱️ Waiting for Firestore realtime propagation...");
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Increased delay
-      console.log("⏱️ Delay completed - should have triggered realtime update");
-
-      // Then update notification status to accepted
-      console.log("🔄 Updating notification status to accepted");
+      // Mark notification as accepted and read atomically
       await setStatus(notifId, "accepted");
-      console.log("✅ Notification status updated");
-
-      // Final verification
-      console.log("🔍 Invitation acceptance process completed");
+      await markRead(notifId);
     } catch (error) {
       console.error("Error accepting invitation:", error);
     } finally {
@@ -146,19 +121,17 @@ export default function NotificationsPage() {
   ) => {
     setProcessingId(notifId);
     try {
-      // If we have invitation data, also delete the invitation
+      // Delete the invitation document directly
       if (data?.token) {
         const invitation = await getInvitation(data.token);
         if (invitation) {
-          // Delete the invitation from database
-          await fetch(`/api/invitations/${invitation.id}`, {
-            method: "DELETE",
-          }).catch(() => {}); // Ignore errors, notification removal is priority
+          await deleteInvitation(invitation.id);
         }
       }
 
-      // Update notification status to rejected
+      // Mark notification as rejected and read
       await setStatus(notifId, "rejected");
+      await markRead(notifId);
     } catch (error) {
       console.error("Error declining invitation:", error);
     } finally {
@@ -176,19 +149,29 @@ export default function NotificationsPage() {
         showMenuButton={true}
         actions={
           unreadCount > 0 ? (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleMarkAll}
-              icon={<CheckCheck size={16} />}
-            >
-              Marcar todo como leído
-            </Button>
+            <>
+              <button
+                onClick={handleMarkAll}
+                className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center sm:hidden active:scale-90"
+                title="Marcar todo como leído"
+              >
+                <CheckCheck size={20} />
+              </button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleMarkAll}
+                icon={<CheckCheck size={16} />}
+                className="hidden sm:flex"
+              >
+                Marcar todo como leído
+              </Button>
+            </>
           ) : undefined
         }
       />
 
-      <div className="p-3 sm:p-4 md:p-8 max-w-3xl mx-auto space-y-6 sm:space-y-8 safe-top safe-bottom">
+      <div className="p-3 sm:p-4 md:p-8 max-w-3xl mx-auto space-y-6 sm:space-y-8">
         {/* Pending Invitations */}
         {pendingNotifications.length > 0 && (
           <section>

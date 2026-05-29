@@ -475,28 +475,16 @@ export const acceptInvitation = async (
   invitation: Invitation,
   userId: string,
 ): Promise<void> => {
-  console.log("🚀 acceptInvitation called:", {
-    invitationId: invitation.id,
-    userId,
-    listId: invitation.listId,
-  });
-  const batch = writeBatch(db);
-
-  // Add member to list
   const listRef = doc(db, "lists", invitation.listId);
+
+  // Step 1: Read the list — allowed for any authenticated user (see Firestore rules).
   const listSnap = await getDoc(listRef);
   if (!listSnap.exists()) throw new Error("List not found");
 
   const listData = listSnap.data();
   const members: ListMember[] = listData.members || [];
-  const currentMemberIds = listData.memberIds || [];
 
-  console.log("📋 Current list state:", {
-    listName: listData.name,
-    currentMembers: members.length,
-    currentMemberIds: currentMemberIds.length,
-  });
-
+  // Only add if not already a member (idempotent).
   if (!members.some((m) => m.userId === userId)) {
     members.push({
       userId,
@@ -505,64 +493,18 @@ export const acceptInvitation = async (
     });
     const memberIds = members.map((m) => m.userId);
 
-    console.log("➕ Adding member:", {
-      userId,
-      role: invitation.defaultRole,
-      newMemberIds: memberIds,
-      totalMembers: members.length,
-    });
-
-    const updateData = {
+    // Step 2: Update list — allowed by the invitation-acceptance rule in Firestore rules.
+    await updateDoc(listRef, {
       members,
       memberIds,
       type: "shared",
       updatedAt: serverTimestamp(),
-    };
-
-    console.log("📝 Updating list with data:", {
-      listId: invitation.listId,
-      updateData: {
-        ...updateData,
-        updatedAt: "[serverTimestamp]",
-      },
     });
-
-    batch.update(listRef, updateData);
-  } else {
-    console.log("⚠️ User already a member of this list");
-    console.log(
-      "🔍 Existing members:",
-      members.map((m) => ({ userId: m.userId, role: m.role })),
-    );
   }
 
-  // Delete invitation
-  console.log("🗑️ Deleting invitation:", invitation.id);
-  batch.delete(doc(db, "invitations", invitation.id));
-
-  console.log("🔄 Committing batch operations...");
-  await batch.commit();
-  console.log("✅ Batch committed successfully - list should now be shared");
-
-  // Verify the update by reading the document again
-  console.log("🔍 Verifying update by reading list document...");
-  const updatedListSnap = await getDoc(listRef);
-  if (updatedListSnap.exists()) {
-    const updatedData = updatedListSnap.data();
-    console.log("📋 Updated list state:", {
-      name: updatedData.name,
-      type: updatedData.type,
-      memberCount: updatedData.members?.length || 0,
-      memberIdsCount: updatedData.memberIds?.length || 0,
-      memberIds: updatedData.memberIds,
-      members: updatedData.members?.map((m: any) => ({
-        userId: m.userId,
-        role: m.role,
-      })),
-    });
-  } else {
-    console.error("❌ List document not found after update!");
-  }
+  // Step 3: Delete invitation — allowed for any authenticated user (see Firestore rules).
+  // Done AFTER the list update so the user is a member if any rule ever rechecks membership.
+  await deleteDoc(doc(db, "invitations", invitation.id));
 };
 
 // ============================================

@@ -84,9 +84,16 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   },
 
   setStatus: async (id: string, status) => {
-    // Update notification status in Firestore
     const notifRef = doc(db, "notifications", id);
-    await updateDoc(notifRef, { status, updatedAt: serverTimestamp() });
+    const update: Record<string, unknown> = {
+      status,
+      updatedAt: serverTimestamp(),
+    };
+    // Accepting or rejecting an invitation always clears the unread dot
+    if (status === "accepted" || status === "rejected") {
+      update.read = true;
+    }
+    await updateDoc(notifRef, update);
   },
 
   create: async ({ userId, type, title, body, data }) => {

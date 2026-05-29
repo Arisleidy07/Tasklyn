@@ -313,20 +313,20 @@ export default function PremiumMembersPanel({
                   />
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <Select
                     options={roleOptions}
                     value={inviteRole}
                     onChange={(e) =>
                       setInviteRole(e.target.value as MemberRole)
                     }
-                    className="!h-12 !text-sm flex-1"
+                    className="!h-12 !text-sm sm:flex-1"
                   />
                   <Button
                     onClick={handleSendInvitation}
                     isLoading={isSending}
                     icon={<Send size={16} />}
-                    className="h-12 px-6 bg-blue-600 hover:bg-blue-700"
+                    className="h-12 px-6 bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                   >
                     Enviar invitación
                   </Button>
@@ -438,7 +438,7 @@ export default function PremiumMembersPanel({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
                       {isOwnerMember && <Badge variant="blue">Owner</Badge>}
                       {canManageRoles && !isOwnerMember && (
                         <Select
@@ -447,13 +447,13 @@ export default function PremiumMembersPanel({
                           onChange={(e) =>
                             handleRoleChange(member.userId, e.target.value)
                           }
-                          className="!h-10 !text-xs"
+                          className="!h-9 !text-xs"
                         />
                       )}
                       {isOwner && !isSelf && (
                         <button
                           onClick={() => setEditingUserId(member.userId)}
-                          className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                          className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
                           title="Editar nombre"
                         >
                           <Pencil size={14} />
@@ -462,7 +462,7 @@ export default function PremiumMembersPanel({
                       {canRemove && !isSelf && (
                         <button
                           onClick={() => handleRemoveMember(member.userId)}
-                          className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                          className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
                           title="Eliminar miembro"
                         >
                           <Trash2 size={14} />

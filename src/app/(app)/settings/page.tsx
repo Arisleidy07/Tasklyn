@@ -46,9 +46,10 @@ export default function SettingsPage() {
       <Header
         title="Configuración"
         description="Personaliza tu experiencia en TASKLYN"
+        showMenuButton={true}
       />
 
-      <div className="p-4 md:p-8 max-w-3xl mx-auto">
+      <div className="p-4 md:p-8 max-w-3xl mx-auto pb-24 md:pb-8">
         {/* Plan actual */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -183,7 +184,7 @@ export default function SettingsPage() {
             <CheckCircle2 size={20} className="text-gray-400" />
             Tus estadísticas
           </h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <p className="text-2xl font-bold text-blue-600">
                 {personalListsCount}

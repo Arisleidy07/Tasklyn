@@ -112,17 +112,28 @@ export default function DashboardPage() {
         }
         showMenuButton={true}
         actions={
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            icon={<Plus size={16} />}
-            disabled={!canCreate}
-          >
-            Nueva lista
-          </Button>
+          <>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              disabled={!canCreate}
+              className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center sm:hidden active:scale-90"
+              title="Nueva lista"
+            >
+              <Plus size={20} />
+            </button>
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              icon={<Plus size={16} />}
+              disabled={!canCreate}
+              className="hidden sm:flex"
+            >
+              Nueva lista
+            </Button>
+          </>
         }
       />
 
-      <div className="p-3 sm:p-4 md:p-8 space-y-6 sm:space-y-8 md:space-y-10 max-w-[1200px] mx-auto safe-top safe-bottom">
+      <div className="p-3 sm:p-4 md:p-8 space-y-6 sm:space-y-8 md:space-y-10 max-w-[1200px] mx-auto">
         {/* Stats - solo mostrar en vista general */}
         {!view && (
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
@@ -169,7 +180,7 @@ export default function DashboardPage() {
         {/* Listas personales - solo mostrar si no hay filtro o es personal */}
         {(!view || view === "personal") && (
           <section>
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
                   <FolderOpen size={16} className="text-blue-600" />

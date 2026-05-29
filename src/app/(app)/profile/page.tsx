@@ -91,64 +91,67 @@ export default function ProfilePage() {
     <>
       <ProfileHeader />
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 md:pt-8 pb-20 sm:pb-20 md:pb-12 safe-top safe-bottom">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 md:pt-8 pb-6 md:pb-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6"
           >
-            <div className="px-4 sm:px-6 md:px-8 pt-6 sm:pt-8 pb-4 sm:pb-6">
-              <div className="flex flex-col gap-4 mb-6">
-                <div className="flex justify-center sm:justify-start">
-                  <Avatar
-                    name={user.name}
-                    photoURL={user.photoURL}
-                    size="xl"
-                    className="w-20 h-20 sm:w-24 sm:h-24 md:w-24 md:h-24 text-2xl ring-4 ring-white shadow-lg flex-shrink-0"
-                  />
-                </div>
-                <div className="text-center sm:text-left flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center sm:gap-2 mb-2">
-                    <h1 className="text-2xl sm:text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
-                      {user.name}
-                    </h1>
-                    <div className="flex justify-center sm:justify-start">
-                      <Badge variant={user.plan === "PRO" ? "blue" : "default"}>
-                        {user.plan === "PRO" ? "PRO" : "Gratis"}
-                      </Badge>
+            <div className="px-4 sm:px-6 md:px-8 pt-5 sm:pt-7 pb-4 sm:pb-6">
+              <div className="flex items-start gap-4 sm:gap-5 mb-5 sm:mb-6">
+                <Avatar
+                  name={user.name}
+                  photoURL={user.photoURL}
+                  size="xl"
+                  className="w-16 h-16 sm:w-20 sm:h-20 text-xl ring-4 ring-white shadow-md flex-shrink-0"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight truncate">
+                          {user.name}
+                        </h1>
+                        <Badge
+                          variant={user.plan === "PRO" ? "blue" : "default"}
+                        >
+                          {user.plan === "PRO" ? "PRO" : "Gratis"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-sm text-gray-500 mt-1">
+                        <Mail size={12} />
+                        <span className="truncate">{user.email}</span>
+                      </div>
+                      <p className="text-gray-400 flex items-center gap-1.5 text-xs mt-0.5">
+                        <Calendar size={11} />
+                        Miembro desde {joinDate}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      {user.plan === "FREE" && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          icon={<Crown size={14} />}
+                          className="whitespace-nowrap"
+                        >
+                          <span className="hidden sm:inline">
+                            Actualizar a PRO
+                          </span>
+                          <span className="sm:hidden">PRO</span>
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleLogout}
+                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        icon={<LogOut size={14} />}
+                      >
+                        Salir
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-1.5 text-sm text-gray-500">
-                    <div className="flex items-center gap-1.5">
-                      <Mail size={13} />
-                      {user.email}
-                    </div>
-                  </div>
-                  <p className="text-gray-400 flex items-center justify-center sm:justify-start gap-1.5 text-xs mt-1">
-                    <Calendar size={12} />
-                    Miembro desde {joinDate}
-                  </p>
-                </div>
-                <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                  {user.plan === "FREE" && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      icon={<Crown size={14} />}
-                      className="w-full sm:w-auto"
-                    >
-                      Actualizar a PRO
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={handleLogout}
-                    className="w-full sm:w-auto text-red-500 hover:text-red-600 hover:bg-red-50"
-                    icon={<LogOut size={14} />}
-                  >
-                    Salir
-                  </Button>
                 </div>
               </div>
 
