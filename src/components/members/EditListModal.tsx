@@ -30,14 +30,15 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import type { User } from "@/types";
 
+type TabId = "details" | "members";
+
 interface EditListModalProps {
   list: TaskList;
   memberProfiles: Record<string, User>;
   isOpen: boolean;
   onClose: () => void;
+  defaultTab?: TabId;
 }
-
-type TabId = "details" | "members";
 
 const roleOptions: { value: string; label: string }[] = [
   { value: "editor", label: "Editor" },
@@ -70,6 +71,7 @@ export default function EditListModal({
   memberProfiles,
   isOpen,
   onClose,
+  defaultTab,
 }: EditListModalProps) {
   const { user } = useAuthStore();
   const { updateList, updateMemberRole, removeMember } = useListStore();
@@ -83,12 +85,13 @@ export default function EditListModal({
 
   useEffect(() => {
     if (isOpen) {
+      setActiveTab(defaultTab ?? "details");
       setName(list.name);
       setDescription(list.description || "");
       setSaved(false);
       setConfirmRemove(null);
     }
-  }, [isOpen, list.name, list.description]);
+  }, [isOpen, defaultTab, list.name, list.description]);
 
   if (!user) return null;
 
@@ -210,7 +213,9 @@ export default function EditListModal({
                 <span
                   className={cn(
                     "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full",
-                    myRole ? roleConfig[myRole].pill : "bg-gray-100 text-gray-600",
+                    myRole
+                      ? roleConfig[myRole].pill
+                      : "bg-gray-100 text-gray-600",
                   )}
                 >
                   {myRole && roleConfig[myRole].icon}
@@ -254,8 +259,7 @@ export default function EditListModal({
               const isOwnerMember = member.role === "owner";
               const isSelf = member.userId === user.id;
               const displayName =
-                profile?.name ||
-                (isSelf ? user.name : `Miembro ${index + 1}`);
+                profile?.name || (isSelf ? user.name : `Miembro ${index + 1}`);
               const displayEmail = profile?.email || "";
               const photoURL = profile?.photoURL || "";
               const isConfirmingRemove = confirmRemove === member.userId;

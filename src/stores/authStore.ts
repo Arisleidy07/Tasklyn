@@ -10,7 +10,12 @@ import {
   User as FirebaseUser,
 } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
-import { createUser, getUser, subscribeToUser } from "@/lib/firestore";
+import {
+  createUser,
+  getUser,
+  updateUser,
+  subscribeToUser,
+} from "@/lib/firestore";
 import type { User } from "@/types";
 
 interface AuthState {
@@ -107,6 +112,24 @@ export const initAuthListener = () => {
       if (!user) {
         user = firebaseToUser(firebaseUser);
         await createUser(user);
+      } else {
+        // Sync Firebase Auth data to Firestore if the stored name is generic
+        // or if the photo URL has changed (e.g. user updated Google profile)
+        const syncUpdates: Partial<typeof user> = {};
+        const isGenericName =
+          !user.name ||
+          user.name === "Anonymous" ||
+          user.name === "Default User";
+        if (isGenericName && firebaseUser.displayName) {
+          syncUpdates.name = firebaseUser.displayName;
+        }
+        if (firebaseUser.photoURL && user.photoURL !== firebaseUser.photoURL) {
+          syncUpdates.photoURL = firebaseUser.photoURL;
+        }
+        if (Object.keys(syncUpdates).length > 0) {
+          await updateUser(firebaseUser.uid, syncUpdates);
+          user = { ...user, ...syncUpdates };
+        }
       }
 
       useAuthStore.setState({

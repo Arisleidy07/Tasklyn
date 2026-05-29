@@ -22,6 +22,7 @@ import {
   Clock,
   AlertCircle,
   Settings2,
+  Users,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,9 @@ export default function ListDetailPage() {
   const [showAddTask, setShowAddTask] = useState(false);
   const [showSharePanel, setShowSharePanel] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [editModalTab, setEditModalTab] = useState<"details" | "members">(
+    "details",
+  );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
@@ -131,6 +135,33 @@ export default function ListDetailPage() {
         showMenuButton={true}
         actions={
           <div className="flex items-center gap-1.5">
+            {/* Miembros — visible to ALL users */}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setEditModalTab("members");
+                setShowEditModal(true);
+              }}
+              icon={<Users size={15} />}
+            >
+              <span className="hidden sm:inline">Miembros</span>
+            </Button>
+            {/* Editar — owner + editor */}
+            {canEdit && (
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => {
+                  setEditModalTab("details");
+                  setShowEditModal(true);
+                }}
+                icon={<Settings2 size={15} />}
+              >
+                <span className="hidden sm:inline">Editar</span>
+              </Button>
+            )}
+            {/* Compartir — owner only */}
             {isOwner && (
               <Button
                 size="sm"
@@ -139,16 +170,6 @@ export default function ListDetailPage() {
                 icon={<Share2 size={15} />}
               >
                 <span className="hidden sm:inline">Compartir</span>
-              </Button>
-            )}
-            {isOwner && (
-              <Button
-                size="sm"
-                variant="primary"
-                onClick={() => setShowEditModal(true)}
-                icon={<Settings2 size={15} />}
-              >
-                <span className="hidden sm:inline">Editar</span>
               </Button>
             )}
             {isOwner && (
@@ -324,6 +345,7 @@ export default function ListDetailPage() {
         memberProfiles={memberProfiles}
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
+        defaultTab={editModalTab}
       />
 
       {/* Confirmar Eliminación */}

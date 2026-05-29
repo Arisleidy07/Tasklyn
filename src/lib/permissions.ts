@@ -42,7 +42,11 @@ export function canDeleteList(role: MemberRole | null): boolean {
 }
 
 export function canEditList(role: MemberRole | null): boolean {
-  return role === "owner";
+  return role === "owner" || role === "editor";
+}
+
+export function canViewMembers(role: MemberRole | null): boolean {
+  return role !== null;
 }
 
 // Plan-based checks
