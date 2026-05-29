@@ -419,6 +419,49 @@ select {
   animation: glow-drift 22s ease-in-out 6s infinite;
 }
 
+/* Premium card hover glow */
+.card-premium {
+  transition:
+    box-shadow 0.3s ease,
+    transform 0.25s ease,
+    border-color 0.2s ease;
+}
+.card-premium:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 20px 48px -12px rgba(59, 130, 246, 0.22);
+}
+
+/* Gradient text utility */
+.text-gradient-blue {
+  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Premium glass card */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+@keyframes tab-slide {
+  from {
+    opacity: 0;
+    transform: scaleX(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+.animate-tab-slide {
+  animation: tab-slide 0.2s ease-out both;
+  transform-origin: left center;
+}
+
 .animate-particle-rise {
   animation: particle-rise 4s ease-out infinite;
 }

@@ -27,11 +27,28 @@ export default function AppLayout({ children }: AppLayoutProps) {
         className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
         aria-hidden
       >
-        <div className="animate-glow-drift absolute top-[10%] right-[5%] w-96 h-96 rounded-full bg-blue-500/8 blur-3xl" />
-        <div className="animate-glow-drift-2 absolute bottom-[15%] left-[8%] w-80 h-80 rounded-full bg-blue-400/6 blur-3xl" />
-        <div className="animate-float-slow absolute top-[25%] left-[12%] w-3 h-3 rounded-full bg-blue-400/25" />
-        <div className="animate-float-slow-reverse absolute top-[40%] right-[15%] w-2 h-2 rounded-full bg-blue-500/20" />
-        <div className="animate-float-gentle absolute bottom-[30%] right-[25%] w-2 h-2 rounded-full bg-blue-300/30" />
+        {/* Primary large glow orbs */}
+        <div className="animate-glow-drift absolute top-[5%] right-[3%] w-[520px] h-[520px] rounded-full bg-blue-500/[0.07] blur-[80px]" />
+        <div className="animate-glow-drift-2 absolute bottom-[10%] left-[5%] w-[440px] h-[440px] rounded-full bg-indigo-500/[0.06] blur-[72px]" />
+        <div className="animate-glow-drift-3 absolute top-[45%] left-[35%] w-[360px] h-[360px] rounded-full bg-blue-400/[0.05] blur-[64px]" />
+        {/* Accent smaller orbs */}
+        <div className="animate-glow-drift absolute bottom-[35%] right-[20%] w-48 h-48 rounded-full bg-violet-400/[0.06] blur-3xl" />
+        <div className="animate-glow-drift-2 absolute top-[30%] right-[40%] w-32 h-32 rounded-full bg-blue-300/[0.08] blur-2xl" />
+        {/* Floating particles */}
+        <div className="animate-float-slow absolute top-[22%] left-[14%] w-2.5 h-2.5 rounded-full bg-blue-400/30" />
+        <div className="animate-float-slow-reverse absolute top-[38%] right-[16%] w-2 h-2 rounded-full bg-indigo-500/25" />
+        <div className="animate-float-gentle absolute bottom-[28%] right-[28%] w-2 h-2 rounded-full bg-blue-300/35" />
+        <div className="animate-float-slow absolute bottom-[20%] left-[30%] w-1.5 h-1.5 rounded-full bg-violet-400/25" />
+        <div className="animate-float-gentle absolute top-[60%] left-[8%] w-2 h-2 rounded-full bg-blue-500/20" />
+        {/* Subtle mesh grid overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.015]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(59,130,246,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.4) 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+          }}
+        />
       </div>
 
       {/* Sidebar — hidden on mobile */}
@@ -55,9 +72,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
       >
         <motion.div
           key="page"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         >
           {children}
         </motion.div>

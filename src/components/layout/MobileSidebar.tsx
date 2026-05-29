@@ -9,8 +9,6 @@ import {
   LayoutDashboard,
   LogOut,
   Crown,
-  FolderOpen,
-  Users,
   Plus,
   Settings,
   Sparkles,
@@ -32,25 +30,17 @@ export default function MobileSidebar() {
   const searchParams = useSearchParams();
   const view = searchParams.get("view");
   const { user, logout } = useAuthStore();
-  const { getUserLists, getPersonalLists, getSharedLists } = useListStore();
+  const { getUserLists } = useListStore();
   const { unreadCount } = useNotificationStore();
   const [showCreateModal, setShowCreateModal] = React.useState(false);
 
   if (!user) return null;
 
   const allLists = getUserLists(user.id);
-  const personalLists = getPersonalLists(user.id);
-  const sharedLists = getSharedLists(user.id);
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {
-      return pathname === "/dashboard" && !view;
-    }
-    if (href === "/dashboard?view=personal") {
-      return pathname === "/dashboard" && view === "personal";
-    }
-    if (href === "/dashboard?view=shared") {
-      return pathname === "/dashboard" && view === "shared";
+      return pathname === "/dashboard";
     }
     return pathname === href || pathname?.startsWith(href + "/");
   };
@@ -62,21 +52,6 @@ export default function MobileSidebar() {
       href: "/notifications",
       icon: Bell,
       badge: unreadCount,
-    },
-  ];
-
-  const listNav = [
-    {
-      name: "Mis listas",
-      href: "/dashboard?view=personal",
-      icon: FolderOpen,
-      count: personalLists.length,
-    },
-    {
-      name: "Compartidas",
-      href: "/dashboard?view=shared",
-      icon: Users,
-      count: sharedLists.length,
     },
   ];
 
@@ -105,7 +80,11 @@ export default function MobileSidebar() {
             >
               {/* Header */}
               <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-white flex-shrink-0">
-                <Link href="/dashboard" onClick={closeSidebar} className="flex items-center">
+                <Link
+                  href="/dashboard"
+                  onClick={closeSidebar}
+                  className="flex items-center"
+                >
                   <Logo size="md" showText />
                 </Link>
                 <button
@@ -151,88 +130,55 @@ export default function MobileSidebar() {
                   })}
                 </div>
 
-                {/* Lists */}
+                {/* Recientes */}
                 <div className="space-y-1">
-                  <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-                    Espacio de trabajo
-                  </p>
-                  {listNav.map((item) => {
-                    const active = isActive(item.href);
+                  <div className="flex items-center justify-between px-3 mb-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                      {allLists.length > 0 ? "Recientes" : "Listas"}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowCreateModal(true);
+                        closeSidebar();
+                      }}
+                      className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                    >
+                      <Plus size={12} />
+                      Nueva
+                    </button>
+                  </div>
+                  {allLists.slice(0, 6).map((list) => {
+                    const active = pathname === `/lists/${list.id}`;
                     return (
                       <Link
-                        key={item.name}
-                        href={item.href}
+                        key={list.id}
+                        href={`/lists/${list.id}`}
                         onClick={closeSidebar}
                         className={cn(
-                          "flex items-center gap-3 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200",
+                          "flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200",
                           active
-                            ? "bg-blue-600 text-white shadow-sm shadow-blue-600/25"
-                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                            ? "bg-gray-100 text-gray-900 font-medium"
+                            : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
                         )}
                       >
-                        <item.icon size={18} className="flex-shrink-0" />
-                        <span className="flex-1">{item.name}</span>
-                        {item.count !== undefined && (
-                          <span
-                            className={cn(
-                              "text-[11px] font-semibold min-w-[20px] h-5 flex items-center justify-center rounded-md px-1.5",
-                              active
-                                ? "bg-white/20 text-white"
-                                : "bg-gray-200 text-gray-600",
-                            )}
-                          >
-                            {item.count}
-                          </span>
-                        )}
+                        <div
+                          className={cn(
+                            "w-2 h-2 rounded-full flex-shrink-0",
+                            list.type === "shared"
+                              ? "bg-blue-400"
+                              : "bg-gray-400",
+                          )}
+                        />
+                        <span className="truncate flex-1">{list.name}</span>
                       </Link>
                     );
                   })}
-
-                  {/* Botón crear lista */}
-                  <button
-                    onClick={() => {
-                      setShowCreateModal(true);
-                      closeSidebar();
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200 cursor-pointer text-blue-600 hover:bg-blue-50"
-                  >
-                    <Plus size={18} className="flex-shrink-0" />
-                    Crear lista
-                  </button>
-                </div>
-
-                {/* Recientes */}
-                {allLists.length > 0 && (
-                  <div className="space-y-1">
-                    <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-                      Recientes
+                  {allLists.length === 0 && (
+                    <p className="px-3 py-2 text-xs text-gray-400">
+                      Aún no tienes listas
                     </p>
-                    {allLists.slice(0, 5).map((list) => {
-                      const active = pathname === `/lists/${list.id}`;
-                      return (
-                        <Link
-                          key={list.id}
-                          href={`/lists/${list.id}`}
-                          onClick={closeSidebar}
-                          className={cn(
-                            "flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200",
-                            active
-                              ? "bg-gray-100 text-gray-900 font-medium"
-                              : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
-                          )}
-                        >
-                          <div
-                            className={cn(
-                              "w-2 h-2 rounded-full flex-shrink-0",
-                              list.type === "shared" ? "bg-blue-400" : "bg-gray-400",
-                            )}
-                          />
-                          <span className="truncate flex-1">{list.name}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {/* Cuenta */}
                 <div className="space-y-1">

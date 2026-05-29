@@ -5,25 +5,26 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
+import { useMemberProfiles } from "@/lib/useMemberProfiles";
 import Header from "@/components/layout/Header";
 import TaskItem from "@/components/tasks/TaskItem";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
-import Badge from "@/components/ui/Badge";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import PremiumMembersPanel from "@/components/members/PremiumMembersPanel";
+import EditListModal from "@/components/members/EditListModal";
 import {
   Plus,
-  Users,
   Share2,
   Trash2,
   CheckCircle2,
   Clock,
   AlertCircle,
+  Settings2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { MemberRole } from "@/types";
+import { cn } from "@/lib/utils";
 
 export default function ListDetailPage() {
   const params = useParams();
@@ -36,14 +37,15 @@ export default function ListDetailPage() {
     useTaskStore();
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
   const [showAddTask, setShowAddTask] = useState(false);
-  const [showMembersPanel, setShowMembersPanel] = useState(false);
+  const [showSharePanel, setShowSharePanel] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
 
   const list = getList(listId);
   const tasks = getTasksByList(listId);
 
-  // Subscribe to tasks for this list
+  // Subscribe to real-time tasks for this list
   useEffect(() => {
     if (listId) {
       subscribeToList(listId);
@@ -52,6 +54,40 @@ export default function ListDetailPage() {
       };
     }
   }, [listId, subscribeToList, unsubscribeFromList]);
+
+  // Fetch real-time member profiles (name, email, photo) from Firestore
+  const memberIds = list?.members.map((m) => m.userId) ?? [];
+  const memberProfiles = useMemberProfiles(memberIds);
+
+  // All useMemo hooks must be before any conditional returns
+  const filteredTasks = useMemo(() => {
+    if (!tasks) return [];
+    switch (filter) {
+      case "pending":
+        return tasks.filter((t) => t.status === "pending");
+      case "completed":
+        return tasks.filter((t) => t.status === "completed");
+      default:
+        return tasks;
+    }
+  }, [tasks, filter]);
+
+  // Build memberNames using real Firestore profiles (with custom name fallback)
+  const memberNames = useMemo(() => {
+    if (!list) return {} as Record<string, string>;
+    return list.members.reduce(
+      (acc, m) => {
+        const profile = memberProfiles[m.userId];
+        const realName =
+          profile?.name ||
+          (m.userId === user?.id ? user?.name : undefined) ||
+          `Miembro`;
+        acc[m.userId] = getDisplayName(listId, m.userId, realName);
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
+  }, [list, memberProfiles, user, listId, getDisplayName]);
 
   if (!user || !list) {
     return (
@@ -64,17 +100,6 @@ export default function ListDetailPage() {
   const userMember = list.members.find((m) => m.userId === user.id);
   const isOwner = userMember?.role === "owner";
   const canEdit = isOwner || userMember?.role === "editor";
-
-  const filteredTasks = useMemo(() => {
-    switch (filter) {
-      case "pending":
-        return tasks.filter((t) => t.status === "pending");
-      case "completed":
-        return tasks.filter((t) => t.status === "completed");
-      default:
-        return tasks;
-    }
-  }, [tasks, filter]);
 
   const pendingCount = tasks.filter((t) => t.status === "pending").length;
   const completedCount = tasks.filter((t) => t.status === "completed").length;
@@ -105,101 +130,91 @@ export default function ListDetailPage() {
         }
         showMenuButton={true}
         actions={
-          <div className="flex items-center gap-1 sm:gap-2">
-            <button
-              onClick={() => setShowMembersPanel(true)}
-              className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center sm:hidden"
-              title="Miembros"
-            >
-              <Users size={20} />
-            </button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowMembersPanel(true)}
-              icon={<Users size={16} />}
-              className="hidden sm:flex"
-            >
-              Miembros
-            </Button>
-            {canEdit && (
-              <>
-                <button
-                  onClick={() => setShowMembersPanel(true)}
-                  className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center sm:hidden"
-                  title="Invitar"
-                >
-                  <Share2 size={18} />
-                </button>
-                <Button
-                  size="sm"
-                  onClick={() => setShowMembersPanel(true)}
-                  icon={<Share2 size={16} />}
-                  className="hidden sm:flex"
-                >
-                  Invitar
-                </Button>
-              </>
+          <div className="flex items-center gap-1.5">
+            {isOwner && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowSharePanel(true)}
+                icon={<Share2 size={15} />}
+              >
+                <span className="hidden sm:inline">Compartir</span>
+              </Button>
             )}
             {isOwner && (
-              <>
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="p-2 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center sm:hidden"
-                  title="Eliminar lista"
-                >
-                  <Trash2 size={18} />
-                </button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  icon={<Trash2 size={16} />}
-                  className="hidden sm:flex text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  Eliminar
-                </Button>
-              </>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() => setShowEditModal(true)}
+                icon={<Settings2 size={15} />}
+              >
+                <span className="hidden sm:inline">Editar</span>
+              </Button>
+            )}
+            {isOwner && (
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowDeleteConfirm(true)}
+                icon={<Trash2 size={15} />}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50"
+              >
+                <span className="hidden sm:inline">Eliminar</span>
+              </Button>
             )}
           </div>
         }
       />
 
       <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto pb-6">
-        {/* Filtros */}
-        <div className="flex items-center gap-2 mb-6 overflow-x-auto scrollbar-none">
-          <button
-            onClick={() => setFilter("all")}
-            className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] ${
-              filter === "all"
-                ? "bg-blue-100 text-blue-700"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            Todas <Badge variant="default">{tasks.length}</Badge>
-          </button>
-          <button
-            onClick={() => setFilter("pending")}
-            className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] ${
-              filter === "pending"
-                ? "bg-gray-100 text-gray-700"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <Clock size={14} /> Pendientes{" "}
-            <Badge variant="default">{pendingCount}</Badge>
-          </button>
-          <button
-            onClick={() => setFilter("completed")}
-            className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors min-h-[40px] ${
-              filter === "completed"
-                ? "bg-blue-100 text-blue-700"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <CheckCircle2 size={14} /> Completadas{" "}
-            <Badge variant="default">{completedCount}</Badge>
-          </button>
+        {/* Filtros - Segmented Control */}
+        <div className="flex bg-gray-100 rounded-2xl p-1 mb-6 gap-0.5">
+          {[
+            {
+              key: "all" as const,
+              label: "Todas",
+              count: tasks.length,
+              Icon: null,
+            },
+            {
+              key: "pending" as const,
+              label: "Pendientes",
+              count: pendingCount,
+              Icon: Clock,
+            },
+            {
+              key: "completed" as const,
+              label: "Completadas",
+              count: completedCount,
+              Icon: CheckCircle2,
+            },
+          ].map(({ key, label, count, Icon }) => (
+            <button
+              key={key}
+              onClick={() => setFilter(key)}
+              className={cn(
+                "relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 min-h-[40px]",
+                filter === key
+                  ? "bg-white shadow-sm text-gray-900"
+                  : "text-gray-500 hover:text-gray-700",
+              )}
+            >
+              {Icon && (
+                <Icon size={13} className="hidden sm:block flex-shrink-0" />
+              )}
+              <span>{label}</span>
+              <span
+                className={cn(
+                  "text-[10px] font-semibold px-1.5 py-0.5 rounded-md leading-none",
+                  filter === key
+                    ? "bg-blue-100 text-blue-700"
+                    : "bg-gray-200 text-gray-400",
+                )}
+              >
+                {count}
+              </span>
+            </button>
+          ))}
         </div>
 
         {/* Botón añadir tarea */}
@@ -223,17 +238,7 @@ export default function ListDetailPage() {
                 key={task.id}
                 task={task}
                 role={userMember?.role || null}
-                memberNames={list.members.reduce(
-                  (acc, m) => {
-                    acc[m.userId] = getDisplayName(
-                      listId,
-                      m.userId,
-                      m.userId === user.id ? "Tú" : m.userId.slice(0, 8),
-                    );
-                    return acc;
-                  },
-                  {} as Record<string, string>,
-                )}
+                memberNames={memberNames}
               />
             ))}
           </AnimatePresence>
@@ -306,29 +311,19 @@ export default function ListDetailPage() {
         </div>
       </Modal>
 
-      {/* Panel de miembros e invitaciones */}
+      {/* Share panel — invite only */}
       <PremiumMembersPanel
         list={list}
-        memberNames={list.members.reduce(
-          (acc, m) => {
-            acc[m.userId] = getDisplayName(
-              listId,
-              m.userId,
-              m.userId === user.id ? "Tú" : m.userId.slice(0, 8),
-            );
-            return acc;
-          },
-          {} as Record<string, string>,
-        )}
-        originalNames={list.members.reduce(
-          (acc, m) => {
-            acc[m.userId] = m.userId === user.id ? "Tú" : m.userId.slice(0, 8);
-            return acc;
-          },
-          {} as Record<string, string>,
-        )}
-        isOpen={showMembersPanel}
-        onClose={() => setShowMembersPanel(false)}
+        isOpen={showSharePanel}
+        onClose={() => setShowSharePanel(false)}
+      />
+
+      {/* Edit list + members management */}
+      <EditListModal
+        list={list}
+        memberProfiles={memberProfiles}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
       />
 
       {/* Confirmar Eliminación */}

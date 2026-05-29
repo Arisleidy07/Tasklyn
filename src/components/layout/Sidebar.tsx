@@ -7,9 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard,
   LogOut,
-  Crown,
   FolderOpen,
-  Users,
   Plus,
   Settings,
   ChevronLeft,
@@ -30,9 +28,10 @@ import { cn } from "@/lib/utils";
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
-  const { getUserLists, getPersonalLists, getSharedLists } = useListStore();
+  const { getUserLists } = useListStore();
   const searchParams = useSearchParams();
   const view = searchParams.get("view");
+  const section = searchParams.get("section");
   const { sidebarCollapsed: collapsed, toggleSidebar } = useUIStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { unreadCount } = useNotificationStore();
@@ -40,20 +39,18 @@ export default function Sidebar() {
   if (!user) return null;
 
   const allLists = getUserLists(user.id);
-  const personalLists = getPersonalLists(user.id);
-  const sharedLists = getSharedLists(user.id);
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {
-      return pathname === "/dashboard" && !view;
+      return pathname === "/dashboard" && !view && !section;
     }
-    if (href === "/dashboard?view=personal") {
-      return pathname === "/dashboard" && view === "personal";
+    if (href === "/dashboard?section=lists") {
+      return (
+        (pathname === "/dashboard" && (section === "lists" || !!view)) ||
+        (pathname?.startsWith("/lists/") ?? false)
+      );
     }
-    if (href === "/dashboard?view=shared") {
-      return pathname === "/dashboard" && view === "shared";
-    }
-    return pathname === href || pathname?.startsWith(href + "/");
+    return pathname === href || (pathname?.startsWith(href + "/") ?? false);
   };
 
   const mainNav = [
@@ -63,21 +60,6 @@ export default function Sidebar() {
       href: "/notifications",
       icon: Bell,
       badge: unreadCount,
-    },
-  ];
-
-  const listNav = [
-    {
-      name: "Mis listas",
-      href: "/dashboard?view=personal",
-      icon: FolderOpen,
-      count: personalLists.length,
-    },
-    {
-      name: "Compartidas",
-      href: "/dashboard?view=shared",
-      icon: Users,
-      count: sharedLists.length,
     },
   ];
 
@@ -166,25 +148,24 @@ export default function Sidebar() {
             })}
           </div>
 
-          {/* Lists */}
+          {/* Workspace */}
           <div className="space-y-1">
             {!collapsed && (
               <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-                Espacio de trabajo
+                Workspace
               </p>
             )}
-            {listNav.map((item) => {
-              const active = isActive(item.href);
+            {(() => {
+              const active = isActive("/dashboard?section=lists");
               return (
                 <motion.div
-                  key={item.name}
                   whileHover={{ x: active ? 0 : 2 }}
                   whileTap={{ scale: 0.97 }}
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
                 >
                   <Link
-                    href={item.href}
-                    title={collapsed ? item.name : undefined}
+                    href="/dashboard?section=lists"
+                    title={collapsed ? "Listas" : undefined}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200",
                       active
@@ -193,33 +174,34 @@ export default function Sidebar() {
                       collapsed && "justify-center px-0",
                     )}
                   >
-                    <item.icon size={18} className="flex-shrink-0" />
+                    <FolderOpen size={18} className="flex-shrink-0" />
                     {!collapsed && (
                       <>
-                        <span className="flex-1">{item.name}</span>
-                        {item.count !== undefined && (
-                          <span
-                            className={cn(
-                              "text-[11px] font-semibold min-w-[20px] h-5 flex items-center justify-center rounded-md px-1.5",
-                              active
-                                ? "bg-white/20 text-white"
-                                : "bg-gray-200 text-gray-600",
-                            )}
-                          >
-                            {item.count}
-                          </span>
-                        )}
+                        <span className="flex-1">Listas</span>
+                        <span
+                          className={cn(
+                            "text-[11px] font-semibold min-w-[20px] h-5 flex items-center justify-center rounded-md px-1.5",
+                            active
+                              ? "bg-white/20 text-white"
+                              : "bg-gray-100 text-gray-500",
+                          )}
+                        >
+                          {allLists.length}
+                        </span>
                       </>
                     )}
                   </Link>
                 </motion.div>
               );
-            })}
+            })()}
 
-            {/* Botón crear lista */}
-            <button
+            {/* Nueva lista */}
+            <motion.button
               onClick={() => setShowCreateModal(true)}
-              title={collapsed ? "Crear lista" : undefined}
+              title={collapsed ? "Nueva lista" : undefined}
+              whileHover={{ x: 2 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 cursor-pointer",
                 "text-blue-600 hover:bg-blue-50",
@@ -227,8 +209,8 @@ export default function Sidebar() {
               )}
             >
               <Plus size={18} className="flex-shrink-0" />
-              {!collapsed && "Crear lista"}
-            </button>
+              {!collapsed && "Nueva lista"}
+            </motion.button>
           </div>
 
           {/* Recientes */}

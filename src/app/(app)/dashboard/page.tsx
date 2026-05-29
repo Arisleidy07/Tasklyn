@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
@@ -10,7 +10,6 @@ import ListCard from "@/components/lists/ListCard";
 import CreateListModal from "@/components/lists/CreateListModal";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
-import Badge from "@/components/ui/Badge";
 import {
   Plus,
   ListTodo,
@@ -26,13 +25,22 @@ import { PLAN_LIMITS } from "@/types";
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const view = searchParams.get("view") as "personal" | "shared" | null;
+  const section = searchParams.get("section");
+  const isListsSection = section === "lists" || view !== null;
+  const activeTab: "personal" | "shared" =
+    view === "shared" ? "shared" : "personal";
   const { user } = useAuthStore();
   const { getPersonalLists, getSharedLists, getUserLists } = useListStore();
   const { tasks } = useTaskStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   if (!user) return null;
+
+  const handleTabChange = (tab: "personal" | "shared") => {
+    router.replace(`/dashboard?section=lists&view=${tab}`);
+  };
 
   const personalLists = getPersonalLists(user.id);
   const sharedLists = getSharedLists(user.id);
@@ -96,47 +104,83 @@ export default function DashboardPage() {
   return (
     <>
       <Header
-        title={
-          view === "personal"
-            ? "Mis listas"
-            : view === "shared"
-              ? "Listas compartidas"
-              : "Panel de control"
-        }
+        title={isListsSection ? "Mis listas" : "Panel de control"}
         description={
-          view === "personal"
-            ? `Tienes ${personalLists.length} lista${personalLists.length === 1 ? "" : "s"} personal${personalLists.length === 1 ? "" : "es"}`
-            : view === "shared"
-              ? `Tienes ${sharedLists.length} lista${sharedLists.length === 1 ? "" : "s"} compartida${sharedLists.length === 1 ? "" : "s"}`
-              : `Bienvenido de nuevo, ${user.name.split(" ")[0]}. Aquí está tu resumen.`
+          isListsSection
+            ? activeTab === "personal"
+              ? `${personalLists.length} lista${personalLists.length !== 1 ? "s" : ""} personal${personalLists.length !== 1 ? "es" : ""}`
+              : `${sharedLists.length} lista${sharedLists.length !== 1 ? "s" : ""} compartida${sharedLists.length !== 1 ? "s" : ""}`
+            : `Bienvenido, ${user.name.split(" ")[0]}`
         }
         showMenuButton={true}
         actions={
-          <>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              disabled={!canCreate}
-              className="p-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center sm:hidden active:scale-90"
-              title="Nueva lista"
-            >
-              <Plus size={20} />
-            </button>
-            <Button
-              onClick={() => setShowCreateModal(true)}
-              icon={<Plus size={16} />}
-              disabled={!canCreate}
-              className="hidden sm:flex"
-            >
-              Nueva lista
-            </Button>
-          </>
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            icon={<Plus size={16} />}
+            disabled={!canCreate}
+          >
+            <span className="hidden sm:inline">Nueva lista</span>
+          </Button>
         }
       />
 
-      <div className="p-3 sm:p-4 md:p-8 space-y-6 sm:space-y-8 md:space-y-10 max-w-[1200px] mx-auto">
+      {/* Tab bar — Personales / Compartidas */}
+      {isListsSection && (
+        <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200">
+          <div className="flex max-w-[1400px] mx-auto px-3 sm:px-4 md:px-8">
+            {(["personal", "shared"] as const).map((tab) => {
+              const isTabActive = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => handleTabChange(tab)}
+                  className={`relative flex items-center gap-2 py-3.5 px-4 sm:px-5 text-sm font-medium transition-all duration-200 ${
+                    isTabActive
+                      ? "text-blue-600"
+                      : "text-gray-500 hover:text-gray-800"
+                  }`}
+                >
+                  {tab === "personal" ? (
+                    <FolderOpen size={14} />
+                  ) : (
+                    <Users size={14} />
+                  )}
+                  <span>
+                    {tab === "personal" ? "Personales" : "Compartidas"}
+                  </span>
+                  <span
+                    className={`text-xs px-1.5 py-0.5 rounded-md font-semibold transition-colors ${
+                      isTabActive
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    {tab === "personal"
+                      ? personalLists.length
+                      : sharedLists.length}
+                  </span>
+                  {isTabActive && (
+                    <motion.span
+                      layoutId="tab-indicator"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-blue-600"
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 35,
+                      }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="p-3 sm:p-4 md:p-8 space-y-6 sm:space-y-8 md:space-y-10 max-w-[1400px] mx-auto">
         {/* Stats - solo mostrar en vista general */}
-        {!view && (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        {!isListsSection && (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {stats.map((stat, i) => (
               <motion.div
                 key={stat.label}
@@ -144,32 +188,37 @@ export default function DashboardPage() {
                 animate={{ opacity: 1, y: 0 }}
                 whileHover={{
                   y: -4,
-                  boxShadow: "0 16px 40px -12px rgba(59,130,246,0.18)",
+                  boxShadow: "0 20px 40px -12px rgba(59,130,246,0.2)",
                 }}
                 transition={{
                   delay: i * 0.06,
                   duration: 0.35,
                   ease: [0.16, 1, 0.3, 1],
                 }}
-                className="group relative p-3 sm:p-4 lg:p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-200 transition-colors duration-200"
+                className="group relative p-4 sm:p-5 rounded-2xl border border-gray-200/80 bg-white hover:border-blue-200 transition-all duration-300 overflow-hidden"
               >
-                <div className="flex items-center justify-between mb-3">
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-blue-50/0 group-hover:to-blue-50/20 transition-all duration-500 pointer-events-none" />
+                <div className="flex items-center justify-between mb-4">
                   <div
-                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl ${stat.bg} flex items-center justify-center ${stat.text}`}
+                    className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm ${
+                      i % 2 === 0
+                        ? "bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/25"
+                        : "bg-gradient-to-br from-gray-700 to-gray-900 shadow-gray-500/20"
+                    }`}
                   >
-                    <stat.icon size={14} />
+                    <stat.icon size={18} className="text-white" />
                   </div>
-                  {stat.label === "Completed" && userTasks.length > 0 && (
-                    <span className="flex items-center gap-1 text-xs font-medium text-blue-600">
-                      <TrendingUp size={12} />
+                  {stat.label === "Completadas" && userTasks.length > 0 && (
+                    <span className="flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                      <TrendingUp size={10} />
                       {completionRate}%
                     </span>
                   )}
                 </div>
-                <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 tracking-tight">
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight tabular-nums">
                   {stat.value}
                 </p>
-                <p className="text-xs text-gray-500 font-medium mt-0.5">
+                <p className="text-xs text-gray-500 font-medium mt-1">
                   {stat.label}
                 </p>
               </motion.div>
@@ -177,37 +226,37 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Listas personales - solo mostrar si no hay filtro o es personal */}
-        {(!view || view === "personal") && (
+        {/* Listas personales */}
+        {(!isListsSection || activeTab === "personal") && (
           <section>
-            <div className="flex items-center justify-between mb-4 sm:mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <FolderOpen size={16} className="text-blue-600" />
+            {!isListsSection && (
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <FolderOpen size={16} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">
+                      Mis listas
+                    </h2>
+                    <p className="text-xs text-gray-500">
+                      {personalLists.length}{" "}
+                      {personalLists.length === 1 ? "lista" : "listas"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-base font-semibold text-gray-900">
-                    {view === "personal"
-                      ? "Tus listas personales"
-                      : "Mis listas"}
-                  </h2>
-                  <p className="text-xs text-gray-500">
-                    {personalLists.length}{" "}
-                    {personalLists.length === 1 ? "lista" : "listas"}
-                  </p>
-                </div>
+                {personalLists.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setShowCreateModal(true)}
+                    icon={<Plus size={14} />}
+                  >
+                    Añadir lista
+                  </Button>
+                )}
               </div>
-              {personalLists.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowCreateModal(true)}
-                  icon={<Plus size={14} />}
-                >
-                  Añadir lista
-                </Button>
-              )}
-            </div>
+            )}
             {personalLists.length === 0 ? (
               <EmptyState
                 icon={<ListTodo size={24} />}
@@ -240,37 +289,37 @@ export default function DashboardPage() {
           </section>
         )}
 
-        {/* Listas compartidas - solo mostrar si no hay filtro o es shared */}
-        {(!view || view === "shared") && (
+        {/* Listas compartidas */}
+        {(!isListsSection || activeTab === "shared") && (
           <section>
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                  <Users size={16} className="text-gray-600" />
+            {!isListsSection && (
+              <div className="flex items-center justify-between mb-4 sm:mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <Users size={16} className="text-gray-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">
+                      Listas compartidas
+                    </h2>
+                    <p className="text-xs text-gray-500">
+                      {sharedLists.length}{" "}
+                      {sharedLists.length === 1 ? "lista" : "listas"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-base font-semibold text-gray-900">
-                    {view === "shared"
-                      ? "Tus listas compartidas"
-                      : "Listas compartidas"}
-                  </h2>
-                  <p className="text-xs text-gray-500">
-                    {sharedLists.length}{" "}
-                    {sharedLists.length === 1 ? "lista" : "listas"}
-                  </p>
-                </div>
+                {sharedLists.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setShowCreateModal(true)}
+                    icon={<Plus size={14} />}
+                  >
+                    Añadir lista
+                  </Button>
+                )}
               </div>
-              {sharedLists.length > 0 && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setShowCreateModal(true)}
-                  icon={<Plus size={14} />}
-                >
-                  Añadir lista
-                </Button>
-              )}
-            </div>
+            )}
             {sharedLists.length === 0 ? (
               <EmptyState
                 icon={<Users size={24} />}
@@ -305,7 +354,7 @@ export default function DashboardPage() {
         )}
 
         {/* Crear primera lista - solo mostrar en vista general */}
-        {!view && allLists.length === 0 && (
+        {!isListsSection && allLists.length === 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -333,8 +382,8 @@ export default function DashboardPage() {
           </motion.div>
         )}
 
-        {/* Aviso de límite del plan - solo mostrar en vista general */}
-        {!view && !canCreate && (
+        {/* Aviso de límite del plan */}
+        {!isListsSection && !canCreate && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

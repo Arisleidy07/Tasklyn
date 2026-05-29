@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
@@ -9,16 +9,12 @@ import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import {
   Settings,
-  Bell,
-  Palette,
   Shield,
-  Trash2,
-  Moon,
-  Sun,
-  Globe,
   CheckCircle2,
-  AlertCircle,
   Crown,
+  FolderOpen,
+  Users,
+  ClipboardList,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -26,9 +22,6 @@ export default function SettingsPage() {
   const { user } = useAuthStore();
   const { lists } = useListStore();
   const { tasks } = useTaskStore();
-  const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-
   if (!user) return null;
 
   const personalListsCount = lists.filter((l) => l.owner === user.id).length;
@@ -89,90 +82,6 @@ export default function SettingsPage() {
           </div>
         </motion.div>
 
-        {/* Preferencias */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6"
-        >
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Palette size={20} className="text-gray-400" />
-            Preferencias
-          </h2>
-          <div className="space-y-4">
-            {/* Notificaciones */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Bell size={18} className="text-gray-500" />
-                <div>
-                  <p className="font-medium text-sm text-gray-900">
-                    Notificaciones
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Recibir alertas sobre tareas y invitaciones
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setNotifications(!notifications)}
-                className={`w-12 h-6 rounded-full transition-colors relative ${
-                  notifications ? "bg-blue-600" : "bg-gray-300"
-                }`}
-              >
-                <span
-                  className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                    notifications ? "left-7" : "left-1"
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* Modo oscuro */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                {darkMode ? (
-                  <Moon size={18} className="text-gray-500" />
-                ) : (
-                  <Sun size={18} className="text-gray-500" />
-                )}
-                <div>
-                  <p className="font-medium text-sm text-gray-900">
-                    Modo oscuro
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Cambiar la apariencia de la aplicación
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className={`w-12 h-6 rounded-full transition-colors relative ${
-                  darkMode ? "bg-blue-600" : "bg-gray-300"
-                }`}
-              >
-                <span
-                  className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
-                    darkMode ? "left-7" : "left-1"
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* Idioma */}
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Globe size={18} className="text-gray-500" />
-                <div>
-                  <p className="font-medium text-sm text-gray-900">Idioma</p>
-                  <p className="text-xs text-gray-500">Idioma de la interfaz</p>
-                </div>
-              </div>
-              <Badge variant="blue">Español</Badge>
-            </div>
-          </div>
-        </motion.div>
-
         {/* Estadísticas */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -184,23 +93,39 @@ export default function SettingsPage() {
             <CheckCircle2 size={20} className="text-gray-400" />
             Tus estadísticas
           </h2>
-          <div className="grid grid-cols-3 gap-2 sm:gap-4">
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">
-                {personalListsCount}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Listas creadas</p>
-            </div>
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">
-                {sharedListsCount}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Listas compartidas</p>
-            </div>
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">{totalTasks}</p>
-              <p className="text-xs text-gray-500 mt-1">Tareas totales</p>
-            </div>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              {
+                label: "Listas creadas",
+                value: personalListsCount,
+                icon: FolderOpen,
+              },
+              {
+                label: "Listas compartidas",
+                value: sharedListsCount,
+                icon: Users,
+              },
+              {
+                label: "Tareas totales",
+                value: totalTasks,
+                icon: ClipboardList,
+              },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                className="flex flex-col items-center gap-2 p-4 bg-gray-50 rounded-xl border border-gray-100"
+              >
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm shadow-blue-500/25">
+                  <stat.icon size={14} className="text-white" />
+                </div>
+                <p className="text-2xl font-bold text-gray-900 tabular-nums">
+                  {stat.value}
+                </p>
+                <p className="text-[10px] text-gray-500 text-center leading-tight">
+                  {stat.label}
+                </p>
+              </div>
+            ))}
           </div>
         </motion.div>
 

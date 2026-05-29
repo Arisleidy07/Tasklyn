@@ -1,14 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
+import { updateUser as updateUserInFirestore } from "@/lib/firestore";
 import ProfileHeader from "./header";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
+import Modal from "@/components/ui/Modal";
+import Input from "@/components/ui/Input";
 import {
   Mail,
   Calendar,
@@ -22,21 +25,50 @@ import {
   TrendingUp,
   Settings,
   ChevronRight,
+  Edit2,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateUser } = useAuthStore();
   const { lists } = useListStore();
   const { tasks } = useTaskStore();
+  const [showEditProfile, setShowEditProfile] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editPhotoURL, setEditPhotoURL] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   if (!user) return null;
 
   const handleLogout = async () => {
     await logout();
     router.push("/");
+  };
+
+  const handleOpenEdit = () => {
+    setEditName(user.name);
+    setEditPhotoURL(user.photoURL || "");
+    setShowEditProfile(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editName.trim()) return;
+    setIsSavingProfile(true);
+    try {
+      const updates = {
+        name: editName.trim(),
+        photoURL: editPhotoURL.trim() || user.photoURL,
+      };
+      await updateUserInFirestore(user.id, updates);
+      updateUser(updates);
+      setShowEditProfile(false);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const joinDate = new Date(user.createdAt).toLocaleDateString("es-ES", {
@@ -112,6 +144,13 @@ export default function ProfilePage() {
                         <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight truncate">
                           {user.name}
                         </h1>
+                        <button
+                          onClick={handleOpenEdit}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors flex-shrink-0"
+                          title="Editar perfil"
+                        >
+                          <Edit2 size={14} />
+                        </button>
                         <Badge
                           variant={user.plan === "PRO" ? "blue" : "default"}
                         >
@@ -233,7 +272,7 @@ export default function ProfilePage() {
                   Mis listas recientes
                 </h2>
                 <Link
-                  href="/dashboard?view=personal"
+                  href="/dashboard?section=lists"
                   className="text-xs text-blue-600 hover:underline flex items-center gap-0.5"
                 >
                   Ver todas <ChevronRight size={12} />
@@ -342,6 +381,60 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+      {/* Edit Profile Modal */}
+      <Modal
+        isOpen={showEditProfile}
+        onClose={() => setShowEditProfile(false)}
+        title="Editar perfil"
+        description="Actualiza tu nombre y foto de perfil"
+      >
+        <div className="space-y-4">
+          <Input
+            label="Nombre"
+            placeholder="Tu nombre"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSaveProfile()}
+            autoFocus
+          />
+          <Input
+            label="URL de foto de perfil"
+            placeholder="https://example.com/avatar.png"
+            value={editPhotoURL}
+            onChange={(e) => setEditPhotoURL(e.target.value)}
+          />
+          {editPhotoURL && (
+            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+              <img
+                src={editPhotoURL}
+                alt="Vista previa"
+                className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+              <p className="text-xs text-gray-500">Vista previa de tu foto</p>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <Button
+              variant="ghost"
+              onClick={() => setShowEditProfile(false)}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveProfile}
+              isLoading={isSavingProfile}
+              disabled={!editName.trim()}
+              className="flex-1"
+            >
+              Guardar cambios
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

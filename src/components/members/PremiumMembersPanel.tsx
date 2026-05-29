@@ -1,41 +1,31 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { TaskList, MemberRole } from "@/types";
-import { useListStore } from "@/stores/listStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useInvitationStore } from "@/stores/invitationStore";
-import {
-  getUserRole,
-  canChangeRoles,
-  canRemoveMembers,
-  canInviteMembers,
-} from "@/lib/permissions";
-import Avatar from "@/components/ui/Avatar";
-import Badge from "@/components/ui/Badge";
+import { getUserRole, canInviteMembers } from "@/lib/permissions";
 import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
 import {
-  Trash2,
   Check,
-  Shield,
-  Pencil,
-  X as XIcon,
   Mail,
   Send,
   UserPlus,
   CheckCircle2,
   Share2,
-  Users,
+  Link2,
+  Copy,
+  Eye,
+  Edit3,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface PremiumMembersPanelProps {
   list: TaskList;
-  memberNames: Record<string, string>;
-  originalNames: Record<string, string>;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -45,82 +35,13 @@ const roleOptions: { value: string; label: string }[] = [
   { value: "viewer", label: "Viewer" },
 ];
 
-const roleBadgeVariant: Record<MemberRole, "blue" | "sky" | "default"> = {
-  owner: "blue",
-  editor: "sky",
-  viewer: "default",
-};
-
-function InlineNameEditor({
-  currentName,
-  originalName,
-  onSave,
-  onCancel,
-}: {
-  currentName: string;
-  originalName: string;
-  onSave: (name: string) => void;
-  onCancel: () => void;
-}) {
-  const [value, setValue] = useState(currentName);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-    inputRef.current?.select();
-  }, []);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(value);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") onCancel();
-  };
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex items-center gap-2 flex-1 min-w-0"
-    >
-      <input
-        ref={inputRef}
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={handleKeyDown}
-        onBlur={() => onSave(value)}
-        placeholder={originalName}
-        className="flex-1 min-w-0 h-9 px-3 rounded-lg border border-blue-300 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-      />
-      <button
-        type="submit"
-        className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 transition-colors"
-      >
-        <Check size={16} />
-      </button>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors"
-      >
-        <XIcon size={16} />
-      </button>
-    </form>
-  );
-}
-
 export default function PremiumMembersPanel({
   list,
-  memberNames,
-  originalNames,
   isOpen,
   onClose,
 }: PremiumMembersPanelProps) {
   const { user } = useAuthStore();
-  const { updateMemberRole, removeMember, setCustomName } = useListStore();
-  const { sendEmailInvitation } = useInvitationStore();
-  const [editingUserId, setEditingUserId] = useState<string | null>(null);
+  const { sendEmailInvitation, createInvitation } = useInvitationStore();
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<MemberRole>("viewer");
   const [isSending, setIsSending] = useState(false);
@@ -129,13 +50,12 @@ export default function PremiumMembersPanel({
     notified: boolean;
   } | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
+  const [isCopyingLink, setIsCopyingLink] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   if (!user) return null;
 
   const myRole = getUserRole(list, user.id);
-  const isOwner = myRole === "owner";
-  const canManageRoles = canChangeRoles(myRole);
-  const canRemove = canRemoveMembers(myRole);
   const canInvite = canInviteMembers(myRole);
 
   const handleSendInvitation = async () => {
@@ -143,13 +63,6 @@ export default function PremiumMembersPanel({
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(inviteEmail.trim())) {
       setInviteError("Ingresa un correo electrónico válido.");
-      return;
-    }
-    const alreadyMember = list.members.some(
-      (m) => memberNames[m.userId]?.toLowerCase() === inviteEmail.toLowerCase(),
-    );
-    if (alreadyMember) {
-      setInviteError("Esta persona ya es miembro de la lista.");
       return;
     }
 
@@ -174,17 +87,20 @@ export default function PremiumMembersPanel({
     }
   };
 
-  const handleRoleChange = (memberId: string, newRole: string) => {
-    updateMemberRole(list.id, memberId, newRole as MemberRole);
-  };
-
-  const handleRemoveMember = (memberId: string) => {
-    removeMember(list.id, memberId);
-  };
-
-  const handleSaveCustomName = (memberId: string, newName: string) => {
-    setCustomName(list.id, memberId, newName);
-    setEditingUserId(null);
+  const handleCopyLink = async () => {
+    if (!user) return;
+    setIsCopyingLink(true);
+    try {
+      const invitation = await createInvitation(list.id, user.id, "viewer");
+      const url = `${window.location.origin}/invite/${invitation.token}`;
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 3000);
+    } catch (error) {
+      console.error("Error creating invite link:", error);
+    } finally {
+      setIsCopyingLink(false);
+    }
   };
 
   return (
@@ -192,288 +108,188 @@ export default function PremiumMembersPanel({
       isOpen={isOpen}
       onClose={onClose}
       title="Compartir lista"
-      description={`Invita y gestiona el acceso a "${list.name}"`}
-      size="xl"
+      description={`Invita personas a "${list.name}"`}
+      size="md"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 px-2 sm:px-0">
-        {/* Left Section - Info & Explanation */}
-        <div className="lg:col-span-1 space-y-4 lg:space-y-6">
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl lg:rounded-2xl p-4 lg:p-6 border border-blue-100">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center">
-                <Share2 size={20} className="text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-900">Compartir lista</h3>
-                <p className="text-sm text-gray-600">
-                  Colaboración en tiempo real
-                </p>
-              </div>
+      <div className="space-y-6">
+        {/* Role guide */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-100/80">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
+              <Share2 size={18} className="text-white" />
             </div>
-
-            <div className="space-y-3 text-sm text-gray-700">
-              <p className="leading-relaxed">
-                Invita a personas a colaborar en esta lista. Cada miembro podrá:
+            <div>
+              <h3 className="font-semibold text-gray-900 text-sm">
+                Colaboración en tiempo real
+              </h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {list.members.length}{" "}
+                {list.members.length === 1
+                  ? "miembro activo"
+                  : "miembros activos"}
               </p>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2">
-                  <CheckCircle2
-                    size={16}
-                    className="text-green-500 mt-0.5 flex-shrink-0"
-                  />
-                  <span>
-                    <strong>Editor:</strong> Crear y editar tareas
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2
-                    size={16}
-                    className="text-green-500 mt-0.5 flex-shrink-0"
-                  />
-                  <span>
-                    <strong>Viewer:</strong> Solo ver tareas
-                  </span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <CheckCircle2
-                    size={16}
-                    className="text-green-500 mt-0.5 flex-shrink-0"
-                  />
-                  <span>
-                    <strong>Owner:</strong> Control total
-                  </span>
-                </li>
-              </ul>
             </div>
           </div>
-
-          {/* Current Stats */}
-          <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-            <h4 className="font-semibold text-gray-900 mb-3">Estado actual</h4>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Tipo de lista</span>
-                <Badge variant={list.type === "shared" ? "blue" : "default"}>
-                  {list.type === "shared" ? "Compartida" : "Personal"}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Miembros totales</span>
-                <span className="text-sm font-semibold text-gray-900">
-                  {list.members.length} / ∞
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              {
+                icon: <Crown size={13} />,
+                role: "Owner",
+                desc: "Control total",
+                color: "bg-blue-100 text-blue-700",
+              },
+              {
+                icon: <Edit3 size={13} />,
+                role: "Editor",
+                desc: "Crear y completar tareas",
+                color: "bg-sky-100 text-sky-700",
+              },
+              {
+                icon: <Eye size={13} />,
+                role: "Viewer",
+                desc: "Solo ver",
+                color: "bg-gray-100 text-gray-600",
+              },
+            ].map((item) => (
+              <div
+                key={item.role}
+                className="bg-white/70 rounded-xl p-2.5 text-center"
+              >
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full mb-1",
+                    item.color,
+                  )}
+                >
+                  {item.icon} {item.role}
                 </span>
+                <p className="text-[10px] text-gray-500 leading-tight">
+                  {item.desc}
+                </p>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Tu rol</span>
-                <Badge variant={myRole ? roleBadgeVariant[myRole] : "default"}>
-                  {myRole || "Sin rol"}
-                </Badge>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
-        {/* Main Section - Invite Form & Members */}
-        <div className="lg:col-span-2 space-y-4 lg:space-y-6">
-          {/* Email invite section */}
-          {canInvite && (
-            <div className="bg-white rounded-xl lg:rounded-2xl border border-gray-200 p-4 lg:p-6 shadow-sm">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <UserPlus size={18} className="text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">
-                    Invitar por correo
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Envía una invitación directa
-                  </p>
-                </div>
+        {/* Email invite */}
+        {canInvite && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <UserPlus size={15} className="text-blue-600" />
               </div>
+              <h3 className="font-semibold text-gray-900 text-sm">
+                Invitar por correo
+              </h3>
+            </div>
 
-              <div className="space-y-4">
-                <div className="relative">
-                  <Mail
+            <div className="relative">
+              <Mail
+                size={16}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              />
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => {
+                  setInviteEmail(e.target.value);
+                  setInviteError(null);
+                  setInviteSent(null);
+                }}
+                onKeyDown={(e) => e.key === "Enter" && handleSendInvitation()}
+                placeholder="correo@ejemplo.com"
+                className="w-full h-11 pl-10 pr-4 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Select
+                options={roleOptions}
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value as MemberRole)}
+                className="!h-11 !text-sm flex-1"
+              />
+              <Button
+                onClick={handleSendInvitation}
+                isLoading={isSending}
+                icon={<Send size={15} />}
+                className="h-11 px-5 bg-blue-600 hover:bg-blue-700 flex-shrink-0"
+              >
+                Enviar
+              </Button>
+            </div>
+
+            <AnimatePresence>
+              {inviteError && (
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3"
+                >
+                  {inviteError}
+                </motion.p>
+              )}
+              {inviteSent && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  className="flex items-start gap-3 p-4 rounded-xl bg-green-50 border border-green-100"
+                >
+                  <CheckCircle2
                     size={18}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                    className="text-green-600 flex-shrink-0 mt-0.5"
                   />
-                  <input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => {
-                      setInviteEmail(e.target.value);
-                      setInviteError(null);
-                    }}
-                    onKeyDown={(e) =>
-                      e.key === "Enter" && handleSendInvitation()
-                    }
-                    placeholder="correo@ejemplo.com"
-                    className="w-full h-12 pl-12 pr-4 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-                  />
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <Select
-                    options={roleOptions}
-                    value={inviteRole}
-                    onChange={(e) =>
-                      setInviteRole(e.target.value as MemberRole)
-                    }
-                    className="!h-12 !text-sm sm:flex-1"
-                  />
-                  <Button
-                    onClick={handleSendInvitation}
-                    isLoading={isSending}
-                    icon={<Send size={16} />}
-                    className="h-12 px-6 bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
-                  >
-                    Enviar invitación
-                  </Button>
-                </div>
-              </div>
-
-              <AnimatePresence>
-                {inviteError && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200"
-                  >
-                    <p className="text-sm text-red-600">{inviteError}</p>
-                  </motion.div>
-                )}
-                {inviteSent && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    className="mt-4 p-4 rounded-lg bg-green-50 border border-green-200"
-                  >
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2
-                        size={20}
-                        className="text-green-600 flex-shrink-0 mt-0.5"
-                      />
-                      <div>
-                        <p className="text-sm font-medium text-green-800">
-                          Invitación enviada exitosamente
-                        </p>
-                        <p className="text-sm text-green-600 mt-1">
-                          {inviteSent.notified
-                            ? `Notificación enviada a ${inviteSent.email} dentro de TASKLYN.`
-                            : `Correo de invitación enviado a ${inviteSent.email}.`}
-                        </p>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {/* Members list */}
-          <div className="bg-white rounded-xl lg:rounded-2xl border border-gray-200 p-4 lg:p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <Users size={18} className="text-gray-600" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Miembros</h3>
-                  <p className="text-sm text-gray-600">
-                    {list.members.length}{" "}
-                    {list.members.length === 1 ? "persona" : "personas"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {list.members.map((member) => {
-                const isOwnerMember = member.role === "owner";
-                const isSelf = member.userId === user.id;
-                const displayName = memberNames[member.userId] || "Unknown";
-                const hasCustomName = !!list.customNames[member.userId];
-                const isEditing = editingUserId === member.userId;
-
-                return (
-                  <motion.div
-                    key={member.userId}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 transition-all duration-200"
-                  >
-                    <Avatar name={displayName} size="md" />
-
-                    <div className="flex-1 min-w-0">
-                      {isEditing ? (
-                        <InlineNameEditor
-                          currentName={memberNames[member.userId] || ""}
-                          originalName={originalNames[member.userId] || ""}
-                          onSave={(name) =>
-                            handleSaveCustomName(member.userId, name)
-                          }
-                          onCancel={() => setEditingUserId(null)}
-                        />
-                      ) : (
-                        <>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-gray-900 truncate">
-                              {displayName}
-                            </p>
-                            {isSelf && (
-                              <span className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded-md">
-                                Tú
-                              </span>
-                            )}
-                          </div>
-                          {hasCustomName && (
-                            <p className="text-sm text-gray-500 mt-1">
-                              Original: {originalNames[member.userId]}
-                            </p>
-                          )}
-                        </>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
-                      {isOwnerMember && <Badge variant="blue">Owner</Badge>}
-                      {canManageRoles && !isOwnerMember && (
-                        <Select
-                          options={roleOptions}
-                          value={member.role}
-                          onChange={(e) =>
-                            handleRoleChange(member.userId, e.target.value)
-                          }
-                          className="!h-9 !text-xs"
-                        />
-                      )}
-                      {isOwner && !isSelf && (
-                        <button
-                          onClick={() => setEditingUserId(member.userId)}
-                          className="p-2 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
-                          title="Editar nombre"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                      )}
-                      {canRemove && !isSelf && (
-                        <button
-                          onClick={() => handleRemoveMember(member.userId)}
-                          className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
-                          title="Eliminar miembro"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+                  <div>
+                    <p className="text-sm font-medium text-green-800">
+                      Invitación enviada
+                    </p>
+                    <p className="text-xs text-green-600 mt-0.5">
+                      {inviteSent.notified
+                        ? `Notificado a ${inviteSent.email} dentro de Tasklyn.`
+                        : `Correo enviado a ${inviteSent.email}.`}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+        )}
+
+        {/* Copy invite link */}
+        <div className="pt-2 border-t border-gray-100">
+          <motion.button
+            onClick={handleCopyLink}
+            disabled={isCopyingLink}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.98 }}
+            className={cn(
+              "w-full flex items-center justify-center gap-2 h-11 rounded-xl border text-sm font-medium transition-all duration-200",
+              linkCopied
+                ? "border-green-300 bg-green-50 text-green-700"
+                : "border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:border-gray-300",
+            )}
+          >
+            {isCopyingLink ? (
+              <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+            ) : linkCopied ? (
+              <Check size={15} className="text-green-600" />
+            ) : (
+              <Link2 size={15} />
+            )}
+            {linkCopied
+              ? "¡Enlace copiado!"
+              : isCopyingLink
+                ? "Generando enlace..."
+                : "Copiar enlace de invitación"}
+            {!linkCopied && !isCopyingLink && (
+              <Copy size={12} className="text-gray-400 ml-0.5" />
+            )}
+          </motion.button>
+          <p className="text-[11px] text-gray-400 text-center mt-2">
+            Expira en 7 días · Se une como Viewer
+          </p>
         </div>
       </div>
     </Modal>

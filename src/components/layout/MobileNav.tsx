@@ -17,11 +17,12 @@ export default function MobileNav() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const view = searchParams.get("view");
+  const section = searchParams.get("section");
   const { unreadCount } = useNotificationStore();
 
   const items = [
-    { name: "Panel", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Listas", href: "/dashboard?view=personal", icon: FolderOpen },
+    { name: "Inicio", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Listas", href: "/dashboard?section=lists", icon: FolderOpen },
     { name: "Alertas", href: "/notifications", icon: Bell, badge: unreadCount },
     { name: "Perfil", href: "/profile", icon: User },
     { name: "Config", href: "/settings", icon: Settings },
@@ -29,14 +30,15 @@ export default function MobileNav() {
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {
-      // "Panel" activo solo cuando no hay parámetro view
-      return pathname === "/dashboard" && !view;
+      // "Inicio" activo solo cuando no hay section/view params
+      return pathname === "/dashboard" && !section && !view;
     }
-    if (href === "/dashboard?view=personal") {
-      return pathname === "/dashboard" && view === "personal";
-    }
-    if (href === "/dashboard?view=shared") {
-      return pathname === "/dashboard" && view === "shared";
+    if (href === "/dashboard?section=lists") {
+      // "Listas" activo cuando en dashboard con section/view o dentro de una lista
+      return (
+        (pathname === "/dashboard" && (!!section || !!view)) ||
+        pathname?.startsWith("/lists/")
+      );
     }
     return pathname === href || pathname?.startsWith(href + "/");
   };

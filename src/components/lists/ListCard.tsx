@@ -44,87 +44,126 @@ export default function ListCard({ list }: ListCardProps) {
     >
       <motion.div
         whileHover={{
-          y: -2,
-          boxShadow: "0 8px 32px -8px rgba(59,130,246,0.25)",
+          y: -4,
+          boxShadow:
+            list.type === "shared"
+              ? "0 20px 48px -12px rgba(59,130,246,0.3), 0 0 0 1px rgba(59,130,246,0.12)"
+              : "0 20px 48px -12px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)",
         }}
         whileTap={{ scale: 0.98 }}
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-        className="relative p-4 sm:p-5 rounded-xl border border-gray-200 bg-white hover:border-blue-300 transition-colors duration-200"
+        transition={{ type: "spring", stiffness: 380, damping: 25 }}
+        className="relative p-5 rounded-2xl border border-gray-200/80 bg-white hover:border-blue-200 transition-all duration-300 overflow-hidden"
       >
+        {/* Top accent bar */}
+        <div
+          className={cn(
+            "absolute top-0 left-0 right-0 h-[3px] transition-opacity duration-300",
+            list.type === "shared"
+              ? "bg-gradient-to-r from-blue-400 via-indigo-500 to-blue-500"
+              : "bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 opacity-0 group-hover:opacity-100",
+          )}
+        />
+
+        {/* Hover gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/0 via-transparent to-indigo-50/0 group-hover:from-blue-50/25 group-hover:to-indigo-50/15 transition-all duration-500 pointer-events-none rounded-2xl" />
+
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-[15px] font-semibold text-gray-900 truncate group-hover:text-blue-700 transition-colors">
+          <div className="flex-1 min-w-0 pr-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <h3 className="text-[15px] font-semibold text-gray-900 truncate group-hover:text-blue-700 transition-colors leading-snug">
                 {list.name}
               </h3>
               <ArrowUpRight
-                size={14}
-                className="text-gray-300 group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all flex-shrink-0"
+                size={13}
+                className="text-gray-300 group-hover:text-blue-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all flex-shrink-0"
               />
             </div>
-            <p className="text-xs text-gray-400 flex items-center gap-1.5">
-              <Clock size={10} />
+            <p className="text-[11px] text-gray-400 flex items-center gap-1">
+              <Clock size={9} />
               {formatDate(list.createdAt)}
             </p>
           </div>
           <div
             className={cn(
-              "flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0",
+              "flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0 shadow-sm",
               list.type === "shared"
-                ? "bg-blue-50 text-blue-600"
-                : "bg-gray-100 text-gray-500",
+                ? "bg-gradient-to-br from-blue-500 to-indigo-600"
+                : "bg-gradient-to-br from-gray-100 to-gray-200",
             )}
           >
-            {list.type === "shared" ? <Share2 size={14} /> : <Lock size={14} />}
+            {list.type === "shared" ? (
+              <Share2 size={15} className="text-white" />
+            ) : (
+              <Lock size={15} className="text-gray-500" />
+            )}
           </div>
         </div>
 
-        {/* Task count */}
+        {/* Task stats */}
         <div className="flex items-center gap-4 mb-4">
-          <div className="flex items-center gap-1.5 text-sm">
-            <span className="font-semibold text-gray-900">{pendingCount}</span>
-            <span className="text-gray-500 text-xs">pendientes</span>
+          <div className="flex flex-col">
+            <span className="text-lg font-bold text-gray-900 leading-none tabular-nums">
+              {pendingCount}
+            </span>
+            <span className="text-[10px] text-gray-400 mt-0.5">pendientes</span>
           </div>
-          <div className="flex items-center gap-1.5 text-sm">
-            <CheckCircle2 size={14} className="text-blue-500" />
-            <span className="font-semibold text-gray-900">
+          <div className="w-px h-7 bg-gray-100" />
+          <div className="flex flex-col">
+            <span className="text-lg font-bold text-blue-600 leading-none tabular-nums">
               {completedCount}
             </span>
-            <span className="text-gray-500 text-xs">hechas</span>
+            <span className="text-[10px] text-gray-400 mt-0.5">
+              completadas
+            </span>
           </div>
         </div>
 
         {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-500">
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-gray-400">
               {completedCount}/{totalCount} tareas
             </span>
-            <span className="font-medium text-gray-700">
+            <span className="text-[11px] font-semibold text-gray-600 tabular-nums">
               {totalCount > 0 ? Math.round(progress) : 0}%
             </span>
           </div>
           <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-500 rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{
+                duration: 0.9,
+                ease: [0.16, 1, 0.3, 1],
+                delay: 0.15,
+              }}
+              className={cn(
+                "h-full rounded-full",
+                list.type === "shared"
+                  ? "bg-gradient-to-r from-blue-500 to-indigo-500"
+                  : "bg-gradient-to-r from-gray-400 to-gray-500",
+              )}
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
+        <div className="flex items-center justify-between mt-4 pt-3.5 border-t border-gray-100/80">
           <div className="flex items-center gap-1.5">
-            <Users size={12} className="text-gray-400" />
-            <span className="text-xs text-gray-500">
+            <Users size={11} className="text-gray-400" />
+            <span className="text-[11px] text-gray-400">
               {list.members.length} miembro
               {list.members.length !== 1 ? "s" : ""}
             </span>
           </div>
-          {isOwner && (
-            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+          {isOwner ? (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-600 border border-blue-100">
               Owner
+            </span>
+          ) : (
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-50 text-gray-500 border border-gray-100">
+              Miembro
             </span>
           )}
         </div>

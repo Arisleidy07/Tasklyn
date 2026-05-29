@@ -83,7 +83,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
               ? isCompleted
                 ? "Reabrir tarea"
                 : "Completar tarea"
-              : "Solo el propietario puede completar tareas"
+              : "Sin permiso para completar tareas"
           }
         >
           {isCompleted ? <CheckCircle2 size={20} /> : <Circle size={20} />}
