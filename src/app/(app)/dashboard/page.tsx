@@ -48,15 +48,6 @@ export default function DashboardPage() {
   const limits = PLAN_LIMITS[user.plan];
   const canCreate = allLists.length < limits.maxLists;
 
-  // Debug logs for shared lists
-  console.log("📊 Dashboard rendering:", {
-    userId: user.id,
-    personalListsCount: personalLists.length,
-    sharedListsCount: sharedLists.length,
-    allListsCount: allLists.length,
-    sharedListIds: sharedLists.map((l) => ({ id: l.id, name: l.name })),
-  });
-
   const allListIds = new Set(allLists.map((l) => l.id));
   const userTasks = tasks.filter((t) => allListIds.has(t.listId));
   const completedTasks = userTasks.filter((t) => t.status === "completed");

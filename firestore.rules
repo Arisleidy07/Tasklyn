@@ -29,7 +29,10 @@ service cloud.firestore {
     }
     
     function isListEditor(listId) {
-      // owner can always edit; for others we rely on client-enforced role checks
+      // Firestore rules cannot iterate maps inside arrays, so role enforcement
+      // (owner vs editor vs viewer) is handled client-side. This rule ensures
+      // only authenticated list members can write — viewers are blocked from
+      // the UI before they can reach write paths.
       return isListOwner(listId) || isListMember(listId);
     }
     

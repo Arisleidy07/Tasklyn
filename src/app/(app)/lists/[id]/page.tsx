@@ -59,9 +59,23 @@ export default function ListDetailPage() {
     }
   }, [listId, subscribeToList, unsubscribeFromList]);
 
-  // Fetch real-time member profiles (name, email, photo) from Firestore
-  const memberIds = list?.members.map((m) => m.userId) ?? [];
-  const memberProfiles = useMemberProfiles(memberIds);
+  // Collect ALL user IDs referenced in this list context:
+  // current members + anyone who created/completed a task or appears in history.
+  // This ensures "Completado por" shows the real name even for removed members.
+  const allProfileIds = useMemo(() => {
+    const ids = new Set<string>(list?.members.map((m) => m.userId) ?? []);
+    tasks.forEach((t) => {
+      if (t.createdBy) ids.add(t.createdBy);
+      if (t.completedBy) ids.add(t.completedBy);
+      (t.history ?? []).forEach((h) => {
+        if (h.performedBy) ids.add(h.performedBy);
+      });
+    });
+    return Array.from(ids);
+  }, [list?.members, tasks]);
+
+  // Subscribe to real-time Firestore profiles for all referenced users
+  const memberProfiles = useMemberProfiles(allProfileIds);
 
   // All useMemo hooks must be before any conditional returns
   const filteredTasks = useMemo(() => {
