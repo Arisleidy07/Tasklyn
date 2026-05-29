@@ -11,6 +11,8 @@ import {
   prepareImageFile,
   deleteProfilePhoto,
 } from "@/lib/storage";
+import { auth } from "@/lib/firebase";
+import { updateProfile } from "firebase/auth";
 import ProfileHeader from "./header";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
@@ -107,11 +109,31 @@ export default function ProfilePage() {
       );
       setEditPhotoURL(downloadURL);
       setCropImageSrc(null);
+
+      // Auto-save to Firestore and Auth immediately after crop
+      await handleSavePhoto(downloadURL);
     } catch (error) {
       console.error("Error uploading cropped photo:", error);
-      alert("Error al subir la foto recortada");
+      alert("Error al subir la foto");
     } finally {
       setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleSavePhoto = async (photoURL: string) => {
+    try {
+      // Update Firestore
+      await updateUserInFirestore(user.id, { photoURL });
+
+      // Update Firebase Auth profile
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, { photoURL });
+      }
+
+      // Update local state
+      updateUser({ photoURL });
+    } catch (error) {
+      console.error("Error saving photo:", error);
     }
   };
 
@@ -129,15 +151,32 @@ export default function ProfilePage() {
     if (!editName.trim()) return;
     setIsSavingProfile(true);
     try {
-      const updates = {
+      const updates: { name: string; photoURL?: string } = {
         name: editName.trim(),
-        photoURL: editPhotoURL.trim() || user.photoURL,
       };
+
+      // Only include photoURL if it changed
+      if (editPhotoURL !== user.photoURL) {
+        updates.photoURL = editPhotoURL;
+      }
+
+      // Update Firestore
       await updateUserInFirestore(user.id, updates);
+
+      // Update Firebase Auth profile
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, {
+          displayName: updates.name,
+          ...(updates.photoURL && { photoURL: updates.photoURL }),
+        });
+      }
+
+      // Update local state
       updateUser(updates);
       setShowEditProfile(false);
     } catch (error) {
       console.error("Error updating profile:", error);
+      alert("Error al guardar el perfil");
     } finally {
       setIsSavingProfile(false);
     }
@@ -453,230 +492,159 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-      {/* Photo Cropper Modal */}
+      {/* Photo Cropper Modal - Z-INDEX 100000 POR ENCIMA DE TODO */}
       <PhotoCropperModal
         imageSrc={cropImageSrc || ""}
         isOpen={!!cropImageSrc}
         onClose={() => setCropImageSrc(null)}
         onCropComplete={handleCropComplete}
         onDelete={editPhotoURL ? handleDeletePhoto : undefined}
+        currentPhotoURL={editPhotoURL}
       />
 
-      {/* Premium Edit Profile Modal */}
+      {/* Edit Profile Modal - DISEÑO MINIMALISTA EJECUTIVO */}
       <AnimatePresence>
         {showEditProfile && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[99999] flex items-center justify-center"
+            className="fixed inset-0 z-[99990] flex items-center justify-center p-4"
           >
-            {/* Premium Backdrop with Gradient */}
+            {/* Simple dark overlay - NO blur exagerado */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-gradient-to-br from-gray-900/80 via-blue-900/70 to-indigo-900/80 backdrop-blur-xl"
+              className="absolute inset-0 bg-black/50"
               onClick={() => setShowEditProfile(false)}
             />
 
-            {/* Premium Modal Container */}
+            {/* Clean modal - estilo Linear/Stripe */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              initial={{ opacity: 0, scale: 0.96, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 30 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              exit={{ opacity: 0, scale: 0.96, y: 10 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className={cn(
-                "relative z-10 w-full max-w-md mx-4",
-                "bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden",
-                "border border-white/20",
-                "flex flex-col max-h-[90vh]",
+                "relative z-10 w-full max-w-[420px]",
+                "bg-white rounded-2xl shadow-xl overflow-hidden",
+                "flex flex-col max-h-[85vh]",
               )}
             >
-              {/* Premium Header with Gradient */}
-              <div className="relative px-6 py-5 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700">
-                <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImEiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0id2hpdGUiIHN0b3Atb3BhY2l0eT0iMC4xIi8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSJ0cmFuc3BhcmVudCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjYSkiLz48L3N2Zz4=')] opacity-50" />
-
+              {/* Clean header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <h2 className="text-base font-semibold text-gray-900">
+                  Editar perfil
+                </h2>
                 <button
                   onClick={() => setShowEditProfile(false)}
-                  className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
-
-                <div className="relative flex flex-col items-center text-center">
-                  <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center mb-3 ring-4 ring-white/10">
-                    {editPhotoURL ? (
-                      <img
-                        src={editPhotoURL}
-                        alt="Avatar preview"
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <User size={28} className="text-white" />
-                    )}
-                  </div>
-                  <h2 className="text-xl font-bold text-white">
-                    Editar perfil
-                  </h2>
-                  <p className="text-sm text-blue-100 mt-1">
-                    Personaliza tu información
-                  </p>
-                </div>
               </div>
 
               {/* Content */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                {/* Photo - Top centered */}
+                <div className="flex flex-col items-center">
+                  <div className="relative">
+                    <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                      {editPhotoURL ? (
+                        <img
+                          src={editPhotoURL}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User size={32} className="text-gray-400" />
+                      )}
+                    </div>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute -bottom-1 -right-1 w-7 h-7 bg-gray-900 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
+                    >
+                      <Camera size={14} />
+                    </button>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    {editPhotoURL ? "Cambiar foto" : "Agregar foto"}
+                  </p>
+                </div>
+
                 {/* Name Input */}
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <Sparkles size={14} className="text-blue-500" />
-                    Nombre completo
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-gray-700">
+                    Nombre
                   </label>
                   <Input
-                    placeholder="Tu nombre"
+                    placeholder="Tu nombre completo"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSaveProfile()}
                     autoFocus
-                    className="text-base"
+                    className="h-11"
                   />
                 </div>
 
-                {/* Photo Section */}
-                <div className="space-y-3">
-                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <Camera size={14} className="text-blue-500" />
-                    Foto de perfil
+                {/* Email (read only) */}
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-gray-700">
+                    Correo electrónico
                   </label>
-
-                  {/* Current Photo Preview */}
-                  {editPhotoURL && (
-                    <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
-                      <div className="relative">
-                        <img
-                          src={editPhotoURL}
-                          alt="Current avatar"
-                          className="w-16 h-16 rounded-full object-cover ring-2 ring-white shadow-lg"
-                        />
-                        <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                          <Check size={12} className="text-white" />
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">
-                          Foto actual
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Esta es tu foto de perfil visible para todos
-                        </p>
-                      </div>
-                      <button
-                        onClick={handleDeletePhoto}
-                        className="p-2 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-50 transition-colors"
-                        title="Eliminar foto"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Upload Area */}
-                  <div
-                    className={cn(
-                      "relative border-2 border-dashed rounded-2xl p-6 text-center transition-all cursor-pointer group",
-                      dragActive
-                        ? "border-blue-500 bg-blue-50 scale-[1.02]"
-                        : "border-gray-300 hover:border-blue-400 hover:bg-blue-50/30",
-                      isUploadingPhoto && "opacity-60 pointer-events-none",
-                    )}
-                    onDragEnter={(e) => {
-                      e.preventDefault();
-                      setDragActive(true);
-                    }}
-                    onDragLeave={(e) => {
-                      e.preventDefault();
-                      setDragActive(false);
-                    }}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      disabled={isUploadingPhoto}
-                    />
-
-                    {isUploadingPhoto ? (
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="relative">
-                          <div className="w-12 h-12 rounded-full border-3 border-blue-200 border-t-blue-600 animate-spin" />
-                        </div>
-                        <p className="text-sm font-medium text-gray-700">
-                          Procesando imagen...
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Upload size={24} className="text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-gray-700">
-                            {editPhotoURL
-                              ? "Cambiar foto"
-                              : "Subir foto de perfil"}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Arrastra, pega o haz clic para seleccionar
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-[10px] px-2 py-1 bg-gray-100 rounded-full text-gray-500">
-                            JPG
-                          </span>
-                          <span className="text-[10px] px-2 py-1 bg-gray-100 rounded-full text-gray-500">
-                            PNG
-                          </span>
-                          <span className="text-[10px] px-2 py-1 bg-gray-100 rounded-full text-gray-500">
-                            Máx. 5MB
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                  <div className="h-11 px-3 flex items-center bg-gray-50 rounded-lg text-sm text-gray-500 border border-gray-200">
+                    {user.email}
                   </div>
-
-                  {/* Mobile Camera Hint */}
-                  <p className="text-xs text-gray-400 text-center">
-                    Compatible con cámara del teléfono, galería y desktop
-                  </p>
                 </div>
+
+                {/* Delete photo link */}
+                {editPhotoURL && (
+                  <button
+                    onClick={handleDeletePhoto}
+                    className="text-sm text-red-600 hover:text-red-700 font-medium transition-colors"
+                  >
+                    Eliminar foto de perfil
+                  </button>
+                )}
               </div>
 
-              {/* Actions Footer */}
-              <div className="p-6 pt-4 border-t border-gray-100 bg-gradient-to-b from-white to-gray-50/50">
+              {/* Actions */}
+              <div className="p-5 pt-4 border-t border-gray-100 bg-gray-50/50">
                 <div className="flex gap-3">
-                  <Button
-                    variant="ghost"
+                  <button
                     onClick={() => setShowEditProfile(false)}
-                    className="flex-1 h-11"
+                    className="flex-1 h-10 px-4 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
                   >
                     Cancelar
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     onClick={handleSaveProfile}
-                    isLoading={isSavingProfile}
-                    disabled={!editName.trim()}
-                    className="flex-1 h-11 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                    icon={<Check size={16} />}
+                    disabled={!editName.trim() || isSavingProfile}
+                    className={cn(
+                      "flex-1 h-10 px-4 rounded-lg text-sm font-medium text-white transition-colors",
+                      !editName.trim() || isSavingProfile
+                        ? "bg-gray-300 cursor-not-allowed"
+                        : "bg-gray-900 hover:bg-gray-800",
+                    )}
                   >
-                    Guardar cambios
-                  </Button>
+                    {isSavingProfile ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Guardando...
+                      </span>
+                    ) : (
+                      "Guardar cambios"
+                    )}
+                  </button>
                 </div>
               </div>
             </motion.div>

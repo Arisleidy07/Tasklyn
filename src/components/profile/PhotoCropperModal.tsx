@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Cropper from "react-easy-crop";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ZoomIn, ZoomOut, Move, Check, Trash2 } from "lucide-react";
-import Button from "@/components/ui/Button";
+import { X, ZoomIn, ZoomOut, Check, Trash2, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PhotoCropperModalProps {
@@ -13,6 +12,7 @@ interface PhotoCropperModalProps {
   onClose: () => void;
   onCropComplete: (croppedImage: Blob) => void;
   onDelete?: () => void;
+  currentPhotoURL?: string;
 }
 
 type Point = { x: number; y: number };
@@ -24,55 +24,34 @@ export default function PhotoCropperModal({
   onClose,
   onCropComplete,
   onDelete,
+  currentPhotoURL,
 }: PhotoCropperModalProps) {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  const onCropCompleteCallback = useCallback((_: Area, croppedAreaPixels: Area) => {
-    setCroppedAreaPixels(croppedAreaPixels);
-  }, []);
+  const onCropCompleteCallback = useCallback(
+    (_: Area, croppedAreaPixels: Area) => {
+      setCroppedAreaPixels(croppedAreaPixels);
+    },
+    [],
+  );
+
+  // Generate preview when crop changes
+  useEffect(() => {
+    if (croppedAreaPixels && imageSrc) {
+      generatePreview(imageSrc, croppedAreaPixels).then(setPreviewUrl);
+    }
+  }, [croppedAreaPixels, imageSrc]);
 
   const handleZoomIn = () => setZoom((z) => Math.min(z + 0.1, 3));
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.1, 1));
 
   const createCroppedImage = async (): Promise<Blob> => {
     if (!croppedAreaPixels) throw new Error("No crop area selected");
-
-    const image = await createImage(imageSrc);
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) throw new Error("Could not get canvas context");
-
-    // Set canvas size to the cropped area size
-    canvas.width = croppedAreaPixels.width;
-    canvas.height = croppedAreaPixels.height;
-
-    // Draw the cropped portion of the image
-    ctx.drawImage(
-      image,
-      croppedAreaPixels.x,
-      croppedAreaPixels.y,
-      croppedAreaPixels.width,
-      croppedAreaPixels.height,
-      0,
-      0,
-      croppedAreaPixels.width,
-      croppedAreaPixels.height
-    );
-
-    return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error("Could not create blob"));
-        },
-        "image/jpeg",
-        0.95
-      );
-    });
+    return await getCroppedImg(imageSrc, croppedAreaPixels);
   };
 
   const handleSave = async () => {
@@ -82,6 +61,7 @@ export default function PhotoCropperModal({
       onCropComplete(croppedBlob);
     } catch (error) {
       console.error("Error cropping image:", error);
+      alert("Error al recortar la imagen");
     } finally {
       setIsProcessing(false);
     }
@@ -103,49 +83,39 @@ export default function PhotoCropperModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[99999] flex items-center justify-center"
+          className="fixed inset-0 z-[100000] flex items-center justify-center"
         >
-          {/* Backdrop */}
+          {/* Dark overlay - ENCIMA DE TODO */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/80"
             onClick={onClose}
           />
 
-          {/* Modal */}
+          {/* Main Container */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              "relative z-10 w-full max-w-lg mx-4",
-              "bg-white rounded-2xl shadow-2xl overflow-hidden",
-              "flex flex-col max-h-[90vh]"
+              "relative z-10 w-full h-full md:h-auto md:max-h-[90vh] md:max-w-5xl",
+              "md:rounded-2xl overflow-hidden",
+              "flex flex-col md:flex-row bg-white",
             )}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <Move size={14} className="text-blue-600" />
-                </div>
-                <span className="text-sm font-semibold text-gray-900">
-                  Ajustar foto
-                </span>
-              </div>
-              <button
-                onClick={onClose}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-              >
-                <X size={18} />
-              </button>
-            </div>
+            {/* Close button */}
+            <button
+              onClick={onClose}
+              className="absolute top-4 right-4 z-20 p-2 rounded-full bg-black/20 hover:bg-black/40 text-white transition-colors"
+            >
+              <X size={20} />
+            </button>
 
-            {/* Cropper Area */}
-            <div className="relative flex-1 min-h-[300px] bg-gray-900">
+            {/* Left side - Cropper */}
+            <div className="relative flex-1 min-h-[50vh] md:min-h-[500px] bg-gray-900">
               <Cropper
                 image={imageSrc}
                 crop={crop}
@@ -155,72 +125,153 @@ export default function PhotoCropperModal({
                 onZoomChange={setZoom}
                 onCropComplete={onCropCompleteCallback}
                 cropShape="round"
-                showGrid={true}
+                showGrid={false}
                 style={{
                   containerStyle: {
-                    background: "#1f2937",
+                    background: "#111827",
                   },
                   cropAreaStyle: {
-                    border: "2px solid #3b82f6",
-                    boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.5)",
+                    border: "2px solid white",
+                    boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.7)",
                   },
                 }}
               />
 
-              {/* Zoom Controls */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-full px-3 py-1.5">
+              {/* Zoom Controls - floating */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/60 rounded-full px-4 py-2">
                 <button
                   onClick={handleZoomOut}
-                  className="p-1.5 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                  className="p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
                   disabled={zoom <= 1}
                 >
-                  <ZoomOut size={16} />
+                  <ZoomOut size={18} />
                 </button>
-                <span className="text-xs text-white/80 font-medium min-w-[40px] text-center">
+                <span className="text-sm text-white/90 font-medium min-w-[50px] text-center">
                   {Math.round(zoom * 100)}%
                 </span>
                 <button
                   onClick={handleZoomIn}
-                  className="p-1.5 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+                  className="p-2 rounded-full text-white/70 hover:text-white hover:bg-white/10 transition-colors disabled:opacity-30"
                   disabled={zoom >= 3}
                 >
-                  <ZoomIn size={16} />
+                  <ZoomIn size={18} />
                 </button>
               </div>
             </div>
 
-            {/* Instructions */}
-            <div className="px-4 py-2 bg-blue-50/50 border-b border-gray-100">
-              <p className="text-xs text-gray-500 text-center">
-                Arrastra para mover • Usa los controles para hacer zoom
-              </p>
-            </div>
+            {/* Right side - Preview & Controls */}
+            <div className="w-full md:w-[320px] bg-white flex flex-col">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h3 className="text-base font-semibold text-gray-900">
+                  Ajustar foto
+                </h3>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  Mueve y haz zoom para ajustar
+                </p>
+              </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-between gap-2 p-4 bg-white">
-              <div>
+              {/* Preview Section */}
+              <div className="flex-1 p-6">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+                      Vista previa
+                    </p>
+                    <div className="flex justify-center">
+                      <div className="relative">
+                        {previewUrl ? (
+                          <img
+                            src={previewUrl}
+                            alt="Preview"
+                            className="w-32 h-32 rounded-full object-cover ring-4 ring-gray-100"
+                          />
+                        ) : (
+                          <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center ring-4 ring-gray-50">
+                            <User size={40} className="text-gray-300" />
+                          </div>
+                        )}
+                        <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center ring-2 ring-white">
+                          <Check size={14} className="text-white" />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 text-center mt-3">
+                      Así se verá tu foto de perfil
+                    </p>
+                  </div>
+
+                  {/* Current photo */}
+                  {currentPhotoURL && (
+                    <div className="pt-4 border-t border-gray-100">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+                        Foto actual
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={currentPhotoURL}
+                          alt="Current"
+                          className="w-12 h-12 rounded-full object-cover"
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-600">
+                            Se reemplazará al guardar
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="p-6 border-t border-gray-100 space-y-3">
+                <button
+                  onClick={handleSave}
+                  disabled={isProcessing}
+                  className={cn(
+                    "w-full flex items-center justify-center gap-2 px-4 py-3",
+                    "bg-gray-900 hover:bg-gray-800 text-white rounded-xl",
+                    "text-sm font-medium transition-colors",
+                    "disabled:opacity-50 disabled:cursor-not-allowed",
+                  )}
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      Guardar foto
+                    </>
+                  )}
+                </button>
+
                 {onDelete && (
                   <button
                     onClick={handleDelete}
-                    className="flex items-center gap-1.5 text-xs font-medium text-red-500 hover:text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors"
+                    className={cn(
+                      "w-full flex items-center justify-center gap-2 px-4 py-3",
+                      "text-red-600 hover:bg-red-50 rounded-xl",
+                      "text-sm font-medium transition-colors",
+                    )}
                   >
-                    <Trash2 size={14} />
+                    <Trash2 size={16} />
                     Eliminar foto
                   </button>
                 )}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={onClose}>
-                  Cancelar
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleSave}
-                  isLoading={isProcessing}
-                  icon={<Check size={14} />}
+
+                <button
+                  onClick={onClose}
+                  className={cn(
+                    "w-full px-4 py-3 text-gray-500 hover:text-gray-700",
+                    "text-sm font-medium transition-colors",
+                  )}
                 >
-                  Guardar
-                </Button>
+                  Cancelar
+                </button>
               </div>
             </div>
           </motion.div>
@@ -228,6 +279,58 @@ export default function PhotoCropperModal({
       )}
     </AnimatePresence>
   );
+}
+
+// Generate preview URL from crop area
+async function generatePreview(imageSrc: string, crop: Area): Promise<string> {
+  const blob = await getCroppedImg(imageSrc, crop);
+  return URL.createObjectURL(blob);
+}
+
+// Helper to create cropped image
+async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<Blob> {
+  const image = await createImage(imageSrc);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) throw new Error("No canvas context");
+
+  canvas.width = pixelCrop.width;
+  canvas.height = pixelCrop.height;
+
+  ctx.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    pixelCrop.width,
+    pixelCrop.height,
+  );
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Canvas to Blob failed"));
+      },
+      "image/jpeg",
+      0.95,
+    );
+  });
+}
+
+// Helper function to create image from URL
+function createImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener("load", () => resolve(image));
+    image.addEventListener("error", (error) => reject(error));
+    image.setAttribute("crossOrigin", "anonymous");
+    image.src = url;
+  });
 }
 
 // Helper function to create image from URL
