@@ -48,6 +48,22 @@ const toDate = (timestamp: unknown): string => {
   return new Date().toISOString();
 };
 
+/**
+ * Remove keys with `undefined` values from an object.
+ * Firestore throws if `undefined` is passed to setDoc/updateDoc.
+ */
+const stripUndefined = <T extends Record<string, unknown>>(
+  obj: T,
+): Partial<T> => {
+  const result: Partial<T> = {};
+  for (const key in obj) {
+    if (obj[key] !== undefined) {
+      result[key] = obj[key] as T[Extract<keyof T, string>];
+    }
+  }
+  return result;
+};
+
 const withTimestamps = <T extends Record<string, unknown>>(
   data: T,
 ): T & { updatedAt: ReturnType<typeof serverTimestamp> } => ({
@@ -343,8 +359,9 @@ export const createTask = async (
   task: Omit<Task, "id" | "createdAt">,
 ): Promise<string> => {
   const taskRef = doc(tasksCollection);
+  const cleanTask = stripUndefined(task);
   await setDoc(taskRef, {
-    ...task,
+    ...cleanTask,
     createdAt: serverTimestamp(),
     history: task.history || [],
   });
@@ -357,7 +374,8 @@ export const updateTask = async (
 ): Promise<void> => {
   const taskRef = doc(db, "tasks", taskId);
   const { id, createdAt, ...rest } = updates;
-  await updateDoc(taskRef, withTimestamps(rest));
+  const cleanUpdates = stripUndefined(rest);
+  await updateDoc(taskRef, withTimestamps(cleanUpdates));
 };
 
 export const deleteTask = async (taskId: string): Promise<void> => {

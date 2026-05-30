@@ -32,7 +32,6 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import Textarea from "@/components/ui/Textarea";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { canInviteMembers, canShareList } from "@/lib/permissions";
@@ -508,12 +507,16 @@ export default function ListDetailPage() {
               <FileText size={12} className="text-gray-400" />
               Descripción
             </label>
-            <Textarea
+            <textarea
               placeholder="Detalles adicionales de la tarea..."
               value={newTaskDescription}
-              onChange={(e) => setNewTaskDescription(e.target.value)}
-              rows={3}
-              className="text-sm resize-none"
+              onChange={(e) => {
+                setNewTaskDescription(e.target.value);
+                e.target.style.height = "auto";
+                e.target.style.height = e.target.scrollHeight + "px";
+              }}
+              rows={2}
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all resize-none overflow-hidden min-h-[44px]"
             />
           </div>
 

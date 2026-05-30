@@ -1,18 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
-import Input from "@/components/ui/Input";
-import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
+import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import type { Task } from "@/types";
-import { Plus, X, Phone, MapPin, FileText } from "lucide-react";
+import { Plus, X, Phone, MapPin } from "lucide-react";
 import TaskOptionsBar from "./TaskOptionsBar";
-import DueDatePicker from "./pickers/DueDatePicker";
-import ReminderPicker from "./pickers/ReminderPicker";
-import RecurrencePicker from "./pickers/RecurrencePicker";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface CreateTaskFormProps {
   listId: string;
@@ -34,10 +30,6 @@ export default function CreateTaskForm({
     { id: string; at: string; sent: boolean }[]
   >([]);
   const [recurrence, setRecurrence] = useState<Task["recurrence"]>(null);
-
-  const [showReminderPicker, setShowReminderPicker] = useState(false);
-  const [showDueDatePicker, setShowDueDatePicker] = useState(false);
-  const [showRecurrencePicker, setShowRecurrencePicker] = useState(false);
 
   const { user } = useAuthStore();
   const { createTask } = useTaskStore();
@@ -109,157 +101,110 @@ export default function CreateTaskForm({
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
       className="rounded-2xl border border-blue-200 bg-white p-5 shadow-xl shadow-gray-200/50"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Task Title */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-            Título de la tarea
-          </label>
-          <Input
-            placeholder="Ej: Instalar router principal"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            autoFocus
-            className="text-sm"
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {/* Título */}
+        <AutoResizeTextarea
+          value={title}
+          onChange={setTitle}
+          placeholder="¿Qué necesitas hacer?"
+          autoFocus
+          className="text-base font-semibold text-gray-900 placeholder:text-gray-300"
+          minRows={1}
+        />
+
+        {/* Descripción */}
+        <AutoResizeTextarea
+          value={description}
+          onChange={setDescription}
+          placeholder="Añade una descripción..."
+          className="text-sm text-gray-600 placeholder:text-gray-300"
+          minRows={1}
+        />
+
+        {/* Ubicación */}
+        <div className="flex items-center gap-2">
+          <MapPin size={14} className="text-gray-300 flex-shrink-0" />
+          <input
+            type="text"
+            placeholder="Ubicación o dirección"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className="flex-1 text-sm text-gray-700 placeholder:text-gray-300 bg-transparent border-none focus:outline-none focus:ring-0"
           />
         </div>
 
-        {/* Phone Numbers - Dynamic */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-            <Phone size={12} className="text-gray-400" />
-            Teléfonos
-          </label>
-          <AnimatePresence mode="popLayout">
-            {phoneNumbers.map((phone, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10, height: 0 }}
-                className="flex items-center gap-2"
-              >
-                <Input
-                  type="tel"
-                  placeholder={`Teléfono ${index + 1}`}
-                  value={phone}
-                  onChange={(e) => handlePhoneChange(index, e.target.value)}
-                  className="text-sm flex-1"
-                />
-                {phoneNumbers.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemovePhone(index)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                  >
-                    <X size={16} />
-                  </button>
-                )}
-              </motion.div>
-            ))}
-          </AnimatePresence>
+        {/* Teléfonos */}
+        <div className="space-y-1.5">
+          {phoneNumbers.map((phone, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <Phone size={14} className="text-gray-300 flex-shrink-0" />
+              <input
+                type="tel"
+                placeholder={`Teléfono ${index + 1}`}
+                value={phone}
+                onChange={(e) => handlePhoneChange(index, e.target.value)}
+                className="flex-1 text-sm text-gray-700 placeholder:text-gray-300 bg-transparent border-none focus:outline-none focus:ring-0"
+              />
+              {phoneNumbers.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemovePhone(index)}
+                  className="p-1 rounded-md text-gray-300 hover:text-red-400 transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+          ))}
           <button
             type="button"
             onClick={handleAddPhone}
-            className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors ml-6"
           >
-            <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center">
-              <Plus size={12} />
-            </div>
-            Agregar otro teléfono
+            <Plus size={12} />
+            Agregar teléfono
           </button>
         </div>
 
-        {/* Location */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-            <MapPin size={12} className="text-gray-400" />
-            Ubicación
-          </label>
-          <Input
-            placeholder="Dirección o enlace de Google Maps"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="text-sm"
+        {/* Options Bar + Actions */}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          <TaskOptionsBar
+            dueDate={dueDate}
+            dueTime={dueTime}
+            reminders={reminders}
+            recurrence={recurrence}
+            onReminderChange={(r) => setReminders(r)}
+            onDueDateChange={(d) => setDueDate(d)}
+            onRecurrenceChange={(r) => setRecurrence(r)}
           />
-        </div>
-
-        {/* Description */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-            <FileText size={12} className="text-gray-400" />
-            Descripción
-          </label>
-          <Textarea
-            placeholder="Detalles adicionales de la tarea..."
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="text-sm resize-none"
-          />
-        </div>
-
-        {/* Options Bar */}
-        <TaskOptionsBar
-          dueDate={dueDate}
-          dueTime={dueTime}
-          reminders={reminders}
-          recurrence={recurrence}
-          onReminderClick={() => setShowReminderPicker(true)}
-          onDueDateClick={() => setShowDueDatePicker(true)}
-          onRecurrenceClick={() => setShowRecurrencePicker(true)}
-        />
-
-        {/* Pickers */}
-        <ReminderPicker
-          isOpen={showReminderPicker}
-          onClose={() => setShowReminderPicker(false)}
-          onSelect={(r) => setReminders(r)}
-          currentReminders={reminders}
-          taskDueDate={dueDate}
-          taskDueTime={dueTime}
-        />
-        <DueDatePicker
-          isOpen={showDueDatePicker}
-          onClose={() => setShowDueDatePicker(false)}
-          onSelect={(d) => setDueDate(d)}
-          selectedDate={dueDate}
-        />
-        <RecurrencePicker
-          isOpen={showRecurrencePicker}
-          onClose={() => setShowRecurrencePicker(false)}
-          onSelect={(r) => setRecurrence(r)}
-          currentRecurrence={recurrence}
-        />
-
-        {/* Actions */}
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setIsOpen(false);
-              setTitle("");
-              setDescription("");
-              setLocation("");
-              setPhoneNumbers([""]);
-              setDueDate(null);
-              setDueTime(null);
-              setReminders([]);
-              setRecurrence(null);
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            size="sm"
-            disabled={!title.trim()}
-            icon={<Plus size={14} />}
-          >
-            Crear tarea
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setIsOpen(false);
+                setTitle("");
+                setDescription("");
+                setLocation("");
+                setPhoneNumbers([""]);
+                setDueDate(null);
+                setDueTime(null);
+                setReminders([]);
+                setRecurrence(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!title.trim()}
+              icon={<Plus size={14} />}
+            >
+              Crear
+            </Button>
+          </div>
         </div>
       </form>
     </motion.div>
