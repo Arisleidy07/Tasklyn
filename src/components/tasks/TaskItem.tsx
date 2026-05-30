@@ -56,6 +56,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
   const [expanded, setExpanded] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // Edit form state
   const [editTitle, setEditTitle] = useState("");
@@ -177,10 +178,11 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
         whileHover={{ y: -1, boxShadow: "0 4px 16px -4px rgba(0,0,0,0.07)" }}
         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
         className={cn(
-          "group rounded-xl border transition-colors",
+          "group rounded-xl border transition-colors relative",
           isCompleted
             ? "border-blue-200 bg-blue-50/30"
             : "border-gray-200 bg-white hover:border-blue-200",
+          dropdownOpen && "z-20",
         )}
       >
         <div className="flex items-start gap-3 p-4">
@@ -206,85 +208,63 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
             {isCompleted ? <CheckCircle2 size={20} /> : <Circle size={20} />}
           </button>
 
-          {/* Content */}
+          {/* Content column */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0 space-y-2">
-                {/* Tarea */}
-                <div className="flex items-start gap-2 min-w-0">
-                  <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5">
-                    Tarea
-                  </span>
-                  <p
-                    className={cn(
-                      "text-sm font-medium transition-colors flex-1 leading-relaxed break-words whitespace-normal min-w-0",
-                      isCompleted
-                        ? "text-gray-400 line-through"
-                        : "text-gray-900",
+            {/* ── Title row: content left, actions right ── */}
+            <div className="flex items-start gap-2">
+              {/* Left: title + badges */}
+              <div className="flex-1 min-w-0">
+                <p
+                  className={cn(
+                    "text-[15px] font-medium transition-colors leading-snug",
+                    isCompleted
+                      ? "text-gray-400 line-through"
+                      : "text-gray-900",
+                  )}
+                  style={{
+                    overflowWrap: "anywhere",
+                    wordBreak: "break-word",
+                    whiteSpace: "normal",
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html: linkifyPhoneNumbers(task.title),
+                  }}
+                />
+
+                {/* Option badges (always shown when set) */}
+                {(task.dueDate ||
+                  (task.reminders && task.reminders.length > 0) ||
+                  task.recurrence) && (
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                    {task.dueDate && (
+                      <DueDateBadge
+                        dueDate={task.dueDate}
+                        dueTime={task.dueTime}
+                      />
                     )}
-                    dangerouslySetInnerHTML={{
-                      __html: linkifyPhoneNumbers(task.title),
-                    }}
-                  />
-                </div>
-
-                {/* Teléfonos */}
-                {task.phoneNumbers && task.phoneNumbers.length > 0 && (
-                  <div className="flex items-start gap-2">
-                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
-                      <Phone size={10} className="text-blue-500" />
-                      Teléfonos
-                    </span>
-                    <span
-                      className="text-sm flex-1 leading-relaxed break-words whitespace-normal"
-                      dangerouslySetInnerHTML={{
-                        __html: task.phoneNumbers
-                          .map((phone) => linkifyPhoneNumbers(phone))
-                          .join(' <span class="text-gray-300 mx-1">•</span> '),
-                      }}
-                    />
-                  </div>
-                )}
-
-                {/* Ubicación */}
-                {task.location && (
-                  <div className="flex items-start gap-2">
-                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
-                      <MapPin size={10} className="text-blue-500" />
-                      Ubicación
-                    </span>
-                    <span
-                      className="text-sm flex-1 leading-relaxed break-words whitespace-normal"
-                      dangerouslySetInnerHTML={{
-                        __html: linkifyLocation(task.location),
-                      }}
-                    />
-                  </div>
-                )}
-
-                {/* Descripción */}
-                {task.description && (
-                  <div className="flex items-start gap-2">
-                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
-                      <FileText size={10} className="text-gray-400" />
-                      Descripción
-                    </span>
-                    <p
-                      className="text-sm text-gray-700 flex-1 leading-relaxed break-words whitespace-normal"
-                      dangerouslySetInnerHTML={{
-                        __html: linkifyPhoneNumbers(task.description),
-                      }}
-                    />
+                    {task.reminders && task.reminders.length > 0 && (
+                      <ReminderBadge
+                        reminder={task.reminders[0]}
+                        dueDate={task.dueDate}
+                        dueTime={task.dueTime}
+                      />
+                    )}
+                    {task.recurrence && (
+                      <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-600">
+                        <Repeat size={8} />
+                        {getRecurrenceShortLabel(task.recurrence)}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0">
+              {/* Right: action buttons */}
+              <div className="flex items-center gap-0.5 flex-shrink-0">
                 {canEdit && (
                   <button
                     onClick={handleOpenEdit}
-                    className="p-2 sm:p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center active:scale-90"
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
                     title="Editar tarea"
                   >
                     <Edit2 size={14} />
@@ -293,7 +273,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                 {canArchive && (
                   <button
                     onClick={handleArchive}
-                    className="p-2 sm:p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center active:scale-90"
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
                     title="Archivar tarea"
                   >
                     <Archive size={14} />
@@ -301,7 +281,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                 )}
                 <button
                   onClick={() => setExpanded(!expanded)}
-                  className="p-2 sm:p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center active:scale-90"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
                   title="Ver actividad"
                 >
                   {expanded ? (
@@ -313,7 +293,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                 {canDelete && (
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="p-2 sm:p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center active:scale-90"
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
                     title="Eliminar tarea"
                   >
                     <Trash2 size={14} />
@@ -322,48 +302,55 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
               </div>
             </div>
 
-            {/* Meta + Options */}
-            <div className="flex items-start justify-between gap-3 mt-3">
-              <div className="flex items-center flex-wrap gap-3">
-                <span className="flex items-center gap-1 text-[11px] text-gray-400">
-                  <Clock size={10} />
-                  {timeAgo(task.createdAt)}
+            {/* ── Details: phones, location, description ── */}
+            {task.phoneNumbers && task.phoneNumbers.length > 0 && (
+              <div className="flex items-start gap-2 mt-2">
+                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                  <Phone size={10} className="text-blue-500" />
+                  Teléfonos
                 </span>
-                {task.assignedTo && (
-                  <span className="flex items-center gap-1 text-[11px] text-gray-400">
-                    <User size={10} />
-                    {getUserName(task.assignedTo)}
-                  </span>
-                )}
-                {isCompleted && task.completedBy && (
-                  <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                    <CheckCircle2 size={8} />
-                    Completado por {getUserName(task.completedBy)} •{" "}
-                    {formatActivityDateTime(task.completedAt || task.createdAt)}
-                  </span>
-                )}
-                {/* Badges estáticos para viewers o tareas completadas */}
-                {(!canManageOptions || isCompleted) && task.dueDate && (
-                  <DueDateBadge dueDate={task.dueDate} dueTime={task.dueTime} />
-                )}
-                {(!canManageOptions || isCompleted) &&
-                  task.reminders &&
-                  task.reminders.length > 0 && (
-                    <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
-                      <Bell size={8} />
-                      Recordatorio
-                    </span>
-                  )}
-                {(!canManageOptions || isCompleted) && task.recurrence && (
-                  <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-600">
-                    <Repeat size={8} />
-                    {getRecurrenceShortLabel(task.recurrence)}
-                  </span>
-                )}
+                <span
+                  className="text-sm flex-1 leading-relaxed break-words whitespace-normal"
+                  dangerouslySetInnerHTML={{
+                    __html: task.phoneNumbers
+                      .map((phone) => linkifyPhoneNumbers(phone))
+                      .join(' <span class="text-gray-300 mx-1">•</span> '),
+                  }}
+                />
               </div>
+            )}
+            {task.location && (
+              <div className="flex items-start gap-2 mt-2">
+                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                  <MapPin size={10} className="text-blue-500" />
+                  Ubicación
+                </span>
+                <span
+                  className="text-sm flex-1 leading-relaxed break-words whitespace-normal"
+                  dangerouslySetInnerHTML={{
+                    __html: linkifyLocation(task.location),
+                  }}
+                />
+              </div>
+            )}
+            {task.description && (
+              <div className="flex items-start gap-2 mt-2">
+                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                  <FileText size={10} className="text-gray-400" />
+                  Descripción
+                </span>
+                <p
+                  className="text-sm text-gray-700 flex-1 leading-relaxed break-words whitespace-normal"
+                  dangerouslySetInnerHTML={{
+                    __html: linkifyPhoneNumbers(task.description),
+                  }}
+                />
+              </div>
+            )}
 
-              {/* TaskOptionsBar editable — solo para owners/editors en tareas activas */}
-              {canManageOptions && !isCompleted && (
+            {/* ── Options bar (editors/owners on active tasks) ── */}
+            {canManageOptions && !isCompleted && (
+              <div className="mt-2">
                 <TaskOptionsBar
                   dueDate={task.dueDate}
                   dueTime={task.dueTime}
@@ -378,7 +365,29 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                   onRecurrenceChange={(r) =>
                     user && updateTask(task.id, { recurrence: r }, user.id)
                   }
+                  onDropdownOpenChange={setDropdownOpen}
                 />
+              </div>
+            )}
+
+            {/* ── Meta ── */}
+            <div className="flex items-center flex-wrap gap-2 mt-2">
+              <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                <Clock size={10} />
+                {timeAgo(task.createdAt)}
+              </span>
+              {task.assignedTo && (
+                <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                  <User size={10} />
+                  {getUserName(task.assignedTo)}
+                </span>
+              )}
+              {isCompleted && task.completedBy && (
+                <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                  <CheckCircle2 size={8} />
+                  Completado por {getUserName(task.completedBy)} •{" "}
+                  {formatActivityDateTime(task.completedAt || task.createdAt)}
+                </span>
               )}
             </div>
           </div>
@@ -605,6 +614,43 @@ function DueDateBadge({
       className={`flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${bgClass}`}
     >
       <CalendarDays size={8} />
+      {label}
+    </span>
+  );
+}
+
+function ReminderBadge({
+  reminder,
+  dueDate,
+  dueTime,
+}: {
+  reminder: { id: string; at: string; sent: boolean };
+  dueDate?: string | null;
+  dueTime?: string | null;
+}) {
+  const at = new Date(reminder.at);
+  const now = new Date();
+  const diffHours = (at.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+  let label = at.toLocaleString("es-ES", {
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  if (diffHours < 0) {
+    label = "Vencido";
+  } else if (diffHours <= 2) {
+    label = "En 2 horas";
+  } else if (diffHours <= 24) {
+    label = `Hoy · ${at.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`;
+  } else if (diffHours <= 48) {
+    label = `Mañana · ${at.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`;
+  }
+
+  return (
+    <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+      <Bell size={8} />
       {label}
     </span>
   );

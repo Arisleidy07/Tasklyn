@@ -24,6 +24,7 @@ interface TaskOptionsBarProps {
   onReminderChange: (reminders: TaskReminder[]) => void;
   onDueDateChange: (date: string | null) => void;
   onRecurrenceChange: (rec: RecurrenceConfig | null) => void;
+  onDropdownOpenChange?: (isOpen: boolean) => void;
 }
 
 export default function TaskOptionsBar({
@@ -34,6 +35,7 @@ export default function TaskOptionsBar({
   onReminderChange,
   onDueDateChange,
   onRecurrenceChange,
+  onDropdownOpenChange,
 }: TaskOptionsBarProps) {
   const [openDropdown, setOpenDropdown] = useState<
     "reminder" | "due" | "recurrence" | null
@@ -43,6 +45,11 @@ export default function TaskOptionsBar({
   const hasReminder = reminders && reminders.length > 0;
   const hasDueDate = !!dueDate;
   const hasRecurrence = !!recurrence;
+
+  // Notify parent when dropdown opens/closes
+  useEffect(() => {
+    onDropdownOpenChange?.(openDropdown !== null);
+  }, [openDropdown, onDropdownOpenChange]);
 
   // Close dropdown on outside click
   useEffect(() => {
