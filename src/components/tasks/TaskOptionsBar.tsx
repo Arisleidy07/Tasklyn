@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 import { toISODate } from "@/lib/dateUtils";
 import type { TaskReminder, RecurrenceConfig, RecurrenceType } from "@/types";
 import { MONTHS, generateCalendarDays, formatDate } from "@/lib/dateUtils";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface TaskOptionsBarProps {
   dueDate?: string | null;
@@ -77,23 +76,21 @@ export default function TaskOptionsBar({
             <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-blue-500 rounded-full" />
           )}
         </button>
-        <AnimatePresence>
-          {openDropdown === "reminder" && (
-            <ReminderDropdown
-              reminders={reminders}
-              taskDueDate={dueDate}
-              taskDueTime={dueTime}
-              onSelect={(r) => {
-                onReminderChange(r);
-                setOpenDropdown(null);
-              }}
-              onClear={() => {
-                onReminderChange([]);
-                setOpenDropdown(null);
-              }}
-            />
-          )}
-        </AnimatePresence>
+        {openDropdown === "reminder" && (
+          <ReminderDropdown
+            reminders={reminders}
+            taskDueDate={dueDate}
+            taskDueTime={dueTime}
+            onSelect={(r) => {
+              onReminderChange(r);
+              setOpenDropdown(null);
+            }}
+            onClear={() => {
+              onReminderChange([]);
+              setOpenDropdown(null);
+            }}
+          />
+        )}
       </div>
 
       {/* Due Date */}
@@ -113,17 +110,15 @@ export default function TaskOptionsBar({
             <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-amber-500 rounded-full" />
           )}
         </button>
-        <AnimatePresence>
-          {openDropdown === "due" && (
-            <DueDateDropdown
-              selectedDate={dueDate}
-              onSelect={(d) => {
-                onDueDateChange(d);
-                setOpenDropdown(null);
-              }}
-            />
-          )}
-        </AnimatePresence>
+        {openDropdown === "due" && (
+          <DueDateDropdown
+            selectedDate={dueDate}
+            onSelect={(d) => {
+              onDueDateChange(d);
+              setOpenDropdown(null);
+            }}
+          />
+        )}
       </div>
 
       {/* Recurrence */}
@@ -145,17 +140,19 @@ export default function TaskOptionsBar({
             <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-green-500 rounded-full" />
           )}
         </button>
-        <AnimatePresence>
-          {openDropdown === "recurrence" && (
-            <RecurrenceDropdown
-              currentRecurrence={recurrence}
-              onSelect={(r) => {
-                onRecurrenceChange(r);
-                setOpenDropdown(null);
-              }}
-            />
-          )}
-        </AnimatePresence>
+        {openDropdown === "recurrence" && (
+          <RecurrenceDropdown
+            currentRecurrence={recurrence}
+            onSelect={(r) => {
+              onRecurrenceChange(r);
+              setOpenDropdown(null);
+            }}
+            onClear={() => {
+              onRecurrenceChange(null);
+              setOpenDropdown(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );
@@ -199,13 +196,7 @@ function ReminderDropdown({
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -4, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -4, scale: 0.96 }}
-      transition={{ duration: 0.15 }}
-      className="absolute left-0 top-full mt-2 z-50 w-[260px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
-    >
+    <div className="absolute left-0 top-full mt-2 z-50 w-[260px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
       {!showCustom ? (
         <div className="p-1.5 space-y-0.5">
           {quickOptions.map((opt) => (
@@ -283,7 +274,7 @@ function ReminderDropdown({
           </button>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }
 
@@ -324,14 +315,8 @@ function DueDateDropdown({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -4, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -4, scale: 0.96 }}
-      transition={{ duration: 0.15 }}
-      className="absolute left-0 top-full mt-2 z-50 w-[280px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
-    >
-      {/* Quick options */}
+    <div className="absolute left-0 top-full mt-2 z-50 w-[280px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+      {/* Quick options -->
       <div className="p-2 space-y-0.5 border-b border-gray-100">
         {quickOptions.map((opt) => (
           <button
@@ -373,9 +358,9 @@ function DueDateDropdown({
           </button>
         </div>
         <div className="grid grid-cols-7 mb-1">
-          {["D", "L", "M", "M", "J", "V", "S"].map((d) => (
+          {["D", "L", "M", "M", "J", "V", "S"].map((d, i) => (
             <div
-              key={d}
+              key={`day-${i}`}
               className="text-center text-[9px] font-medium text-gray-400 py-1"
             >
               {d}
@@ -408,7 +393,7 @@ function DueDateDropdown({
           })}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -416,9 +401,11 @@ function DueDateDropdown({
 function RecurrenceDropdown({
   currentRecurrence,
   onSelect,
+  onClear,
 }: {
   currentRecurrence?: RecurrenceConfig | null;
   onSelect: (rec: RecurrenceConfig | null) => void;
+  onClear?: () => void;
 }) {
   const [showCustom, setShowCustom] = useState(false);
   const [selectedDays, setSelectedDays] = useState<number[]>(
@@ -457,13 +444,7 @@ function RecurrenceDropdown({
 
   if (showCustom) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: -4, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -4, scale: 0.96 }}
-        transition={{ duration: 0.15 }}
-        className="absolute left-0 top-full mt-2 z-50 w-[260px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden p-3 space-y-3"
-      >
+      <div className="absolute left-0 top-full mt-2 z-50 w-[260px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden p-3 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-gray-700">
             Personalizado
@@ -556,18 +537,12 @@ function RecurrenceDropdown({
         >
           Guardar
         </button>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -4, scale: 0.96 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -4, scale: 0.96 }}
-      transition={{ duration: 0.15 }}
-      className="absolute left-0 top-full mt-2 z-50 w-[220px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden"
-    >
+    <div className="absolute left-0 top-full mt-2 z-50 w-[220px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
       <div className="p-1.5 space-y-0.5">
         {quickOptions.map((opt) => {
           const isActive = currentRecurrence?.type === opt.type;
@@ -602,7 +577,7 @@ function RecurrenceDropdown({
           </button>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
