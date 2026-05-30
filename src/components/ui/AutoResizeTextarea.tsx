@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface AutoResizeTextareaProps {
@@ -23,6 +23,7 @@ export default function AutoResizeTextarea({
   maxRows = 8,
 }: AutoResizeTextareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -32,6 +33,7 @@ export default function AutoResizeTextarea({
     const maxHeight = maxRows * lineHeight;
     const newHeight = Math.min(el.scrollHeight, maxHeight);
     el.style.height = `${newHeight}px`;
+    setIsOverflowing(el.scrollHeight > maxHeight);
   }, [value, maxRows]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -47,7 +49,8 @@ export default function AutoResizeTextarea({
       autoFocus={autoFocus}
       rows={minRows}
       className={cn(
-        "w-full bg-transparent border-none focus:outline-none focus:ring-0 resize-none overflow-hidden",
+        "w-full bg-transparent border-none focus:outline-none focus:ring-0 resize-none overflow-x-hidden whitespace-pre-wrap break-words",
+        isOverflowing ? "overflow-y-auto" : "overflow-y-hidden",
         className,
       )}
     />

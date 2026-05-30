@@ -122,34 +122,34 @@ export default function CreateTaskForm({
         />
 
         {/* Ubicación */}
-        <div className="flex items-center gap-2">
-          <MapPin size={14} className="text-gray-300 flex-shrink-0" />
-          <input
-            type="text"
-            placeholder="Ubicación o dirección"
+        <div className="flex items-start gap-2">
+          <MapPin size={14} className="text-gray-300 flex-shrink-0 mt-0.5" />
+          <AutoResizeTextarea
             value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            className="flex-1 text-sm text-gray-700 placeholder:text-gray-300 bg-transparent border-none focus:outline-none focus:ring-0"
+            onChange={setLocation}
+            placeholder="Ubicación o dirección"
+            className="text-sm text-gray-700 placeholder:text-gray-300"
+            minRows={1}
           />
         </div>
 
         {/* Teléfonos */}
         <div className="space-y-1.5">
           {phoneNumbers.map((phone, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <Phone size={14} className="text-gray-300 flex-shrink-0" />
-              <input
-                type="tel"
-                placeholder={`Teléfono ${index + 1}`}
+            <div key={index} className="flex items-start gap-2">
+              <Phone size={14} className="text-gray-300 flex-shrink-0 mt-0.5" />
+              <AutoResizeTextarea
                 value={phone}
-                onChange={(e) => handlePhoneChange(index, e.target.value)}
-                className="flex-1 text-sm text-gray-700 placeholder:text-gray-300 bg-transparent border-none focus:outline-none focus:ring-0"
+                onChange={(v) => handlePhoneChange(index, v)}
+                placeholder={`Teléfono ${index + 1}`}
+                className="flex-1 text-sm text-gray-700 placeholder:text-gray-300"
+                minRows={1}
               />
               {phoneNumbers.length > 1 && (
                 <button
                   type="button"
                   onClick={() => handleRemovePhone(index)}
-                  className="p-1 rounded-md text-gray-300 hover:text-red-400 transition-colors"
+                  className="p-1 rounded-md text-gray-300 hover:text-red-400 transition-colors flex-shrink-0"
                 >
                   <X size={14} />
                 </button>
