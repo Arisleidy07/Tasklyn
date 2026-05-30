@@ -4,7 +4,13 @@ import React, { useState } from "react";
 import { Task, MemberRole } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
-import { canCompleteTask, canDeleteTask, canEditTask } from "@/lib/permissions";
+import {
+  canCompleteTask,
+  canDeleteTask,
+  canEditTask,
+  canArchiveTask,
+  canManageTaskOptions,
+} from "@/lib/permissions";
 import { motion, AnimatePresence } from "framer-motion";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
@@ -73,6 +79,8 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
   const canComplete = canCompleteTask(role);
   const canEdit = canEditTask(role);
   const canDelete = canDeleteTask(role);
+  const canArchive = canArchiveTask(role);
+  const canManageOptions = canManageTaskOptions(role);
 
   const getUserName = (userId: string) =>
     memberNames[userId] || "Usuario desconocido";
@@ -209,7 +217,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                   </span>
                   <p
                     className={cn(
-                      "text-sm font-medium transition-colors flex-1 leading-relaxed",
+                      "text-sm font-medium transition-colors flex-1 leading-relaxed break-words whitespace-normal",
                       isCompleted
                         ? "text-gray-400 line-through"
                         : "text-gray-900",
@@ -228,7 +236,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                       Teléfonos
                     </span>
                     <span
-                      className="text-sm flex-1 leading-relaxed"
+                      className="text-sm flex-1 leading-relaxed break-words whitespace-normal"
                       dangerouslySetInnerHTML={{
                         __html: task.phoneNumbers
                           .map((phone) => linkifyPhoneNumbers(phone))
@@ -246,7 +254,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                       Ubicación
                     </span>
                     <span
-                      className="text-sm flex-1 leading-relaxed"
+                      className="text-sm flex-1 leading-relaxed break-words whitespace-normal"
                       dangerouslySetInnerHTML={{
                         __html: linkifyLocation(task.location),
                       }}
@@ -262,7 +270,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                       Descripción
                     </span>
                     <p
-                      className="text-sm text-gray-700 flex-1 leading-relaxed"
+                      className="text-sm text-gray-700 flex-1 leading-relaxed break-words whitespace-normal"
                       dangerouslySetInnerHTML={{
                         __html: linkifyPhoneNumbers(task.description),
                       }}
@@ -282,7 +290,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                     <Edit2 size={14} />
                   </button>
                 )}
-                {canEdit && (
+                {canArchive && (
                   <button
                     onClick={handleArchive}
                     className="p-2 sm:p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center active:scale-90"
@@ -314,42 +322,63 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
               </div>
             </div>
 
-            {/* Meta */}
-            <div className="flex items-center flex-wrap gap-3 mt-3">
-              <span className="flex items-center gap-1 text-[11px] text-gray-400">
-                <Clock size={10} />
-                {timeAgo(task.createdAt)}
-              </span>
-              {task.assignedTo && (
+            {/* Meta + Options */}
+            <div className="flex items-start justify-between gap-3 mt-3">
+              <div className="flex items-center flex-wrap gap-3">
                 <span className="flex items-center gap-1 text-[11px] text-gray-400">
-                  <User size={10} />
-                  {getUserName(task.assignedTo)}
+                  <Clock size={10} />
+                  {timeAgo(task.createdAt)}
                 </span>
-              )}
-              {isCompleted && task.completedBy && (
-                <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                  <CheckCircle2 size={8} />
-                  Completado por {getUserName(task.completedBy)} •{" "}
-                  {formatActivityDateTime(task.completedAt || task.createdAt)}
-                </span>
-              )}
-              {/* Due date badge */}
-              {task.dueDate && !isCompleted && (
-                <DueDateBadge dueDate={task.dueDate} dueTime={task.dueTime} />
-              )}
-              {/* Reminder badge */}
-              {task.reminders && task.reminders.length > 0 && !isCompleted && (
-                <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
-                  <Bell size={8} />
-                  Recordatorio
-                </span>
-              )}
-              {/* Recurrence badge */}
-              {task.recurrence && (
-                <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-600">
-                  <Repeat size={8} />
-                  {getRecurrenceShortLabel(task.recurrence)}
-                </span>
+                {task.assignedTo && (
+                  <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                    <User size={10} />
+                    {getUserName(task.assignedTo)}
+                  </span>
+                )}
+                {isCompleted && task.completedBy && (
+                  <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                    <CheckCircle2 size={8} />
+                    Completado por {getUserName(task.completedBy)} •{" "}
+                    {formatActivityDateTime(task.completedAt || task.createdAt)}
+                  </span>
+                )}
+                {/* Badges estáticos para viewers o tareas completadas */}
+                {(!canManageOptions || isCompleted) && task.dueDate && (
+                  <DueDateBadge dueDate={task.dueDate} dueTime={task.dueTime} />
+                )}
+                {(!canManageOptions || isCompleted) &&
+                  task.reminders &&
+                  task.reminders.length > 0 && (
+                    <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+                      <Bell size={8} />
+                      Recordatorio
+                    </span>
+                  )}
+                {(!canManageOptions || isCompleted) && task.recurrence && (
+                  <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-600">
+                    <Repeat size={8} />
+                    {getRecurrenceShortLabel(task.recurrence)}
+                  </span>
+                )}
+              </div>
+
+              {/* TaskOptionsBar editable — solo para owners/editors en tareas activas */}
+              {canManageOptions && !isCompleted && (
+                <TaskOptionsBar
+                  dueDate={task.dueDate}
+                  dueTime={task.dueTime}
+                  reminders={task.reminders || []}
+                  recurrence={task.recurrence}
+                  onReminderChange={(r) =>
+                    user && updateTask(task.id, { reminders: r }, user.id)
+                  }
+                  onDueDateChange={(d) =>
+                    user && updateTask(task.id, { dueDate: d }, user.id)
+                  }
+                  onRecurrenceChange={(r) =>
+                    user && updateTask(task.id, { recurrence: r }, user.id)
+                  }
+                />
               )}
             </div>
           </div>

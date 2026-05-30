@@ -17,12 +17,7 @@ import {
   RotateCcw,
   AlertTriangle,
 } from "lucide-react";
-import {
-  cn,
-  timeAgo,
-  linkifyPhoneNumbers,
-  linkifyLocation,
-} from "@/lib/utils";
+import { cn, timeAgo, linkifyPhoneNumbers, linkifyLocation } from "@/lib/utils";
 
 interface ArchivedTaskItemProps {
   task: Task;
@@ -72,7 +67,7 @@ export default function ArchivedTaskItem({
               <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5">
                 Tarea
               </span>
-              <p className="text-sm font-medium text-gray-700 flex-1 leading-relaxed line-through">
+              <p className="text-sm font-medium text-gray-700 flex-1 leading-relaxed line-through break-words whitespace-normal">
                 {task.title}
               </p>
             </div>

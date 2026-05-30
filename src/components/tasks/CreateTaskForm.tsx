@@ -7,7 +7,6 @@ import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import type { Task } from "@/types";
 import { Plus, X, Phone, MapPin } from "lucide-react";
-import TaskOptionsBar from "./TaskOptionsBar";
 import { motion } from "framer-motion";
 
 interface CreateTaskFormProps {
@@ -24,12 +23,6 @@ export default function CreateTaskForm({
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>([""]);
-  const [dueDate, setDueDate] = useState<string | null>(null);
-  const [dueTime, setDueTime] = useState<string | null>(null);
-  const [reminders, setReminders] = useState<
-    { id: string; at: string; sent: boolean }[]
-  >([]);
-  const [recurrence, setRecurrence] = useState<Task["recurrence"]>(null);
 
   const { user } = useAuthStore();
   const { createTask } = useTaskStore();
@@ -62,20 +55,13 @@ export default function CreateTaskForm({
       createdBy: user.id,
       location: location.trim() || undefined,
       phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
-      dueDate,
-      dueTime,
-      reminders: reminders.length > 0 ? reminders : undefined,
-      recurrence,
+      // Options (reminder, due date, recurrence) are configured after creation
     });
 
     setTitle("");
     setDescription("");
     setLocation("");
     setPhoneNumbers([""]);
-    setDueDate(null);
-    setDueTime(null);
-    setReminders([]);
-    setRecurrence(null);
     setIsOpen(false);
     onCreated?.();
   };
@@ -166,45 +152,30 @@ export default function CreateTaskForm({
           </button>
         </div>
 
-        {/* Options Bar + Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <TaskOptionsBar
-            dueDate={dueDate}
-            dueTime={dueTime}
-            reminders={reminders}
-            recurrence={recurrence}
-            onReminderChange={(r) => setReminders(r)}
-            onDueDateChange={(d) => setDueDate(d)}
-            onRecurrenceChange={(r) => setRecurrence(r)}
-          />
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setIsOpen(false);
-                setTitle("");
-                setDescription("");
-                setLocation("");
-                setPhoneNumbers([""]);
-                setDueDate(null);
-                setDueTime(null);
-                setReminders([]);
-                setRecurrence(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!title.trim()}
-              icon={<Plus size={14} />}
-            >
-              Crear
-            </Button>
-          </div>
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setIsOpen(false);
+              setTitle("");
+              setDescription("");
+              setLocation("");
+              setPhoneNumbers([""]);
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={!title.trim()}
+            icon={<Plus size={14} />}
+          >
+            Crear
+          </Button>
         </div>
       </form>
     </motion.div>

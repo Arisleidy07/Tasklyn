@@ -18,7 +18,15 @@ export function canCompleteTask(role: MemberRole | null): boolean {
 }
 
 export function canDeleteTask(role: MemberRole | null): boolean {
-  return role === "owner";
+  return role === "owner" || role === "editor";
+}
+
+export function canArchiveTask(role: MemberRole | null): boolean {
+  return role === "owner" || role === "editor";
+}
+
+export function canManageTaskOptions(role: MemberRole | null): boolean {
+  return role === "owner" || role === "editor";
 }
 
 export function canInviteMembers(role: MemberRole | null): boolean {
