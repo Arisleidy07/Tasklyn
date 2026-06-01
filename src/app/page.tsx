@@ -14,6 +14,7 @@ import {
   Shield,
   Zap,
   Clock,
+  Bell,
 } from "lucide-react";
 
 export default function LandingPage() {
