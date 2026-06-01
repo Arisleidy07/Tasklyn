@@ -959,8 +959,8 @@ export default function LandingPage() {
               ¿Listo para que Tasklyn sea tu nuevo centro de operaciones?
             </h2>
             <p className="text-slate-200/80 mb-8 text-sm sm:text-base">
-              Crea tu espacio, invita a tu equipo y empieza a coordinar trabajo
-              como una empresa SaaS profesional.
+              Crea tu espacio, invita a tu equipo y empieza a coordinar el
+              trabajo diario de forma clara y organizada.
             </p>
             <Button
               onClick={login}
@@ -991,10 +991,10 @@ export default function LandingPage() {
             </p>
           </div>
           <a
-            href="mailto:soporte@tasklyn.app"
+            href="mailto:tasklyn.oficial@gmail.com"
             className="inline-flex items-center justify-center px-5 h-11 rounded-xl border border-slate-700 text-sm font-medium text-slate-100 hover:bg-slate-900/80 hover:text-white transition-colors"
           >
-            soporte@tasklyn.app
+            tasklyn.oficial@gmail.com
           </a>
         </div>
       </section>

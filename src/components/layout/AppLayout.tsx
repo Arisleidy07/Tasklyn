@@ -16,11 +16,18 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   useNotificationEngine();
-  const { sidebarCollapsed } = useUIStore();
+  const { sidebarCollapsed, theme } = useUIStore();
   const [mounted] = useState(() => typeof window !== "undefined");
 
   return (
-    <div className="min-h-screen bg-gray-50 relative overflow-x-hidden">
+    <div
+      className={cn(
+        "min-h-screen relative overflow-x-hidden",
+        theme === "dark"
+          ? "bg-slate-950 text-slate-50"
+          : "bg-gray-50 text-gray-900",
+      )}
+    >
       {/* Premium animated background */}
       <div
         className="pointer-events-none fixed inset-0 z-0 overflow-hidden"

@@ -4,6 +4,7 @@ import React from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
+import { useUIStore } from "@/stores/uiStore";
 import Header from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
@@ -22,6 +23,7 @@ export default function SettingsPage() {
   const { user } = useAuthStore();
   const { lists } = useListStore();
   const { tasks } = useTaskStore();
+  const { theme, setTheme } = useUIStore();
   if (!user) return null;
 
   const personalListsCount = lists.filter((l) => l.owner === user.id).length;
@@ -75,10 +77,55 @@ export default function SettingsPage() {
               </div>
             </div>
             {user.plan === "FREE" && (
-              <Button variant="outline" icon={<Crown size={16} />}>
-                Actualizar a PRO
+              <Button
+                variant="outline"
+                icon={<Crown size={16} />}
+                disabled
+                className="cursor-not-allowed opacity-70"
+              >
+                Próximamente
               </Button>
             )}
+          </div>
+        </motion.div>
+
+        {/* Apariencia y tema */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6"
+        >
+          <h2 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
+            <Settings size={20} className="text-gray-400" />
+            Apariencia y tema
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Elige cómo quieres ver Tasklyn en este dispositivo.
+          </p>
+          <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1">
+            <button
+              type="button"
+              onClick={() => setTheme("light")}
+              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                theme === "light"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              Claro
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme("dark")}
+              className={`ml-1 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                theme === "dark"
+                  ? "bg-gray-900 text-white shadow-sm"
+                  : "text-gray-500 hover:text-gray-800"
+              }`}
+            >
+              Oscuro
+            </button>
           </div>
         </motion.div>
 

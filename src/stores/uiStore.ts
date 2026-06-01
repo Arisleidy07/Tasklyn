@@ -1,13 +1,18 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
+type AppTheme = "light" | "dark";
+
 interface UIStore {
   sidebarCollapsed: boolean;
   sidebarOpen: boolean;
+  theme: AppTheme;
   toggleSidebar: () => void;
   setSidebarCollapsed: (v: boolean) => void;
   openSidebar: () => void;
   closeSidebar: () => void;
+  setTheme: (theme: AppTheme) => void;
+  toggleTheme: () => void;
 }
 
 export const useUIStore = create<UIStore>()(
@@ -15,16 +20,21 @@ export const useUIStore = create<UIStore>()(
     (set) => ({
       sidebarCollapsed: false,
       sidebarOpen: false,
+      theme: "light",
       toggleSidebar: () =>
         set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
       openSidebar: () => set({ sidebarOpen: true }),
       closeSidebar: () => set({ sidebarOpen: false }),
+      setTheme: (theme) => set({ theme }),
+      toggleTheme: () =>
+        set((s) => ({ theme: s.theme === "light" ? "dark" : "light" })),
     }),
     {
       name: "ui-storage",
       partialize: (state) => ({
         sidebarCollapsed: state.sidebarCollapsed,
+        theme: state.theme,
         // Don't persist sidebarOpen state
       }),
     },
