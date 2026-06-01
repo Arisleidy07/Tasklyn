@@ -20,6 +20,7 @@ import {
   notifyTaskAssigned,
   notifyTaskEdited,
 } from "@/lib/notify";
+import { toISODate } from "@/lib/dateUtils";
 
 interface TaskState {
   tasks: Task[];
@@ -172,7 +173,7 @@ function calculateNextDueDate(
   }
 
   return {
-    dueDate: next.toISOString().split("T")[0],
+    dueDate: toISODate(next),
     dueTime: task.dueTime || undefined,
   };
 }

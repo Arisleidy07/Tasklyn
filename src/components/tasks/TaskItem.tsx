@@ -45,6 +45,7 @@ import {
   linkifyPhoneNumbers,
   linkifyLocation,
 } from "@/lib/utils";
+import { toISODate } from "@/lib/dateUtils";
 
 interface TaskItemProps {
   task: Task;
@@ -373,9 +374,20 @@ export default function TaskItem({
                       user.id,
                     );
                   }}
-                  onRecurrenceChange={(r) =>
-                    user && updateTask(task.id, { recurrence: r }, user.id)
-                  }
+                  onRecurrenceChange={(r) => {
+                    if (!user) return;
+
+                    const updates: Partial<Task> = {
+                      recurrence: r,
+                    };
+
+                    // Si activas una repetición y no hay vencimiento, fija uno por defecto (hoy)
+                    if (r && !task.dueDate) {
+                      updates.dueDate = toISODate(new Date());
+                    }
+
+                    updateTask(task.id, updates, user.id, user.name);
+                  }}
                   onDropdownOpenChange={setDropdownOpen}
                 />
               </div>
@@ -705,13 +717,22 @@ function ReminderBadge({
 }
 
 function getRecurrenceShortLabel(rec: NonNullable<Task["recurrence"]>): string {
+  if (rec.type === "custom") {
+    if (rec.daysOfWeek && rec.daysOfWeek.length > 0) {
+      return "Semanal (personalizado)";
+    }
+    if (rec.interval && rec.interval > 1) {
+      return `Cada ${rec.interval} días`;
+    }
+    return "Personalizado";
+  }
+
   const labels: Record<string, string> = {
     daily: "Diario",
     weekdays: "Laboral",
     weekly: "Semanal",
     monthly: "Mensual",
     yearly: "Anual",
-    custom: "Custom",
   };
   return labels[rec.type] || "Repetir";
 }
