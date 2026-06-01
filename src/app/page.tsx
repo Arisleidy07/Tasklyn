@@ -92,22 +92,13 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
-              size="sm"
-              onClick={login}
-              isLoading={isLoading}
-              className="hidden sm:inline-flex text-slate-200 hover:text-white hover:bg-slate-800/80 border-slate-700"
-            >
-              Iniciar sesión
-            </Button>
-            <Button
               onClick={login}
               isLoading={isLoading}
               size="sm"
               icon={<ArrowRight size={16} />}
               className="bg-blue-600 hover:bg-blue-500 text-white border-none"
             >
-              Crear cuenta
+              Iniciar sesión
             </Button>
           </div>
         </div>
@@ -140,9 +131,6 @@ export default function LandingPage() {
             {/* Logo grande */}
             <div className="flex items-center gap-3 mb-6">
               <Logo size="lg" textClassName="text-slate-50" />
-              <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-900/80 border border-slate-700 text-slate-100 uppercase tracking-wide">
-                Plataforma de productividad para equipos
-              </span>
             </div>
 
             <h1 className="text-3.5xl sm:text-5xl lg:text-6xl font-semibold tracking-tight mb-5 leading-tight">
@@ -167,18 +155,7 @@ export default function LandingPage() {
               >
                 Comenzar gratis
               </Button>
-              <button
-                type="button"
-                onClick={login}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 h-11 rounded-xl border border-slate-600/80 text-sm font-medium text-slate-100 bg-slate-900/70 hover:bg-slate-800/90 hover:border-slate-400 transition-colors"
-              >
-                Ver panel en vivo
-              </button>
             </div>
-
-            <p className="text-xs sm:text-sm text-slate-300">
-              Gratis para siempre en el plan personal. Sin tarjeta de crédito.
-            </p>
           </motion.div>
 
           {/* Hero mockup — demo realista del dashboard */}
@@ -190,7 +167,7 @@ export default function LandingPage() {
           >
             {/* Preview - Mockup realista del dashboard de Tasklyn */}
             <div className="bg-slate-950/90 rounded-3xl border border-slate-700/70 p-4 shadow-[0_26px_80px_rgba(15,23,42,0.95)]">
-              <div className="bg-slate-950 rounded-2xl overflow-hidden flex h-[280px] sm:h-[320px]">
+              <div className="bg-slate-950 rounded-2xl overflow-hidden flex min-h-[260px] sm:min-h-[320px] lg:min-h-[360px]">
                 {/* Sidebar simulando navegación real */}
                 <div className="w-56 bg-slate-950 border-r border-slate-800 p-4 hidden sm:flex flex-col">
                   <div className="flex items-center gap-2 mb-5">
@@ -248,7 +225,7 @@ export default function LandingPage() {
                   </div>
 
                   {/* Middle: métricas rápidas */}
-                  <div className="grid grid-cols-3 gap-3 text-[11px]">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px]">
                     <div className="rounded-xl bg-slate-900/90 border border-slate-700/80 px-3 py-2">
                       <p className="text-slate-400 mb-1">Pendientes hoy</p>
                       <p className="text-lg font-semibold text-slate-50 leading-none">
@@ -279,7 +256,7 @@ export default function LandingPage() {
                   </div>
 
                   {/* Bottom: lista de tareas y miembros */}
-                  <div className="flex-1 flex gap-3 min-h-0">
+                  <div className="flex-1 flex flex-col md:flex-row gap-3 min-h-0">
                     {/* Tareas simuladas */}
                     <div className="flex-1 rounded-xl bg-slate-900/90 border border-slate-700/80 p-3 flex flex-col gap-2">
                       <div className="flex items-center justify-between mb-1">
@@ -343,19 +320,19 @@ export default function LandingPage() {
                     </div>
 
                     {/* Miembros y listas */}
-                    <div className="w-40 sm:w-44 rounded-xl bg-slate-900/90 border border-slate-700/80 p-3 flex flex-col gap-3">
+                    <div className="w-full md:w-44 rounded-xl bg-slate-900/90 border border-slate-700/80 p-3 flex flex-col gap-3">
                       <div>
                         <p className="text-xs font-semibold text-slate-200 mb-1">
                           Miembros
                         </p>
                         <div className="flex -space-x-2 mb-1">
-                          {["RS", "MG", "LP", "+3"].map((initials, idx) => (
+                          {[0, 1, 2, 3].map((idx) => (
                             <div
-                              key={initials}
-                              className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-slate-100"
+                              key={idx}
+                              className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center"
                               style={{ zIndex: 10 - idx }}
                             >
-                              {initials}
+                              <span className="w-3 h-3 rounded-full bg-slate-500" />
                             </div>
                           ))}
                         </div>
@@ -422,8 +399,8 @@ export default function LandingPage() {
                   Listas compartidas
                 </h3>
                 <p className="text-slate-400 text-sm">
-                  Crea listas personales o compartidas y mantén a toda la
-                  empresa alineada con un único lugar de verdad.
+                  Crea listas personales y compartidas para mantener a tu equipo
+                  organizado y con las tareas claras.
                 </p>
               </div>
             </motion.div>
@@ -464,8 +441,8 @@ export default function LandingPage() {
                   Recordatorios inteligentes
                 </h3>
                 <p className="text-slate-400 text-sm">
-                  Vencimientos, recordatorios y repeticiones con notificaciones
-                  en tiempo real en web, Android, iOS, Windows y Mac.
+                  Configura vencimientos y repeticiones para que Tasklyn te
+                  avise a tiempo cuando una tarea se aproxima o se retrasa.
                 </p>
               </div>
             </motion.div>
@@ -511,27 +488,6 @@ export default function LandingPage() {
                 </p>
               </div>
             </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.25 }}
-              className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-4"
-            >
-              <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 size={22} className="text-blue-400" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-50 mb-1">
-                  Desde cualquier dispositivo
-                </h3>
-                <p className="text-slate-400 text-sm">
-                  Interfaz responsive diseñada para teléfono, tablet, laptop y
-                  monitores grandes, sin nada roto ni cortado.
-                </p>
-              </div>
-            </motion.div>
           </div>
         </div>
       </section>
@@ -542,12 +498,12 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
             <div>
               <h2 className="text-2xl sm:text-3xl font-semibold text-slate-50 mb-2">
-                Un panel tan claro como potente
+                Un panel que refleja tu día a día
               </h2>
               <p className="text-sm sm:text-base text-slate-300 max-w-xl">
-                Inspirado en la experiencia de herramientas como Microsoft To
-                Do, Notion y ClickUp, pero adaptado a equipos modernos y flujos
-                de trabajo colaborativos.
+                Así se ve el panel principal cuando entras a Tasklyn: las mismas
+                listas, tareas, miembros y notificaciones que verás dentro de la
+                aplicación real.
               </p>
             </div>
           </div>
@@ -661,7 +617,7 @@ export default function LandingPage() {
                           Enviar propuesta final
                         </p>
                         <p className="text-[10px] text-slate-400">
-                          Asignada a Rut · Vence hoy
+                          Asignada a un miembro del equipo · Vence hoy
                         </p>
                       </div>
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300">
@@ -711,7 +667,7 @@ export default function LandingPage() {
                   <li className="flex items-start gap-2">
                     <span className="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
                     <div>
-                      <p>Rut completó "Enviar propuesta final"</p>
+                      <p>Se completó la tarea "Enviar propuesta final"</p>
                       <p className="text-slate-500 text-[10px]">
                         Hace 12 min · Lista Clientes VIP
                       </p>
@@ -720,7 +676,9 @@ export default function LandingPage() {
                   <li className="flex items-start gap-2">
                     <span className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
                     <div>
-                      <p>Se añadió a Marta a la lista "Operaciones diarias"</p>
+                      <p>
+                        Se añadió un miembro a la lista "Operaciones diarias"
+                      </p>
                       <p className="text-slate-500 text-[10px]">Hace 35 min</p>
                     </div>
                   </li>
@@ -742,11 +700,11 @@ export default function LandingPage() {
                     Perfil
                   </p>
                   <div className="rounded-2xl bg-slate-950 border border-slate-800 p-3 flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-blue-600/80 flex items-center justify-center text-xs font-semibold text-white">
-                      RS
+                    <div className="w-8 h-8 rounded-full bg-blue-600/80 flex items-center justify-center">
+                      <Users size={16} className="text-white" />
                     </div>
                     <div className="text-[11px]">
-                      <p className="text-slate-50">Rut Arisleidy</p>
+                      <p className="text-slate-50">Miembro del equipo</p>
                       <p className="text-slate-400">Owner · Plan Free</p>
                     </div>
                   </div>
@@ -944,10 +902,10 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Final */}
-      <section className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden border-t border-slate-800/70 bg-mesh-blue">
+      <section className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden border-t border-slate-800/70 bg-slate-950">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="animate-glow-drift absolute top-[10%] right-[15%] w-64 h-64 rounded-full bg-blue-500/10 blur-3xl" />
-          <div className="animate-glow-drift-2 absolute bottom-[5%] left-[10%] w-80 h-80 rounded-full bg-blue-400/10 blur-3xl" />
+          <div className="animate-glow-drift absolute top-[10%] right-[15%] w-64 h-64 rounded-full bg-blue-500/30 blur-3xl" />
+          <div className="animate-glow-drift-2 absolute bottom-[5%] left-[10%] w-80 h-80 rounded-full bg-blue-400/25 blur-3xl" />
         </div>
         <div className="relative max-w-3xl mx-auto text-center">
           <motion.div
@@ -955,10 +913,10 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl font-semibold text-slate-900 mb-4">
+            <h2 className="text-3xl font-semibold text-slate-50 mb-4">
               Organiza el trabajo de tu equipo en Tasklyn
             </h2>
-            <p className="text-slate-700 mb-8 text-sm sm:text-base">
+            <p className="text-slate-300 mb-8 text-sm sm:text-base">
               Crea tu espacio, invita a tu equipo y organiza tu trabajo desde un
               solo lugar.
             </p>
@@ -967,7 +925,7 @@ export default function LandingPage() {
               isLoading={isLoading}
               size="lg"
               icon={<ArrowRight size={18} />}
-              className="bg-slate-950 text-slate-50 border border-slate-900 hover:bg-slate-900"
+              className="bg-blue-600 hover:bg-blue-500 text-white border-none"
             >
               Crear cuenta gratis
             </Button>
