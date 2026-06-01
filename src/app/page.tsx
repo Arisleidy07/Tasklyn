@@ -962,7 +962,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] gap-8 text-sm">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Logo size="sm" />
+              <Logo size="sm" showText={false} />
               <span className="text-slate-200 font-semibold text-sm">
                 Tasklyn
               </span>
