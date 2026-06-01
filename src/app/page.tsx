@@ -43,9 +43,12 @@ export default function LandingPage() {
             <button
               type="button"
               onClick={() => scrollToId("hero")}
-              className="flex items-center gap-2 cursor-pointer"
+              className="flex items-center gap-2 cursor-pointer group"
             >
-              <Logo size="md" />
+              <Logo size="md" showText={false} />
+              <span className="text-lg font-semibold tracking-tight text-slate-50 group-hover:text-white">
+                Tasklyn
+              </span>
             </button>
             <nav className="hidden md:flex items-center gap-6 text-sm text-slate-300">
               <button
@@ -114,8 +117,8 @@ export default function LandingPage() {
         id="hero"
         className="relative pt-28 sm:pt-32 pb-20 sm:pb-28 px-4 sm:px-6 overflow-hidden"
       >
-        {/* Premium background — mesh gradient */}
-        <div className="absolute inset-0 bg-mesh-blue pointer-events-none" />
+        {/* Premium background — dark mesh gradient for strong contrast */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 pointer-events-none" />
 
         {/* Floating blue circles */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -135,21 +138,21 @@ export default function LandingPage() {
           >
             {/* Logo grande */}
             <div className="flex items-center gap-3 mb-6">
-              <Logo size="lg" />
-              <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-900/70 border border-slate-700 text-slate-200 uppercase tracking-wide">
+              <Logo size="lg" textClassName="text-slate-50" />
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-900/80 border border-slate-700 text-slate-100 uppercase tracking-wide">
                 SaaS de productividad para equipos
               </span>
             </div>
 
-            <h1 className="text-3.5xl sm:text-5xl lg:text-6xl font-semibold text-slate-50 tracking-tight mb-5 leading-tight">
-              Organiza tu trabajo y
+            <h1 className="text-3.5xl sm:text-5xl lg:text-6xl font-semibold tracking-tight mb-5 leading-tight">
+              <span className="text-slate-50">Organiza tu trabajo</span>
               <br className="hidden sm:block" />
-              <span className="text-blue-400">colabora en tiempo real.</span>
+              <span className="text-blue-400">y colabora en tiempo real.</span>
             </h1>
 
-            <p className="text-base sm:text-lg text-slate-300 mb-7 max-w-xl">
+            <p className="text-base sm:text-lg text-slate-200 mb-7 max-w-xl">
               Tasklyn centraliza listas, tareas, miembros y notificaciones en un
-              solo lugar, para que tu equipo se mantenga alineado desde
+              panel moderno, para que tu equipo se mantenga alineado desde
               cualquier dispositivo.
             </p>
 
@@ -159,95 +162,225 @@ export default function LandingPage() {
                 isLoading={isLoading}
                 size="lg"
                 icon={<ArrowRight size={18} />}
-                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white border-none shadow-[0_18px_50px_rgba(37,99,235,0.45)]"
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white border-none shadow-[0_20px_60px_rgba(37,99,235,0.55)] hover:shadow-[0_20px_70px_rgba(37,99,235,0.7)] transition-shadow"
               >
                 Comenzar gratis
               </Button>
               <button
                 type="button"
                 onClick={login}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 h-11 rounded-xl border border-slate-700/80 text-sm font-medium text-slate-100 bg-slate-900/40 hover:bg-slate-800/70 transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 h-11 rounded-xl border border-slate-600/80 text-sm font-medium text-slate-100 bg-slate-900/70 hover:bg-slate-800/90 hover:border-slate-400 transition-colors"
               >
                 Ver panel en vivo
               </button>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-400">
+            <p className="text-xs sm:text-sm text-slate-300">
               Gratis para siempre en el plan personal. Sin tarjeta de crédito.
             </p>
           </motion.div>
 
-          {/* Hero mockup */}
+          {/* Hero mockup — demo realista del dashboard */}
           <motion.div
             initial={{ opacity: 0, y: 30, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.15, duration: 0.6 }}
             className="relative"
           >
-            {/* Preview - Mockup simple */}
-            <div className="bg-slate-900/70 rounded-3xl border border-slate-700/80 p-4 shadow-[0_32px_80px_rgba(15,23,42,0.9)]">
-              <div className="bg-slate-950/80 rounded-2xl overflow-hidden">
-                {/* Mock UI simple */}
-                <div className="flex h-[280px] sm:h-[320px]">
-                  <div className="w-52 bg-slate-950 border-r border-slate-800 p-4 hidden sm:block">
-                    <div className="flex items-center gap-2 mb-5">
-                      <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-                        <CheckCircle2 size={16} className="text-white" />
-                      </div>
-                      <span className="font-semibold text-slate-50 text-sm">
-                        Tasklyn
+            {/* Preview - Mockup realista del dashboard de Tasklyn */}
+            <div className="bg-slate-950/90 rounded-3xl border border-slate-700/70 p-4 shadow-[0_26px_80px_rgba(15,23,42,0.95)]">
+              <div className="bg-slate-950 rounded-2xl overflow-hidden flex h-[280px] sm:h-[320px]">
+                {/* Sidebar simulando navegación real */}
+                <div className="w-56 bg-slate-950 border-r border-slate-800 p-4 hidden sm:flex flex-col">
+                  <div className="flex items-center gap-2 mb-5">
+                    <Logo size="sm" showText={false} />
+                    <span className="font-semibold text-slate-50 text-sm">
+                      Tasklyn
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="px-3 py-2 rounded-lg bg-blue-600 text-white font-medium flex items-center justify-between shadow-sm">
+                      <span>Dashboard</span>
+                      <span className="text-[10px] bg-blue-500/40 px-1.5 py-0.5 rounded-md">
+                        Hoy
                       </span>
                     </div>
-                    <div className="space-y-1.5 text-xs">
-                      <div className="px-3 py-2 bg-blue-600/90 text-white rounded-lg font-medium flex items-center justify-between">
-                        <span>Dashboard</span>
-                        <span className="text-[10px] bg-blue-500/40 px-1.5 py-0.5 rounded-md">
-                          Hoy
+                    <div className="px-3 py-2 rounded-lg flex items-center justify-between text-slate-200/90 hover:bg-slate-900/60 cursor-default">
+                      <span>Mis listas</span>
+                      <span className="text-[10px] text-slate-400">8</span>
+                    </div>
+                    <div className="px-3 py-2 rounded-lg flex items-center justify-between text-slate-200/90 hover:bg-slate-900/60 cursor-default">
+                      <span>Compartidas</span>
+                      <span className="text-[10px] text-slate-400">5</span>
+                    </div>
+                    <div className="px-3 py-2 rounded-lg flex items-center justify-between text-slate-400 hover:bg-slate-900/60 cursor-default">
+                      <span>Archivadas</span>
+                      <span className="text-[10px] text-slate-500">2</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main dashboard mock */}
+                <div className="flex-1 p-4 sm:p-5 flex flex-col gap-3">
+                  {/* Top row: título + métricas y notificaciones */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-slate-400 font-semibold mb-1">
+                        Panel de equipo
+                      </p>
+                      <h3 className="font-semibold text-slate-50 text-sm sm:text-base">
+                        Implementación clientes · Q2
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="hidden sm:flex items-center gap-1 text-[11px] text-slate-300 bg-slate-900/80 px-2.5 py-1 rounded-full border border-slate-700/70">
+                        <Clock size={10} />
+                        <span>Hoy · 14 tareas</span>
+                      </div>
+                      <div className="relative inline-flex items-center justify-center w-8 h-8 rounded-full bg-slate-900 border border-slate-700 text-slate-200">
+                        <Bell size={14} />
+                        <span className="absolute -top-1 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-[9px] font-semibold flex items-center justify-center text-white">
+                          3
                         </span>
-                      </div>
-                      <div className="px-3 py-2 text-slate-300/90 rounded-lg flex items-center justify-between">
-                        <span>Mis listas</span>
-                        <span className="text-[10px] text-slate-500">6</span>
-                      </div>
-                      <div className="px-3 py-2 text-slate-300/80 rounded-lg flex items-center justify-between">
-                        <span>Compartidas</span>
-                        <span className="text-[10px] text-slate-500">4</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex-1 p-4 sm:p-5">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-semibold text-slate-50 text-sm sm:text-base">
-                        Lista: Implementación clientes
-                      </h3>
-                      <div className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/40 text-[10px] font-semibold text-emerald-300">
-                        <CheckCircle2 size={12} />
-                        72% completado
-                      </div>
+
+                  {/* Middle: métricas rápidas */}
+                  <div className="grid grid-cols-3 gap-3 text-[11px]">
+                    <div className="rounded-xl bg-slate-900/90 border border-slate-700/80 px-3 py-2">
+                      <p className="text-slate-400 mb-1">Pendientes hoy</p>
+                      <p className="text-lg font-semibold text-slate-50 leading-none">
+                        14
+                      </p>
+                      <p className="text-[10px] text-emerald-400 mt-0.5">
+                        +5 vs ayer
+                      </p>
                     </div>
-                    <div className="space-y-2">
+                    <div className="rounded-xl bg-slate-900/90 border border-slate-700/80 px-3 py-2">
+                      <p className="text-slate-400 mb-1">Completadas</p>
+                      <p className="text-lg font-semibold text-emerald-400 leading-none">
+                        11
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        78% del día
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-slate-900/90 border border-slate-700/80 px-3 py-2">
+                      <p className="text-slate-400 mb-1">Miembros activos</p>
+                      <p className="text-lg font-semibold text-slate-50 leading-none">
+                        6
+                      </p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">
+                        3 editores · 3 viewers
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Bottom: lista de tareas y miembros */}
+                  <div className="flex-1 flex gap-3 min-h-0">
+                    {/* Tareas simuladas */}
+                    <div className="flex-1 rounded-xl bg-slate-900/90 border border-slate-700/80 p-3 flex flex-col gap-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-xs font-semibold text-slate-200">
+                          Tareas del día
+                        </p>
+                        <span className="text-[10px] text-slate-400">
+                          6 de 14 completadas
+                        </span>
+                      </div>
                       {[
-                        "Configurar acceso",
-                        "Notificar al equipo",
-                        "Activar recordatorios",
-                      ].map((label, index) => (
+                        {
+                          label: "Llamar a cliente principal",
+                          status: "En curso",
+                          badge: "Vence hoy",
+                        },
+                        {
+                          label: "Configurar acceso del equipo",
+                          status: "Completada",
+                          badge: "Hecho",
+                        },
+                        {
+                          label: "Programar recordatorios",
+                          status: "Pendiente",
+                          badge: "Mañana",
+                        },
+                      ].map((task, idx) => (
                         <div
-                          key={label}
-                          className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/80"
+                          key={task.label}
+                          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800/80"
                         >
-                          <div className="w-5 h-5 rounded-full border-2 border-blue-500/70 flex items-center justify-center flex-shrink-0">
-                            {index === 0 && (
+                          <div className="w-4 h-4 rounded-full border-2 border-blue-500/80 flex items-center justify-center flex-shrink-0">
+                            {task.status === "Completada" && (
                               <CheckCircle2
-                                size={12}
+                                size={11}
                                 className="text-blue-400"
                               />
                             )}
                           </div>
-                          <div className="flex-1 h-3 rounded bg-slate-700/60">
-                            <div className="h-3 rounded bg-blue-500/80 w-[70%]" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] text-slate-100 truncate">
+                              {task.label}
+                            </p>
+                            <p className="text-[10px] text-slate-500">
+                              {task.status}
+                            </p>
                           </div>
+                          <span
+                            className={
+                              idx === 0
+                                ? "text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300"
+                                : idx === 1
+                                  ? "text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300"
+                                  : "text-[10px] px-2 py-0.5 rounded-full bg-slate-700/40 text-slate-200"
+                            }
+                          >
+                            {task.badge}
+                          </span>
                         </div>
                       ))}
+                    </div>
+
+                    {/* Miembros y listas */}
+                    <div className="w-40 sm:w-44 rounded-xl bg-slate-900/90 border border-slate-700/80 p-3 flex flex-col gap-3">
+                      <div>
+                        <p className="text-xs font-semibold text-slate-200 mb-1">
+                          Miembros
+                        </p>
+                        <div className="flex -space-x-2 mb-1">
+                          {["RS", "MG", "LP", "+3"].map((initials, idx) => (
+                            <div
+                              key={initials}
+                              className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] text-slate-100"
+                              style={{ zIndex: 10 - idx }}
+                            >
+                              {initials}
+                            </div>
+                          ))}
+                        </div>
+                        <p className="text-[10px] text-slate-400">
+                          Owners, editores y viewers.
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-slate-200 mb-1">
+                          Listas activas
+                        </p>
+                        <ul className="space-y-1 text-[11px] text-slate-300">
+                          <li className="flex items-center justify-between">
+                            <span>Clientes clave</span>
+                            <span className="text-slate-500">8</span>
+                          </li>
+                          <li className="flex items-center justify-between">
+                            <span>Operaciones</span>
+                            <span className="text-slate-500">5</span>
+                          </li>
+                          <li className="flex items-center justify-between">
+                            <span>Backlog</span>
+                            <span className="text-slate-500">12</span>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -402,7 +535,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Capturas / Mockups */}
+      {/* Capturas / Mockups — demo clara del panel */}
       <section className="py-16 sm:py-20 bg-slate-950/95 border-t border-slate-800/70">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
@@ -410,54 +543,237 @@ export default function LandingPage() {
               <h2 className="text-2xl sm:text-3xl font-semibold text-slate-50 mb-2">
                 Un panel tan claro como potente
               </h2>
-              <p className="text-sm sm:text-base text-slate-400 max-w-xl">
-                Inspírate en la experiencia de herramientas como Todoist, Notion
-                o ClickUp, pero con un flujo adaptado a tu operación diaria.
+              <p className="text-sm sm:text-base text-slate-300 max-w-xl">
+                Inspirado en la experiencia de herramientas como Microsoft To
+                Do, Notion y ClickUp, pero adaptado a equipos modernos y flujos
+                de trabajo colaborativos.
               </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6">
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-4 flex flex-col gap-4">
-              <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide">
-                Dashboard
-              </p>
-              <div className="h-[220px] rounded-2xl bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800/80" />
-              <p className="text-sm text-slate-300">
-                KPIs de listas, tareas pendientes/completadas y actividad
-                reciente de tu equipo en un solo vistazo.
-              </p>
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-5 lg:gap-6">
+            {/* Mockup dashboard completo */}
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-4 flex flex-col gap-3 shadow-[0_22px_60px_rgba(15,23,42,0.85)]">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Logo size="sm" textClassName="text-slate-50" />
+                  <span className="text-xs text-slate-400">
+                    Dashboard de Tasklyn
+                  </span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/40">
+                  Equipo en tiempo real
+                </span>
+              </div>
+
+              {/* Fila de métricas */}
+              <div className="grid grid-cols-4 gap-3 text-[11px] mb-3">
+                <div className="rounded-2xl bg-slate-950/90 border border-slate-800 px-3 py-2">
+                  <p className="text-slate-400 mb-1">Tareas hoy</p>
+                  <p className="text-xl font-semibold text-slate-50 leading-none">
+                    18
+                  </p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    +6 vs ayer
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-950/90 border border-slate-800 px-3 py-2">
+                  <p className="text-slate-400 mb-1">Completadas</p>
+                  <p className="text-xl font-semibold text-emerald-400 leading-none">
+                    13
+                  </p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    72% avance
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-950/90 border border-slate-800 px-3 py-2">
+                  <p className="text-slate-400 mb-1">Listas activas</p>
+                  <p className="text-xl font-semibold text-slate-50 leading-none">
+                    9
+                  </p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    por cliente / área
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-slate-950/90 border border-slate-800 px-3 py-2">
+                  <p className="text-slate-400 mb-1">Miembros</p>
+                  <p className="text-xl font-semibold text-slate-50 leading-none">
+                    24
+                  </p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    owners y editores
+                  </p>
+                </div>
+              </div>
+
+              {/* Zona principal: listas y tareas */}
+              <div className="flex-1 grid grid-cols-[minmax(0,1.1fr)_minmax(0,1.3fr)] gap-3 min-h-[180px]">
+                {/* Columna de listas */}
+                <div className="rounded-2xl bg-slate-950/90 border border-slate-800 p-3 flex flex-col gap-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-semibold text-slate-200">
+                      Listas
+                    </p>
+                    <span className="text-[10px] text-slate-500">
+                      9 activas
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 text-[11px]">
+                    <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-blue-600/15 border border-blue-500/40">
+                      <span className="text-slate-50">Clientes VIP</span>
+                      <span className="text-slate-300">12</span>
+                    </div>
+                    <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800">
+                      <span className="text-slate-200">
+                        Operaciones diarias
+                      </span>
+                      <span className="text-slate-400">8</span>
+                    </div>
+                    <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800">
+                      <span className="text-slate-200">Soporte</span>
+                      <span className="text-slate-400">5</span>
+                    </div>
+                    <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-slate-900/60 border border-slate-800/80">
+                      <span className="text-slate-300">Backlog</span>
+                      <span className="text-slate-500">21</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Columna de tareas */}
+                <div className="rounded-2xl bg-slate-950/90 border border-slate-800 p-3 flex flex-col gap-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-semibold text-slate-200">
+                      Tareas en "Clientes VIP"
+                    </p>
+                    <span className="text-[10px] text-slate-500">
+                      Vista de hoy
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 text-[11px]">
+                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-800">
+                      <div className="w-3.5 h-3.5 rounded-full border-2 border-emerald-400 flex items-center justify-center flex-shrink-0">
+                        <CheckCircle2 size={9} className="text-emerald-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-slate-50 truncate">
+                          Enviar propuesta final
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          Asignada a Rut · Vence hoy
+                        </p>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300">
+                        Completada
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-800/80">
+                      <div className="w-3.5 h-3.5 rounded-full border-2 border-blue-500 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-slate-50 truncate">
+                          Reunión con cliente A
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          Hoy · 16:00 · 2 recordatorios
+                        </p>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300">
+                        Próxima
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-800/80">
+                      <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-600 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-slate-50 truncate">
+                          Actualizar datos de contacto
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                          Sin vencimiento · 3 comentarios
+                        </p>
+                      </div>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                        En curso
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
+            {/* Panel lateral: actividad y notificaciones */}
             <div className="space-y-4">
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-4">
-                <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide mb-3">
-                  Listas y tareas
+              <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-4 flex flex-col gap-3">
+                <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide mb-1">
+                  Actividad reciente
                 </p>
-                <div className="h-[140px] rounded-2xl bg-slate-950 border border-slate-800/80" />
-                <p className="mt-3 text-sm text-slate-300">
-                  Tarjetas de listas ejecutivas y tareas con vencimientos,
-                  recordatorios, archivos y contexto.
-                </p>
+                <ul className="space-y-2 text-[11px] text-slate-300">
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
+                    <div>
+                      <p>Rut completó "Enviar propuesta final"</p>
+                      <p className="text-slate-500 text-[10px]">
+                        Hace 12 min · Lista Clientes VIP
+                      </p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
+                    <div>
+                      <p>Se añadió a Marta a la lista "Operaciones diarias"</p>
+                      <p className="text-slate-500 text-[10px]">Hace 35 min</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-1 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                    <div>
+                      <p>3 tareas vencen en las próximas 24 horas</p>
+                      <p className="text-slate-500 text-[10px]">
+                        Notificaciones activas en todos los dispositivos
+                      </p>
+                    </div>
+                  </li>
+                </ul>
               </div>
-              <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-4 grid grid-cols-2 gap-3">
+
+              <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-4 grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide mb-2">
                     Perfil
                   </p>
-                  <div className="h-20 rounded-2xl bg-slate-950 border border-slate-800/80" />
-                  <p className="mt-2 text-xs text-slate-400">
-                    Foto real, datos de contacto y plan.
-                  </p>
+                  <div className="rounded-2xl bg-slate-950 border border-slate-800 p-3 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-600/80 flex items-center justify-center text-xs font-semibold text-white">
+                      RS
+                    </div>
+                    <div className="text-[11px]">
+                      <p className="text-slate-50">Rut Arisleidy</p>
+                      <p className="text-slate-400">Owner · Plan Free</p>
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-blue-300 uppercase tracking-wide mb-2">
                     Notificaciones
                   </p>
-                  <div className="h-20 rounded-2xl bg-slate-950 border border-slate-800/80" />
-                  <p className="mt-2 text-xs text-slate-400">
-                    Invitaciones, vencimientos y actividad clave.
-                  </p>
+                  <div className="rounded-2xl bg-slate-950 border border-slate-800 p-3 text-[11px] text-slate-300 space-y-1.5">
+                    <p className="flex items-center justify-between">
+                      <span>Invitaciones</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-slate-800 text-slate-200 text-[10px]">
+                        2
+                      </span>
+                    </p>
+                    <p className="flex items-center justify-between">
+                      <span>Vencimientos</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 text-[10px]">
+                        3 hoy
+                      </span>
+                    </p>
+                    <p className="flex items-center justify-between">
+                      <span>Actividad</span>
+                      <span className="px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 text-[10px]">
+                        OK
+                      </span>
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

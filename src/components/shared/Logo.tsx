@@ -8,6 +8,7 @@ interface LogoProps {
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
   showText?: boolean;
+  textClassName?: string;
 }
 
 const sizeMap = {
@@ -21,6 +22,7 @@ export default function Logo({
   size = "md",
   className,
   showText = true,
+  textClassName,
 }: LogoProps) {
   const s = sizeMap[size];
   return (
@@ -35,7 +37,13 @@ export default function Logo({
         priority
       />
       {showText && (
-        <span className={cn(s.text, "font-bold tracking-tight text-gray-900")}>
+        <span
+          className={cn(
+            s.text,
+            "font-bold tracking-tight",
+            textClassName || "text-gray-900",
+          )}
+        >
           TASKLYN
         </span>
       )}
