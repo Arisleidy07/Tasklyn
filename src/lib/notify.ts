@@ -4,8 +4,25 @@
 // ============================================
 
 import { createNotification } from "./firestore";
-import { showInAppNotification, playNotificationSound } from "./notifications";
+import {
+  showInAppNotification,
+  playNotificationSound,
+  sendBrowserNotification,
+} from "./notifications";
 import type { NotificationType } from "@/types";
+
+// Prevent duplicate notifications within a short time window
+const recentNotifications = new Set<string>();
+const NOTIFICATION_DEBOUNCE_MS = 2000;
+
+function shouldSendNotification(key: string): boolean {
+  if (recentNotifications.has(key)) {
+    return false;
+  }
+  recentNotifications.add(key);
+  setTimeout(() => recentNotifications.delete(key), NOTIFICATION_DEBOUNCE_MS);
+  return true;
+}
 
 interface NotifyParams {
   userId: string;
@@ -21,6 +38,13 @@ interface NotifyParams {
  * Creates a Firestore document + shows in-app toast + plays sound.
  */
 export async function notifyUser(params: NotifyParams): Promise<void> {
+  // Create a unique key for this notification to prevent duplicates
+  const notificationKey = `${params.userId}-${params.type}-${params.title}-${params.body}`;
+
+  if (!shouldSendNotification(notificationKey)) {
+    return; // Skip duplicate notification
+  }
+
   try {
     await createNotification({
       userId: params.userId,
@@ -35,6 +59,7 @@ export async function notifyUser(params: NotifyParams): Promise<void> {
     if (!params.silent) {
       playNotificationSound();
       showInAppNotification(params.title, params.body);
+      sendBrowserNotification(params.title, params.body);
     }
   } catch (err) {
     console.error("Failed to send notification:", err);

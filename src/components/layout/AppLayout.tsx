@@ -17,11 +17,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   useNotificationEngine();
   const { sidebarCollapsed } = useUIStore();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [mounted] = useState(() => typeof window !== "undefined");
 
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-x-hidden">

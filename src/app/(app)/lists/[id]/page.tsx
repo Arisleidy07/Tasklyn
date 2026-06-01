@@ -30,11 +30,10 @@ import {
   X,
   Archive,
   ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { canInviteMembers, canShareList } from "@/lib/permissions";
+import { canShareList } from "@/lib/permissions";
 
 export default function ListDetailPage() {
   const params = useParams();
@@ -99,17 +98,37 @@ export default function ListDetailPage() {
     return tasks.filter((t) => t.status === "archived");
   }, [tasks]);
 
+  const pendingTasks = useMemo(
+    () => activeTasks.filter((t) => t.status === "pending"),
+    [activeTasks],
+  );
+
+  const completedTasks = useMemo(
+    () => activeTasks.filter((t) => t.status === "completed"),
+    [activeTasks],
+  );
+
   // All useMemo hooks must be before any conditional returns
   const filteredTasks = useMemo(() => {
     switch (filter) {
       case "pending":
-        return activeTasks.filter((t) => t.status === "pending");
+        return pendingTasks;
       case "completed":
-        return activeTasks.filter((t) => t.status === "completed");
+        return completedTasks;
       default:
         return activeTasks;
     }
-  }, [activeTasks, filter]);
+  }, [activeTasks, filter, pendingTasks, completedTasks]);
+
+  // Log for debugging duplicate keys
+  useEffect(() => {
+    const taskIds = filteredTasks.map((t) => t.id);
+    const uniqueIds = new Set(taskIds);
+    if (taskIds.length !== uniqueIds.size) {
+      console.error("Duplicate task IDs found in filteredTasks:", taskIds);
+      console.error("Unique IDs:", Array.from(uniqueIds));
+    }
+  }, [filteredTasks]);
 
   // Build memberNames using real Firestore profiles (with custom name fallback)
   const memberNames = useMemo(() => {
@@ -139,13 +158,10 @@ export default function ListDetailPage() {
   const userMember = list.members.find((m) => m.userId === user.id);
   const isOwner = userMember?.role === "owner";
   const canEdit = isOwner || userMember?.role === "editor";
-  const canInvite = canInviteMembers(userMember?.role ?? null);
   const canShare = canShareList(userMember?.role ?? null);
 
-  const pendingCount = activeTasks.filter((t) => t.status === "pending").length;
-  const completedCount = activeTasks.filter(
-    (t) => t.status === "completed",
-  ).length;
+  const pendingCount = pendingTasks.length;
+  const completedCount = completedTasks.length;
   const archivedCount = archivedTasks.length;
 
   const handleDeleteList = async () => {
@@ -190,6 +206,13 @@ export default function ListDetailPage() {
     setNewTaskPhones(newPhones);
   };
 
+  const handleBackClick = () => {
+    const search = new URLSearchParams();
+    search.set("section", "lists");
+    search.set("view", list.type === "shared" ? "shared" : "personal");
+    router.push(`/dashboard?${search.toString()}`);
+  };
+
   return (
     <>
       <Header
@@ -198,7 +221,18 @@ export default function ListDetailPage() {
           list.description ||
           `${list.members.length} miembro${list.members.length !== 1 ? "s" : ""}`
         }
+        badge={
+          archivedCount > 0 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-[10px] font-medium text-gray-600 border border-gray-200">
+              <Archive size={10} className="text-gray-500" />
+              {archivedCount} archivada
+              {archivedCount !== 1 ? "s" : ""}
+            </span>
+          )
+        }
         showMenuButton={true}
+        showBackButton={true}
+        onBackClick={handleBackClick}
         actions={
           <div className="flex items-center gap-1.5">
             {/* Miembros — visible to ALL users */}
@@ -254,15 +288,9 @@ export default function ListDetailPage() {
       />
 
       <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto pb-6">
-        {/* Filtros - Segmented Control */}
-        <div className="flex bg-gray-100 rounded-2xl p-1 mb-6 gap-0.5">
+        {/* Filtros - Segmented Control (Pendientes, Completadas, Todas) */}
+        <div className="flex bg-gray-50 border border-gray-200/80 rounded-2xl p-1.5 mb-6 gap-1 shadow-sm">
           {[
-            {
-              key: "all" as const,
-              label: "Todas",
-              count: activeTasks.length,
-              Icon: null,
-            },
             {
               key: "pending" as const,
               label: "Pendientes",
@@ -275,15 +303,21 @@ export default function ListDetailPage() {
               count: completedCount,
               Icon: CheckCircle2,
             },
+            {
+              key: "all" as const,
+              label: "Todas",
+              count: activeTasks.length,
+              Icon: null,
+            },
           ].map(({ key, label, count, Icon }) => (
             <button
               key={key}
               onClick={() => setFilter(key)}
               className={cn(
-                "relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 min-h-[40px]",
+                "relative flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight transition-all duration-200 min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-50",
                 filter === key
-                  ? "bg-white shadow-sm text-gray-900"
-                  : "text-gray-500 hover:text-gray-700",
+                  ? "bg-white text-gray-900 shadow-sm border border-gray-200"
+                  : "text-gray-500 hover:text-gray-800 hover:bg-white/40 border border-transparent",
               )}
             >
               {Icon && (
@@ -292,10 +326,10 @@ export default function ListDetailPage() {
               <span>{label}</span>
               <span
                 className={cn(
-                  "text-[10px] font-semibold px-1.5 py-0.5 rounded-md leading-none",
+                  "text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none tracking-wide",
                   filter === key
-                    ? "bg-blue-100 text-blue-700"
-                    : "bg-gray-200 text-gray-400",
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "bg-gray-100 text-gray-500",
                 )}
               >
                 {count}
@@ -319,69 +353,199 @@ export default function ListDetailPage() {
 
         {/* Tareas */}
         <div className="space-y-3">
-          <AnimatePresence mode="popLayout">
-            {filteredTasks.map((task) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                role={userMember?.role || null}
-                memberNames={memberNames}
+          {filter === "all" ? (
+            activeTasks.length === 0 ? (
+              <EmptyState
+                icon={<CheckCircle2 size={32} />}
+                title="Aún no hay tareas"
+                description="Crea tu primera tarea para empezar."
+                action={
+                  canEdit && (
+                    <Button
+                      size="sm"
+                      onClick={() => setShowAddTask(true)}
+                      icon={<Plus size={14} />}
+                    >
+                      Añadir tarea
+                    </Button>
+                  )
+                }
               />
-            ))}
-          </AnimatePresence>
+            ) : (
+              <div className="space-y-6">
+                {/* Bloque de pendientes */}
+                <section>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-50 text-blue-600 text-[11px] font-semibold">
+                        P
+                      </span>
+                      <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                        Pendientes
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">
+                      {pendingTasks.length}
+                    </span>
+                  </div>
+                  {pendingTasks.length > 0 ? (
+                    <div className="space-y-2">
+                      <AnimatePresence mode="popLayout">
+                        {pendingTasks.map((task) => (
+                          <TaskItem
+                            key={task.id}
+                            task={task}
+                            role={userMember?.role || null}
+                            memberNames={memberNames}
+                            listMembers={list?.members}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-gray-400 italic">
+                      No hay tareas pendientes.
+                    </p>
+                  )}
+                </section>
 
-          {filteredTasks.length === 0 && (
-            <EmptyState
-              icon={<CheckCircle2 size={32} />}
-              title={
-                filter === "completed"
-                  ? "No hay tareas completadas"
-                  : "Aún no hay tareas"
-              }
-              description={
-                filter === "completed"
-                  ? "Las tareas que completes aparecerán aquí."
-                  : "Crea tu primera tarea para empezar."
-              }
-              action={
-                canEdit && (
-                  <Button
-                    size="sm"
-                    onClick={() => setShowAddTask(true)}
-                    icon={<Plus size={14} />}
-                  >
-                    Añadir tarea
-                  </Button>
-                )
-              }
-            />
+                {/* Bloque de completadas */}
+                <section>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 text-[11px] font-semibold">
+                        C
+                      </span>
+                      <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                        Completadas
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">
+                      {completedTasks.length}
+                    </span>
+                  </div>
+                  {completedTasks.length > 0 ? (
+                    <div className="space-y-2">
+                      <AnimatePresence mode="popLayout">
+                        {completedTasks.map((task) => (
+                          <TaskItem
+                            key={task.id}
+                            task={task}
+                            role={userMember?.role || null}
+                            memberNames={memberNames}
+                            listMembers={list?.members}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-gray-400 italic">
+                      Aún no hay tareas completadas.
+                    </p>
+                  )}
+                </section>
+              </div>
+            )
+          ) : (
+            <>
+              <AnimatePresence mode="popLayout">
+                {filteredTasks.map((task) => (
+                  <TaskItem
+                    key={task.id}
+                    task={task}
+                    role={userMember?.role || null}
+                    memberNames={memberNames}
+                    listMembers={list?.members}
+                  />
+                ))}
+              </AnimatePresence>
+
+              {filteredTasks.length === 0 && (
+                <EmptyState
+                  icon={<CheckCircle2 size={32} />}
+                  title={
+                    filter === "completed"
+                      ? "No hay tareas completadas"
+                      : "Aún no hay tareas"
+                  }
+                  description={
+                    filter === "completed"
+                      ? "Las tareas que completes aparecerán aquí."
+                      : "Crea tu primera tarea para empezar."
+                  }
+                  action={
+                    canEdit && (
+                      <Button
+                        size="sm"
+                        onClick={() => setShowAddTask(true)}
+                        icon={<Plus size={14} />}
+                      >
+                        Añadir tarea
+                      </Button>
+                    )
+                  }
+                />
+              )}
+            </>
           )}
         </div>
 
-        {/* Archivados Section */}
+        {/* Área de archivados dentro de la lista */}
         {archivedCount > 0 && (
-          <div className="mt-8">
+          <div className="mt-10 pt-6 border-t border-dashed border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-[11px] font-semibold">
+                  A
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Área de archivados
+                  </p>
+                  <p className="text-[11px] text-gray-400">
+                    Tareas guardadas para referencia. Puedes restaurar o
+                    eliminar.
+                  </p>
+                </div>
+              </div>
+              {!showArchived && (
+                <span className="text-[11px] text-gray-400 hidden sm:inline-flex">
+                  {archivedCount} archivada{archivedCount !== 1 ? "s" : ""}{" "}
+                  ocultas
+                </span>
+              )}
+            </div>
+
             <button
               onClick={() => setShowArchived(!showArchived)}
-              className="flex items-center gap-2 w-full text-left group"
+              className="mt-3 flex items-center gap-2 w-full text-left group px-3 py-2 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200"
             >
               <div className="flex items-center gap-2 flex-1">
-                <Archive size={16} className="text-gray-400" />
-                <h3 className="text-sm font-semibold text-gray-700">
-                  Archivados
-                </h3>
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-200 text-gray-500">
-                  {archivedCount}
-                </span>
+                <div className="w-7 h-7 rounded-xl bg-gray-900 flex items-center justify-center">
+                  <Archive size={14} className="text-white" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-gray-800 flex items-center gap-1">
+                    Ver tareas archivadas
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-gray-900 text-white">
+                      {archivedCount}
+                    </span>
+                  </span>
+                  <span className="text-[11px] text-gray-500">
+                    Toca para desplegar todas las tareas archivadas de esta
+                    lista.
+                  </span>
+                </div>
               </div>
               <ChevronDown
                 size={14}
                 className={cn(
-                  "text-gray-400 transition-transform",
+                  "text-gray-400 transition-transform group-hover:text-gray-600",
                   showArchived && "rotate-180",
                 )}
               />
             </button>
+
             <AnimatePresence>
               {showArchived && (
                 <motion.div
@@ -389,9 +553,9 @@ export default function ListDetailPage() {
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
+                  className="overflow-hidden mt-3"
                 >
-                  <div className="space-y-2 pt-3">
+                  <div className="space-y-2 pt-1">
                     <AnimatePresence mode="popLayout">
                       {archivedTasks.map((task) => (
                         <ArchivedTaskItem

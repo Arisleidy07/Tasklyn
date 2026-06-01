@@ -66,11 +66,13 @@ export default function NotificationsPage() {
     markAllRead,
     remove,
     archive,
+    unarchive,
     setStatus,
   } = useNotificationStore();
   const { getInvitation, acceptInvitation, rejectInvitation } =
     useInvitationStore();
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   if (!user) return null;
 
@@ -150,26 +152,35 @@ export default function NotificationsPage() {
         }
         showMenuButton={true}
         actions={
-          unreadCount > 0 ? (
-            <>
-              <button
-                onClick={handleMarkAll}
-                className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center sm:hidden active:scale-90"
-                title="Marcar todo como leído"
-              >
-                <CheckCheck size={20} />
-              </button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleMarkAll}
-                icon={<CheckCheck size={16} />}
-                className="hidden sm:flex"
-              >
-                Marcar todo como leído
-              </Button>
-            </>
-          ) : undefined
+          <>
+            <button
+              onClick={() => setShowArchived(!showArchived)}
+              className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center active:scale-90"
+              title="Archivados"
+            >
+              <Archive size={20} />
+            </button>
+            {unreadCount > 0 ? (
+              <>
+                <button
+                  onClick={handleMarkAll}
+                  className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center sm:hidden active:scale-90"
+                  title="Marcar todo como leído"
+                >
+                  <CheckCheck size={20} />
+                </button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleMarkAll}
+                  icon={<CheckCheck size={16} />}
+                  className="hidden sm:flex"
+                >
+                  Marcar todo como leído
+                </Button>
+              </>
+            ) : undefined}
+          </>
         }
       />
 
@@ -453,6 +464,83 @@ export default function NotificationsPage() {
                 </div>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* Archived Notifications */}
+        {archivedNotifications.length > 0 && (
+          <section>
+            <button
+              onClick={() => setShowArchived(!showArchived)}
+              className="flex items-center gap-2 w-full text-left group"
+            >
+              <div className="flex items-center gap-2 flex-1">
+                <Archive size={16} className="text-gray-400" />
+                <h3 className="text-sm font-semibold text-gray-700">
+                  Archivados
+                </h3>
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-200 text-gray-500">
+                  {archivedNotifications.length}
+                </span>
+              </div>
+            </button>
+            <AnimatePresence>
+              {showArchived && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
+                >
+                  <div className="space-y-2 pt-3">
+                    {archivedNotifications.map((notif) => {
+                      const cfg = typeConfig[notif.type];
+                      const Icon = cfg.icon;
+                      return (
+                        <div
+                          key={notif.id}
+                          className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-gray-200 bg-gray-50/50"
+                        >
+                          <div
+                            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.bg}`}
+                          >
+                            <Icon size={14} className={cfg.color} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-gray-600 leading-snug">
+                              {notif.title}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-0.5 leading-snug">
+                              {notif.body}
+                            </p>
+                            <p className="text-[11px] text-gray-400 mt-1.5">
+                              {timeAgo(notif.createdAt)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => unarchive(notif.id)}
+                              className="p-2 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                              title="Desarchivar"
+                            >
+                              <Archive size={14} className="rotate-180" />
+                            </button>
+                            <button
+                              onClick={() => remove(notif.id)}
+                              className="p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                              title="Eliminar"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </section>
         )}
 

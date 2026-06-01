@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Menu } from "lucide-react";
+import { Menu, ArrowLeft } from "lucide-react";
 import { useUIStore } from "@/stores/uiStore";
 
 interface HeaderProps {
@@ -10,6 +10,8 @@ interface HeaderProps {
   actions?: React.ReactNode;
   badge?: React.ReactNode;
   showMenuButton?: boolean;
+  showBackButton?: boolean;
+  onBackClick?: () => void;
 }
 
 export default function Header({
@@ -18,6 +20,8 @@ export default function Header({
   actions,
   badge,
   showMenuButton = false,
+  showBackButton = false,
+  onBackClick,
 }: HeaderProps) {
   const { openSidebar } = useUIStore();
 
@@ -25,6 +29,15 @@ export default function Header({
     <header className="border-b border-gray-200 bg-white/95 backdrop-blur-xl sticky top-0 z-20 safe-top">
       <div className="flex items-center gap-2 px-3 md:px-8 py-3 md:py-5 max-w-full min-h-[60px] md:min-h-[72px]">
         <div className="flex items-center gap-2 min-w-0 flex-1">
+          {showBackButton && (
+            <button
+              onClick={onBackClick}
+              className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center flex-shrink-0 active:scale-90"
+              title="Volver"
+            >
+              <ArrowLeft size={22} />
+            </button>
+          )}
           {showMenuButton && (
             <button
               onClick={openSidebar}

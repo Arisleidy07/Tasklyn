@@ -83,11 +83,17 @@ let audioCtx: AudioContext | null = null;
 export function playNotificationSound() {
   if (typeof window === "undefined") return;
   try {
-    if (!audioCtx)
-      audioCtx = new (
-        window.AudioContext || (window as any).webkitAudioContext
-      )();
+    if (!audioCtx) {
+      const win = window as Window &
+        typeof globalThis & {
+          webkitAudioContext?: typeof AudioContext;
+        };
+      const Ctx = win.AudioContext || win.webkitAudioContext;
+      if (!Ctx) return;
+      audioCtx = new Ctx();
+    }
     const ctx = audioCtx;
+    if (!ctx) return;
     const t = ctx.currentTime;
 
     // Two oscillators for a pleasant major-third "ding"

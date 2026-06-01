@@ -21,11 +21,19 @@ const quickOptions = [
   { label: "Hoy", getDate: () => toISODate(new Date()) },
   {
     label: "Mañana",
-    getDate: () => toISODate(new Date(Date.now() + 86400000)),
+    getDate: () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      return toISODate(d);
+    },
   },
   {
     label: "Próxima semana",
-    getDate: () => toISODate(new Date(Date.now() + 7 * 86400000)),
+    getDate: () => {
+      const d = new Date();
+      d.setDate(d.getDate() + 7);
+      return toISODate(d);
+    },
   },
 ];
 

@@ -1,23 +1,43 @@
 // Premium date utilities for Tasklyn
 
 const MONTHS = [
-  "enero", "febrero", "marzo", "abril", "mayo", "junio",
-  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+  "enero",
+  "febrero",
+  "marzo",
+  "abril",
+  "mayo",
+  "junio",
+  "julio",
+  "agosto",
+  "septiembre",
+  "octubre",
+  "noviembre",
+  "diciembre",
 ];
 
 const DAYS_SHORT = ["D", "L", "M", "M", "J", "V", "S"];
 const DAYS_FULL = [
-  "Domingo", "Lunes", "Martes", "Miércoles",
-  "Jueves", "Viernes", "Sábado",
+  "Domingo",
+  "Lunes",
+  "Martes",
+  "Miércoles",
+  "Jueves",
+  "Viernes",
+  "Sábado",
 ];
 
-export function formatDate(dateStr: string, opts?: { short?: boolean; withYear?: boolean }): string {
+export function formatDate(
+  dateStr: string,
+  opts?: { short?: boolean; withYear?: boolean },
+): string {
   const date = new Date(dateStr + "T00:00:00");
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const d = new Date(dateStr + "T00:00:00");
   d.setHours(0, 0, 0, 0);
-  const diff = Math.round((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const diff = Math.round(
+    (d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
 
   if (diff === 0) return "Hoy";
   if (diff === 1) return "Mañana";
@@ -38,13 +58,19 @@ export function formatTime(timeStr: string): string {
   return `${hour12}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
-export function formatDateTime(dateStr: string, timeStr?: string | null): string {
+export function formatDateTime(
+  dateStr: string,
+  timeStr?: string | null,
+): string {
   const date = formatDate(dateStr);
   if (!timeStr) return date;
   return `${date} · ${formatTime(timeStr)}`;
 }
 
-export function getDueStatus(dueDate?: string | null, dueTime?: string | null): "overdue" | "dueSoon" | "upcoming" | "noDue" {
+export function getDueStatus(
+  dueDate?: string | null,
+  dueTime?: string | null,
+): "overdue" | "dueSoon" | "upcoming" | "noDue" {
   if (!dueDate) return "noDue";
   const now = new Date();
   const due = new Date(dueDate + (dueTime ? `T${dueTime}` : "T23:59:59"));
@@ -55,7 +81,10 @@ export function getDueStatus(dueDate?: string | null, dueTime?: string | null): 
   return "upcoming";
 }
 
-export function generateCalendarDays(year: number, month: number): {
+export function generateCalendarDays(
+  year: number,
+  month: number,
+): {
   date: number;
   currentMonth: boolean;
   fullDate: string;
@@ -89,7 +118,10 @@ export function generateCalendarDays(year: number, month: number): {
 }
 
 export function toISODate(date: Date): string {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export { MONTHS, DAYS_SHORT, DAYS_FULL };

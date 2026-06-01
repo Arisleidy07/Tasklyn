@@ -11,6 +11,7 @@ import {
 } from "@/lib/notifications";
 import { notifyReminder, notifyDueSoon } from "@/lib/notify";
 import { useTaskStore } from "@/stores/taskStore";
+import { updateTask } from "@/lib/firestore";
 
 /**
  * Global notification engine.
@@ -24,6 +25,8 @@ export function useNotificationEngine() {
   const { subscribe, unsubscribe } = useNotificationStore();
   const { tasks } = useTaskStore();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const dueSoonNotifiedRef = useRef<Set<string>>(new Set());
+  const dueNowNotifiedRef = useRef<Set<string>>(new Set());
 
   // Subscribe to user notifications on mount
   useEffect(() => {
@@ -49,7 +52,6 @@ export function useNotificationEngine() {
 
     const checkRemindersAndDueDates = () => {
       const now = new Date();
-      const nowStr = now.toISOString();
 
       tasks.forEach((task) => {
         if (task.status === "completed") return;
@@ -60,13 +62,13 @@ export function useNotificationEngine() {
             if (reminder.sent) return;
             const reminderTime = new Date(reminder.at);
             if (reminderTime <= now) {
-              notifyReminder(
-                user.id,
-                task.title,
-                task.id,
-                task.listId
+              notifyReminder(user.id, task.title, task.id, task.listId);
+              const updatedReminders = task.reminders?.map((r) =>
+                r.id === reminder.id ? { ...r, sent: true } : r,
               );
-              // Mark reminder as sent (would need a Firestore update in real app)
+              if (updatedReminders) {
+                void updateTask(task.id, { reminders: updatedReminders });
+              }
             }
           });
         }
@@ -74,30 +76,37 @@ export function useNotificationEngine() {
         // Check due dates (notify 24h before and at due time)
         if (task.dueDate) {
           const due = new Date(
-            task.dueTime ? `${task.dueDate}T${task.dueTime}` : `${task.dueDate}T23:59:59`
+            task.dueTime
+              ? `${task.dueDate}T${task.dueTime}`
+              : `${task.dueDate}T23:59:59`,
           );
-          const diffHours = (due.getTime() - now.getTime()) / (1000 * 60 * 60);
+          const diffMs = due.getTime() - now.getTime();
+          const diffHours = diffMs / (1000 * 60 * 60);
 
-          // Due within 24 hours and not yet notified
-          if (diffHours > 0 && diffHours <= 24 && diffHours > 23) {
+          // 24h antes (ventana de 10 minutos para evitar disparos múltiples por desfases)
+          if (
+            diffHours <= 24 &&
+            diffHours > 24 - 10 / 60 &&
+            !dueSoonNotifiedRef.current.has(task.id)
+          ) {
             notifyDueSoon(
               user.id,
               task.title,
               task.dueTime ? `${task.dueDate} · ${task.dueTime}` : task.dueDate,
               task.id,
-              task.listId
+              task.listId,
             );
+            dueSoonNotifiedRef.current.add(task.id);
           }
 
-          // Exact due time
-          if (diffHours <= 0 && diffHours > -0.1) {
-            notifyDueSoon(
-              user.id,
-              task.title,
-              "Ahora",
-              task.id,
-              task.listId
-            );
+          // Exactamente en el vencimiento (ventana de 10 minutos)
+          if (
+            diffHours <= 0 &&
+            diffHours > -10 / 60 &&
+            !dueNowNotifiedRef.current.has(task.id)
+          ) {
+            notifyDueSoon(user.id, task.title, "Ahora", task.id, task.listId);
+            dueNowNotifiedRef.current.add(task.id);
           }
         }
       });

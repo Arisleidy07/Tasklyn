@@ -67,9 +67,10 @@ export default function TaskOptionsBar({
       {/* Reminder */}
       <div className="relative">
         <button
-          onClick={() =>
-            setOpenDropdown(openDropdown === "reminder" ? null : "reminder")
-          }
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenDropdown(openDropdown === "reminder" ? null : "reminder");
+          }}
           className={cn(
             "flex items-center justify-center w-8 h-8 rounded-lg transition-all",
             hasReminder
@@ -103,7 +104,10 @@ export default function TaskOptionsBar({
       {/* Due Date */}
       <div className="relative">
         <button
-          onClick={() => setOpenDropdown(openDropdown === "due" ? null : "due")}
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenDropdown(openDropdown === "due" ? null : "due");
+          }}
           className={cn(
             "flex items-center justify-center w-8 h-8 rounded-lg transition-all",
             hasDueDate
@@ -131,9 +135,12 @@ export default function TaskOptionsBar({
       {/* Recurrence */}
       <div className="relative">
         <button
-          onClick={() =>
-            setOpenDropdown(openDropdown === "recurrence" ? null : "recurrence")
-          }
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenDropdown(
+              openDropdown === "recurrence" ? null : "recurrence",
+            );
+          }}
           className={cn(
             "flex items-center justify-center w-8 h-8 rounded-lg transition-all",
             hasRecurrence
@@ -203,9 +210,18 @@ function ReminderDropdown({
   ];
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-50 w-[260px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+    <div className="absolute left-0 top-full mt-2 z-[9999] w-[260px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
       {!showCustom ? (
         <div className="p-1.5 space-y-0.5">
+          {reminders && reminders.length > 0 && (
+            <button
+              onClick={onClear}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
+            >
+              <span>Eliminar aviso</span>
+              <X size={14} className="text-red-400" />
+            </button>
+          )}
           {quickOptions.map((opt) => (
             <button
               key={opt.label}
@@ -236,14 +252,6 @@ function ReminderDropdown({
           >
             Elegir fecha y hora
           </button>
-          {reminders && reminders.length > 0 && (
-            <button
-              onClick={onClear}
-              className="w-full text-left px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
-            >
-              Eliminar recordatorio
-            </button>
-          )}
         </div>
       ) : (
         <div className="p-3 space-y-3">
@@ -301,10 +309,21 @@ function DueDateDropdown({
 
   const quickOptions = [
     { label: "Hoy", get: () => toISODate(new Date()) },
-    { label: "Mañana", get: () => toISODate(new Date(Date.now() + 86400000)) },
+    {
+      label: "Mañana",
+      get: () => {
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        return toISODate(d);
+      },
+    },
     {
       label: "Próxima semana",
-      get: () => toISODate(new Date(Date.now() + 7 * 86400000)),
+      get: () => {
+        const d = new Date();
+        d.setDate(d.getDate() + 7);
+        return toISODate(d);
+      },
     },
   ];
 
@@ -322,9 +341,18 @@ function DueDateDropdown({
   };
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-50 w-[280px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-      {/* Quick options -->
+    <div className="absolute left-0 top-full mt-2 z-[9999] w-[280px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+      {/* Quick options */}
       <div className="p-2 space-y-0.5 border-b border-gray-100">
+        {selectedDate && (
+          <button
+            onClick={() => onSelect(null)}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
+          >
+            <span>Eliminar vencimiento</span>
+            <X size={14} className="text-red-400" />
+          </button>
+        )}
         {quickOptions.map((opt) => (
           <button
             key={opt.label}
@@ -337,12 +365,14 @@ function DueDateDropdown({
             </span>
           </button>
         ))}
-        <button
-          onClick={() => onSelect(null)}
-          className="w-full px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors"
-        >
-          Sin fecha
-        </button>
+        {!selectedDate && (
+          <button
+            onClick={() => onSelect(null)}
+            className="w-full px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors"
+          >
+            Sin vencimiento
+          </button>
+        )}
       </div>
 
       {/* Calendar */}
@@ -451,7 +481,7 @@ function RecurrenceDropdown({
 
   if (showCustom) {
     return (
-      <div className="absolute left-0 top-full mt-2 z-50 w-[260px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden p-3 space-y-3">
+      <div className="absolute left-0 top-full mt-2 z-[9999] w-[260px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden p-3 space-y-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold text-gray-700">
             Personalizado
@@ -549,8 +579,23 @@ function RecurrenceDropdown({
   }
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-50 w-[220px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+    <div className="absolute left-0 top-full mt-2 z-[9999] w-[220px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
       <div className="p-1.5 space-y-0.5">
+        {currentRecurrence && (
+          <button
+            onClick={() => {
+              if (onClear) {
+                onClear();
+              } else {
+                onSelect(null);
+              }
+            }}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
+          >
+            <span>Eliminar repetición</span>
+            <X size={14} className="text-red-400" />
+          </button>
+        )}
         {quickOptions.map((opt) => {
           const isActive = currentRecurrence?.type === opt.type;
           return (
@@ -575,14 +620,6 @@ function RecurrenceDropdown({
         >
           Personalizado...
         </button>
-        {currentRecurrence && (
-          <button
-            onClick={() => onSelect(null)}
-            className="w-full text-left px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
-          >
-            No repetir
-          </button>
-        )}
       </div>
     </div>
   );

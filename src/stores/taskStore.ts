@@ -66,6 +66,7 @@ interface TaskState {
     id: string,
     completedBy: string,
     completerName?: string,
+    listMembers?: Array<{ userId: string; role: string }>,
   ) => Promise<void>;
   uncompleteTask: (id: string, performedBy: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
@@ -118,7 +119,7 @@ function calculateNextDueDate(
       break;
     case "weekdays": {
       let daysToAdd = 1;
-      let temp = new Date(current);
+      const temp = new Date(current);
       temp.setDate(temp.getDate() + daysToAdd);
       while (temp.getDay() === 0 || temp.getDay() === 6) {
         daysToAdd++;
@@ -406,7 +407,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     });
   },
 
-  completeTask: async (id, completedBy, completerName) => {
+  completeTask: async (id, completedBy, completerName, listMembers) => {
     const task = get().tasks.find((t) => t.id === id);
     if (!task) return;
 
@@ -424,15 +425,23 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       ],
     });
 
-    // Notify task creator (if not the creator completing it)
-    if (completerName && completedBy !== task.createdBy) {
-      notifyTaskCompleted(
-        task.createdBy,
-        task.title,
-        completerName,
-        task.id,
-        task.listId,
-      );
+    // Notify relevant members (owner and editors, excluding the completer)
+    if (completerName && listMembers) {
+      listMembers.forEach((member) => {
+        // Notify owner and editors, but not the person who completed it
+        if (
+          (member.role === "owner" || member.role === "editor") &&
+          member.userId !== completedBy
+        ) {
+          notifyTaskCompleted(
+            member.userId,
+            task.title,
+            completerName,
+            task.id,
+            task.listId,
+          );
+        }
+      });
     }
 
     // Auto-generate next recurring task
@@ -445,7 +454,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         completedCount: newCount,
       });
       if (nextTask) {
-        set((state) => ({ tasks: [...state.tasks, nextTask] }));
+        set((state) => {
+          const taskMap = new Map(state.tasks.map((t) => [t.id, t]));
+          taskMap.set(nextTask.id, nextTask);
+          return { tasks: Array.from(taskMap.values()) };
+        });
       }
     }
   },
@@ -520,7 +533,16 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const unsubscribe = subscribeToListTasks(listId, (tasks) => {
       set((state) => {
         const otherTasks = state.tasks.filter((t) => t.listId !== listId);
-        return { tasks: [...otherTasks, ...tasks] };
+        // Merge tasks, replacing any with same ID to prevent duplicates
+        const taskMap = new Map(otherTasks.map((t) => [t.id, t]));
+        tasks.forEach((t) => taskMap.set(t.id, t));
+        const mergedTasks = Array.from(taskMap.values());
+        console.log(
+          "subscribeToList: merged tasks for list",
+          listId,
+          mergedTasks.map((t) => t.id),
+        );
+        return { tasks: mergedTasks };
       });
     });
 

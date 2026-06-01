@@ -30,11 +30,7 @@ export default function Modal({
   children,
   size = "md",
 }: ModalProps) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [mounted] = useState(() => typeof window !== "undefined");
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {

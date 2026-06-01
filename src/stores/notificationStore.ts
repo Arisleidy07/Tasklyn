@@ -22,9 +22,10 @@ interface NotificationStore {
   markAllRead: (userId: string) => Promise<void>;
   remove: (id: string) => Promise<void>;
   archive: (id: string) => Promise<void>;
+  unarchive: (id: string) => Promise<void>;
   setStatus: (
     id: string,
-    status: "accepted" | "rejected" | "archived",
+    status: "accepted" | "rejected" | "archived" | "pending",
   ) => Promise<void>;
   create: (params: {
     userId: string;
@@ -81,6 +82,11 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   archive: async (id: string) => {
     const { setStatus } = get();
     await setStatus(id, "archived");
+  },
+
+  unarchive: async (id: string) => {
+    const { setStatus } = get();
+    await setStatus(id, "pending");
   },
 
   setStatus: async (id: string, status) => {

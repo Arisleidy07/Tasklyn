@@ -50,9 +50,15 @@ interface TaskItemProps {
   task: Task;
   role: MemberRole | null;
   memberNames: Record<string, string>;
+  listMembers?: Array<{ userId: string; role: string }>;
 }
 
-export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
+export default function TaskItem({
+  task,
+  role,
+  memberNames,
+  listMembers,
+}: TaskItemProps) {
   const [expanded, setExpanded] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -91,7 +97,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
     if (isCompleted) {
       uncompleteTask(task.id, user.id);
     } else {
-      completeTask(task.id, user.id, user.name);
+      completeTask(task.id, user.id, user.name, listMembers);
     }
   };
 
@@ -243,14 +249,10 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                       />
                     )}
                     {task.reminders && task.reminders.length > 0 && (
-                      <ReminderBadge
-                        reminder={task.reminders[0]}
-                        dueDate={task.dueDate}
-                        dueTime={task.dueTime}
-                      />
+                      <ReminderBadge reminder={task.reminders[0]} />
                     )}
                     {task.recurrence && (
-                      <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-600">
+                      <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
                         <Repeat size={8} />
                         {getRecurrenceShortLabel(task.recurrence)}
                       </span>
@@ -265,7 +267,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                   <button
                     onClick={handleOpenEdit}
                     className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
-                    title="Editar tarea"
+                    title="Editar"
                   >
                     <Edit2 size={14} />
                   </button>
@@ -274,7 +276,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                   <button
                     onClick={handleArchive}
                     className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
-                    title="Archivar tarea"
+                    title="Archivar"
                   >
                     <Archive size={14} />
                   </button>
@@ -282,7 +284,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                 <button
                   onClick={() => setExpanded(!expanded)}
                   className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
-                  title="Ver actividad"
+                  title="Historial"
                 >
                   {expanded ? (
                     <ChevronUp size={14} />
@@ -294,7 +296,7 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
                     className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
-                    title="Eliminar tarea"
+                    title="Eliminar"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -359,9 +361,18 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
                   onReminderChange={(r) =>
                     user && updateTask(task.id, { reminders: r }, user.id)
                   }
-                  onDueDateChange={(d) =>
-                    user && updateTask(task.id, { dueDate: d }, user.id)
-                  }
+                  onDueDateChange={(d) => {
+                    if (!user) return;
+                    updateTask(
+                      task.id,
+                      {
+                        dueDate: d,
+                        // Si se elimina la fecha, limpiamos también la hora
+                        dueTime: d ? task.dueTime || null : null,
+                      },
+                      user.id,
+                    );
+                  }}
                   onRecurrenceChange={(r) =>
                     user && updateTask(task.id, { recurrence: r }, user.id)
                   }
@@ -394,40 +405,43 @@ export default function TaskItem({ task, role, memberNames }: TaskItemProps) {
         </div>
 
         {/* Expanded: History */}
-        {expanded && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="border-t border-gray-100"
-          >
-            <div className="p-4 pt-3">
-              <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-3">
-                <History size={12} />
-                Actividad
-              </p>
-              <div className="space-y-2">
-                {task.history.slice(-8).map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="flex items-start gap-2 text-[11px] text-gray-500"
-                  >
-                    <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5 flex-shrink-0" />
-                    <span className="leading-relaxed">
-                      <span className="font-semibold text-gray-700">
-                        {getUserName(entry.performedBy)}
-                      </span>{" "}
-                      {entry.details || entry.action}
-                      <span className="text-gray-400 ml-1">
-                        · {formatActivityDateTime(entry.performedAt)}
+        <AnimatePresence initial={false}>
+          {expanded && (
+            <motion.div
+              key="history"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="border-t border-gray-100"
+            >
+              <div className="p-4 pt-3">
+                <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-3">
+                  <History size={12} />
+                  Actividad
+                </p>
+                <div className="space-y-2">
+                  {task.history.slice(-8).map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="flex items-start gap-2 text-[11px] text-gray-500"
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5 flex-shrink-0" />
+                      <span className="leading-relaxed">
+                        <span className="font-semibold text-gray-700">
+                          {getUserName(entry.performedBy)}
+                        </span>{" "}
+                        {entry.details || entry.action}
+                        <span className="text-gray-400 ml-1">
+                          · {formatActivityDateTime(entry.performedAt)}
+                        </span>
                       </span>
-                    </span>
-                  </div>
-                ))}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* ── Edit Modal ── */}
@@ -594,19 +608,32 @@ function DueDateBadge({
 }) {
   const now = new Date();
   const due = new Date(dueDate + (dueTime ? `T${dueTime}` : "T23:59:59"));
-  const diffHours = (due.getTime() - now.getTime()) / (1000 * 60 * 60);
+  const diffMs = due.getTime() - now.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  let bgClass = "bg-gray-100 text-gray-600";
+  let bgClass = "bg-blue-50 text-blue-600";
   let label = dueTime ? `${dueDate} · ${dueTime}` : dueDate;
 
-  if (diffHours < 0) {
+  if (diffMs < 0) {
     bgClass = "bg-red-50 text-red-600";
     label = "Vencida";
-  } else if (diffHours <= 24) {
-    bgClass = "bg-amber-50 text-amber-700";
+  } else if (diffDays === 0) {
+    bgClass = "bg-blue-50 text-blue-600";
     label = dueTime ? `Hoy · ${dueTime}` : "Vence hoy";
-  } else if (diffHours <= 48) {
+  } else if (diffDays === 1) {
     label = "Mañana";
+  } else if (diffDays < 7) {
+    const dateStr = due.toLocaleDateString("es-ES", {
+      weekday: "short",
+      day: "numeric",
+    });
+    label = dateStr;
+  } else {
+    const dateStr = due.toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "short",
+    });
+    label = dateStr;
   }
 
   return (
@@ -621,35 +648,56 @@ function DueDateBadge({
 
 function ReminderBadge({
   reminder,
-  dueDate,
-  dueTime,
 }: {
   reminder: { id: string; at: string; sent: boolean };
-  dueDate?: string | null;
-  dueTime?: string | null;
 }) {
   const at = new Date(reminder.at);
   const now = new Date();
-  const diffHours = (at.getTime() - now.getTime()) / (1000 * 60 * 60);
+  const diffMs = at.getTime() - now.getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  let label = at.toLocaleString("es-ES", {
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  let label = "";
 
-  if (diffHours < 0) {
+  if (diffMs < 0) {
     label = "Vencido";
-  } else if (diffHours <= 2) {
-    label = "En 2 horas";
-  } else if (diffHours <= 24) {
-    label = `Hoy · ${at.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`;
-  } else if (diffHours <= 48) {
-    label = `Mañana · ${at.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`;
+  } else if (diffMinutes < 1) {
+    label = "Ahora";
+  } else if (diffMinutes < 60) {
+    label = `En ${diffMinutes} min`;
+  } else if (diffHours < 24) {
+    if (diffHours === 1) {
+      label = "En 1 hora";
+    } else {
+      label = `En ${diffHours} horas`;
+    }
+  } else if (diffDays === 1) {
+    const timeStr = at.toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    label = `Mañana · ${timeStr}`;
+  } else if (diffDays === 0) {
+    const timeStr = at.toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    label = `Hoy · ${timeStr}`;
+  } else {
+    const dateStr = at.toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "short",
+    });
+    const timeStr = at.toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    label = `${dateStr} · ${timeStr}`;
   }
 
   return (
-    <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+    <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">
       <Bell size={8} />
       {label}
     </span>
