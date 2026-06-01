@@ -581,3 +581,75 @@ select {
     perspective: 1000;
   }
 }
+
+.app-theme-dark .bg-white {
+  background-color: rgb(15 23 42);
+}
+
+.app-theme-dark .bg-white\/95 {
+  background-color: rgb(15 23 42 / 0.95);
+}
+
+.app-theme-dark .bg-gray-50 {
+  background-color: rgb(15 23 42 / 0.9);
+}
+
+.app-theme-dark .bg-gray-100 {
+  background-color: rgb(30 41 59);
+}
+
+.app-theme-dark .bg-gray-200 {
+  background-color: rgb(51 65 85);
+}
+
+.app-theme-dark .bg-blue-50 {
+  background-color: rgba(37, 99, 235, 0.16);
+}
+
+.app-theme-dark .border-gray-100,
+.app-theme-dark .border-gray-200 {
+  border-color: rgb(51 65 85);
+}
+
+.app-theme-dark .border-gray-50 {
+  border-color: rgb(30 41 59);
+}
+
+.app-theme-dark .text-gray-900 {
+  color: rgb(226 232 240);
+}
+
+.app-theme-dark .text-gray-800 {
+  color: rgb(226 232 240);
+}
+
+.app-theme-dark .text-gray-700 {
+  color: rgb(203 213 225);
+}
+
+.app-theme-dark .text-gray-600,
+.app-theme-dark .text-gray-500,
+.app-theme-dark .text-gray-400 {
+  color: rgb(148 163 184);
+}
+
+.app-theme-dark .text-gray-300 {
+  color: rgb(148 163 184);
+}
+
+.app-theme-dark .hover\:bg-gray-50:hover,
+.app-theme-dark .hover\:bg-gray-100:hover {
+  background-color: rgb(30 41 59);
+}
+
+.app-theme-dark .hover\:bg-gray-200:hover {
+  background-color: rgb(51 65 85);
+}
+
+.app-theme-dark .hover\:bg-blue-50:hover {
+  background-color: rgba(37, 99, 235, 0.25);
+}
+
+.app-theme-dark .shadow-sm {
+  box-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.8);
+}

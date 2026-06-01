@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useNotificationStore } from "@/stores/notificationStore";
+import { useUIStore } from "@/stores/uiStore";
 import AppLayout from "@/components/layout/AppLayout";
 
 export default function AuthenticatedLayout({
@@ -17,6 +18,7 @@ export default function AuthenticatedLayout({
   const { subscribeToLists, unsubscribeFromLists } = useListStore();
   const { subscribe: subscribeNotifs, unsubscribe: unsubscribeNotifs } =
     useNotificationStore();
+  const { theme } = useUIStore();
 
   useEffect(() => {
     if (isAuthReady && !isAuthenticated) {
@@ -46,7 +48,13 @@ export default function AuthenticatedLayout({
 
   if (!isAuthReady || !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div
+        className={
+          theme === "dark"
+            ? "min-h-screen flex items-center justify-center bg-slate-950 text-slate-50"
+            : "min-h-screen flex items-center justify-center bg-gray-50 text-gray-900"
+        }
+      >
         <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full" />
       </div>
     );

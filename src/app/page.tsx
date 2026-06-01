@@ -141,7 +141,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-3 mb-6">
               <Logo size="lg" textClassName="text-slate-50" />
               <span className="px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-900/80 border border-slate-700 text-slate-100 uppercase tracking-wide">
-                SaaS de productividad para equipos
+                Plataforma de productividad para equipos
               </span>
             </div>
 
@@ -444,7 +444,7 @@ export default function LandingPage() {
                 </h3>
                 <p className="text-slate-400 text-sm">
                   Invita miembros, define roles de owner, editor o viewer y
-                  colabora en tiempo real, como en las mejores apps SaaS.
+                  colabora en tiempo real sin perder contexto ni tareas.
                 </p>
               </div>
             </motion.div>
@@ -946,8 +946,8 @@ export default function LandingPage() {
       {/* CTA Final */}
       <section className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden border-t border-slate-800/70 bg-mesh-blue">
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="animate-glow-drift absolute top-[10%] right-[15%] w-64 h-64 rounded-full bg-blue-500/20 blur-3xl" />
-          <div className="animate-glow-drift-2 absolute bottom-[5%] left-[10%] w-80 h-80 rounded-full bg-blue-400/20 blur-3xl" />
+          <div className="animate-glow-drift absolute top-[10%] right-[15%] w-64 h-64 rounded-full bg-blue-500/10 blur-3xl" />
+          <div className="animate-glow-drift-2 absolute bottom-[5%] left-[10%] w-80 h-80 rounded-full bg-blue-400/10 blur-3xl" />
         </div>
         <div className="relative max-w-3xl mx-auto text-center">
           <motion.div
@@ -955,19 +955,19 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl font-semibold text-slate-50 mb-4">
-              ¿Listo para que Tasklyn sea tu nuevo centro de operaciones?
+            <h2 className="text-3xl font-semibold text-slate-900 mb-4">
+              Organiza el trabajo de tu equipo en Tasklyn
             </h2>
-            <p className="text-slate-200/80 mb-8 text-sm sm:text-base">
-              Crea tu espacio, invita a tu equipo y empieza a coordinar el
-              trabajo diario de forma clara y organizada.
+            <p className="text-slate-700 mb-8 text-sm sm:text-base">
+              Crea tu espacio, invita a tu equipo y organiza tu trabajo desde un
+              solo lugar.
             </p>
             <Button
               onClick={login}
               isLoading={isLoading}
               size="lg"
               icon={<ArrowRight size={18} />}
-              className="bg-slate-950 text-slate-50 border border-slate-700 hover:bg-slate-900/90"
+              className="bg-slate-950 text-slate-50 border border-slate-900 hover:bg-slate-900"
             >
               Crear cuenta gratis
             </Button>
@@ -1001,7 +1001,7 @@ export default function LandingPage() {
 
       {/* Footer simple */}
       <footer className="border-t border-slate-900 bg-slate-950 py-10 px-4 sm:px-6">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] gap-8 text-sm">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] gap-8 text-sm">
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Logo size="sm" />
@@ -1010,28 +1010,24 @@ export default function LandingPage() {
               </span>
             </div>
             <p className="text-slate-400 text-sm max-w-xs">
-              Plataforma de gestión de tareas colaborativa, lista para llevar tu
-              operación al siguiente nivel.
+              Plataforma de gestión de tareas colaborativa para equipos que
+              quieren tener sus listas, miembros y notificaciones en un solo
+              lugar.
             </p>
           </div>
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">
-              Producto
+              Contacto
             </p>
             <ul className="space-y-2 text-slate-300">
-              <li>Acerca de Tasklyn</li>
-              <li>Soporte</li>
-              <li>Contacto</li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-3">
-              Legal & redes
-            </p>
-            <ul className="space-y-2 text-slate-300">
-              <li>Política de privacidad</li>
-              <li>Términos de uso</li>
-              <li>Redes sociales</li>
+              <li>
+                <a
+                  href="mailto:tasklyn.oficial@gmail.com"
+                  className="hover:text-white transition-colors"
+                >
+                  tasklyn.oficial@gmail.com
+                </a>
+              </li>
             </ul>
           </div>
         </div>
@@ -1040,7 +1036,7 @@ export default function LandingPage() {
             © {new Date().getFullYear()} Tasklyn. Todos los derechos reservados.
           </p>
           <p>
-            Hecho para equipos que necesitan orden real, no más listas sueltas.
+            Diseñado para equipos que necesitan una vista clara de su trabajo.
           </p>
         </div>
       </footer>
