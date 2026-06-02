@@ -241,12 +241,12 @@ export default function ProfilePage() {
   return (
     <>
       <ProfileHeader />
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 md:pt-8 pb-6 md:pb-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6"
+            className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden mb-6"
           >
             <div className="px-4 sm:px-6 md:px-8 pt-5 sm:pt-7 pb-4 sm:pb-6">
               <div className="flex items-start gap-4 sm:gap-5 mb-5 sm:mb-6">
@@ -260,12 +260,12 @@ export default function ProfilePage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight truncate">
+                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight truncate">
                           {user.name}
                         </h1>
                         <button
                           onClick={handleOpenEdit}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors flex-shrink-0"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/20 transition-colors flex-shrink-0"
                           title="Editar perfil"
                         >
                           <Edit2 size={14} />
@@ -280,7 +280,7 @@ export default function ProfilePage() {
                         <Mail size={12} />
                         <span className="truncate">{user.email}</span>
                       </div>
-                      <p className="text-gray-400 flex items-center gap-1.5 text-xs mt-0.5">
+                      <p className="text-gray-400 dark:text-slate-500 flex items-center gap-1.5 text-xs mt-0.5">
                         <Calendar size={11} />
                         Miembro desde {joinDate}
                       </p>

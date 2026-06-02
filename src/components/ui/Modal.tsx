@@ -72,25 +72,39 @@ export default function Modal({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "-100%", opacity: 0 }}
             transition={{ type: "spring", damping: 28, stiffness: 280 }}
-            className="sm:hidden fixed inset-0 z-[99999] flex flex-col bg-white"
+            className={cn(
+              "modal-mobile-fullscreen sm:hidden fixed inset-0 z-[99999] flex flex-col",
+              "bg-white",
+              "dark:bg-slate-900",
+            )}
             style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100/80 flex-shrink-0 bg-white/95 backdrop-blur-sm">
+            <div
+              className={cn(
+                "modal-mobile-header flex items-center justify-between px-5 py-4 border-b flex-shrink-0",
+                "border-gray-100/80 bg-white/95 backdrop-blur-sm",
+                "dark:bg-slate-900/95 dark:border-slate-800/80",
+              )}
+            >
               <div className="flex-1 min-w-0 pr-3">
                 {title && (
-                  <h2 className="text-lg font-semibold text-gray-900 leading-tight">
+                  <h2 className="text-lg font-semibold text-gray-900 leading-tight dark:text-slate-100">
                     {title}
                   </h2>
                 )}
                 {description && (
-                  <p className="mt-0.5 text-sm text-gray-500 truncate">
+                  <p className="mt-0.5 text-sm text-gray-500 truncate dark:text-slate-400">
                     {description}
                   </p>
                 )}
               </div>
               <button
                 onClick={onClose}
-                className="flex-shrink-0 p-2.5 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 active:scale-90 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+                className={cn(
+                  "flex-shrink-0 p-2.5 rounded-xl active:scale-90 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center",
+                  "text-gray-400 hover:text-gray-700 hover:bg-gray-100",
+                  "dark:text-slate-500 dark:hover:text-slate-300 dark:hover:bg-slate-800",
+                )}
               >
                 <X size={20} />
               </button>
@@ -113,25 +127,37 @@ export default function Modal({
               exit={{ opacity: 0, scale: 0.95, y: 12 }}
               transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className={cn(
-                "relative w-full bg-white rounded-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] border border-gray-200/60 overflow-hidden flex flex-col max-h-[88vh]",
+                "modal-panel relative w-full rounded-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] border overflow-hidden flex flex-col max-h-[88vh]",
+                "bg-white border-gray-200/60",
+                "dark:bg-slate-900 dark:border-slate-700/60",
                 sizeMap[size],
               )}
             >
               {title && (
-                <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-gray-100 flex-shrink-0 bg-white sticky top-0 z-10">
+                <div
+                  className={cn(
+                    "flex items-start justify-between px-6 pt-5 pb-4 border-b flex-shrink-0 sticky top-0 z-10",
+                    "border-gray-100 bg-white",
+                    "dark:bg-slate-900 dark:border-slate-800",
+                  )}
+                >
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
                       {title}
                     </h2>
                     {description && (
-                      <p className="mt-1 text-sm text-gray-500">
+                      <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
                         {description}
                       </p>
                     )}
                   </div>
                   <button
                     onClick={onClose}
-                    className="p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all active:scale-90 cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center"
+                    className={cn(
+                      "p-2 rounded-lg transition-all active:scale-90 cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center",
+                      "text-gray-400 hover:text-gray-700 hover:bg-gray-100",
+                      "dark:text-slate-500 dark:hover:text-slate-300 dark:hover:bg-slate-800",
+                    )}
                   >
                     <X size={20} />
                   </button>

@@ -4,20 +4,29 @@ import React from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
-import { useUIStore } from "@/stores/uiStore";
+import { useUIStore, type AppTheme } from "@/stores/uiStore";
 import Header from "@/components/layout/Header";
-import Button from "@/components/ui/Button";
-import Badge from "@/components/ui/Badge";
 import {
   Settings,
-  Shield,
   CheckCircle2,
   Crown,
   FolderOpen,
   Users,
   ClipboardList,
+  Sun,
+  Moon,
+  Sparkles,
+  Layers,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+const themes: { id: AppTheme; label: string; icon: React.ReactNode }[] = [
+  { id: "light", label: "Claro", icon: <Sun size={18} /> },
+  { id: "dark", label: "Oscuro", icon: <Moon size={18} /> },
+  { id: "glass", label: "Cristal", icon: <Sparkles size={18} /> },
+  { id: "dark-glass", label: "Cristal Oscuro", icon: <Layers size={18} /> },
+];
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -49,83 +58,109 @@ export default function SettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6"
+          className={cn(
+            "rounded-xl border shadow-sm p-6 mb-6",
+            "bg-white border-gray-200",
+            "dark:bg-slate-900 dark:border-slate-800",
+          )}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div
-                className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  user.plan === "PRO" ? "bg-blue-100" : "bg-gray-100"
-                }`}
+                className={cn(
+                  "w-12 h-12 rounded-xl flex items-center justify-center",
+                  user.plan === "PRO"
+                    ? "bg-blue-100 dark:bg-blue-500/20"
+                    : "bg-gray-100 dark:bg-slate-800",
+                )}
               >
                 <Crown
                   size={24}
                   className={
-                    user.plan === "PRO" ? "text-blue-600" : "text-gray-500"
+                    user.plan === "PRO"
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-500 dark:text-slate-500"
                   }
                 />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
                   Plan {user.plan === "PRO" ? "PRO" : "Gratis"}
                 </h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-slate-400">
                   {user.plan === "PRO"
                     ? "Acceso ilimitado a todas las funciones"
                     : "5 listas máximo, 20 tareas por lista"}
                 </p>
               </div>
             </div>
-            {user.plan === "FREE" && (
-              <Button
-                variant="outline"
-                icon={<Crown size={16} />}
-                disabled
-                className="cursor-not-allowed opacity-70"
-              >
-                Próximamente
-              </Button>
-            )}
           </div>
         </motion.div>
 
-        {/* Apariencia y tema */}
+        {/* Theme Selector - Premium Design */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6"
+          className={cn(
+            "rounded-xl border shadow-sm p-6 mb-6",
+            "bg-white border-gray-200",
+            "dark:bg-slate-900 dark:border-slate-800",
+          )}
         >
-          <h2 className="text-lg font-semibold text-gray-900 mb-2 flex items-center gap-2">
-            <Settings size={20} className="text-gray-400" />
-            Apariencia y tema
-          </h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Elige cómo quieres ver Tasklyn en este dispositivo.
+          <div className="flex items-center gap-2 mb-2">
+            <Settings size={20} className="text-gray-400 dark:text-slate-500" />
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              Tema de la aplicación
+            </h2>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">
+            Elige el estilo visual que prefieras para Tasklyn.
           </p>
-          <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1">
-            <button
-              type="button"
-              onClick={() => setTheme("light")}
-              className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                theme === "light"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-800"
-              }`}
-            >
-              Claro
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme("dark")}
-              className={`ml-1 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                theme === "dark"
-                  ? "bg-gray-900 text-white shadow-sm"
-                  : "text-gray-500 hover:text-gray-800"
-              }`}
-            >
-              Oscuro
-            </button>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {themes.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTheme(t.id)}
+                className={cn(
+                  "theme-option relative flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-200",
+                  theme === t.id
+                    ? "border-blue-500 shadow-lg shadow-blue-500/20"
+                    : "border-transparent hover:scale-[1.02]",
+                  t.id === "light" && "theme-preview-light",
+                  t.id === "dark" && "theme-preview-dark",
+                  t.id === "glass" && "theme-preview-glass",
+                  t.id === "dark-glass" && "theme-preview-dark-glass",
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
+                    theme === t.id
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-200/80 text-gray-600 dark:bg-slate-700 dark:text-slate-400",
+                  )}
+                >
+                  {t.icon}
+                </div>
+                <span
+                  className={cn(
+                    "text-sm font-medium",
+                    theme === t.id
+                      ? "text-gray-900 dark:text-slate-100"
+                      : "text-gray-600 dark:text-slate-400",
+                  )}
+                >
+                  {t.label}
+                </span>
+                {theme === t.id && (
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+                    <CheckCircle2 size={12} className="text-white" />
+                  </div>
+                )}
+              </button>
+            ))}
           </div>
         </motion.div>
 
@@ -134,74 +169,56 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6"
+          className={cn(
+            "rounded-xl border shadow-sm p-6",
+            "bg-white border-gray-200",
+            "dark:bg-slate-900 dark:border-slate-800",
+          )}
         >
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <CheckCircle2 size={20} className="text-gray-400" />
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+            <CheckCircle2
+              size={20}
+              className="text-gray-400 dark:text-slate-500"
+            />
             Tus estadísticas
           </h2>
           <div className="grid grid-cols-3 gap-3">
             {[
               {
-                label: "Listas creadas",
+                label: "Listas",
                 value: personalListsCount,
                 icon: FolderOpen,
               },
               {
-                label: "Listas compartidas",
+                label: "Compartidas",
                 value: sharedListsCount,
                 icon: Users,
               },
               {
-                label: "Tareas totales",
+                label: "Tareas",
                 value: totalTasks,
                 icon: ClipboardList,
               },
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="flex flex-col items-center gap-2 p-4 bg-gray-50 rounded-xl border border-gray-100"
+                className={cn(
+                  "flex flex-col items-center gap-2 p-4 rounded-xl border",
+                  "bg-gray-50 border-gray-100",
+                  "dark:bg-slate-800 dark:border-slate-700",
+                )}
               >
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm shadow-blue-500/25">
                   <stat.icon size={14} className="text-white" />
                 </div>
-                <p className="text-2xl font-bold text-gray-900 tabular-nums">
+                <p className="text-2xl font-bold text-gray-900 dark:text-slate-100 tabular-nums">
                   {stat.value}
                 </p>
-                <p className="text-[10px] text-gray-500 text-center leading-tight">
+                <p className="text-[10px] text-gray-500 dark:text-slate-400 text-center leading-tight">
                   {stat.label}
                 </p>
               </div>
             ))}
-          </div>
-        </motion.div>
-
-        {/* Seguridad */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
-        >
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Shield size={20} className="text-gray-400" />
-            Seguridad
-          </h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <CheckCircle2 size={18} className="text-green-500" />
-                <div>
-                  <p className="font-medium text-sm text-gray-900">
-                    Autenticación segura
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Tu cuenta está protegida con Google
-                  </p>
-                </div>
-              </div>
-              <Badge variant="default">Activo</Badge>
-            </div>
           </div>
         </motion.div>
       </div>

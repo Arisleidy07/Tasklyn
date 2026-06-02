@@ -18,6 +18,7 @@ import {
   showInAppNotification,
   playNotificationSound,
 } from "@/lib/notifications";
+import { useListStore } from "./listStore";
 import type { Invitation, MemberRole } from "@/types";
 
 interface SendEmailInviteParams {
@@ -156,7 +157,29 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
   },
 
   acceptInvitation: async (invitation, userId, accepterName) => {
+    console.log("[invitationStore] acceptInvitation starting", {
+      invitationId: invitation.id,
+      userId,
+      accepterName,
+    });
+
+    // Step 1: Accept the invitation in Firestore (adds user to list members)
     await acceptInvitationInDb(invitation, userId);
+    console.log("[invitationStore] acceptInvitationInDb completed");
+
+    // Step 2: Force refresh lists to include the newly joined list
+    // This ensures the list appears immediately in "Shared Lists" without waiting
+    console.log("[invitationStore] Refreshing lists...");
+    try {
+      const listStore = useListStore.getState();
+      await listStore.refreshLists(userId);
+      console.log("[invitationStore] Lists refreshed successfully");
+    } catch (error) {
+      console.error("[invitationStore] Failed to refresh lists:", error);
+      // Don't throw - the subscription should eventually catch up
+    }
+
+    // Step 3: Notify the inviter that invitation was accepted
     if (accepterName) {
       await notifyInvitationAccepted(
         invitation.invitedBy,
@@ -164,7 +187,10 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
         accepterName,
         invitation.listId,
       );
+      console.log("[invitationStore] notifyInvitationAccepted sent to owner");
     }
+
+    console.log("[invitationStore] acceptInvitation completed successfully");
   },
 
   rejectInvitation: async (invitation, _userId, rejecterName) => {

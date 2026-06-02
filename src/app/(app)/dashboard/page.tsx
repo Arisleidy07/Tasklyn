@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { PLAN_LIMITS } from "@/types";
+import { cn } from "@/lib/utils";
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
@@ -117,7 +118,7 @@ export default function DashboardPage() {
 
       {/* Tab bar — Personales / Compartidas */}
       {isListsSection && (
-        <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200">
+        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-slate-800">
           <div className="flex max-w-[1400px] mx-auto px-3 sm:px-4 md:px-8">
             {(["personal", "shared"] as const).map((tab) => {
               const isTabActive = activeTab === tab;
@@ -186,9 +187,9 @@ export default function DashboardPage() {
                   duration: 0.35,
                   ease: [0.16, 1, 0.3, 1],
                 }}
-                className="group relative p-4 sm:p-5 rounded-2xl border border-gray-200/80 bg-white hover:border-blue-200 transition-all duration-300 overflow-hidden"
+                className="group relative p-4 sm:p-5 rounded-2xl border border-gray-200/80 bg-white hover:border-blue-200 transition-all duration-300 overflow-hidden dark:bg-slate-900 dark:border-slate-800 dark:hover:border-blue-500/30"
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-blue-50/0 group-hover:to-blue-50/20 transition-all duration-500 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-blue-50/0 group-hover:to-blue-50/20 dark:to-blue-500/0 dark:group-hover:to-blue-500/10 transition-all duration-500 pointer-events-none" />
                 <div className="flex items-center justify-between mb-4">
                   <div
                     className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm ${
@@ -206,10 +207,10 @@ export default function DashboardPage() {
                     </span>
                   )}
                 </div>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight tabular-nums">
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100 tracking-tight tabular-nums">
                   {stat.value}
                 </p>
-                <p className="text-xs text-gray-500 font-medium mt-1">
+                <p className="text-xs text-gray-500 dark:text-slate-400 font-medium mt-1">
                   {stat.label}
                 </p>
               </motion.div>
@@ -223,8 +224,11 @@ export default function DashboardPage() {
             {!isListsSection && (
               <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                    <FolderOpen size={16} className="text-blue-600" />
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center">
+                    <FolderOpen
+                      size={16}
+                      className="text-blue-600 dark:text-blue-400"
+                    />
                   </div>
                   <div>
                     <h2 className="text-base font-semibold text-gray-900">

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useInvitationStore } from "@/stores/invitationStore";
+import { getList } from "@/lib/firestore";
 import Header from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
@@ -99,22 +100,63 @@ export default function NotificationsPage() {
     notifId: string,
     data: Record<string, string>,
   ) => {
+    console.log(`[Notifications] Accepting invitation ${notifId}`);
     setProcessingId(notifId);
+
     try {
+      // Step 1: Get the invitation
+      console.log(
+        `[Notifications] Fetching invitation with token ${data.token}...`,
+      );
       const invitation = await getInvitation(data.token);
+
       if (!invitation) {
+        console.error(
+          `[Notifications] Invitation not found for token ${data.token}`,
+        );
+        alert(
+          "No se encontró la invitación. Puede haber expirado o sido eliminada.",
+        );
         setProcessingId(null);
         return;
       }
 
-      // Add user to list + notify inviter
-      await acceptInvitation(invitation, user.id, user.name);
+      console.log(`[Notifications] Found invitation:`, {
+        id: invitation.id,
+        listId: invitation.listId,
+        role: invitation.defaultRole,
+      });
 
-      // Mark notification as accepted and read atomically
+      // Step 2: Accept the invitation (adds to list, deletes invitation)
+      console.log(`[Notifications] Calling acceptInvitation...`);
+      await acceptInvitation(invitation, user.id, user.name);
+      console.log(`[Notifications] acceptInvitation completed successfully`);
+
+      // Step 3: Verify by fetching the updated list
+      console.log(`[Notifications] Verifying list membership...`);
+      const list = await getList(invitation.listId);
+      const isNowMember = list?.members?.some((m) => m.userId === user.id);
+
+      if (!isNowMember) {
+        console.error(
+          `[Notifications] Verification failed: user not in list members`,
+        );
+        throw new Error("No se pudo verificar la membresía en la lista");
+      }
+
+      console.log(
+        `[Notifications] Verified: user is now member of list ${invitation.listId}`,
+      );
+
+      // Step 4: Only mark notification as accepted after successful verification
+      console.log(`[Notifications] Marking notification as accepted...`);
       await setStatus(notifId, "accepted");
       await markRead(notifId);
+
+      console.log(`[Notifications] SUCCESS: Invitation flow completed`);
     } catch (error) {
-      console.error("Error accepting invitation:", error);
+      console.error("[Notifications] Error accepting invitation:", error);
+      alert("Error al aceptar la invitación. Por favor, inténtalo de nuevo.");
     } finally {
       setProcessingId(null);
     }

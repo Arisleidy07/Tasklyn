@@ -158,200 +158,201 @@ export default function LandingPage() {
             </div>
           </motion.div>
 
-          {/* Hero mockup — vista fiel del dashboard real */}
+          {/* Hero demo — composición premium de productividad */}
           <motion.div
             initial={{ opacity: 0, y: 30, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.15, duration: 0.6 }}
             className="relative"
           >
-            <div className="rounded-[2rem] border border-slate-700/70 bg-slate-900/80 p-2 sm:p-3 shadow-[0_30px_90px_rgba(15,23,42,0.95)]">
-              <div className="overflow-hidden rounded-[1.5rem] bg-gray-50 text-gray-900 min-h-[520px] sm:min-h-[560px] lg:min-h-[610px] flex">
-                <aside className="hidden md:flex w-[212px] flex-col border-r border-gray-200 bg-gray-50">
-                  <div className="h-16 flex items-center px-4 border-b border-gray-200 bg-white">
-                    <Logo size="md" />
-                  </div>
-                  <nav className="flex-1 px-3 py-4 space-y-6">
-                    <div className="space-y-1">
-                      <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-                        General
-                      </p>
-                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium bg-blue-600 text-white shadow-sm shadow-blue-600/25">
-                        <ListTodo size={18} />
-                        <span>Panel de control</span>
-                      </div>
-                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-gray-600">
-                        <Bell size={18} />
-                        <span>Notificaciones</span>
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
-                        Workspace
-                      </p>
-                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-gray-600 bg-white shadow-sm">
-                        <Users size={18} />
-                        <span>Listas</span>
-                      </div>
-                    </div>
-                  </nav>
-                </aside>
+            <div className="absolute -inset-6 rounded-[2.5rem] bg-blue-500/10 blur-3xl" />
+            <div className="relative overflow-hidden rounded-[2rem] border border-slate-700/70 bg-slate-900/70 p-4 sm:p-5 shadow-[0_30px_90px_rgba(15,23,42,0.95)] backdrop-blur-xl">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(59,130,246,0.22),transparent_32%),radial-gradient(circle_at_80%_10%,rgba(99,102,241,0.16),transparent_30%)]" />
+              <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(148,163,184,0.25)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.25)_1px,transparent_1px)] bg-[size:36px_36px]" />
 
-                <div className="flex-1 min-w-0 flex flex-col">
-                  <div className="border-b border-gray-200 bg-white/95 backdrop-blur-xl">
-                    <div className="flex items-center gap-2 px-3 md:px-6 py-3 md:py-5 min-h-[60px] md:min-h-[72px]">
-                      <button className="md:hidden p-2 rounded-xl text-gray-500 bg-gray-100 min-w-[40px] min-h-[40px] flex items-center justify-center">
-                        <ListTodo size={20} />
-                      </button>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-lg md:text-xl font-bold text-gray-900 truncate tracking-tight">
-                          Panel de control
-                        </h3>
-                        <p className="text-xs md:text-sm text-gray-500 truncate mt-0.5">
-                          Vista principal de Tasklyn
-                        </p>
-                      </div>
-                      <button className="inline-flex items-center gap-2 h-10 px-3 rounded-xl bg-blue-600 text-white text-sm font-medium shadow-sm">
-                        <span className="hidden sm:inline">Nueva lista</span>
-                        <ArrowRight size={15} />
-                      </button>
-                    </div>
+              <div className="relative grid gap-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.28em] text-blue-300 font-semibold">
+                      Tasklyn Flow
+                    </p>
+                    <h3 className="mt-1 text-lg sm:text-xl font-semibold text-slate-50">
+                      Listas, tareas y equipo alineados
+                    </h3>
                   </div>
+                  <motion.div
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{
+                      duration: 5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    className="hidden sm:flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-500/10 px-3 py-1.5 text-xs text-blue-100"
+                  >
+                    <Bell size={13} />
+                    Recordatorio activo
+                  </motion.div>
+                </div>
 
-                  <div className="p-3 sm:p-4 md:p-6 space-y-5 md:space-y-6">
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                      {[
-                        { label: "Listas totales", value: "5", icon: ListTodo },
-                        { label: "Compartidas", value: "2", icon: Users },
-                        {
-                          label: "Completadas",
-                          value: "7",
-                          icon: CheckCircle2,
-                        },
-                        { label: "Pendientes", value: "9", icon: Clock },
-                      ].map((item, idx) => (
-                        <div
-                          key={item.label}
-                          className="relative p-4 rounded-2xl border border-gray-200/80 bg-white overflow-hidden"
-                        >
-                          <div className="flex items-center justify-between mb-4">
-                            <div
-                              className={
-                                idx % 2 === 0
-                                  ? "w-10 h-10 rounded-2xl flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 shadow-sm shadow-blue-500/25"
-                                  : "w-10 h-10 rounded-2xl flex items-center justify-center bg-gradient-to-br from-gray-700 to-gray-900 shadow-sm shadow-gray-500/20"
-                              }
-                            >
-                              <item.icon size={18} className="text-white" />
-                            </div>
-                          </div>
-                          <p className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight tabular-nums">
-                            {item.value}
+                <div className="grid grid-cols-1 sm:grid-cols-[0.9fr_1.2fr] gap-4">
+                  <motion.div
+                    whileHover={{ y: -4 }}
+                    className="rounded-3xl border border-slate-700/70 bg-slate-950/70 p-4"
+                  >
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-9 h-9 rounded-2xl bg-blue-500/15 border border-blue-400/20 flex items-center justify-center text-blue-300">
+                          <ListTodo size={17} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-slate-50">
+                            Operaciones
                           </p>
-                          <p className="text-xs text-gray-500 font-medium mt-1">
-                            {item.label}
+                          <p className="text-[11px] text-slate-400">
+                            6/10 completadas
                           </p>
                         </div>
+                      </div>
+                      <span className="text-xs font-semibold text-blue-300">
+                        60%
+                      </span>
+                    </div>
+
+                    <div className="h-2 rounded-full bg-slate-800 overflow-hidden mb-5">
+                      <motion.div
+                        initial={{ width: "18%" }}
+                        animate={{ width: "60%" }}
+                        transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
+                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-400"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      {[
+                        { label: "Entrega semanal", done: true },
+                        { label: "Seguimiento cliente", done: true },
+                        { label: "Revisión interna", done: false },
+                      ].map((task, index) => (
+                        <motion.div
+                          key={task.label}
+                          initial={{ opacity: 0, x: -12 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.35 + index * 0.14 }}
+                          className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-3 py-3"
+                        >
+                          <motion.span
+                            initial={{ scale: 0.8 }}
+                            animate={{ scale: task.done ? [0.8, 1.15, 1] : 1 }}
+                            transition={{ delay: 0.55 + index * 0.12 }}
+                            className={
+                              task.done
+                                ? "flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white"
+                                : "h-5 w-5 rounded-full border-2 border-slate-600"
+                            }
+                          >
+                            {task.done && <CheckCircle2 size={13} />}
+                          </motion.span>
+                          <span
+                            className={
+                              task.done
+                                ? "text-sm text-slate-400 line-through"
+                                : "text-sm text-slate-100"
+                            }
+                          >
+                            {task.label}
+                          </span>
+                        </motion.div>
                       ))}
                     </div>
+                  </motion.div>
 
-                    <section>
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                            <ListTodo size={16} className="text-blue-600" />
-                          </div>
-                          <div>
-                            <h4 className="text-base font-semibold text-gray-900">
-                              Mis listas
-                            </h4>
-                            <p className="text-xs text-gray-500">
-                              Listas personales y compartidas
-                            </p>
-                          </div>
+                  <div className="grid gap-4">
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      className="rounded-3xl border border-slate-700/70 bg-slate-950/70 p-4"
+                    >
+                      <div className="flex items-center justify-between gap-3 mb-4">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-50">
+                            Tarea próxima
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            Vencimiento y aviso sincronizados
+                          </p>
+                        </div>
+                        <div className="w-10 h-10 rounded-2xl bg-amber-400/10 border border-amber-300/20 flex items-center justify-center text-amber-300">
+                          <Clock size={18} />
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                        {[
-                          {
-                            name: "Operaciones",
-                            type: "Compartida",
-                            pending: 4,
-                            done: 6,
-                            members: 3,
-                          },
-                          {
-                            name: "Clientes",
-                            type: "Personal",
-                            pending: 3,
-                            done: 1,
-                            members: 1,
-                          },
-                        ].map((list) => (
-                          <div
-                            key={list.name}
-                            className="relative p-5 rounded-2xl border border-gray-200/80 bg-white/95 overflow-hidden"
-                          >
-                            <div
-                              className={
-                                list.type === "Compartida"
-                                  ? "absolute inset-y-3 left-0 w-[3px] rounded-r-xl bg-gradient-to-b from-blue-500 via-indigo-500 to-blue-400"
-                                  : "absolute inset-y-3 left-0 w-[3px] rounded-r-xl bg-gradient-to-b from-gray-200 via-gray-300 to-gray-200"
-                              }
-                            />
-                            <div className="flex items-start justify-between mb-4">
-                              <div className="flex-1 min-w-0 pr-3">
-                                <h5 className="text-[15px] font-semibold text-gray-900 truncate leading-snug">
-                                  {list.name}
-                                </h5>
-                                <p className="text-[11px] text-gray-400 flex items-center gap-1.5 mt-1">
-                                  <Clock size={9} />
-                                  Creada recientemente
-                                </p>
-                              </div>
-                              <div className="flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0 shadow-sm border bg-gradient-to-br from-blue-500 to-indigo-600 border-blue-500/60">
-                                <Users size={15} className="text-white" />
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between gap-4 mb-4">
-                              <div className="flex items-center gap-4">
-                                <div className="flex flex-col min-w-[54px]">
-                                  <span className="text-lg font-semibold text-gray-900 leading-none tabular-nums">
-                                    {list.pending}
-                                  </span>
-                                  <span className="text-[10px] text-gray-400 mt-0.5">
-                                    pendientes
-                                  </span>
-                                </div>
-                                <div className="w-px h-7 bg-gray-100" />
-                                <div className="flex flex-col min-w-[54px]">
-                                  <span className="text-lg font-semibold text-blue-600 leading-none tabular-nums">
-                                    {list.done}
-                                  </span>
-                                  <span className="text-[10px] text-gray-400 mt-0.5">
-                                    completadas
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-                              <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
-                                <Users size={11} />
-                                <span>
-                                  {list.members} miembro
-                                  {list.members !== 1 ? "s" : ""}
-                                </span>
-                              </div>
-                              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100">
-                                {list.type}
-                              </span>
-                            </div>
-                          </div>
-                        ))}
+                      <div className="flex flex-wrap gap-2">
+                        <span className="rounded-full border border-blue-400/20 bg-blue-500/10 px-3 py-1 text-[11px] text-blue-200">
+                          Hoy
+                        </span>
+                        <span className="rounded-full border border-amber-300/20 bg-amber-400/10 px-3 py-1 text-[11px] text-amber-200">
+                          Recordatorio
+                        </span>
+                        <span className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-[11px] text-emerald-200">
+                          Recurrente
+                        </span>
                       </div>
-                    </section>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      className="rounded-3xl border border-slate-700/70 bg-slate-950/70 p-4"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <p className="text-sm font-semibold text-slate-50">
+                          Colaboración
+                        </p>
+                        <Users size={17} className="text-blue-300" />
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex -space-x-2">
+                          {[0, 1, 2, 3].map((idx) => (
+                            <motion.span
+                              key={idx}
+                              animate={{ y: [0, idx % 2 === 0 ? -4 : 4, 0] }}
+                              transition={{
+                                duration: 4 + idx,
+                                repeat: Infinity,
+                                ease: "easeInOut",
+                              }}
+                              className="w-8 h-8 rounded-full border border-slate-700 bg-gradient-to-br from-slate-700 to-slate-900"
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-slate-400">
+                          roles claros
+                        </span>
+                      </div>
+                    </motion.div>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { label: "Listas", icon: ListTodo },
+                    { label: "Avisos", icon: Bell },
+                    { label: "Equipo", icon: Users },
+                  ].map((item, index) => (
+                    <motion.div
+                      key={item.label}
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{
+                        duration: 4.5 + index,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                      className="rounded-2xl border border-slate-700/60 bg-slate-950/50 px-3 py-3 text-center"
+                    >
+                      <item.icon
+                        size={16}
+                        className="mx-auto mb-1 text-blue-300"
+                      />
+                      <p className="text-[11px] text-slate-300">{item.label}</p>
+                    </motion.div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -483,233 +484,141 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Vista real de una lista */}
+      {/* Demo visual — funciones conectadas */}
       <section className="py-16 sm:py-20 bg-slate-950/95 border-t border-slate-800/70">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
             <div>
               <h2 className="text-2xl sm:text-3xl font-semibold text-slate-50 mb-2">
-                La misma experiencia que usas dentro de Tasklyn
+                Todo conectado, sin perder el ritmo
               </h2>
               <p className="text-sm sm:text-base text-slate-300 max-w-xl">
-                Esta vista muestra cómo se organizan las tareas dentro de una
-                lista real: filtros, estados, recordatorios, vencimientos,
-                miembros y acciones de gestión.
+                Tasklyn une listas, tareas, recordatorios y colaboración en un
+                flujo visual claro para que el trabajo avance sin fricción.
               </p>
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-slate-800 bg-slate-900/80 p-2 sm:p-3 shadow-[0_22px_60px_rgba(15,23,42,0.85)]">
-            <div className="overflow-hidden rounded-[1.5rem] bg-gray-50 text-gray-900">
-              <div className="border-b border-gray-200 bg-white/95 backdrop-blur-xl">
-                <div className="flex items-center gap-2 px-3 md:px-6 py-3 md:py-5 min-h-[60px] md:min-h-[72px]">
-                  <button className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center">
-                    <ArrowRight size={18} className="rotate-180" />
-                  </button>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <h3 className="text-lg md:text-xl font-bold text-gray-900 truncate tracking-tight">
-                        Operaciones
-                      </h3>
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-[10px] font-medium text-gray-600 border border-gray-200">
-                        <Users size={10} className="text-gray-500" />3 miembros
-                      </span>
-                    </div>
-                    <p className="text-xs md:text-sm text-gray-500 truncate mt-0.5">
-                      Lista compartida con tareas activas
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <button className="hidden sm:inline-flex items-center gap-2 h-9 px-3 rounded-xl bg-white border border-gray-200 text-gray-700 text-sm font-medium">
-                      <Users size={15} />
-                      Miembros
-                    </button>
-                    <button className="inline-flex items-center gap-2 h-9 px-3 rounded-xl bg-blue-600 text-white text-sm font-medium">
-                      <ArrowRight size={15} />
-                      <span className="hidden sm:inline">Editar</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+          <div className="relative overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-900/70 p-4 sm:p-6 md:p-8 shadow-[0_22px_60px_rgba(15,23,42,0.85)]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.18),transparent_35%),radial-gradient(circle_at_85%_70%,rgba(16,185,129,0.1),transparent_28%)]" />
+            <div className="absolute inset-0 opacity-[0.07] bg-[linear-gradient(rgba(148,163,184,0.26)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.26)_1px,transparent_1px)] bg-[size:42px_42px]" />
 
-              <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto">
-                <div className="flex bg-gray-50 border border-gray-200/80 rounded-2xl p-1.5 mb-6 gap-1 shadow-sm">
-                  {[
-                    {
-                      label: "Pendientes",
-                      count: 3,
-                      active: true,
-                      icon: Clock,
-                    },
-                    {
-                      label: "Completadas",
-                      count: 2,
-                      active: false,
-                      icon: CheckCircle2,
-                    },
-                    { label: "Todas", count: 5, active: false, icon: null },
-                  ].map((tab) => (
-                    <button
-                      key={tab.label}
-                      className={
-                        tab.active
-                          ? "relative flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight min-h-[40px] bg-white text-gray-900 shadow-sm border border-gray-200"
-                          : "relative flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight min-h-[40px] text-gray-500 border border-transparent"
-                      }
-                    >
-                      {tab.icon && (
-                        <tab.icon
-                          size={13}
-                          className="hidden sm:block flex-shrink-0"
-                        />
-                      )}
-                      <span>{tab.label}</span>
-                      <span
-                        className={
-                          tab.active
-                            ? "text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none tracking-wide bg-blue-600 text-white shadow-sm"
-                            : "text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none tracking-wide bg-gray-100 text-gray-500"
-                        }
-                      >
-                        {tab.count}
-                      </span>
-                    </button>
-                  ))}
+            <div className="relative min-h-[560px] sm:min-h-[500px] lg:min-h-[460px]">
+              <motion.div
+                animate={{ scale: [1, 1.03, 1] }}
+                transition={{
+                  duration: 6,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="absolute left-1/2 top-1/2 z-10 w-36 sm:w-44 -translate-x-1/2 -translate-y-1/2 rounded-[2rem] border border-blue-400/25 bg-blue-500/15 p-4 text-center shadow-[0_0_70px_rgba(37,99,235,0.35)] backdrop-blur-xl"
+              >
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/30">
+                  <ListTodo size={22} />
                 </div>
+                <p className="text-sm font-semibold text-slate-50">Tasklyn</p>
+                <p className="mt-1 text-[11px] text-blue-100">
+                  centro de trabajo
+                </p>
+              </motion.div>
 
-                <div className="mb-6">
-                  <button className="w-full sm:w-auto inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-blue-600 text-white text-sm font-medium shadow-sm">
-                    <ArrowRight size={16} />
-                    Añadir tarea
-                  </button>
-                </div>
+              <div className="absolute left-1/2 top-1/2 hidden h-px w-[74%] -translate-x-1/2 bg-gradient-to-r from-transparent via-blue-400/40 to-transparent sm:block" />
+              <div className="absolute left-1/2 top-1/2 hidden h-[72%] w-px -translate-y-1/2 bg-gradient-to-b from-transparent via-blue-400/30 to-transparent sm:block" />
+              <div className="absolute left-[18%] top-[24%] hidden h-px w-[64%] -rotate-12 bg-gradient-to-r from-transparent via-slate-500/25 to-transparent sm:block" />
+              <div className="absolute left-[18%] bottom-[26%] hidden h-px w-[64%] rotate-12 bg-gradient-to-r from-transparent via-slate-500/25 to-transparent sm:block" />
 
-                <div className="space-y-3">
-                  {[
-                    {
-                      title: "Preparar entrega semanal",
-                      meta: "Vence hoy · Recordatorio activo",
-                      badges: ["Vence hoy", "Aviso"],
-                      completed: false,
+              {[
+                {
+                  label: "Listas",
+                  detail: "orden por contexto",
+                  icon: ListTodo,
+                  position: "left-0 top-8 sm:left-4 sm:top-16",
+                  color: "blue",
+                },
+                {
+                  label: "Tareas",
+                  detail: "avance visible",
+                  icon: CheckCircle2,
+                  position: "right-0 top-24 sm:right-8 sm:top-12",
+                  color: "emerald",
+                },
+                {
+                  label: "Recordatorios",
+                  detail: "avisos puntuales",
+                  icon: Bell,
+                  position: "left-2 bottom-28 sm:left-12 sm:bottom-16",
+                  color: "amber",
+                },
+                {
+                  label: "Vencimientos",
+                  detail: "fechas claras",
+                  icon: Clock,
+                  position: "right-4 bottom-20 sm:right-16 sm:bottom-12",
+                  color: "indigo",
+                },
+                {
+                  label: "Equipo",
+                  detail: "colaboración real",
+                  icon: Users,
+                  position: "left-1/2 top-0 -translate-x-1/2 sm:top-4",
+                  color: "slate",
+                },
+              ].map((node, index) => (
+                <motion.div
+                  key={node.label}
+                  initial={{ opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.35 }}
+                  animate={{ y: [0, index % 2 === 0 ? -8 : 8, 0] }}
+                  transition={{
+                    opacity: { duration: 0.45, delay: index * 0.08 },
+                    y: {
+                      duration: 5 + index * 0.45,
+                      repeat: Infinity,
+                      ease: "easeInOut",
                     },
-                    {
-                      title: "Confirmar datos del cliente",
-                      meta: "Teléfono y ubicación guardados",
-                      badges: ["Datos"],
-                      completed: false,
-                    },
-                    {
-                      title: "Revisar checklist de seguimiento",
-                      meta: "Repetición semanal configurada",
-                      badges: ["Repetir"],
-                      completed: false,
-                    },
-                    {
-                      title: "Actualizar estado de la lista",
-                      meta: "Completada por un miembro del equipo",
-                      badges: ["Completada"],
-                      completed: true,
-                    },
-                  ].map((task) => (
+                  }}
+                  whileHover={{ scale: 1.04 }}
+                  className={`absolute ${node.position} w-[min(82vw,220px)] rounded-3xl border border-slate-700/70 bg-slate-950/80 p-4 shadow-2xl backdrop-blur-xl`}
+                >
+                  <div className="flex items-center gap-3">
                     <div
-                      key={task.title}
                       className={
-                        task.completed
-                          ? "group rounded-xl border border-blue-200 bg-blue-50/30 transition-colors relative"
-                          : "group rounded-xl border border-gray-200 bg-white transition-colors relative"
+                        node.color === "emerald"
+                          ? "flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-300"
+                          : node.color === "amber"
+                            ? "flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-400/10 text-amber-300"
+                            : node.color === "indigo"
+                              ? "flex h-11 w-11 items-center justify-center rounded-2xl border border-indigo-300/20 bg-indigo-400/10 text-indigo-300"
+                              : node.color === "slate"
+                                ? "flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-500/30 bg-slate-800 text-slate-200"
+                                : "flex h-11 w-11 items-center justify-center rounded-2xl border border-blue-300/20 bg-blue-500/10 text-blue-300"
                       }
                     >
-                      <div className="flex items-start gap-3 p-4">
-                        <button
-                          className={
-                            task.completed
-                              ? "mt-0.5 flex-shrink-0 text-blue-600"
-                              : "mt-0.5 flex-shrink-0 text-gray-300"
-                          }
-                        >
-                          {task.completed ? (
-                            <CheckCircle2 size={20} />
-                          ) : (
-                            <span className="block w-5 h-5 rounded-full border-2 border-current" />
-                          )}
-                        </button>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start gap-2">
-                            <div className="flex-1 min-w-0">
-                              <p
-                                className={
-                                  task.completed
-                                    ? "text-[15px] font-medium leading-snug text-gray-400 line-through break-words"
-                                    : "text-[15px] font-medium leading-snug text-gray-900 break-words"
-                                }
-                              >
-                                {task.title}
-                              </p>
-                              <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                {task.badges.map((badge) => (
-                                  <span
-                                    key={badge}
-                                    className={
-                                      badge === "Vence hoy"
-                                        ? "flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600"
-                                        : badge === "Aviso"
-                                          ? "flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600"
-                                          : badge === "Repetir"
-                                            ? "flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600"
-                                            : "flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600"
-                                    }
-                                  >
-                                    {badge === "Aviso" && <Bell size={8} />}
-                                    {badge === "Vence hoy" && (
-                                      <Clock size={8} />
-                                    )}
-                                    {badge}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="hidden sm:flex items-center gap-0.5 flex-shrink-0">
-                              <button className="p-1.5 rounded-lg text-gray-400 bg-gray-50">
-                                <Clock size={14} />
-                              </button>
-                              <button className="p-1.5 rounded-lg text-gray-400 bg-gray-50">
-                                <Users size={14} />
-                              </button>
-                            </div>
-                          </div>
-                          <div className="flex items-center flex-wrap gap-2 mt-2">
-                            <span className="flex items-center gap-1 text-[11px] text-gray-400">
-                              <Clock size={10} />
-                              {task.meta}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
+                      <node.icon size={19} />
                     </div>
-                  ))}
-
-                  <div className="rounded-xl border border-gray-100 bg-white/70 p-4">
-                    <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-3">
-                      Actividad
-                    </p>
-                    <div className="space-y-2">
-                      <div className="flex items-start gap-2 text-[11px] text-gray-500">
-                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5 flex-shrink-0" />
-                        <span className="leading-relaxed">
-                          Se completó una tarea y se actualizó el historial.
-                        </span>
-                      </div>
-                      <div className="flex items-start gap-2 text-[11px] text-gray-500">
-                        <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5 flex-shrink-0" />
-                        <span className="leading-relaxed">
-                          Se configuró un recordatorio para una tarea pendiente.
-                        </span>
-                      </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-50">
+                        {node.label}
+                      </p>
+                      <p className="text-[11px] text-slate-400">
+                        {node.detail}
+                      </p>
                     </div>
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              ))}
+
+              <motion.div
+                animate={{ x: ["-8%", "108%"] }}
+                transition={{ duration: 7, repeat: Infinity, ease: "linear" }}
+                className="absolute left-0 top-1/2 hidden h-px w-24 bg-gradient-to-r from-transparent via-blue-300/70 to-transparent sm:block"
+              />
+              <motion.div
+                animate={{ y: ["110%", "-20%"] }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                className="absolute left-1/2 top-0 hidden h-24 w-px bg-gradient-to-b from-transparent via-emerald-300/60 to-transparent sm:block"
+              />
             </div>
           </div>
         </div>

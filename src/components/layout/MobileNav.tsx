@@ -44,7 +44,13 @@ export default function MobileNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-200/80 mobile-nav-safe shadow-[0_-1px_0_0_rgba(0,0,0,0.06)]">
+    <nav
+      className={cn(
+        "nav-mobile fixed bottom-0 left-0 right-0 z-50 md:hidden mobile-nav-safe",
+        "bg-white/95 backdrop-blur-xl border-t border-gray-200/80 shadow-[0_-1px_0_0_rgba(0,0,0,0.06)]",
+        "dark:bg-slate-900/95 dark:border-slate-800/80",
+      )}
+    >
       <div className="flex items-center justify-around h-16">
         {items.map((item) => {
           const active = isActive(item.href);
@@ -54,16 +60,18 @@ export default function MobileNav() {
               href={item.href}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 flex-1 h-full relative transition-all duration-200 active:scale-90",
-                active ? "text-blue-600" : "text-gray-400",
+                active
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-gray-400 dark:text-slate-500",
               )}
             >
               {active && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-blue-600" />
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-blue-600 dark:bg-blue-400" />
               )}
               <div
                 className={cn(
                   "relative flex items-center justify-center w-10 h-8 rounded-xl transition-colors",
-                  active ? "bg-blue-50" : "",
+                  active ? "bg-blue-50 dark:bg-blue-500/20" : "",
                 )}
               >
                 <item.icon size={22} />
@@ -76,7 +84,9 @@ export default function MobileNav() {
               <span
                 className={cn(
                   "text-[10px] font-medium",
-                  active ? "text-blue-600" : "text-gray-400",
+                  active
+                    ? "text-blue-600 dark:text-blue-400"
+                    : "text-gray-400 dark:text-slate-500",
                 )}
               >
                 {item.name}

@@ -23,9 +23,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
     <div
       className={cn(
         "min-h-screen relative overflow-x-hidden",
-        theme === "dark"
-          ? "app-theme-dark bg-slate-950 text-slate-50"
-          : "app-theme-light bg-gray-50 text-gray-900",
+        theme === "dark" && "app-theme-dark bg-slate-950 text-slate-50",
+        theme === "light" && "app-theme-light bg-gray-50 text-gray-900",
+        theme === "glass" && "app-theme-glass text-slate-800",
+        theme === "dark-glass" && "app-theme-dark-glass text-slate-50",
       )}
     >
       {/* Premium animated background */}

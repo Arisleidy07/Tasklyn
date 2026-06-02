@@ -76,10 +76,18 @@ export default function MobileSidebar() {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 z-[9999] w-[280px] max-w-[85vw] flex flex-col bg-white border-r border-gray-200 md:hidden"
+              className={cn(
+                "fixed inset-y-0 left-0 z-[9999] w-[280px] max-w-[85vw] flex flex-col md:hidden",
+                "bg-white border-r border-gray-200",
+                "dark:bg-slate-900 dark:border-slate-800"
+              )}
             >
               {/* Header */}
-              <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200 bg-white flex-shrink-0">
+              <div className={cn(
+                "h-16 flex items-center justify-between px-4 border-b flex-shrink-0",
+                "border-gray-200 bg-white",
+                "dark:bg-slate-900 dark:border-slate-800"
+              )}>
                 <Link
                   href="/dashboard"
                   onClick={closeSidebar}
@@ -89,8 +97,11 @@ export default function MobileSidebar() {
                 </Link>
                 <button
                   onClick={closeSidebar}
-                  className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
-                >
+                  className={cn(
+                    "p-2 rounded-lg transition-colors cursor-pointer",
+                    "text-gray-400 hover:text-gray-600 hover:bg-gray-100",
+                    "dark:text-slate-400 dark:hover:text-slate-300 dark:hover:bg-slate-800"
+                  )}
                   <X size={20} />
                 </button>
               </div>
@@ -99,7 +110,11 @@ export default function MobileSidebar() {
               <nav className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
                 {/* Main */}
                 <div className="space-y-1">
-                  <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                  <p className={cn(
+                    "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
+                    "text-gray-400",
+                    "dark:text-slate-500"
+                  )}>
                     General
                   </p>
                   {mainNav.map((item) => {
@@ -112,10 +127,11 @@ export default function MobileSidebar() {
                         className={cn(
                           "relative flex items-center gap-3 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200",
                           active
-                            ? "bg-blue-600 text-white shadow-sm shadow-blue-600/25"
-                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
+                            ? "bg-blue-600 text-white shadow-sm shadow-blue-600/25 dark:bg-blue-600/90 dark:shadow-blue-900/30"
+                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200",
                         )}
                       >
+                        {active && <div className="sidebar-indicator" />}
                         <item.icon size={18} className="flex-shrink-0" />
                         <span className="flex-1">{item.name}</span>
                         {"badge" in item &&
@@ -133,7 +149,11 @@ export default function MobileSidebar() {
                 {/* Recientes */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between px-3 mb-2">
-                    <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                    <p className={cn(
+                      "text-[10px] font-semibold uppercase tracking-widest",
+                      "text-gray-400",
+                      "dark:text-slate-500"
+                    )}>
                       {allLists.length > 0 ? "Recientes" : "Listas"}
                     </p>
                     <button
@@ -141,7 +161,11 @@ export default function MobileSidebar() {
                         setShowCreateModal(true);
                         closeSidebar();
                       }}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                      className={cn(
+                        "flex items-center gap-1 text-[11px] font-semibold transition-colors",
+                        "text-blue-600 hover:text-blue-700",
+                        "dark:text-blue-400 dark:hover:text-blue-300"
+                      )}
                     >
                       <Plus size={12} />
                       Nueva
@@ -155,12 +179,13 @@ export default function MobileSidebar() {
                         href={`/lists/${list.id}`}
                         onClick={closeSidebar}
                         className={cn(
-                          "flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200",
+                          "sidebar-item flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200",
                           active
-                            ? "bg-gray-100 text-gray-900 font-medium"
-                            : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
+                            ? "bg-gray-100 text-gray-900 font-medium dark:bg-slate-800 dark:text-slate-100"
+                            : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300",
                         )}
                       >
+                        {active && <div className="sidebar-indicator" />}
                         <div
                           className={cn(
                             "w-2 h-2 rounded-full flex-shrink-0",
@@ -182,19 +207,24 @@ export default function MobileSidebar() {
 
                 {/* Cuenta */}
                 <div className="space-y-1">
-                  <p className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                  <p className={cn(
+                    "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
+                    "text-gray-400",
+                    "dark:text-slate-500"
+                  )}>
                     Cuenta
                   </p>
                   <Link
                     href="/profile"
                     onClick={closeSidebar}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200",
+                      "sidebar-item flex items-center gap-3 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200",
                       isActive("/profile")
-                        ? "bg-gray-100 text-gray-900"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
+                        ? "bg-gray-100 text-gray-900 dark:bg-slate-800 dark:text-slate-100"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300",
                     )}
                   >
+                    {isActive("/profile") && <div className="sidebar-indicator" />}
                     <User size={18} className="flex-shrink-0" />
                     <span className="flex-1">Perfil</span>
                   </Link>
@@ -202,12 +232,13 @@ export default function MobileSidebar() {
                     href="/settings"
                     onClick={closeSidebar}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200",
+                      "sidebar-item flex items-center gap-3 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200",
                       isActive("/settings")
-                        ? "bg-gray-100 text-gray-900"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-700",
+                        ? "bg-gray-100 text-gray-900 dark:bg-slate-800 dark:text-slate-100"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300",
                     )}
                   >
+                    {isActive("/settings") && <div className="sidebar-indicator" />}
                     <Settings size={18} className="flex-shrink-0" />
                     <span className="flex-1">Configuración</span>
                   </Link>
@@ -238,14 +269,18 @@ export default function MobileSidebar() {
               )}
 
               {/* User section */}
-              <div className="px-3 py-3 border-t border-gray-200 bg-white flex-shrink-0">
+              <div className={cn(
+                "px-3 py-3 border-t flex-shrink-0",
+                "border-gray-200 bg-white",
+                "dark:bg-slate-900 dark:border-slate-800"
+              )}>
                 <div className="flex items-center gap-3 p-2 rounded-xl">
                   <Avatar name={user.name} photoURL={user.photoURL} size="md" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate">
+                    <p className="text-sm font-semibold text-gray-800 truncate dark:text-slate-200">
                       {user.name}
                     </p>
-                    <p className="text-[11px] text-gray-500 truncate">
+                    <p className="text-[11px] text-gray-500 truncate dark:text-slate-400">
                       {user.email}
                     </p>
                   </div>
@@ -254,7 +289,11 @@ export default function MobileSidebar() {
                       e.preventDefault();
                       logout();
                     }}
-                    className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                    className={cn(
+                      "p-2 rounded-lg transition-colors cursor-pointer",
+                      "text-gray-400 hover:text-red-500 hover:bg-red-50",
+                      "dark:text-slate-400 dark:hover:text-red-400 dark:hover:bg-red-950/30"
+                    )}
                     title="Cerrar sesión"
                   >
                     <LogOut size={16} />

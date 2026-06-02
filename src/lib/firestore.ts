@@ -7,7 +7,9 @@ import {
   collection,
   doc,
   getDoc,
+  getDocFromServer,
   getDocs,
+  getDocsFromServer,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -291,6 +293,29 @@ export const setCustomName = async (
   await updateDoc(listRef, withTimestamps({ customNames }));
 };
 
+// Fetch all lists for a user (one-time fetch from server, for manual refresh)
+export const getUserLists = async (userId: string): Promise<TaskList[]> => {
+  console.log(`[getUserLists] Fetching lists for user ${userId} from server`);
+  const q = query(
+    listsCollection,
+    where("memberIds", "array-contains", userId),
+  );
+
+  const snap = await getDocsFromServer(q);
+  console.log(`[getUserLists] Found ${snap.docs.length} lists from server`);
+
+  return snap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      ...data,
+      id: doc.id,
+      createdAt: toDate(data.createdAt),
+      members: data.members || [],
+      customNames: data.customNames || {},
+    } as TaskList;
+  });
+};
+
 // Subscribe to all lists for a user (real-time)
 export const subscribeToUserLists = (
   userId: string,
@@ -489,40 +514,139 @@ export const deleteInvitationsByList = async (
 // BATCH OPERATIONS
 // ============================================
 
+/**
+ * Accept an invitation with retry logic and comprehensive error handling.
+ * This function:
+ * 1. Verifies the list exists
+ * 2. Adds the user as a member with the correct role
+ * 3. Updates the list type to "shared"
+ * 4. Deletes the invitation document
+ * 5. Verifies all writes succeeded
+ */
 export const acceptInvitation = async (
   invitation: Invitation,
   userId: string,
 ): Promise<void> => {
+  const debugPrefix = `[acceptInvitation ${userId.substring(0, 6)}...]`;
+  console.log(
+    `${debugPrefix} Starting acceptance for list ${invitation.listId}`,
+  );
+
   const listRef = doc(db, "lists", invitation.listId);
+  const invitationRef = doc(db, "invitations", invitation.id);
 
-  // Step 1: Read the list — allowed for any authenticated user (see Firestore rules).
-  const listSnap = await getDoc(listRef);
-  if (!listSnap.exists()) throw new Error("List not found");
+  // Retry configuration
+  const MAX_RETRIES = 3;
+  let lastError: Error | null = null;
 
-  const listData = listSnap.data();
-  const members: ListMember[] = listData.members || [];
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      console.log(`${debugPrefix} Attempt ${attempt}/${MAX_RETRIES}`);
 
-  // Only add if not already a member (idempotent).
-  if (!members.some((m) => m.userId === userId)) {
-    members.push({
-      userId,
-      role: invitation.defaultRole,
-      joinedAt: new Date().toISOString(),
-    });
-    const memberIds = members.map((m) => m.userId);
+      // Step 1: Read the list with fresh data from server
+      console.log(`${debugPrefix} Fetching list document from server...`);
+      const listSnap = await getDocFromServer(listRef);
 
-    // Step 2: Update list — allowed by the invitation-acceptance rule in Firestore rules.
-    await updateDoc(listRef, {
-      members,
-      memberIds,
-      type: "shared",
-      updatedAt: serverTimestamp(),
-    });
+      if (!listSnap.exists()) {
+        throw new Error(`List ${invitation.listId} not found`);
+      }
+
+      const listData = listSnap.data();
+      const currentMembers: ListMember[] = listData.members || [];
+      const existingMember = currentMembers.find((m) => m.userId === userId);
+
+      if (existingMember) {
+        console.log(
+          `${debugPrefix} User already member with role ${existingMember.role}`,
+        );
+        // User is already a member, just delete the invitation
+        await deleteDoc(invitationRef);
+        console.log(
+          `${debugPrefix} Deleted invitation (user was already member)`,
+        );
+        return;
+      }
+
+      // Step 2: Prepare updated members array
+      const newMember: ListMember = {
+        userId,
+        role: invitation.defaultRole,
+        joinedAt: new Date().toISOString(),
+      };
+      const updatedMembers = [...currentMembers, newMember];
+      const updatedMemberIds = updatedMembers.map((m) => m.userId);
+
+      console.log(
+        `${debugPrefix} Adding member with role ${invitation.defaultRole}`,
+      );
+      console.log(
+        `${debugPrefix} Members before: ${currentMembers.length}, after: ${updatedMembers.length}`,
+      );
+
+      // Step 3: Update the list document
+      const updateData = {
+        members: updatedMembers,
+        memberIds: updatedMemberIds,
+        type: "shared" as const,
+        updatedAt: serverTimestamp(),
+      };
+
+      console.log(`${debugPrefix} Updating list document...`);
+      await updateDoc(listRef, updateData);
+      console.log(`${debugPrefix} List updated successfully`);
+
+      // Step 4: Verify the write succeeded from server (critical!)
+      console.log(`${debugPrefix} Verifying list update from server...`);
+      const verifySnap = await getDocFromServer(listRef);
+      if (!verifySnap.exists()) {
+        throw new Error("List disappeared after update");
+      }
+
+      const verifyData = verifySnap.data();
+      const verifyMembers: ListMember[] = verifyData.members || [];
+      const isMemberAdded = verifyMembers.some((m) => m.userId === userId);
+
+      if (!isMemberAdded) {
+        throw new Error("Member was not added to list after update");
+      }
+
+      console.log(`${debugPrefix} Verified: user is now in members array`);
+
+      // Step 5: Delete the invitation document
+      console.log(`${debugPrefix} Deleting invitation ${invitation.id}...`);
+      await deleteDoc(invitationRef);
+      console.log(`${debugPrefix} Invitation deleted`);
+
+      // Step 6: Verify invitation deletion
+      const inviteVerify = await getDoc(invitationRef);
+      if (inviteVerify.exists()) {
+        console.warn(
+          `${debugPrefix} Warning: Invitation still exists after deletion`,
+        );
+        // Don't throw here, the main operation succeeded
+      } else {
+        console.log(`${debugPrefix} Verified: invitation deleted`);
+      }
+
+      console.log(`${debugPrefix} SUCCESS: Invitation accepted completely`);
+      return; // Success! Exit retry loop
+    } catch (error) {
+      lastError = error as Error;
+      console.error(`${debugPrefix} Attempt ${attempt} failed:`, error);
+
+      if (attempt < MAX_RETRIES) {
+        const delay = attempt * 1000; // 1s, 2s, 3s
+        console.log(`${debugPrefix} Retrying in ${delay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
   }
 
-  // Step 3: Delete invitation — allowed for any authenticated user (see Firestore rules).
-  // Done AFTER the list update so the user is a member if any rule ever rechecks membership.
-  await deleteDoc(doc(db, "invitations", invitation.id));
+  // All retries exhausted
+  console.error(`${debugPrefix} ALL RETRIES FAILED`);
+  throw new Error(
+    `Failed to accept invitation after ${MAX_RETRIES} attempts: ${lastError?.message}`,
+  );
 };
 
 // ============================================

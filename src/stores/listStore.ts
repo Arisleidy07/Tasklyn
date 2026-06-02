@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import {
   subscribeToUserLists,
+  getUserLists as getUserListsFromDb,
   createList as createListInDb,
   updateList as updateListInDb,
   deleteList as deleteListInDb,
@@ -55,6 +56,7 @@ interface ListState {
   isMember: (listId: string, userId: string) => boolean;
   subscribeToLists: (userId: string) => void;
   unsubscribeFromLists: () => void;
+  refreshLists: (userId: string) => Promise<void>;
 }
 
 export const useListStore = create<ListState>((set, get) => ({
@@ -163,5 +165,19 @@ export const useListStore = create<ListState>((set, get) => ({
   unsubscribeFromLists: () => {
     get().unsubscribe?.();
     set({ unsubscribe: null, lists: [] });
+  },
+
+  refreshLists: async (userId) => {
+    console.log("[listStore] Refreshing lists for user:", userId);
+    set({ isLoading: true });
+    try {
+      const lists = await getUserListsFromDb(userId);
+      console.log("[listStore] Refreshed lists:", lists.length);
+      set({ lists, isLoading: false });
+    } catch (error) {
+      console.error("[listStore] Error refreshing lists:", error);
+      set({ isLoading: false });
+      throw error;
+    }
   },
 }));
