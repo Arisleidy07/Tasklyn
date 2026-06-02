@@ -79,15 +79,17 @@ export default function MobileSidebar() {
               className={cn(
                 "fixed inset-y-0 left-0 z-[9999] w-[280px] max-w-[85vw] flex flex-col md:hidden",
                 "bg-white border-r border-gray-200",
-                "dark:bg-slate-900 dark:border-slate-800"
+                "dark:bg-slate-900 dark:border-slate-800",
               )}
             >
               {/* Header */}
-              <div className={cn(
-                "h-16 flex items-center justify-between px-4 border-b flex-shrink-0",
-                "border-gray-200 bg-white",
-                "dark:bg-slate-900 dark:border-slate-800"
-              )}>
+              <div
+                className={cn(
+                  "h-16 flex items-center justify-between px-4 border-b flex-shrink-0",
+                  "border-gray-200 bg-white",
+                  "dark:bg-slate-900 dark:border-slate-800",
+                )}
+              >
                 <Link
                   href="/dashboard"
                   onClick={closeSidebar}
@@ -100,8 +102,9 @@ export default function MobileSidebar() {
                   className={cn(
                     "p-2 rounded-lg transition-colors cursor-pointer",
                     "text-gray-400 hover:text-gray-600 hover:bg-gray-100",
-                    "dark:text-slate-400 dark:hover:text-slate-300 dark:hover:bg-slate-800"
+                    "dark:text-slate-400 dark:hover:text-slate-300 dark:hover:bg-slate-800",
                   )}
+                >
                   <X size={20} />
                 </button>
               </div>
@@ -110,11 +113,13 @@ export default function MobileSidebar() {
               <nav className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
                 {/* Main */}
                 <div className="space-y-1">
-                  <p className={cn(
-                    "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
-                    "text-gray-400",
-                    "dark:text-slate-500"
-                  )}>
+                  <p
+                    className={cn(
+                      "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
+                      "text-gray-400",
+                      "dark:text-slate-500",
+                    )}
+                  >
                     General
                   </p>
                   {mainNav.map((item) => {
@@ -149,11 +154,13 @@ export default function MobileSidebar() {
                 {/* Recientes */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between px-3 mb-2">
-                    <p className={cn(
-                      "text-[10px] font-semibold uppercase tracking-widest",
-                      "text-gray-400",
-                      "dark:text-slate-500"
-                    )}>
+                    <p
+                      className={cn(
+                        "text-[10px] font-semibold uppercase tracking-widest",
+                        "text-gray-400",
+                        "dark:text-slate-500",
+                      )}
+                    >
                       {allLists.length > 0 ? "Recientes" : "Listas"}
                     </p>
                     <button
@@ -164,7 +171,7 @@ export default function MobileSidebar() {
                       className={cn(
                         "flex items-center gap-1 text-[11px] font-semibold transition-colors",
                         "text-blue-600 hover:text-blue-700",
-                        "dark:text-blue-400 dark:hover:text-blue-300"
+                        "dark:text-blue-400 dark:hover:text-blue-300",
                       )}
                     >
                       <Plus size={12} />
@@ -207,11 +214,13 @@ export default function MobileSidebar() {
 
                 {/* Cuenta */}
                 <div className="space-y-1">
-                  <p className={cn(
-                    "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
-                    "text-gray-400",
-                    "dark:text-slate-500"
-                  )}>
+                  <p
+                    className={cn(
+                      "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
+                      "text-gray-400",
+                      "dark:text-slate-500",
+                    )}
+                  >
                     Cuenta
                   </p>
                   <Link
@@ -224,7 +233,9 @@ export default function MobileSidebar() {
                         : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300",
                     )}
                   >
-                    {isActive("/profile") && <div className="sidebar-indicator" />}
+                    {isActive("/profile") && (
+                      <div className="sidebar-indicator" />
+                    )}
                     <User size={18} className="flex-shrink-0" />
                     <span className="flex-1">Perfil</span>
                   </Link>
@@ -238,7 +249,9 @@ export default function MobileSidebar() {
                         : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300",
                     )}
                   >
-                    {isActive("/settings") && <div className="sidebar-indicator" />}
+                    {isActive("/settings") && (
+                      <div className="sidebar-indicator" />
+                    )}
                     <Settings size={18} className="flex-shrink-0" />
                     <span className="flex-1">Configuración</span>
                   </Link>
@@ -269,11 +282,13 @@ export default function MobileSidebar() {
               )}
 
               {/* User section */}
-              <div className={cn(
-                "px-3 py-3 border-t flex-shrink-0",
-                "border-gray-200 bg-white",
-                "dark:bg-slate-900 dark:border-slate-800"
-              )}>
+              <div
+                className={cn(
+                  "px-3 py-3 border-t flex-shrink-0",
+                  "border-gray-200 bg-white",
+                  "dark:bg-slate-900 dark:border-slate-800",
+                )}
+              >
                 <div className="flex items-center gap-3 p-2 rounded-xl">
                   <Avatar name={user.name} photoURL={user.photoURL} size="md" />
                   <div className="flex-1 min-w-0">
@@ -292,7 +307,7 @@ export default function MobileSidebar() {
                     className={cn(
                       "p-2 rounded-lg transition-colors cursor-pointer",
                       "text-gray-400 hover:text-red-500 hover:bg-red-50",
-                      "dark:text-slate-400 dark:hover:text-red-400 dark:hover:bg-red-950/30"
+                      "dark:text-slate-400 dark:hover:text-red-400 dark:hover:bg-red-950/30",
                     )}
                     title="Cerrar sesión"
                   >
