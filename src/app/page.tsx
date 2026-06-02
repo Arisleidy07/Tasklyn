@@ -15,6 +15,9 @@ import {
   Zap,
   Clock,
   Bell,
+  FolderKanban,
+  Calendar,
+  Share2,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -158,7 +161,7 @@ export default function LandingPage() {
             </div>
           </motion.div>
 
-          {/* Hero demo — composición premium de productividad */}
+          {/* Hero demo — Representación real de app en funcionamiento */}
           <motion.div
             initial={{ opacity: 0, y: 30, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -166,193 +169,295 @@ export default function LandingPage() {
             className="relative"
           >
             <div className="absolute -inset-6 rounded-[2.5rem] bg-blue-500/10 blur-3xl" />
-            <div className="relative overflow-hidden rounded-[2rem] border border-slate-700/70 bg-slate-900/70 p-4 sm:p-5 shadow-[0_30px_90px_rgba(15,23,42,0.95)] backdrop-blur-xl">
+            <div className="relative overflow-hidden rounded-[2rem] border border-slate-700/70 bg-slate-900/80 p-4 sm:p-5 shadow-[0_30px_90px_rgba(15,23,42,0.95)] backdrop-blur-xl">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(59,130,246,0.22),transparent_32%),radial-gradient(circle_at_80%_10%,rgba(99,102,241,0.16),transparent_30%)]" />
               <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(148,163,184,0.25)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.25)_1px,transparent_1px)] bg-[size:36px_36px]" />
 
-              <div className="relative grid gap-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-blue-300 font-semibold">
-                      Tasklyn Flow
-                    </p>
-                    <h3 className="mt-1 text-lg sm:text-xl font-semibold text-slate-50">
-                      Listas, tareas y equipo alineados
-                    </h3>
+              <div className="relative">
+                {/* Header de app */}
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-blue-500 flex items-center justify-center">
+                      <ListTodo size={18} className="text-white" />
+                    </div>
+                    <span className="font-semibold text-slate-100">
+                      Tasklyn
+                    </span>
                   </div>
-                  <motion.div
-                    animate={{ y: [0, -6, 0] }}
-                    transition={{
-                      duration: 5,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className="hidden sm:flex items-center gap-2 rounded-full border border-blue-400/20 bg-blue-500/10 px-3 py-1.5 text-xs text-blue-100"
-                  >
-                    <Bell size={13} />
-                    Recordatorio activo
-                  </motion.div>
+                  <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                    <Clock size={12} />
+                    <span>
+                      {new Date().toLocaleTimeString("es-ES", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-[0.9fr_1.2fr] gap-4">
+                {/* Grid principal */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Panel Lista Principal */}
                   <motion.div
-                    whileHover={{ y: -4 }}
-                    className="rounded-3xl border border-slate-700/70 bg-slate-950/70 p-4"
+                    whileHover={{ y: -2 }}
+                    className="rounded-2xl border border-slate-700/60 bg-slate-950/70 p-3"
                   >
-                    <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-9 h-9 rounded-2xl bg-blue-500/15 border border-blue-400/20 flex items-center justify-center text-blue-300">
-                          <ListTodo size={17} />
+                        <div className="w-7 h-7 rounded-xl bg-blue-500/15 border border-blue-400/20 flex items-center justify-center">
+                          <ListTodo size={14} className="text-blue-300" />
                         </div>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-50">
-                            Operaciones
-                          </p>
-                          <p className="text-[11px] text-slate-400">
-                            6/10 completadas
-                          </p>
-                        </div>
+                        <span className="text-sm font-medium text-slate-200">
+                          Proyecto Alpha
+                        </span>
                       </div>
-                      <span className="text-xs font-semibold text-blue-300">
-                        60%
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <Users size={12} className="text-slate-500" />
+                        <span className="text-[10px] text-slate-400">4</span>
+                      </div>
                     </div>
 
-                    <div className="h-2 rounded-full bg-slate-800 overflow-hidden mb-5">
-                      <motion.div
-                        initial={{ width: "18%" }}
-                        animate={{ width: "60%" }}
-                        transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1] }}
-                        className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-400"
-                      />
+                    {/* Barra de progreso */}
+                    <div className="mb-3">
+                      <div className="flex justify-between text-[10px] mb-1">
+                        <span className="text-slate-400">Progreso</span>
+                        <span className="text-blue-300">75%</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: "75%" }}
+                          transition={{ duration: 1.2, ease: "easeOut" }}
+                          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
+                        />
+                      </div>
                     </div>
 
-                    <div className="space-y-3">
+                    {/* Tareas */}
+                    <div className="space-y-2">
                       {[
-                        { label: "Entrega semanal", done: true },
-                        { label: "Seguimiento cliente", done: true },
-                        { label: "Revisión interna", done: false },
+                        {
+                          label: "Revisar diseño UI",
+                          done: true,
+                          time: "09:00",
+                        },
+                        {
+                          label: "Aprobar presupuesto",
+                          done: true,
+                          time: "10:30",
+                        },
+                        {
+                          label: "Reunión con cliente",
+                          done: false,
+                          time: "14:00",
+                          urgent: true,
+                        },
+                        { label: "Enviar reporte", done: false, time: "16:00" },
                       ].map((task, index) => (
                         <motion.div
                           key={task.label}
-                          initial={{ opacity: 0, x: -12 }}
+                          initial={{ opacity: 0, x: -8 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.35 + index * 0.14 }}
-                          className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-3 py-3"
+                          transition={{ delay: 0.3 + index * 0.1 }}
+                          className={`flex items-center gap-2 p-2 rounded-xl ${
+                            task.done
+                              ? "bg-slate-900/40"
+                              : "bg-slate-800/60 border border-slate-700/50"
+                          }`}
                         >
-                          <motion.span
-                            initial={{ scale: 0.8 }}
-                            animate={{ scale: task.done ? [0.8, 1.15, 1] : 1 }}
-                            transition={{ delay: 0.55 + index * 0.12 }}
-                            className={
+                          <div
+                            className={`w-4 h-4 rounded-full flex items-center justify-center ${
                               task.done
-                                ? "flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white"
-                                : "h-5 w-5 rounded-full border-2 border-slate-600"
-                            }
+                                ? "bg-blue-500"
+                                : "border-2 border-slate-500"
+                            }`}
                           >
-                            {task.done && <CheckCircle2 size={13} />}
-                          </motion.span>
-                          <span
-                            className={
-                              task.done
-                                ? "text-sm text-slate-400 line-through"
-                                : "text-sm text-slate-100"
-                            }
-                          >
-                            {task.label}
-                          </span>
+                            {task.done && (
+                              <CheckCircle2 size={10} className="text-white" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className={`text-[11px] truncate ${
+                                task.done
+                                  ? "text-slate-500 line-through"
+                                  : "text-slate-200"
+                              }`}
+                            >
+                              {task.label}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {task.urgent && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                            )}
+                            <span
+                              className={`text-[9px] ${task.urgent ? "text-amber-300" : "text-slate-500"}`}
+                            >
+                              {task.time}
+                            </span>
+                          </div>
                         </motion.div>
                       ))}
                     </div>
                   </motion.div>
 
-                  <div className="grid gap-4">
+                  {/* Panel Listas y Compartidas */}
+                  <div className="space-y-3">
+                    {/* Mis Listas */}
                     <motion.div
-                      whileHover={{ y: -4 }}
-                      className="rounded-3xl border border-slate-700/70 bg-slate-950/70 p-4"
+                      whileHover={{ y: -2 }}
+                      className="rounded-2xl border border-slate-700/60 bg-slate-950/70 p-3"
                     >
-                      <div className="flex items-center justify-between gap-3 mb-4">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-50">
-                            Tarea próxima
-                          </p>
-                          <p className="text-[11px] text-slate-400">
-                            Vencimiento y aviso sincronizados
-                          </p>
-                        </div>
-                        <div className="w-10 h-10 rounded-2xl bg-amber-400/10 border border-amber-300/20 flex items-center justify-center text-amber-300">
-                          <Clock size={18} />
-                        </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <FolderKanban size={14} className="text-slate-400" />
+                        <span className="text-[11px] font-medium text-slate-300">
+                          Mis Listas
+                        </span>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        <span className="rounded-full border border-blue-400/20 bg-blue-500/10 px-3 py-1 text-[11px] text-blue-200">
-                          Hoy
-                        </span>
-                        <span className="rounded-full border border-amber-300/20 bg-amber-400/10 px-3 py-1 text-[11px] text-amber-200">
-                          Recordatorio
-                        </span>
-                        <span className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-3 py-1 text-[11px] text-emerald-200">
-                          Recurrente
-                        </span>
+                      <div className="space-y-1.5">
+                        {[
+                          {
+                            name: "Personal",
+                            count: 8,
+                            color: "bg-emerald-500",
+                          },
+                          { name: "Trabajo", count: 12, color: "bg-blue-500" },
+                          { name: "Compras", count: 5, color: "bg-amber-500" },
+                        ].map((list, i) => (
+                          <div
+                            key={list.name}
+                            className="flex items-center justify-between p-1.5 rounded-lg bg-slate-900/50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`w-2 h-2 rounded-full ${list.color}`}
+                              />
+                              <span className="text-[11px] text-slate-300">
+                                {list.name}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-500">
+                              {list.count}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </motion.div>
 
+                    {/* Compartidas */}
                     <motion.div
-                      whileHover={{ y: -4 }}
-                      className="rounded-3xl border border-slate-700/70 bg-slate-950/70 p-4"
+                      whileHover={{ y: -2 }}
+                      className="rounded-2xl border border-slate-700/60 bg-slate-950/70 p-3"
                     >
-                      <div className="flex items-center justify-between mb-4">
-                        <p className="text-sm font-semibold text-slate-50">
-                          Colaboración
-                        </p>
-                        <Users size={17} className="text-blue-300" />
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex -space-x-2">
-                          {[0, 1, 2, 3].map((idx) => (
-                            <motion.span
-                              key={idx}
-                              animate={{ y: [0, idx % 2 === 0 ? -4 : 4, 0] }}
-                              transition={{
-                                duration: 4 + idx,
-                                repeat: Infinity,
-                                ease: "easeInOut",
-                              }}
-                              className="w-8 h-8 rounded-full border border-slate-700 bg-gradient-to-br from-slate-700 to-slate-900"
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Share2 size={14} className="text-slate-400" />
+                          <span className="text-[11px] font-medium text-slate-300">
+                            Compartidas
+                          </span>
+                        </div>
+                        <div className="flex -space-x-1.5">
+                          {[1, 2, 3].map((i) => (
+                            <div
+                              key={i}
+                              className="w-5 h-5 rounded-full bg-slate-700 border border-slate-600"
                             />
                           ))}
                         </div>
-                        <span className="text-xs text-slate-400">
-                          roles claros
+                      </div>
+                      <div className="space-y-1.5">
+                        {[
+                          { name: "Marketing Q4", members: 5 },
+                          { name: "Desarrollo App", members: 8 },
+                        ].map((list) => (
+                          <div
+                            key={list.name}
+                            className="flex items-center justify-between p-1.5 rounded-lg bg-slate-900/50"
+                          >
+                            <span className="text-[11px] text-slate-300">
+                              {list.name}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <Users size={10} className="text-slate-500" />
+                              <span className="text-[10px] text-slate-500">
+                                {list.members}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+
+                    {/* Recordatorios Próximos */}
+                    <motion.div
+                      whileHover={{ y: -2 }}
+                      className="rounded-2xl border border-slate-700/60 bg-slate-950/70 p-3"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bell size={14} className="text-amber-400" />
+                        <span className="text-[11px] font-medium text-slate-300">
+                          Próximos
                         </span>
+                      </div>
+                      <div className="space-y-2">
+                        {[
+                          {
+                            label: "Vence: Reporte mensual",
+                            time: "Hoy 17:00",
+                            urgent: true,
+                          },
+                          {
+                            label: "Reunión equipo",
+                            time: "Mañana 10:00",
+                            urgent: false,
+                          },
+                        ].map((reminder, i) => (
+                          <div key={i} className="flex items-start gap-2">
+                            <div
+                              className={`w-1 h-1 rounded-full mt-1.5 ${reminder.urgent ? "bg-red-400" : "bg-blue-400"}`}
+                            />
+                            <div className="flex-1">
+                              <p className="text-[10px] text-slate-300">
+                                {reminder.label}
+                              </p>
+                              <p
+                                className={`text-[9px] ${reminder.urgent ? "text-red-400" : "text-slate-500"}`}
+                              >
+                                {reminder.time}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </motion.div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  {[
-                    { label: "Listas", icon: ListTodo },
-                    { label: "Avisos", icon: Bell },
-                    { label: "Equipo", icon: Users },
-                  ].map((item, index) => (
-                    <motion.div
-                      key={item.label}
-                      animate={{ y: [0, -5, 0] }}
-                      transition={{
-                        duration: 4.5 + index,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      }}
-                      className="rounded-2xl border border-slate-700/60 bg-slate-950/50 px-3 py-3 text-center"
-                    >
-                      <item.icon
-                        size={16}
-                        className="mx-auto mb-1 text-blue-300"
-                      />
-                      <p className="text-[11px] text-slate-300">{item.label}</p>
-                    </motion.div>
-                  ))}
+                {/* Barra inferior con estados */}
+                <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span className="text-[10px] text-slate-400">6 done</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      <span className="text-[10px] text-slate-400">
+                        4 pending
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                      <span className="text-[10px] text-slate-400">
+                        2 urgent
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] text-slate-500">
+                    <Calendar size={12} />
+                    <span>Actualizado ahora</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -484,142 +589,206 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Demo visual — funciones conectadas */}
-      <section className="py-16 sm:py-20 bg-slate-950/95 border-t border-slate-800/70">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-semibold text-slate-50 mb-2">
-                Todo conectado, sin perder el ritmo
-              </h2>
-              <p className="text-sm sm:text-base text-slate-300 max-w-xl">
-                Tasklyn une listas, tareas, recordatorios y colaboración en un
-                flujo visual claro para que el trabajo avance sin fricción.
-              </p>
+      {/* Demo 2 — Hub central Tasklyn con identidad real y conexiones tecnológicas */}
+      <section className="py-16 sm:py-20 bg-slate-950 border-t border-slate-800/70">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-slate-50 mb-2">
+              Todo conectado en un flujo visual
+            </h2>
+            <p className="text-sm text-slate-400 max-w-md mx-auto">
+              Las funciones de Tasklyn se interconectan para mantener a tu equipo sincronizado sin fricción.
+            </p>
+          </div>
+
+          {/* Hub visual central */}
+          <div className="relative">
+            {/* Líneas de conexión con flujo de energía */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <svg className="w-full h-full absolute" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  {/* Gradiente de flujo azul */}
+                  <linearGradient id="flowBlue" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="rgba(59,130,246,0)">
+                      <animate attributeName="offset" values="-0.5;1.5" dur="3s" repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="50%" stopColor="rgba(59,130,246,0.8)">
+                      <animate attributeName="offset" values="-0.5;1.5" dur="3s" repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="100%" stopColor="rgba(59,130,246,0)">
+                      <animate attributeName="offset" values="-0.5;1.5" dur="3s" repeatCount="indefinite" />
+                    </stop>
+                  </linearGradient>
+                  
+                  {/* Gradiente de flujo cian */}
+                  <linearGradient id="flowCyan" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="rgba(6,182,212,0)">
+                      <animate attributeName="offset" values="-0.5;1.5" dur="2.5s" repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="50%" stopColor="rgba(6,182,212,0.7)">
+                      <animate attributeName="offset" values="-0.5;1.5" dur="2.5s" repeatCount="indefinite" />
+                    </stop>
+                    <stop offset="100%" stopColor="rgba(6,182,212,0)">
+                      <animate attributeName="offset" values="-0.5;1.5" dur="2.5s" repeatCount="indefinite" />
+                    </stop>
+                  </linearGradient>
+                </defs>
+                
+                {/* Líneas horizontales con flujo */}
+                <line x1="100" y1="200" x2="350" y2="200" stroke="url(#flowBlue)" strokeWidth="2" />
+                <line x1="450" y1="200" x2="700" y2="200" stroke="url(#flowBlue)" strokeWidth="2" />
+                
+                {/* Líneas verticales con flujo */}
+                <line x1="400" y1="50" x2="400" y2="150" stroke="url(#flowCyan)" strokeWidth="2" />
+                <line x1="400" y1="250" x2="400" y2="350" stroke="url(#flowCyan)" strokeWidth="2" />
+                
+                {/* Líneas diagonales sutiles */}
+                <line x1="120" y1="80" x2="350" y2="170" stroke="rgba(148,163,184,0.15)" strokeWidth="1" />
+                <line x1="680" y1="80" x2="450" y2="170" stroke="rgba(148,163,184,0.15)" strokeWidth="1" />
+                <line x1="120" y1="320" x2="350" y2="230" stroke="rgba(148,163,184,0.15)" strokeWidth="1" />
+                <line x1="680" y1="320" x2="450" y2="230" stroke="rgba(148,163,184,0.15)" strokeWidth="1" />
+              </svg>
+            </div>
+
+            {/* Nodos de funciones distribuidos */}
+            <div className="relative h-[420px] sm:h-[380px]">
+              {/* Nodo superior — Equipo */}
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 }}
+                className="absolute left-1/2 -translate-x-1/2 top-0"
+              >
+                <div className="flex flex-col items-center">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg shadow-slate-900/50">
+                    <Users size={24} className="text-blue-400" />
+                  </div>
+                  <span className="mt-2 text-xs font-medium text-slate-400">Equipo</span>
+                </div>
+              </motion.div>
+
+              {/* Nodo izquierdo — Listas */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+                className="absolute left-0 sm:left-8 top-1/2 -translate-y-1/2"
+              >
+                <div className="flex flex-col items-center">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg shadow-slate-900/50">
+                    <FolderKanban size={24} className="text-emerald-400" />
+                  </div>
+                  <span className="mt-2 text-xs font-medium text-slate-400">Listas</span>
+                </div>
+              </motion.div>
+
+              {/* Nodo derecho — Tareas */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3 }}
+                className="absolute right-0 sm:right-8 top-1/2 -translate-y-1/2"
+              >
+                <div className="flex flex-col items-center">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg shadow-slate-900/50">
+                    <CheckCircle2 size={24} className="text-cyan-400" />
+                  </div>
+                  <span className="mt-2 text-xs font-medium text-slate-400">Tareas</span>
+                </div>
+              </motion.div>
+
+              {/* Nodo inferior izquierdo — Recordatorios */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4 }}
+                className="absolute left-[15%] sm:left-[20%] bottom-0"
+              >
+                <div className="flex flex-col items-center">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg shadow-slate-900/50">
+                    <Bell size={24} className="text-amber-400" />
+                  </div>
+                  <span className="mt-2 text-xs font-medium text-slate-400">Recordatorios</span>
+                </div>
+              </motion.div>
+
+              {/* Nodo inferior derecho — Vencimientos */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.5 }}
+                className="absolute right-[15%] sm:right-[20%] bottom-0"
+              >
+                <div className="flex flex-col items-center">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg shadow-slate-900/50">
+                    <Clock size={24} className="text-rose-400" />
+                  </div>
+                  <span className="mt-2 text-xs font-medium text-slate-400">Vencimientos</span>
+                </div>
+              </motion.div>
+
+              {/* Centro — Logo Tasklyn con identidad real */}
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                whileInView={{ scale: 1, opacity: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2, type: "spring" }}
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
+              >
+                <div className="relative">
+                  {/* Anillos pulsantes */}
+                  <motion.div
+                    animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute inset-0 -m-6 rounded-[2rem] border border-blue-400/20"
+                  />
+                  <motion.div
+                    animate={{ scale: [1, 1.25, 1], opacity: [0.2, 0.3, 0.2] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                    className="absolute inset-0 -m-10 rounded-[2.5rem] border border-blue-400/10"
+                  />
+                  
+                  {/* Logo principal */}
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-[1.5rem] bg-gradient-to-br from-blue-500 to-blue-600 flex flex-col items-center justify-center shadow-[0_0_60px_rgba(37,99,235,0.4)] border border-blue-400/30">
+                    <ListTodo size={36} className="text-white" strokeWidth={2} />
+                  </div>
+                  
+                  {/* Nombre debajo */}
+                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-center whitespace-nowrap">
+                    <p className="text-base font-bold text-slate-100">Tasklyn</p>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-900/70 p-4 sm:p-6 md:p-8 shadow-[0_22px_60px_rgba(15,23,42,0.85)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.18),transparent_35%),radial-gradient(circle_at_85%_70%,rgba(16,185,129,0.1),transparent_28%)]" />
-            <div className="absolute inset-0 opacity-[0.07] bg-[linear-gradient(rgba(148,163,184,0.26)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.26)_1px,transparent_1px)] bg-[size:42px_42px]" />
-
-            <div className="relative min-h-[560px] sm:min-h-[500px] lg:min-h-[460px]">
+          {/* Leyenda de funciones */}
+          <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {[
+              { icon: FolderKanban, label: "Organiza por listas", color: "text-emerald-400" },
+              { icon: CheckCircle2, label: "Gestiona tareas", color: "text-cyan-400" },
+              { icon: Users, label: "Colabora en equipo", color: "text-blue-400" },
+              { icon: Bell, label: "Recibe recordatorios", color: "text-amber-400" },
+              { icon: Clock, label: "Controla vencimientos", color: "text-rose-400" },
+              { icon: Share2, label: "Comparte listas", color: "text-slate-400" },
+            ].map((item, i) => (
               <motion.div
-                animate={{ scale: [1, 1.03, 1] }}
-                transition={{
-                  duration: 6,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="absolute left-1/2 top-1/2 z-10 w-36 sm:w-44 -translate-x-1/2 -translate-y-1/2 rounded-[2rem] border border-blue-400/25 bg-blue-500/15 p-4 text-center shadow-[0_0_70px_rgba(37,99,235,0.35)] backdrop-blur-xl"
+                key={item.label}
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.1 * i }}
+                className="flex items-center gap-2 text-xs text-slate-400"
               >
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-lg shadow-blue-500/30">
-                  <ListTodo size={22} />
-                </div>
-                <p className="text-sm font-semibold text-slate-50">Tasklyn</p>
-                <p className="mt-1 text-[11px] text-blue-100">
-                  centro de trabajo
-                </p>
+                <item.icon size={14} className={item.color} />
+                <span>{item.label}</span>
               </motion.div>
-
-              <div className="absolute left-1/2 top-1/2 hidden h-px w-[74%] -translate-x-1/2 bg-gradient-to-r from-transparent via-blue-400/40 to-transparent sm:block" />
-              <div className="absolute left-1/2 top-1/2 hidden h-[72%] w-px -translate-y-1/2 bg-gradient-to-b from-transparent via-blue-400/30 to-transparent sm:block" />
-              <div className="absolute left-[18%] top-[24%] hidden h-px w-[64%] -rotate-12 bg-gradient-to-r from-transparent via-slate-500/25 to-transparent sm:block" />
-              <div className="absolute left-[18%] bottom-[26%] hidden h-px w-[64%] rotate-12 bg-gradient-to-r from-transparent via-slate-500/25 to-transparent sm:block" />
-
-              {[
-                {
-                  label: "Listas",
-                  detail: "orden por contexto",
-                  icon: ListTodo,
-                  position: "left-0 top-8 sm:left-4 sm:top-16",
-                  color: "blue",
-                },
-                {
-                  label: "Tareas",
-                  detail: "avance visible",
-                  icon: CheckCircle2,
-                  position: "right-0 top-24 sm:right-8 sm:top-12",
-                  color: "emerald",
-                },
-                {
-                  label: "Recordatorios",
-                  detail: "avisos puntuales",
-                  icon: Bell,
-                  position: "left-2 bottom-28 sm:left-12 sm:bottom-16",
-                  color: "amber",
-                },
-                {
-                  label: "Vencimientos",
-                  detail: "fechas claras",
-                  icon: Clock,
-                  position: "right-4 bottom-20 sm:right-16 sm:bottom-12",
-                  color: "indigo",
-                },
-                {
-                  label: "Equipo",
-                  detail: "colaboración real",
-                  icon: Users,
-                  position: "left-1/2 top-0 -translate-x-1/2 sm:top-4",
-                  color: "slate",
-                },
-              ].map((node, index) => (
-                <motion.div
-                  key={node.label}
-                  initial={{ opacity: 0, y: 18 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.35 }}
-                  animate={{ y: [0, index % 2 === 0 ? -8 : 8, 0] }}
-                  transition={{
-                    opacity: { duration: 0.45, delay: index * 0.08 },
-                    y: {
-                      duration: 5 + index * 0.45,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    },
-                  }}
-                  whileHover={{ scale: 1.04 }}
-                  className={`absolute ${node.position} w-[min(82vw,220px)] rounded-3xl border border-slate-700/70 bg-slate-950/80 p-4 shadow-2xl backdrop-blur-xl`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={
-                        node.color === "emerald"
-                          ? "flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-300"
-                          : node.color === "amber"
-                            ? "flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-300/20 bg-amber-400/10 text-amber-300"
-                            : node.color === "indigo"
-                              ? "flex h-11 w-11 items-center justify-center rounded-2xl border border-indigo-300/20 bg-indigo-400/10 text-indigo-300"
-                              : node.color === "slate"
-                                ? "flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-500/30 bg-slate-800 text-slate-200"
-                                : "flex h-11 w-11 items-center justify-center rounded-2xl border border-blue-300/20 bg-blue-500/10 text-blue-300"
-                      }
-                    >
-                      <node.icon size={19} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-50">
-                        {node.label}
-                      </p>
-                      <p className="text-[11px] text-slate-400">
-                        {node.detail}
-                      </p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-
-              <motion.div
-                animate={{ x: ["-8%", "108%"] }}
-                transition={{ duration: 7, repeat: Infinity, ease: "linear" }}
-                className="absolute left-0 top-1/2 hidden h-px w-24 bg-gradient-to-r from-transparent via-blue-300/70 to-transparent sm:block"
-              />
-              <motion.div
-                animate={{ y: ["110%", "-20%"] }}
-                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                className="absolute left-1/2 top-0 hidden h-24 w-px bg-gradient-to-b from-transparent via-emerald-300/60 to-transparent sm:block"
-              />
-            </div>
+            ))}
           </div>
         </div>
       </section>

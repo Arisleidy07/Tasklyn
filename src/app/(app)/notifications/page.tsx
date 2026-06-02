@@ -4,10 +4,12 @@ import React, { useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useInvitationStore } from "@/stores/invitationStore";
+import { useUIStore } from "@/stores/uiStore";
 import { getList } from "@/lib/firestore";
 import Header from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
+import Logo from "@/components/shared/Logo";
 import {
   Bell,
   CheckCheck,
@@ -25,22 +27,101 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import type { MemberRole, NotificationType } from "@/types";
 
-const typeConfig: Record<
-  NotificationType,
-  { icon: React.ElementType; color: string; bg: string }
-> = {
-  invitation: { icon: UserPlus, color: "text-blue-600", bg: "bg-blue-50" },
-  task_assigned: { icon: ListTodo, color: "text-blue-600", bg: "bg-blue-50" },
-  task_completed: {
-    icon: CheckCircle2,
-    color: "text-green-600",
-    bg: "bg-green-50",
-  },
-  member_joined: { icon: Users, color: "text-blue-600", bg: "bg-blue-50" },
-  list_shared: { icon: Share2, color: "text-orange-600", bg: "bg-orange-50" },
-  reminder: { icon: Bell, color: "text-amber-600", bg: "bg-amber-50" },
-  due_soon: { icon: Clock, color: "text-red-600", bg: "bg-red-50" },
-};
+// Theme-aware notification type config
+const getTypeConfig = (isDark: boolean) =>
+  ({
+    invitation: {
+      icon: UserPlus,
+      light: {
+        color: "text-blue-600",
+        bg: "bg-blue-50",
+        border: "border-blue-200",
+      },
+      dark: {
+        color: "text-blue-400",
+        bg: "bg-blue-500/15",
+        border: "border-blue-400/25",
+      },
+    },
+    task_assigned: {
+      icon: ListTodo,
+      light: {
+        color: "text-blue-600",
+        bg: "bg-blue-50",
+        border: "border-blue-200",
+      },
+      dark: {
+        color: "text-blue-400",
+        bg: "bg-blue-500/15",
+        border: "border-blue-400/25",
+      },
+    },
+    task_completed: {
+      icon: CheckCircle2,
+      light: {
+        color: "text-emerald-600",
+        bg: "bg-emerald-50",
+        border: "border-emerald-200",
+      },
+      dark: {
+        color: "text-emerald-400",
+        bg: "bg-emerald-500/15",
+        border: "border-emerald-400/25",
+      },
+    },
+    member_joined: {
+      icon: Users,
+      light: {
+        color: "text-blue-600",
+        bg: "bg-blue-50",
+        border: "border-blue-200",
+      },
+      dark: {
+        color: "text-blue-400",
+        bg: "bg-blue-500/15",
+        border: "border-blue-400/25",
+      },
+    },
+    list_shared: {
+      icon: Share2,
+      light: {
+        color: "text-amber-600",
+        bg: "bg-amber-50",
+        border: "border-amber-200",
+      },
+      dark: {
+        color: "text-amber-400",
+        bg: "bg-amber-500/15",
+        border: "border-amber-400/25",
+      },
+    },
+    reminder: {
+      icon: Bell,
+      light: {
+        color: "text-amber-600",
+        bg: "bg-amber-50",
+        border: "border-amber-200",
+      },
+      dark: {
+        color: "text-amber-400",
+        bg: "bg-amber-500/15",
+        border: "border-amber-400/25",
+      },
+    },
+    due_soon: {
+      icon: Clock,
+      light: {
+        color: "text-red-600",
+        bg: "bg-red-50",
+        border: "border-red-200",
+      },
+      dark: {
+        color: "text-red-400",
+        bg: "bg-red-500/15",
+        border: "border-red-400/25",
+      },
+    },
+  }) as const;
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -60,6 +141,9 @@ function timeAgo(dateStr: string): string {
 
 export default function NotificationsPage() {
   const { user } = useAuthStore();
+  const { isDarkTheme } = useUIStore();
+  const isDark = isDarkTheme();
+  const typeConfig = getTypeConfig(isDark);
   const {
     notifications,
     unreadCount,
@@ -230,7 +314,9 @@ export default function NotificationsPage() {
         {/* Pending Invitations */}
         {pendingNotifications.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+            <h3
+              className={`text-sm font-semibold mb-3 ${isDark ? "text-slate-100" : "text-gray-900"}`}
+            >
               Invitaciones Pendientes
             </h3>
             <motion.div
@@ -258,15 +344,24 @@ export default function NotificationsPage() {
                     }}
                     className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-colors cursor-pointer ${
                       notif.read
-                        ? "bg-white border-gray-200"
-                        : "bg-blue-50/50 border-blue-200"
+                        ? isDark
+                          ? "bg-slate-900/60 border-slate-700"
+                          : "bg-white border-gray-200"
+                        : isDark
+                          ? "bg-blue-500/10 border-blue-400/30"
+                          : "bg-blue-50/50 border-blue-200"
                     }`}
                     onClick={() => !notif.read && markRead(notif.id)}
                   >
                     <div
-                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.bg}`}
+                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        isDark ? cfg.dark.bg : cfg.light.bg
+                      } border ${isDark ? cfg.dark.border : cfg.light.border}`}
                     >
-                      <Icon size={14} className={cfg.color} />
+                      <Icon
+                        size={14}
+                        className={isDark ? cfg.dark.color : cfg.light.color}
+                      />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -274,8 +369,12 @@ export default function NotificationsPage() {
                         <p
                           className={`text-sm leading-snug ${
                             notif.read
-                              ? "text-gray-700 font-normal"
-                              : "text-gray-900 font-semibold"
+                              ? isDark
+                                ? "text-slate-400 font-normal"
+                                : "text-gray-700 font-normal"
+                              : isDark
+                                ? "text-slate-100 font-semibold"
+                                : "text-gray-900 font-semibold"
                           }`}
                         >
                           {notif.title}
@@ -284,10 +383,14 @@ export default function NotificationsPage() {
                           <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5 leading-snug">
+                      <p
+                        className={`text-xs mt-0.5 leading-snug ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                      >
                         {notif.body}
                       </p>
-                      <p className="text-[11px] text-gray-400 mt-1.5">
+                      <p
+                        className={`text-[11px] mt-1.5 ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                      >
                         {timeAgo(notif.createdAt)}
                       </p>
 
@@ -354,7 +457,9 @@ export default function NotificationsPage() {
         {/* Other Notifications */}
         {otherNotifications.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold text-gray-900 mb-3">
+            <h3
+              className={`text-sm font-semibold mb-3 ${isDark ? "text-slate-100" : "text-gray-900"}`}
+            >
               Otras Notificaciones
             </h3>
             <motion.div
@@ -383,15 +488,24 @@ export default function NotificationsPage() {
                       }}
                       className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-colors cursor-pointer ${
                         notif.read
-                          ? "bg-white border-gray-200"
-                          : "bg-blue-50/50 border-blue-200"
+                          ? isDark
+                            ? "bg-slate-900/60 border-slate-700"
+                            : "bg-white border-gray-200"
+                          : isDark
+                            ? "bg-blue-500/10 border-blue-400/30"
+                            : "bg-blue-50/50 border-blue-200"
                       }`}
                       onClick={() => !notif.read && markRead(notif.id)}
                     >
                       <div
-                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.bg}`}
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                          isDark ? cfg.dark.bg : cfg.light.bg
+                        } border ${isDark ? cfg.dark.border : cfg.light.border}`}
                       >
-                        <Icon size={14} className={cfg.color} />
+                        <Icon
+                          size={14}
+                          className={isDark ? cfg.dark.color : cfg.light.color}
+                        />
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -399,8 +513,12 @@ export default function NotificationsPage() {
                           <p
                             className={`text-sm leading-snug ${
                               notif.read
-                                ? "text-gray-700 font-normal"
-                                : "text-gray-900 font-semibold"
+                                ? isDark
+                                  ? "text-slate-400 font-normal"
+                                  : "text-gray-700 font-normal"
+                                : isDark
+                                  ? "text-slate-100 font-semibold"
+                                  : "text-gray-900 font-semibold"
                             }`}
                           >
                             {notif.title}
@@ -409,10 +527,14 @@ export default function NotificationsPage() {
                             <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 mt-0.5 leading-snug">
+                        <p
+                          className={`text-xs mt-0.5 leading-snug ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                        >
                           {notif.body}
                         </p>
-                        <p className="text-[11px] text-gray-400 mt-1.5">
+                        <p
+                          className={`text-[11px] mt-1.5 ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                        >
                           {timeAgo(notif.createdAt)}
                         </p>
                       </div>
@@ -450,23 +572,42 @@ export default function NotificationsPage() {
         {/* Accepted Invitations */}
         {acceptedNotifications.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold text-green-700 mb-3">
+            <h3
+              className={`text-sm font-semibold mb-3 ${isDark ? "text-emerald-400" : "text-emerald-700"}`}
+            >
               Invitaciones Aceptadas
             </h3>
             <div className="space-y-2">
               {acceptedNotifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className="flex items-start gap-4 p-4 rounded-xl border border-green-200 bg-green-50/30"
+                  className={`flex items-start gap-4 p-4 rounded-xl border ${
+                    isDark
+                      ? "border-emerald-400/30 bg-emerald-500/10"
+                      : "border-emerald-200 bg-emerald-50/30"
+                  }`}
                 >
-                  <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-                    <CheckCircle2 size={18} className="text-green-600" />
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      isDark ? "bg-emerald-500/20" : "bg-emerald-100"
+                    }`}
+                  >
+                    <CheckCircle2
+                      size={18}
+                      className={
+                        isDark ? "text-emerald-400" : "text-emerald-600"
+                      }
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-green-800">
+                    <p
+                      className={`text-sm font-semibold ${isDark ? "text-emerald-300" : "text-emerald-800"}`}
+                    >
                       {notif.title}
                     </p>
-                    <p className="text-xs text-green-600 mt-1">
+                    <p
+                      className={`text-xs mt-1 ${isDark ? "text-emerald-400/80" : "text-emerald-600"}`}
+                    >
                       Ya tienes acceso a este espacio
                     </p>
                   </div>
@@ -479,27 +620,50 @@ export default function NotificationsPage() {
         {/* Rejected Invitations */}
         {rejectedNotifications.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold text-gray-600 mb-3">
+            <h3
+              className={`text-sm font-semibold mb-3 ${isDark ? "text-slate-400" : "text-gray-600"}`}
+            >
               Invitaciones Rechazadas
             </h3>
             <div className="space-y-2">
               {rejectedNotifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 bg-gray-50/50"
+                  className={`flex items-start gap-4 p-4 rounded-xl border ${
+                    isDark
+                      ? "border-slate-700 bg-slate-800/50"
+                      : "border-gray-200 bg-gray-50/50"
+                  }`}
                 >
-                  <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-                    <X size={18} className="text-gray-500" />
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                      isDark ? "bg-slate-700" : "bg-gray-100"
+                    }`}
+                  >
+                    <X
+                      size={18}
+                      className={isDark ? "text-slate-400" : "text-gray-500"}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-600">{notif.title}</p>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p
+                      className={`text-sm ${isDark ? "text-slate-300" : "text-gray-600"}`}
+                    >
+                      {notif.title}
+                    </p>
+                    <p
+                      className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                    >
                       Rechazaste esta invitación
                     </p>
                   </div>
                   <button
                     onClick={() => remove(notif.id)}
-                    className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    className={`p-1.5 rounded-lg transition-colors ${
+                      isDark
+                        ? "text-slate-500 hover:text-red-400 hover:bg-red-500/15"
+                        : "text-gray-300 hover:text-red-500 hover:bg-red-50"
+                    }`}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -517,11 +681,22 @@ export default function NotificationsPage() {
               className="flex items-center gap-2 w-full text-left group"
             >
               <div className="flex items-center gap-2 flex-1">
-                <Archive size={16} className="text-gray-400" />
-                <h3 className="text-sm font-semibold text-gray-700">
+                <Archive
+                  size={16}
+                  className={isDark ? "text-slate-400" : "text-gray-400"}
+                />
+                <h3
+                  className={`text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}
+                >
                   Archivados
                 </h3>
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-200 text-gray-500">
+                <span
+                  className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${
+                    isDark
+                      ? "bg-slate-700 text-slate-400"
+                      : "bg-gray-200 text-gray-500"
+                  }`}
+                >
                   {archivedNotifications.length}
                 </span>
               </div>
@@ -542,21 +717,38 @@ export default function NotificationsPage() {
                       return (
                         <div
                           key={notif.id}
-                          className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-gray-200 bg-gray-50/50"
+                          className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border ${
+                            isDark
+                              ? "border-slate-700 bg-slate-800/50"
+                              : "border-gray-200 bg-gray-50/50"
+                          }`}
                         >
                           <div
-                            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${cfg.bg}`}
+                            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                              isDark ? cfg.dark.bg : cfg.light.bg
+                            } border ${isDark ? cfg.dark.border : cfg.light.border}`}
                           >
-                            <Icon size={14} className={cfg.color} />
+                            <Icon
+                              size={14}
+                              className={
+                                isDark ? cfg.dark.color : cfg.light.color
+                              }
+                            />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm text-gray-600 leading-snug">
+                            <p
+                              className={`text-sm leading-snug ${isDark ? "text-slate-300" : "text-gray-600"}`}
+                            >
                               {notif.title}
                             </p>
-                            <p className="text-xs text-gray-500 mt-0.5 leading-snug">
+                            <p
+                              className={`text-xs mt-0.5 leading-snug ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                            >
                               {notif.body}
                             </p>
-                            <p className="text-[11px] text-gray-400 mt-1.5">
+                            <p
+                              className={`text-[11px] mt-1.5 ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                            >
                               {timeAgo(notif.createdAt)}
                             </p>
                           </div>
