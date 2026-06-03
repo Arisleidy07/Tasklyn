@@ -6,6 +6,7 @@ import { useAuthStore } from "@/stores/authStore";
 import Logo from "@/components/shared/Logo";
 import HeroDemo from "@/components/landing/HeroDemo";
 import DemoHub from "@/components/landing/DemoHub";
+import PricingSection from "@/components/landing/PricingSection";
 import Button from "@/components/ui/Button";
 import { motion } from "framer-motion";
 import {
@@ -391,74 +392,7 @@ export default function LandingPage() {
       </section>
 
       {/* Precios */}
-      <section
-        id="pricing"
-        className="py-16 sm:py-20 bg-slate-950/95 border-t border-slate-800/70"
-      >
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-slate-50 mb-3">
-            Precios sencillos para empezar rápido
-          </h2>
-          <p className="text-sm sm:text-base text-slate-400 mb-10 max-w-2xl mx-auto">
-            Empieza con el plan gratuito y evoluciona al plan PRO cuando tu
-            equipo lo necesite. Sin sorpresas.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 flex flex-col items-start">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/40 mb-3">
-                Actual
-              </span>
-              <h3 className="text-lg font-semibold text-slate-50 mb-1">Free</h3>
-              <p className="text-sm text-slate-400 mb-4 text-left">
-                Ideal para uso personal o pequeños equipos que quieren probar
-                Tasklyn sin fricción.
-              </p>
-              <p className="text-3xl font-semibold text-slate-50 mb-1">$0</p>
-              <p className="text-xs text-slate-500 mb-5">para siempre</p>
-              <ul className="text-left space-y-1.5 text-sm text-slate-300 mb-5">
-                <li>· Hasta 5 listas activas</li>
-                <li>· Hasta 20 tareas por lista</li>
-                <li>· Hasta 3 miembros por lista</li>
-                <li>· Notificaciones básicas</li>
-              </ul>
-              <Button
-                onClick={login}
-                isLoading={isLoading}
-                size="sm"
-                className="mt-auto bg-blue-600 hover:bg-blue-500 text-white border-none w-full"
-              >
-                Crear cuenta gratis
-              </Button>
-            </div>
-
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/40 p-6 flex flex-col items-start opacity-70">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 mb-3">
-                Próximamente
-              </span>
-              <h3 className="text-lg font-semibold text-slate-200 mb-1">PRO</h3>
-              <p className="text-sm text-slate-400 mb-4 text-left">
-                Pensado para equipos que necesitan listas, tareas y miembros
-                ilimitados con automatizaciones avanzadas.
-              </p>
-              <p className="text-3xl font-semibold text-slate-200 mb-1">$ —</p>
-              <p className="text-xs text-slate-500 mb-5">detalles muy pronto</p>
-              <ul className="text-left space-y-1.5 text-sm text-slate-400 mb-5">
-                <li>· Listas y tareas ilimitadas</li>
-                <li>· Miembros ilimitados por lista</li>
-                <li>· Automatizaciones y plantillas</li>
-                <li>· Soporte prioritario</li>
-              </ul>
-              <button
-                type="button"
-                className="mt-auto w-full h-10 rounded-xl border border-slate-700 text-slate-400 text-sm cursor-default"
-              >
-                Próximamente
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+      <PricingSection login={login} isLoading={isLoading} />
 
       {/* CTA Final */}
       <section className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden border-t border-slate-800/70 bg-slate-950">

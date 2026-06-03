@@ -1,0 +1,209 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { Check, Zap, Building2, User } from "lucide-react";
+import Button from "@/components/ui/Button";
+
+interface PricingPlan {
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  badge?: string;
+  badgeColor?: string;
+  features: string[];
+  cta: string;
+  ctaVariant: "primary" | "secondary";
+  popular?: boolean;
+}
+
+const plans: PricingPlan[] = [
+  {
+    name: "Free",
+    price: "$0",
+    period: "/mes",
+    description: "Ideal para uso personal o pequeños equipos que quieren probar Tasklyn sin fricción.",
+    badge: "Gratis",
+    badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
+    features: [
+      "Hasta 5 listas activas",
+      "Hasta 20 tareas por lista",
+      "Hasta 3 miembros por lista",
+      "Notificaciones básicas",
+      "Calendario integrado",
+      "App móvil",
+    ],
+    cta: "Comenzar gratis",
+    ctaVariant: "secondary",
+  },
+  {
+    name: "Pro",
+    price: "$12",
+    period: "/mes",
+    description: "Para equipos en crecimiento que necesitan más capacidad y funciones avanzadas.",
+    badge: "Popular",
+    badgeColor: "bg-blue-500/20 text-blue-400 border-blue-500/40",
+    features: [
+      "Listas ilimitadas",
+      "Tareas ilimitadas",
+      "Hasta 20 miembros por lista",
+      "Notificaciones avanzadas",
+      "Estadísticas y reportes",
+      "Prioridades de tareas",
+      "Soporte por email",
+    ],
+    cta: "Elegir Pro",
+    ctaVariant: "primary",
+    popular: true,
+  },
+  {
+    name: "Business",
+    price: "$29",
+    period: "/mes",
+    description: "Para empresas que necesitan máxima potencia, control y soporte dedicado.",
+    badge: "Empresas",
+    badgeColor: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+    features: [
+      "Todo lo de Pro",
+      "Miembros ilimitados",
+      "Equipos y grupos",
+      "Permisos avanzados",
+      "API de integración",
+      "Soporte prioritario 24/7",
+      "Onboarding personalizado",
+    ],
+    cta: "Contactar ventas",
+    ctaVariant: "secondary",
+  },
+];
+
+export default function PricingSection({ login, isLoading }: { login: () => void; isLoading: boolean }) {
+  return (
+    <section id="pricing" className="py-20 sm:py-24 bg-slate-950 border-t border-slate-800/70">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-12"
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 mb-4">
+            <Zap size={14} className="text-blue-400" />
+            <span className="text-xs font-medium text-blue-400">Planes flexibles</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-bold text-slate-50 mb-4 tracking-tight">
+            Precios simples y transparentes
+          </h2>
+          <p className="text-sm sm:text-base text-slate-400 max-w-lg mx-auto">
+            Empieza gratis y escala cuando tu equipo lo necesite. Sin sorpresas, sin contratos a largo plazo.
+          </p>
+        </motion.div>
+
+        {/* Pricing Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+          {plans.map((plan, index) => (
+            <motion.div
+              key={plan.name}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.1, duration: 0.5 }}
+              className={`relative rounded-2xl p-6 flex flex-col ${
+                plan.popular
+                  ? "bg-gradient-to-b from-slate-800 to-slate-900 border-2 border-blue-500/50 shadow-[0_0_40px_rgba(37,99,235,0.15)]"
+                  : "bg-slate-900/50 border border-slate-800 hover:border-slate-700 transition-colors"
+              }`}
+            >
+              {/* Popular Badge */}
+              {plan.popular && (
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                  <div className="px-3 py-1 rounded-full bg-blue-500 text-white text-xs font-medium shadow-lg">
+                    Más popular
+                  </div>
+                </div>
+              )}
+
+              {/* Plan Badge */}
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${plan.badgeColor} w-fit mb-4`}>
+                {plan.name === "Free" && <User size={12} />}
+                {plan.name === "Pro" && <Zap size={12} />}
+                {plan.name === "Business" && <Building2 size={12} />}
+                <span className="text-[11px] font-medium">{plan.badge}</span>
+              </div>
+
+              {/* Plan Name */}
+              <h3 className="text-xl font-semibold text-slate-100 mb-1">{plan.name}</h3>
+              <p className="text-sm text-slate-400 mb-4">{plan.description}</p>
+
+              {/* Price */}
+              <div className="mb-6">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl font-bold text-slate-100">{plan.price}</span>
+                  <span className="text-sm text-slate-500">{plan.period}</span>
+                </div>
+                {plan.name !== "Free" && (
+                  <p className="text-[11px] text-slate-500 mt-1">Facturado mensualmente</p>
+                )}
+              </div>
+
+              {/* Features */}
+              <ul className="space-y-3 mb-6 flex-1">
+                {plan.features.map((feature, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                      plan.popular ? "bg-blue-500/20" : "bg-slate-800"
+                    }`}>
+                      <Check size={12} className={plan.popular ? "text-blue-400" : "text-slate-400"} />
+                    </div>
+                    <span className="text-sm text-slate-300">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              {/* CTA Button */}
+              {plan.ctaVariant === "primary" ? (
+                <Button
+                  onClick={login}
+                  isLoading={isLoading}
+                  className="w-full bg-blue-600 hover:bg-blue-500 text-white border-none shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+                >
+                  {plan.cta}
+                </Button>
+              ) : (
+                <button
+                  onClick={login}
+                  disabled={isLoading}
+                  className={`w-full h-11 rounded-xl font-medium transition-colors ${
+                    plan.popular
+                      ? "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
+                      : "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 hover:border-slate-600"
+                  }`}
+                >
+                  {plan.cta}
+                </button>
+              )}
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Bottom Note */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.5 }}
+          className="mt-12 text-center"
+        >
+          <p className="text-sm text-slate-500">
+            ¿Necesitas algo más?{" "}
+            <a href="mailto:tasklyn.oficial@gmail.com" className="text-blue-400 hover:text-blue-300 underline">
+              Contáctanos para planes personalizados
+            </a>
+          </p>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
