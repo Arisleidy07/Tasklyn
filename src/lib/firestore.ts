@@ -131,19 +131,27 @@ export const subscribeToUser = (
   userId: string,
   callback: (user: User | null) => void,
 ): Unsubscribe => {
+  console.log("👤 Setting up user subscription:", userId);
   const userRef = doc(db, "users", userId);
-  return onSnapshot(userRef, (snap) => {
-    if (!snap.exists()) {
+  return onSnapshot(
+    userRef,
+    (snap) => {
+      if (!snap.exists()) {
+        callback(null);
+        return;
+      }
+      const data = snap.data();
+      callback({
+        ...data,
+        id: snap.id,
+        createdAt: toDate(data.createdAt),
+      } as User);
+    },
+    (error) => {
+      console.error("❌ Error in user subscription:", error);
       callback(null);
-      return;
-    }
-    const data = snap.data();
-    callback({
-      ...data,
-      id: snap.id,
-      createdAt: toDate(data.createdAt),
-    } as User);
-  });
+    },
+  );
 };
 
 // ============================================
@@ -436,31 +444,40 @@ export const subscribeToListTasks = (
   listId: string,
   callback: (tasks: Task[]) => void,
 ): Unsubscribe => {
+  console.log("📋 Setting up tasks subscription for list:", listId);
   const q = query(tasksCollection, where("listId", "==", listId));
 
-  return onSnapshot(q, (snap) => {
-    const tasks = snap.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        ...data,
-        id: doc.id,
-        createdAt: toDate(data.createdAt),
-        completedAt: data.completedAt ? toDate(data.completedAt) : null,
-        history: (data.history || []).map((h: DocumentData) => ({
-          ...h,
-          performedAt:
-            typeof h.performedAt === "string"
-              ? h.performedAt
-              : toDate(h.performedAt),
-        })),
-      } as Task;
-    });
-    tasks.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    callback(tasks);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      console.log("📦 Tasks snapshot received:", snap.docs.length);
+      const tasks = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: toDate(data.createdAt),
+          completedAt: data.completedAt ? toDate(data.completedAt) : null,
+          history: (data.history || []).map((h: DocumentData) => ({
+            ...h,
+            performedAt:
+              typeof h.performedAt === "string"
+                ? h.performedAt
+                : toDate(h.performedAt),
+          })),
+        } as Task;
+      });
+      tasks.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      callback(tasks);
+    },
+    (error) => {
+      console.error("❌ Error in tasks subscription:", error);
+      callback([]);
+    },
+  );
 };
 
 // ============================================
@@ -651,24 +668,34 @@ export const subscribeToUserTeams = (
   userId: string,
   callback: (teams: Team[]) => void,
 ): Unsubscribe => {
+  console.log("👥 Setting up teams subscription for user:", userId);
   const q = query(
     teamsCollection,
     where("memberIds", "array-contains", userId),
   );
 
-  return onSnapshot(q, (snap) => {
-    const teams = snap.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        ...data,
-        id: doc.id,
-        createdAt: toDate(data.createdAt),
-        updatedAt: toDate(data.updatedAt),
-        members: data.members || [],
-      } as Team;
-    });
-    callback(teams);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      console.log("📦 Teams snapshot received:", snap.docs.length);
+      const teams = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: toDate(data.createdAt),
+          updatedAt: toDate(data.updatedAt),
+          members: data.members || [],
+        } as Team;
+      });
+      callback(teams);
+    },
+    (error) => {
+      console.error("❌ Error in teams subscription:", error);
+      // Return empty teams on error to prevent app crash
+      callback([]);
+    },
+  );
 };
 
 export const getUserTeams = async (userId: string): Promise<Team[]> => {
@@ -720,19 +747,28 @@ export const subscribeToTeamGoals = (
   teamId: string,
   callback: (goals: Goal[]) => void,
 ): Unsubscribe => {
+  console.log("🎯 Setting up goals subscription for team:", teamId);
   const q = query(goalsCollection, where("teamId", "==", teamId));
 
-  return onSnapshot(q, (snap) => {
-    const goals = snap.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        ...data,
-        id: doc.id,
-        createdAt: toDate(data.createdAt),
-      } as Goal;
-    });
-    callback(goals);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      console.log("📦 Goals snapshot received:", snap.docs.length);
+      const goals = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: toDate(data.createdAt),
+        } as Goal;
+      });
+      callback(goals);
+    },
+    (error) => {
+      console.error("❌ Error in goals subscription:", error);
+      callback([]);
+    },
+  );
 };
 
 // ============================================
@@ -756,46 +792,64 @@ export const subscribeToUserAchievements = (
   userId: string,
   callback: (achievements: Achievement[]) => void,
 ): Unsubscribe => {
+  console.log("🏆 Setting up achievements subscription for user:", userId);
   const q = query(achievementsCollection, where("userId", "==", userId));
 
-  return onSnapshot(q, (snap) => {
-    const achievements = snap.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        ...data,
-        id: doc.id,
-        createdAt: toDate(data.createdAt),
-      } as Achievement;
-    });
-    achievements.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    callback(achievements);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      console.log("📦 Achievements snapshot received:", snap.docs.length);
+      const achievements = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: toDate(data.createdAt),
+        } as Achievement;
+      });
+      achievements.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      callback(achievements);
+    },
+    (error) => {
+      console.error("❌ Error in achievements subscription:", error);
+      callback([]);
+    },
+  );
 };
 
 export const subscribeToTeamAchievements = (
   teamId: string,
   callback: (achievements: Achievement[]) => void,
 ): Unsubscribe => {
+  console.log("🏆 Setting up team achievements subscription:", teamId);
   const q = query(achievementsCollection, where("teamId", "==", teamId));
 
-  return onSnapshot(q, (snap) => {
-    const achievements = snap.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        ...data,
-        id: doc.id,
-        createdAt: toDate(data.createdAt),
-      } as Achievement;
-    });
-    achievements.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    callback(achievements);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      console.log("📦 Team achievements snapshot received:", snap.docs.length);
+      const achievements = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: toDate(data.createdAt),
+        } as Achievement;
+      });
+      achievements.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      callback(achievements);
+    },
+    (error) => {
+      console.error("❌ Error in team achievements subscription:", error);
+      callback([]);
+    },
+  );
 };
 
 // ============================================
@@ -1013,20 +1067,29 @@ export const subscribeToTaskComments = (
   taskId: string,
   callback: (comments: TaskComment[]) => void,
 ): Unsubscribe => {
+  console.log("💬 Setting up comments subscription for task:", taskId);
   const q = query(collection(db, "comments"), where("taskId", "==", taskId));
-  return onSnapshot(q, (snap) => {
-    const comments = snap.docs.map((d) => ({
-      ...d.data(),
-      id: d.id,
-      createdAt: toDate(d.data().createdAt),
-      editedAt: d.data().editedAt ? toDate(d.data().editedAt) : undefined,
-    })) as TaskComment[];
-    comments.sort(
-      (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-    );
-    callback(comments);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      console.log("📦 Comments snapshot received:", snap.docs.length);
+      const comments = snap.docs.map((d) => ({
+        ...d.data(),
+        id: d.id,
+        createdAt: toDate(d.data().createdAt),
+        editedAt: d.data().editedAt ? toDate(d.data().editedAt) : undefined,
+      })) as TaskComment[];
+      comments.sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      );
+      callback(comments);
+    },
+    (error) => {
+      console.error("❌ Error in comments subscription:", error);
+      callback([]);
+    },
+  );
 };
 
 // ============================================
@@ -1063,40 +1126,58 @@ export const subscribeToUserClients = (
   userId: string,
   callback: (clients: Client[]) => void,
 ): Unsubscribe => {
+  console.log("👤 Setting up clients subscription for user:", userId);
   const q = query(collection(db, "clients"), where("ownerId", "==", userId));
-  return onSnapshot(q, (snap) => {
-    const clients = snap.docs.map((d) => ({
-      ...d.data(),
-      id: d.id,
-      createdAt: toDate(d.data().createdAt),
-      updatedAt: toDate(d.data().updatedAt),
-    })) as Client[];
-    clients.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    callback(clients);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      console.log("📦 Clients snapshot received:", snap.docs.length);
+      const clients = snap.docs.map((d) => ({
+        ...d.data(),
+        id: d.id,
+        createdAt: toDate(d.data().createdAt),
+        updatedAt: toDate(d.data().updatedAt),
+      })) as Client[];
+      clients.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      callback(clients);
+    },
+    (error) => {
+      console.error("❌ Error in clients subscription:", error);
+      callback([]);
+    },
+  );
 };
 
 export const subscribeToNotifications = (
   userId: string,
   callback: (notifications: Notification[]) => void,
 ): Unsubscribe => {
+  console.log("🔔 Setting up notifications subscription for user:", userId);
   const q = query(notificationsCollection, where("userId", "==", userId));
-  return onSnapshot(q, (snap) => {
-    const notifications = snap.docs.map((d) => {
-      const data = d.data();
-      return {
-        ...data,
-        id: d.id,
-        createdAt: toDate(data.createdAt),
-      } as Notification;
-    });
-    notifications.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
-    callback(notifications);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      console.log("📦 Notifications snapshot received:", snap.docs.length);
+      const notifications = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          ...data,
+          id: d.id,
+          createdAt: toDate(data.createdAt),
+        } as Notification;
+      });
+      notifications.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      callback(notifications);
+    },
+    (error) => {
+      console.error("❌ Error in notifications subscription:", error);
+      callback([]);
+    },
+  );
 };

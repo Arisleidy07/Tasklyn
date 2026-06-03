@@ -12,29 +12,47 @@ service cloud.firestore {
 
     // Helper to check if a user is a member of the list
     function isListMember() {
-      return getAuthUid() in resource.data.memberIds;
+      return resource.data.memberIds != null && getAuthUid() in resource.data.memberIds;
+    }
+
+    // Helper to check if user will be a member after update
+    function willBeListMember() {
+      return request.resource.data.memberIds != null && getAuthUid() in request.resource.data.memberIds;
     }
 
     // Helper to check if user is a team member
     function isTeamMember(teamId) {
-      return getAuthUid() in get(/databases/$(database)/documents/teams/$(teamId)).data.memberIds;
+      var team = get(/databases/$(database)/documents/teams/$(teamId)).data;
+      return team != null && team.memberIds != null && getAuthUid() in team.memberIds;
     }
 
     // Helper to check if user is team owner
     function isTeamOwner(teamId) {
-      return get(/databases/$(database)/documents/teams/$(teamId)).data.owner == getAuthUid();
+      var team = get(/databases/$(database)/documents/teams/$(teamId)).data;
+      return team != null && team.owner == getAuthUid();
     }
 
     // Helper to check if user is team admin or owner
     function isTeamAdmin(teamId) {
       var team = get(/databases/$(database)/documents/teams/$(teamId)).data;
+      if (team == null || team.members == null) return false;
       var member = team.members[getAuthUid()];
-      return member && (member.role == "owner" || member.role == "admin");
+      return member != null && (member.role == "owner" || member.role == "admin");
+    }
+
+    // Helper to check if user will be team owner after create
+    function willBeTeamOwner() {
+      return request.resource.data.owner == getAuthUid();
     }
 
     // Helper to check if user is the owner
     function isListOwner() {
-      return resource.data.owner == getAuthUid();
+      return resource.data.owner != null && resource.data.owner == getAuthUid();
+    }
+
+    // Helper to check if user will be owner after create
+    function willBeListOwner() {
+      return request.resource.data.owner != null && request.resource.data.owner == getAuthUid();
     }
 
     // Check if user is joining a list via invitation acceptance
@@ -42,6 +60,7 @@ service cloud.firestore {
     function isJoiningList() {
       return isAuth() &&
         !isListMember() &&
+        request.resource.data.memberIds != null &&
         (getAuthUid() in request.resource.data.memberIds);
     }
 
@@ -52,8 +71,18 @@ service cloud.firestore {
     }
 
     match /lists/{listId} {
-      allow read: if isAuth();
-      allow create: if isAuth() && getAuthUid() in request.resource.data.memberIds;
+      // Allow read if user is a member or owner
+      allow read: if isAuth() && (
+        isListMember() ||
+        isListOwner() ||
+        willBeListMember()
+      );
+
+      // Allow create if user will be owner or member
+      allow create: if isAuth() && (
+        willBeListOwner() ||
+        (request.resource.data.memberIds != null && getAuthUid() in request.resource.data.memberIds)
+      );
 
       // Allow update if user is a member, owner, or joining via invitation
       allow update: if isAuth() && (
@@ -78,9 +107,16 @@ service cloud.firestore {
     }
 
     match /teams/{teamId} {
+      // Allow read if user is a team member
       allow read: if isAuth() && isTeamMember(teamId);
-      allow create: if isAuth();
+
+      // Allow create if user will be owner
+      allow create: if isAuth() && willBeTeamOwner();
+
+      // Allow update if user is team admin
       allow update: if isAuth() && isTeamAdmin(teamId);
+
+      // Allow delete if user is team owner
       allow delete: if isAuth() && isTeamOwner(teamId);
     }
 
@@ -96,24 +132,35 @@ service cloud.firestore {
     match /subscriptions/{subscriptionId} {
       allow read: if isAuth() && (
         resource.data.userId == getAuthUid() ||
-        request.auth.token.admin == true
+        request.resource.data.userId == getAuthUid()
       );
-      allow create, update: if request.auth.token.admin == true ||
-        (isAuth() && resource.data.userId == getAuthUid());
+      allow create, update: if isAuth() && (
+        resource.data.userId == getAuthUid() ||
+        request.resource.data.userId == getAuthUid()
+      );
       allow delete: if false;
     }
 
-    // Payments - read-only for users, server writes
+    // Payments - read-only for users, server writes via API
     match /payments/{paymentId} {
-      allow read: if isAuth() && resource.data.userId == getAuthUid();
-      allow create, update, delete: if request.auth.token.admin == true;
+      allow read: if isAuth() && (
+        resource.data.userId == getAuthUid() ||
+        request.resource.data.userId == getAuthUid()
+      );
+      allow create, update, delete: if false; // Only server-side via Admin SDK
     }
 
-    // Notifications - users can read their own, system can create
+    // Notifications - users can read/update/delete their own, system can create
     match /notifications/{notificationId} {
-      allow read: if isAuth() && resource.data.userId == getAuthUid();
-      allow create: if request.auth.token.admin == true;
-      allow update: if isAuth() && resource.data.userId == getAuthUid();
+      allow read: if isAuth() && (
+        resource.data.userId == getAuthUid() ||
+        request.resource.data.userId == getAuthUid()
+      );
+      allow create: if isAuth(); // Allow any authenticated user to create notifications
+      allow update: if isAuth() && (
+        resource.data.userId == getAuthUid() ||
+        request.resource.data.userId == getAuthUid()
+      );
       allow delete: if isAuth() && resource.data.userId == getAuthUid();
     }
 
