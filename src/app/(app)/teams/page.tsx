@@ -217,92 +217,105 @@ function CreateTeamModal({ onClose, onSubmit, loading }: CreateTeamModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 z-[99998]">
+      {/* Backdrop */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 8 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 8 }}
-        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-200/80 dark:border-slate-800"
-      >
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-            <Users size={18} className="text-white" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">
-              Crear Equipo
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-slate-400">
-              Configura tu nuevo equipo de trabajo
-            </p>
-          </div>
-        </div>
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
-              Nombre del equipo <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Equipo Ventas, Equipo TI..."
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-              autoFocus
-              maxLength={60}
-            />
+      {/* Modal Content */}
+      <div className="relative z-[99999] flex items-center justify-center min-h-screen p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 8 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 8 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full shadow-2xl border border-gray-200/80 dark:border-slate-800 relative"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+              <Users size={18} className="text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">
+                Crear Equipo
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-slate-400">
+                Configura tu nuevo equipo de trabajo
+              </p>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
-              Descripción{" "}
-              <span className="text-gray-400 font-normal">(opcional)</span>
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="¿Para qué es este equipo?"
-              rows={3}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
-              maxLength={200}
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                Nombre del equipo <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ej: Equipo Ventas, Equipo TI..."
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                autoFocus
+                maxLength={60}
+              />
+            </div>
 
-          {error && (
-            <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
-              {error}
-            </p>
-          )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                Descripción{" "}
+                <span className="text-gray-400 font-normal">(opcional)</span>
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="¿Para qué es este equipo?"
+                rows={3}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm resize-none"
+                maxLength={200}
+              />
+            </div>
 
-          <div className="flex gap-3 pt-2">
-            <Button
-              variant="ghost"
-              onClick={onClose}
-              type="button"
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={loading || !name.trim()}
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  Creando...
-                </span>
-              ) : (
-                "Crear equipo"
-              )}
-            </Button>
-          </div>
-        </form>
-      </motion.div>
+            {error && (
+              <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+                {error}
+              </p>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="ghost"
+                onClick={onClose}
+                type="button"
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1"
+                disabled={loading || !name.trim()}
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    Creando...
+                  </span>
+                ) : (
+                  "Crear equipo"
+                )}
+              </Button>
+            </div>
+          </form>
+        </motion.div>
+      </div>
     </div>
   );
 }
