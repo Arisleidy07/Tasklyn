@@ -39,9 +39,12 @@ interface NotifyParams {
  */
 export async function notifyUser(params: NotifyParams): Promise<void> {
   // Create a unique key for this notification to prevent duplicates
-  const notificationKey = `${params.userId}-${params.type}-${params.title}-${params.body}`;
+  // Include taskId from data if available to avoid blocking different tasks with same title
+  const entityId = params.data?.taskId || params.data?.listId || "";
+  const notificationKey = `${params.userId}-${params.type}-${entityId}-${params.title}-${params.body}`;
 
   if (!shouldSendNotification(notificationKey)) {
+    console.log("⏭️ Skipping duplicate notification:", notificationKey);
     return; // Skip duplicate notification
   }
 
@@ -109,7 +112,7 @@ export function notifyTaskEdited(
 ) {
   return notifyUser({
     userId: targetUserId,
-    type: "task_assigned",
+    type: "task_edited",
     title: `${editorName} editó una tarea`,
     body: `"${taskTitle}"`,
     data: { taskId, listId },

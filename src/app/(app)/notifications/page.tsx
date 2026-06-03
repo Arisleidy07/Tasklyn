@@ -23,6 +23,7 @@ import {
   X,
   Archive,
   Clock,
+  Edit2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MemberRole, NotificationType } from "@/types";
@@ -67,6 +68,19 @@ const getTypeConfig = (isDark: boolean) =>
         color: "text-emerald-400",
         bg: "bg-emerald-500/15",
         border: "border-emerald-400/25",
+      },
+    },
+    task_edited: {
+      icon: Edit2,
+      light: {
+        color: "text-amber-600",
+        bg: "bg-amber-50",
+        border: "border-amber-200",
+      },
+      dark: {
+        color: "text-amber-400",
+        bg: "bg-amber-500/15",
+        border: "border-amber-400/25",
       },
     },
     member_joined: {

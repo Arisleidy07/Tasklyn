@@ -250,6 +250,7 @@ export type NotificationType =
   | "invitation"
   | "task_assigned"
   | "task_completed"
+  | "task_edited"
   | "member_joined"
   | "list_shared"
   | "reminder"
