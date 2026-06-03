@@ -550,16 +550,51 @@ export const deleteInvitationsByList = async (
 export const teamsCollection = collection(db, "teams");
 
 export const createTeam = async (
-  team: Omit<Team, "id" | "createdAt" | "updatedAt">,
+  teamData: Omit<
+    Team,
+    "id" | "createdAt" | "updatedAt" | "members" | "stats" | "settings"
+  > & { ownerId: string },
 ): Promise<string> => {
   const teamRef = doc(teamsCollection);
-  const memberIds = team.members.map((m) => m.userId);
-  await setDoc(teamRef, {
-    ...team,
+  const now = new Date().toISOString();
+
+  // Ensure owner is in members list
+  const ownerMember: TeamMember = {
+    userId: teamData.ownerId,
+    role: "owner",
+    joinedAt: now,
+  };
+
+  const members = [ownerMember];
+  const memberIds = [teamData.ownerId];
+
+  // Initialize team with complete configuration
+  const newTeam = {
+    ...teamData,
+    owner: teamData.ownerId,
+    members,
     memberIds,
+    settings: {
+      allowInvites: true,
+      requireApproval: false,
+    },
+    stats: {
+      totalTasks: 0,
+      completedTasks: 0,
+      totalMembers: 1,
+      totalLists: 0,
+    },
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await setDoc(teamRef, {
+    ...newTeam,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+
+  console.log("✅ Team created with full configuration:", teamRef.id);
   return teamRef.id;
 };
 

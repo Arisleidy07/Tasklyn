@@ -323,29 +323,15 @@ export default function TeamsPage() {
   );
 
   const handleCreateTeam = async (teamData: any) => {
+    if (!user?.id) {
+      console.error("No user available to create team");
+      return;
+    }
     setLoading(true);
     try {
-      await createTeam({
-        ...teamData,
-        owner: user.id,
-        members: [
-          {
-            userId: user.id,
-            role: "owner",
-            joinedAt: new Date().toISOString(),
-          },
-        ],
-        settings: {
-          allowInvites: true,
-          requireApproval: false,
-        },
-        stats: {
-          totalTasks: 0,
-          completedTasks: 0,
-          totalMembers: 1,
-          totalLists: 0,
-        },
-      });
+      // Simply pass team data (name, description) and ownerId
+      // createTeam now handles: owner assignment, members init, settings, stats
+      await createTeam(teamData, user.id);
       setShowCreateModal(false);
     } catch (error) {
       console.error("Failed to create team:", error);

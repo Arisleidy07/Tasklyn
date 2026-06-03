@@ -42,12 +42,27 @@ interface TeamState {
   subscribeToTeams: (userId: string) => void;
   unsubscribeFromTeams: () => void;
   refreshTeams: (userId: string) => Promise<void>;
-  createTeam: (team: Omit<Team, "id" | "createdAt" | "updatedAt">) => Promise<string>;
+  createTeam: (
+    team: Omit<
+      Team,
+      "id" | "createdAt" | "updatedAt" | "members" | "stats" | "settings"
+    >,
+    ownerId: string,
+  ) => Promise<string>;
   updateTeam: (teamId: string, updates: Partial<Team>) => Promise<void>;
   setCurrentTeam: (team: Team | null) => void;
-  addTeamMember: (teamId: string, userId: string, role: "owner" | "admin" | "member", invitedBy?: string) => Promise<void>;
+  addTeamMember: (
+    teamId: string,
+    userId: string,
+    role: "owner" | "admin" | "member",
+    invitedBy?: string,
+  ) => Promise<void>;
   removeTeamMember: (teamId: string, userId: string) => Promise<void>;
-  updateTeamMemberRole: (teamId: string, userId: string, role: "owner" | "admin" | "member") => Promise<void>;
+  updateTeamMemberRole: (
+    teamId: string,
+    userId: string,
+    role: "owner" | "admin" | "member",
+  ) => Promise<void>;
 
   // Goal actions
   subscribeToGoals: (teamId: string) => void;
@@ -59,11 +74,16 @@ interface TeamState {
   subscribeToAchievements: (userId: string) => void;
   subscribeToTeamAchievements: (teamId: string) => void;
   unsubscribeFromAchievements: () => void;
-  createAchievement: (achievement: Omit<Achievement, "id" | "createdAt">) => Promise<string>;
+  createAchievement: (
+    achievement: Omit<Achievement, "id" | "createdAt">,
+  ) => Promise<string>;
 
   // Utility
   getTeamById: (teamId: string) => Team | null;
-  getUserRoleInTeam: (teamId: string, userId: string) => "owner" | "admin" | "member" | null;
+  getUserRoleInTeam: (
+    teamId: string,
+    userId: string,
+  ) => "owner" | "admin" | "member" | null;
   isTeamOwner: (teamId: string, userId: string) => boolean;
   isTeamAdmin: (teamId: string, userId: string) => boolean;
 }
@@ -115,10 +135,14 @@ export const useTeamStore = create<TeamState>()(
         }
       },
 
-      createTeam: async (teamData) => {
+      createTeam: async (teamData, ownerId: string) => {
         try {
-          const teamId = await createTeam(teamData);
+          const teamId = await createTeam({ ...teamData, ownerId });
           console.log("✅ Team created:", teamId);
+
+          // Refresh teams list to include the new team
+          await get().refreshTeams(ownerId);
+
           return teamId;
         } catch (error) {
           console.error("Failed to create team:", error);
@@ -142,7 +166,12 @@ export const useTeamStore = create<TeamState>()(
         set({ currentTeam: team });
       },
 
-      addTeamMember: async (teamId: string, userId: string, role: "owner" | "admin" | "member", invitedBy?: string) => {
+      addTeamMember: async (
+        teamId: string,
+        userId: string,
+        role: "owner" | "admin" | "member",
+        invitedBy?: string,
+      ) => {
         try {
           await addTeamMember(teamId, userId, role, invitedBy);
           console.log("✅ Team member added:", userId);
@@ -164,7 +193,11 @@ export const useTeamStore = create<TeamState>()(
         }
       },
 
-      updateTeamMemberRole: async (teamId: string, userId: string, role: "owner" | "admin" | "member") => {
+      updateTeamMemberRole: async (
+        teamId: string,
+        userId: string,
+        role: "owner" | "admin" | "member",
+      ) => {
         try {
           await updateTeamMemberRole(teamId, userId, role);
           console.log("✅ Team member role updated:", userId, role);
@@ -224,10 +257,13 @@ export const useTeamStore = create<TeamState>()(
 
         achievementsUnsubscribe?.(); // Cleanup previous subscription
 
-        achievementsUnsubscribe = subscribeToUserAchievements(userId, (achievements) => {
-          console.log("📦 Achievements received:", achievements.length);
-          set({ achievements, achievementsLoading: false });
-        });
+        achievementsUnsubscribe = subscribeToUserAchievements(
+          userId,
+          (achievements) => {
+            console.log("📦 Achievements received:", achievements.length);
+            set({ achievements, achievementsLoading: false });
+          },
+        );
       },
 
       subscribeToTeamAchievements: (teamId: string) => {
@@ -236,10 +272,13 @@ export const useTeamStore = create<TeamState>()(
 
         achievementsUnsubscribe?.(); // Cleanup previous subscription
 
-        achievementsUnsubscribe = subscribeToTeamAchievements(teamId, (achievements) => {
-          console.log("📦 Team achievements received:", achievements.length);
-          set({ achievements, achievementsLoading: false });
-        });
+        achievementsUnsubscribe = subscribeToTeamAchievements(
+          teamId,
+          (achievements) => {
+            console.log("📦 Team achievements received:", achievements.length);
+            set({ achievements, achievementsLoading: false });
+          },
+        );
       },
 
       unsubscribeFromAchievements: () => {
@@ -282,6 +321,6 @@ export const useTeamStore = create<TeamState>()(
         return role === "owner" || role === "admin";
       },
     }),
-    { name: "team-store" }
-  )
+    { name: "team-store" },
+  ),
 );
