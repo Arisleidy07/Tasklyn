@@ -1,4 +1,10 @@
-import { MemberRole, TaskList, PLAN_FEATURES, Plan } from "@/types";
+import {
+  MemberRole,
+  TaskList,
+  PLAN_FEATURES,
+  Plan,
+  PlanFeatures,
+} from "@/types";
 
 export function getUserRole(list: TaskList, userId: string): MemberRole | null {
   const member = list.members.find((m) => m.userId === userId);
@@ -57,19 +63,38 @@ export function canViewMembers(role: MemberRole | null): boolean {
   return role !== null;
 }
 
+// Helper to safely get plan features with fallback to free
+function getPlanFeatures(plan: Plan | string | undefined): PlanFeatures {
+  const validPlan = (plan || "free") as Plan;
+  return PLAN_FEATURES[validPlan] || PLAN_FEATURES["free"];
+}
+
 // Plan-based checks
-export function canCreateMoreLists(currentCount: number, plan: Plan): boolean {
-  return currentCount < PLAN_FEATURES[plan].maxLists;
+export function canCreateMoreLists(
+  currentCount: number,
+  plan: Plan | string | undefined,
+): boolean {
+  const features = getPlanFeatures(plan);
+  return currentCount < features.maxLists;
 }
 
-export function canAddMoreTasks(currentCount: number, plan: Plan): boolean {
-  return currentCount < PLAN_FEATURES[plan].maxTasksPerList;
+export function canAddMoreTasks(
+  currentCount: number,
+  plan: Plan | string | undefined,
+): boolean {
+  const features = getPlanFeatures(plan);
+  return currentCount < features.maxTasksPerList;
 }
 
-export function canAddMoreMembers(currentCount: number, plan: Plan): boolean {
-  return currentCount < PLAN_FEATURES[plan].maxCollaborators;
+export function canAddMoreMembers(
+  currentCount: number,
+  plan: Plan | string | undefined,
+): boolean {
+  const features = getPlanFeatures(plan);
+  return currentCount < features.maxCollaborators;
 }
 
-export function canAssignTasks(plan: Plan): boolean {
-  return PLAN_FEATURES[plan].canAssign;
+export function canAssignTasks(plan: Plan | string | undefined): boolean {
+  const features = getPlanFeatures(plan);
+  return features.canAssign;
 }

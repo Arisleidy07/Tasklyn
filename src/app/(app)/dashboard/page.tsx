@@ -25,7 +25,7 @@ import {
   Zap,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { PLAN_LIMITS } from "@/types";
+import { PLAN_FEATURES, type Plan } from "@/types";
 import { cn } from "@/lib/utils";
 import {
   format,
@@ -59,7 +59,9 @@ export default function DashboardPage() {
   const personalLists = getPersonalLists(user.id);
   const sharedLists = getSharedLists(user.id);
   const allLists = getUserLists(user.id);
-  const limits = PLAN_LIMITS[user.plan];
+  // Safely get plan features with fallback to free plan
+  const userPlan = (user.plan || "free") as Plan;
+  const limits = PLAN_FEATURES[userPlan] || PLAN_FEATURES["free"];
   const canCreate = allLists.length < limits.maxLists;
 
   const allListIds = new Set(allLists.map((l) => l.id));
@@ -723,7 +725,7 @@ export default function DashboardPage() {
           >
             <p className="text-sm text-gray-700 font-semibold">
               Has alcanzado el límite de {limits.maxLists} listas en el plan{" "}
-              {user.plan}.
+              {userPlan}.
             </p>
             <p className="text-xs text-gray-500 mt-1">
               Actualiza a PRO para listas ilimitadas, tareas y miembros del

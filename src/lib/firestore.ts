@@ -334,51 +334,60 @@ export const subscribeToUserLists = (
     where("memberIds", "array-contains", userId),
   );
 
-  return onSnapshot(q, (snap) => {
-    console.log("📦 User lists snapshot received:", {
-      docCount: snap.docs.length,
-      userId,
-      metadata: snap.metadata,
-      hasPendingWrites: snap.metadata.hasPendingWrites,
-      fromCache: snap.metadata.fromCache,
-    });
-
-    const lists = snap.docs.map((doc) => {
-      const data = doc.data();
-      const list = {
-        ...data,
-        id: doc.id,
-        createdAt: toDate(data.createdAt),
-        members: data.members || [],
-        customNames: data.customNames || {},
-      } as TaskList;
-
-      console.log("📋 List in subscription:", {
-        id: list.id,
-        name: list.name,
-        type: list.type,
-        memberCount: list.members.length,
-        memberIds: data.memberIds,
-        isUserMember: data.memberIds?.includes(userId),
-        userInMembers: list.members.some((m) => m.userId === userId),
+  return onSnapshot(
+    q,
+    (snap) => {
+      console.log("📦 User lists snapshot received:", {
+        docCount: snap.docs.length,
+        userId,
+        metadata: snap.metadata,
+        hasPendingWrites: snap.metadata.hasPendingWrites,
+        fromCache: snap.metadata.fromCache,
       });
 
-      return list;
-    });
+      const lists = snap.docs.map((doc) => {
+        const data = doc.data();
+        const list = {
+          ...data,
+          id: doc.id,
+          createdAt: toDate(data.createdAt),
+          members: data.members || [],
+          customNames: data.customNames || {},
+        } as TaskList;
 
-    const sharedLists = lists.filter(
-      (l) => l.type === "shared" && l.members.some((m) => m.userId === userId),
-    );
-    console.log(
-      "🤝 Shared lists for this user:",
-      sharedLists.map((l) => ({ id: l.id, name: l.name })),
-    );
-    console.log(
-      "🚀 Calling callback with lists:",
-      lists.map((l) => ({ id: l.id, name: l.name, type: l.type })),
-    );
-    callback(lists);
-  });
+        console.log("📋 List in subscription:", {
+          id: list.id,
+          name: list.name,
+          type: list.type,
+          memberCount: list.members.length,
+          memberIds: data.memberIds,
+          isUserMember: data.memberIds?.includes(userId),
+          userInMembers: list.members.some((m) => m.userId === userId),
+        });
+
+        return list;
+      });
+
+      const sharedLists = lists.filter(
+        (l) =>
+          l.type === "shared" && l.members.some((m) => m.userId === userId),
+      );
+      console.log(
+        "🤝 Shared lists for this user:",
+        sharedLists.map((l) => ({ id: l.id, name: l.name })),
+      );
+      console.log(
+        "🚀 Calling callback with lists:",
+        lists.map((l) => ({ id: l.id, name: l.name, type: l.type })),
+      );
+      callback(lists);
+    },
+    (error) => {
+      console.error("❌ Error in lists subscription:", error);
+      // Return empty lists on error to prevent app crash
+      callback([]);
+    },
+  );
 };
 
 // ============================================

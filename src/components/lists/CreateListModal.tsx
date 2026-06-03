@@ -30,7 +30,8 @@ export default function CreateListModal({
     if (!name.trim() || !user) return;
 
     const userLists = getUserLists(user.id);
-    if (!canCreateMoreLists(userLists.length, user.plan)) {
+    const userPlan = user.plan || "free";
+    if (!canCreateMoreLists(userLists.length, userPlan)) {
       return;
     }
 
