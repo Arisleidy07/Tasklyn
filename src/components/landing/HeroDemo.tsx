@@ -3,141 +3,104 @@
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
-  ListTodo,
+  FolderOpen,
   Users,
-  FolderKanban,
-  TrendingUp,
-  Activity,
-  PieChart,
   Bell,
-  Search,
   Plus,
-  MoreHorizontal,
-  Filter,
-  LayoutGrid,
-  MessageSquare,
-  Paperclip,
-  Flag,
+  LayoutDashboard,
+  Activity,
+  Trophy,
   Calendar,
+  BarChart3,
   Clock,
+  Zap,
+  Flag,
+  LogOut,
 } from "lucide-react";
 import Logo from "@/components/shared/Logo";
 
-const priorityColors = {
-  high: "bg-rose-500/15 text-rose-400 border-rose-500/20",
-  medium: "bg-amber-500/15 text-amber-400 border-amber-500/20",
-  low: "bg-slate-500/15 text-slate-400 border-slate-500/20",
-};
+const sidebarNav = [
+  { name: "Panel de control", icon: LayoutDashboard, active: true },
+  { name: "Actividad", icon: Activity },
+  { name: "Equipos", icon: Users },
+  { name: "Panel de Equipo", icon: BarChart3 },
+  { name: "Ranking", icon: Trophy },
+  { name: "Calendario", icon: Calendar },
+  { name: "Notificaciones", icon: Bell, badge: 3 },
+];
 
-const tagColors: Record<string, string> = {
-  Logística: "bg-blue-500/15 text-blue-400",
-  Ventas: "bg-emerald-500/15 text-emerald-400",
-  Finanzas: "bg-amber-500/15 text-amber-400",
-  Operaciones: "bg-purple-500/15 text-purple-400",
-  Compras: "bg-cyan-500/15 text-cyan-400",
-  IT: "bg-slate-500/15 text-slate-400",
-  Urgente: "bg-rose-500/15 text-rose-400",
-  Meeting: "bg-indigo-500/15 text-indigo-400",
-  Reporte: "bg-teal-500/15 text-teal-400",
-};
+const recentLists = [
+  { name: "Operaciones", color: "bg-blue-500", tasks: 12, shared: true },
+  { name: "Ventas Q2", color: "bg-emerald-500", tasks: 8, shared: true },
+  { name: "Logística", color: "bg-amber-500", tasks: 5, shared: false },
+];
+
+const stats = [
+  {
+    label: "Listas totales",
+    value: "8",
+    icon: FolderOpen,
+    gradient: "from-blue-500 to-indigo-600",
+  },
+  {
+    label: "Compartidas",
+    value: "3",
+    icon: Users,
+    gradient: "from-purple-500 to-pink-600",
+  },
+  {
+    label: "Tasa de éxito",
+    value: "78%",
+    icon: CheckCircle2,
+    gradient: "from-green-500 to-emerald-600",
+  },
+  {
+    label: "Pendientes",
+    value: "14",
+    icon: Clock,
+    gradient: "from-yellow-500 to-orange-600",
+  },
+];
+
+const weekBars = [
+  { label: "Lun", created: 3, done: 2 },
+  { label: "Mar", created: 5, done: 4 },
+  { label: "Mié", created: 4, done: 5 },
+  { label: "Jue", created: 6, done: 3 },
+  { label: "Vie", created: 7, done: 6 },
+  { label: "Sáb", created: 2, done: 2 },
+  { label: "Hoy", created: 4, done: 3, today: true },
+];
+const maxBar = 7;
+
+const listCards = [
+  {
+    name: "Operaciones Junio",
+    tasks: 12,
+    pending: 5,
+    shared: true,
+    color: "bg-blue-500",
+    members: ["AR", "JL", "CP"],
+  },
+  {
+    name: "Ventas Q2",
+    tasks: 8,
+    pending: 3,
+    shared: true,
+    color: "bg-emerald-500",
+    members: ["MR", "AR"],
+  },
+  {
+    name: "Logística diaria",
+    tasks: 5,
+    pending: 2,
+    shared: false,
+    color: "bg-amber-500",
+    members: ["JL"],
+  },
+];
 
 export default function HeroDemo() {
-  const columns = [
-    {
-      title: "Por hacer",
-      count: 5,
-      color: "bg-slate-400",
-      tasks: [
-        {
-          title: "Inventario sucursal Norte",
-          priority: "high" as const,
-          tags: ["Logística", "Urgente"],
-          assignees: ["MR"],
-          dueDate: "Hoy",
-          comments: 3,
-          attachments: 1,
-        },
-        {
-          title: "Facturas pendientes por pagar",
-          priority: "high" as const,
-          tags: ["Finanzas"],
-          assignees: ["AR"],
-          dueDate: "Mañana",
-          comments: 1,
-          attachments: 2,
-        },
-        {
-          title: "Seguimiento proveedores",
-          priority: "medium" as const,
-          tags: ["Compras"],
-          assignees: ["CP", "JL"],
-          dueDate: "Vie",
-          comments: 0,
-          attachments: 0,
-        },
-      ],
-    },
-    {
-      title: "En progreso",
-      count: 2,
-      color: "bg-blue-500",
-      tasks: [
-        {
-          title: "Reunión con cliente Corporativo",
-          priority: "high" as const,
-          tags: ["Ventas", "Meeting"],
-          assignees: ["JL", "AR", "CP"],
-          dueDate: "Hoy, 11:00",
-          comments: 5,
-          attachments: 1,
-          progress: 60,
-        },
-        {
-          title: "Comprar suministros oficina",
-          priority: "medium" as const,
-          tags: ["Operaciones"],
-          assignees: ["AR"],
-          dueDate: "Hoy, 09:30",
-          comments: 2,
-          attachments: 0,
-          progress: 80,
-        },
-      ],
-    },
-    {
-      title: "Completadas",
-      count: 8,
-      color: "bg-emerald-500",
-      tasks: [
-        {
-          title: "Reporte mensual ventas",
-          priority: "medium" as const,
-          tags: ["Ventas", "Reporte"],
-          assignees: ["JL"],
-          completedDate: "Ayer",
-          comments: 4,
-          attachments: 3,
-        },
-        {
-          title: "Actualizar inventario software",
-          priority: "low" as const,
-          tags: ["IT"],
-          assignees: ["MR"],
-          completedDate: "Ayer",
-          comments: 1,
-          attachments: 0,
-        },
-      ],
-    },
-  ];
-
-  const sidebarLists = [
-    { name: "Operaciones", count: 12, color: "bg-blue-500" },
-    { name: "Ventas", count: 8, color: "bg-emerald-500" },
-    { name: "Logística", count: 5, color: "bg-amber-500" },
-    { name: "Finanzas", count: 3, color: "bg-rose-500" },
-  ];
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 30, scale: 0.96 }}
@@ -146,232 +109,346 @@ export default function HeroDemo() {
       className="relative"
     >
       <div className="absolute -inset-6 rounded-[2.5rem] bg-blue-500/10 blur-3xl" />
-      <div className="relative overflow-hidden rounded-[2rem] border border-slate-700/70 bg-slate-950 shadow-[0_30px_90px_rgba(15,23,42,0.95)]">
-        {/* Top Bar */}
-        <div className="h-14 border-b border-slate-800 bg-slate-900/95 flex items-center justify-between px-4">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Logo size="sm" className="w-7 h-7" />
-              <span className="font-semibold text-slate-100 text-sm">Tasklyn</span>
-              <span className="px-1.5 py-0.5 rounded bg-blue-500/15 text-[10px] text-blue-400 border border-blue-500/20">PRO</span>
+      <div className="relative overflow-hidden rounded-[2rem] border border-slate-700/70 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.9)]">
+        {/* App shell: sidebar + main */}
+        <div className="flex h-[500px]">
+          {/* ── Sidebar ── */}
+          <div className="w-[200px] flex-shrink-0 flex flex-col border-r border-gray-200 bg-gray-50/80">
+            {/* Logo area */}
+            <div className="h-14 flex items-center px-4 border-b border-gray-200 bg-white/90">
+              <Logo
+                size="sm"
+                showText={true}
+                textClassName="text-gray-900 text-sm font-bold"
+              />
             </div>
-            <nav className="hidden sm:flex items-center gap-1">
-              {["Dashboard", "Listas", "Equipos", "Calendario"].map((item) => (
-                <button
-                  key={item}
-                  className={`px-3 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
-                    item === "Dashboard"
-                      ? "bg-slate-800 text-slate-100"
-                      : "text-slate-400 hover:text-slate-200"
+
+            {/* Nav */}
+            <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-hidden">
+              <p className="px-3 mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-gray-400">
+                General
+              </p>
+              {sidebarNav.map((item) => (
+                <div
+                  key={item.name}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-medium transition-colors ${
+                    item.active
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-gray-500 hover:bg-white hover:text-gray-800"
                   }`}
                 >
-                  {item}
-                </button>
-              ))}
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800/70 border border-slate-700/50">
-              <Search size={14} className="text-slate-500" />
-              <span className="text-[11px] text-slate-500">Buscar tareas...</span>
-              <span className="px-1.5 py-0.5 rounded bg-slate-700 text-[9px] text-slate-400">⌘K</span>
-            </div>
-            <button className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center text-slate-400 hover:text-slate-200 relative">
-              <Bell size={14} />
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-rose-500 border-2 border-slate-900" />
-            </button>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-[10px] text-white font-medium">
-              AR
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex h-[480px]">
-          {/* Sidebar */}
-          <div className="w-14 sm:w-52 border-r border-slate-800 bg-slate-900/50 py-4 flex flex-col gap-1">
-            <div className="px-3 mb-3">
-              <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500/15 border border-blue-500/20 text-blue-400 hover:bg-blue-500/25 transition-colors">
-                <Plus size={14} />
-                <span className="hidden sm:block text-[11px] font-medium">Nueva tarea</span>
-              </button>
-            </div>
-
-            <div className="px-2 space-y-0.5">
-              <div className="px-2 py-1.5 text-[10px] font-medium text-slate-500 uppercase tracking-wider hidden sm:block">
-                Listas
-              </div>
-              {sidebarLists.map((list) => (
-                <button
-                  key={list.name}
-                  className={`w-full flex items-center gap-2 px-2 sm:px-3 py-2 rounded-lg transition-colors ${
-                    list.name === "Operaciones"
-                      ? "bg-slate-800 text-slate-100"
-                      : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-300"
-                  }`}
-                >
-                  <div className={`w-2 h-2 rounded-full ${list.color}`} />
-                  <span className="hidden sm:block text-[11px] flex-1 text-left">{list.name}</span>
-                  <span className="hidden sm:block text-[10px] text-slate-500">{list.count}</span>
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-auto px-3 pt-4 border-t border-slate-800/50">
-              <div className="flex items-center gap-2 px-2 py-2 rounded-lg bg-slate-800/50">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="hidden sm:block text-[10px] text-slate-400">Sistema activo</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Kanban Board */}
-          <div className="flex-1 p-4 overflow-x-auto">
-            {/* Board Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <h2 className="text-lg font-semibold text-slate-100">Operaciones Junio</h2>
-                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-800/70">
-                  <Users size={12} className="text-slate-400" />
-                  <span className="text-[11px] text-slate-400">6 miembros</span>
+                  <item.icon size={13} className="flex-shrink-0" />
+                  <span className="flex-1 truncate">{item.name}</span>
+                  {item.badge && (
+                    <span className="text-[9px] font-bold min-w-[14px] h-[14px] flex items-center justify-center rounded-full bg-red-500 text-white px-1">
+                      {item.badge}
+                    </span>
+                  )}
                 </div>
+              ))}
+
+              <div className="pt-3">
+                <p className="px-3 mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-gray-400">
+                  Workspace
+                </p>
+                <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-medium text-gray-500 hover:bg-white hover:text-gray-800">
+                  <FolderOpen size={13} className="flex-shrink-0" />
+                  <span className="flex-1">Listas</span>
+                  <span className="text-[9px] font-semibold min-w-[16px] h-4 flex items-center justify-center rounded bg-gray-100 text-gray-500 px-1">
+                    8
+                  </span>
+                </div>
+                <button className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-[11px] font-medium text-blue-600 hover:bg-blue-50">
+                  <Plus size={13} className="flex-shrink-0" />
+                  <span>Nueva lista</span>
+                </button>
+              </div>
+
+              <div className="pt-3">
+                <p className="px-3 mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-gray-400">
+                  Recientes
+                </p>
+                {recentLists.map((list) => (
+                  <div
+                    key={list.name}
+                    className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-[11px] text-gray-500 hover:bg-white hover:text-gray-700"
+                  >
+                    <div
+                      className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${list.color}`}
+                    />
+                    <span className="flex-1 truncate">{list.name}</span>
+                  </div>
+                ))}
+              </div>
+            </nav>
+
+            {/* User */}
+            <div className="px-3 py-3 border-t border-gray-200 bg-white/90 flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-[9px] text-white font-bold flex-shrink-0">
+                AR
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-semibold text-gray-800 truncate">
+                  Ana Rodríguez
+                </p>
+                <p className="text-[9px] text-gray-400 truncate">Plan PRO</p>
+              </div>
+              <LogOut size={11} className="text-gray-400 flex-shrink-0" />
+            </div>
+          </div>
+
+          {/* ── Main content ── */}
+          <div className="flex-1 flex flex-col overflow-hidden bg-white">
+            {/* Header */}
+            <div className="h-14 flex items-center justify-between px-5 border-b border-gray-200 bg-white flex-shrink-0">
+              <div>
+                <h1 className="text-sm font-semibold text-gray-900">
+                  Panel de control
+                </h1>
+                <p className="text-[10px] text-gray-400">Bienvenida, Ana</p>
               </div>
               <div className="flex items-center gap-2">
-                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-[11px] text-slate-300 hover:text-slate-100 transition-colors">
-                  <Filter size={12} />
-                  <span className="hidden sm:inline">Filtrar</span>
-                </button>
-                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-[11px] text-slate-300 hover:text-slate-100 transition-colors">
-                  <LayoutGrid size={12} />
-                  <span className="hidden sm:inline">Vista</span>
+                <div className="relative">
+                  <Bell size={15} className="text-gray-400" />
+                  <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-red-500" />
+                </div>
+                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-[10px] font-medium">
+                  <Plus size={11} />
+                  Nueva lista
                 </button>
               </div>
             </div>
 
-            {/* Kanban Columns */}
-            <div className="flex gap-4 min-w-[700px]">
-              {columns.map((column, colIndex) => (
-                <div key={column.title} className="flex-1 min-w-[220px]">
-                  {/* Column Header */}
+            {/* Scrollable content */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {/* Stats grid */}
+              <div className="grid grid-cols-4 gap-2.5">
+                {stats.map((stat, i) => (
+                  <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 + i * 0.06 }}
+                    className="p-3 rounded-2xl border border-gray-200/80 bg-white hover:border-blue-200 transition-colors"
+                  >
+                    <div
+                      className={`w-7 h-7 rounded-xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center mb-2 shadow-sm`}
+                    >
+                      <stat.icon size={13} className="text-white" />
+                    </div>
+                    <p className="text-lg font-bold text-gray-900 tabular-nums">
+                      {stat.value}
+                    </p>
+                    <p className="text-[9px] text-gray-400 font-medium">
+                      {stat.label}
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Widgets row */}
+              <div className="grid grid-cols-3 gap-2.5">
+                {/* Weekly activity */}
+                <div className="col-span-2 p-3.5 rounded-2xl border border-gray-200/80 bg-white">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-2 h-2 rounded-full ${column.color}`} />
-                      <span className="text-[12px] font-medium text-slate-200">{column.title}</span>
-                      <span className="px-1.5 py-0.5 rounded-full bg-slate-800 text-[10px] text-slate-400">
-                        {column.count}
+                    <div>
+                      <p className="text-[11px] font-semibold text-gray-800">
+                        Actividad semanal
+                      </p>
+                      <p className="text-[9px] text-gray-400">Últimos 7 días</p>
+                    </div>
+                    <div className="flex items-center gap-2 text-[9px]">
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-blue-300 inline-block" />
+                        Creadas
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
+                        Completadas
                       </span>
                     </div>
-                    <button className="p-1 rounded hover:bg-slate-800 text-slate-500 transition-colors">
-                      <MoreHorizontal size={14} />
-                    </button>
                   </div>
-
-                  {/* Tasks */}
-                  <div className="space-y-2">
-                    {column.tasks.map((task, taskIndex) => (
-                      <motion.div
-                        key={task.title}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 + colIndex * 0.1 + taskIndex * 0.05 }}
-                        className={`p-3 rounded-xl border cursor-pointer transition-all hover:translate-y-[-2px] ${
-                          column.title === "Completadas"
-                            ? "bg-slate-900/50 border-slate-800 opacity-70"
-                            : "bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-800/50"
-                        }`}
+                  <div className="flex items-end gap-1 h-20">
+                    {weekBars.map((d, i) => (
+                      <div
+                        key={i}
+                        className="flex-1 flex flex-col items-center gap-0.5"
                       >
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {task.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${tagColors[tag] || "bg-slate-500/15 text-slate-400"}`}
-                            >
-                              {tag}
-                            </span>
-                          ))}
+                        <div className="w-full flex gap-0.5 items-end h-16">
+                          <div
+                            className="flex-1 rounded-t bg-blue-200 transition-all"
+                            style={{
+                              height: `${Math.round((d.created / maxBar) * 64)}px`,
+                              minHeight: "2px",
+                            }}
+                          />
+                          <div
+                            className="flex-1 rounded-t bg-green-400 transition-all"
+                            style={{
+                              height: `${Math.round((d.done / maxBar) * 64)}px`,
+                              minHeight: "2px",
+                            }}
+                          />
                         </div>
-
-                        {/* Title */}
-                        <h4 className={`text-[12px] font-medium mb-2 ${column.title === "Completadas" ? "text-slate-500 line-through" : "text-slate-200"}`}>
-                          {task.title}
-                        </h4>
-
-                        {/* Priority Indicator */}
-                        {column.title !== "Completadas" && (
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className={`px-1.5 py-0.5 rounded text-[9px] font-medium border ${priorityColors[task.priority]}`}>
-                              {task.priority === "high" ? "Alta" : task.priority === "medium" ? "Media" : "Baja"}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Progress Bar for In Progress */}
-                        {"progress" in task && task.progress && (
-                          <div className="mb-2">
-                            <div className="h-1 rounded-full bg-slate-800 overflow-hidden">
-                              <div
-                                className="h-full rounded-full bg-blue-500"
-                                style={{ width: `${task.progress}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Footer: Due Date, Assignees, Meta */}
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-800/50">
-                          <div className="flex items-center gap-2">
-                            {/* Due Date */}
-                            <div className={`flex items-center gap-1 text-[10px] ${"completedDate" in task ? "text-emerald-400" : "dueDate" in task && task.dueDate === "Hoy" ? "text-rose-400" : "text-slate-500"}`}>
-                              <Clock size={10} />
-                              <span>{"completedDate" in task ? task.completedDate : task.dueDate}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            {/* Comments & Attachments */}
-                            {(task.comments > 0 || task.attachments > 0) && (
-                              <div className="flex items-center gap-2">
-                                {task.comments > 0 && (
-                                  <div className="flex items-center gap-0.5 text-[9px] text-slate-500">
-                                    <MessageSquare size={10} />
-                                    <span>{task.comments}</span>
-                                  </div>
-                                )}
-                                {task.attachments > 0 && (
-                                  <div className="flex items-center gap-0.5 text-[9px] text-slate-500">
-                                    <Paperclip size={10} />
-                                    <span>{task.attachments}</span>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Assignees */}
-                            <div className="flex -space-x-1">
-                              {task.assignees.map((assignee, i) => (
-                                <div
-                                  key={i}
-                                  className="w-5 h-5 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center text-[8px] text-slate-200 border border-slate-800"
-                                >
-                                  {assignee}
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
+                        <span
+                          className={`text-[8px] font-medium capitalize ${d.today ? "text-blue-600" : "text-gray-400"}`}
+                        >
+                          {d.label}
+                        </span>
+                      </div>
                     ))}
-
-                    {/* Add Task Button */}
-                    <button className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed border-slate-700 text-slate-500 hover:text-slate-300 hover:border-slate-600 transition-colors">
-                      <Plus size={14} />
-                      <span className="text-[11px]">Agregar tarea</span>
-                    </button>
+                  </div>
+                  <div className="flex items-center gap-3 mt-2 pt-2 border-t border-gray-100">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5 rounded-md bg-blue-50 flex items-center justify-center">
+                        <Zap size={10} className="text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-800">4</p>
+                        <p className="text-[8px] text-gray-400">creadas hoy</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-5 h-5 rounded-md bg-green-50 flex items-center justify-center">
+                        <CheckCircle2 size={10} className="text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-800">3</p>
+                        <p className="text-[8px] text-gray-400">
+                          completadas hoy
+                        </p>
+                      </div>
+                    </div>
+                    <div className="ml-auto text-right">
+                      <p className="text-sm font-bold text-gray-900">78%</p>
+                      <p className="text-[8px] text-gray-400">productividad</p>
+                    </div>
                   </div>
                 </div>
-              ))}
+
+                {/* Priority breakdown */}
+                <div className="p-3.5 rounded-2xl border border-gray-200/80 bg-white">
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <Flag size={11} className="text-gray-400" />
+                    <p className="text-[11px] font-semibold text-gray-800">
+                      Prioridades
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    {[
+                      {
+                        label: "Crítica",
+                        color: "bg-red-500",
+                        bg: "bg-red-50",
+                        text: "text-red-600",
+                        count: 2,
+                      },
+                      {
+                        label: "Alta",
+                        color: "bg-orange-500",
+                        bg: "bg-orange-50",
+                        text: "text-orange-600",
+                        count: 5,
+                      },
+                      {
+                        label: "Media",
+                        color: "bg-yellow-400",
+                        bg: "bg-yellow-50",
+                        text: "text-yellow-600",
+                        count: 7,
+                      },
+                      {
+                        label: "Baja",
+                        color: "bg-green-400",
+                        bg: "bg-green-50",
+                        text: "text-green-600",
+                        count: 4,
+                      },
+                    ].map((p) => (
+                      <div
+                        key={p.label}
+                        className={`flex items-center justify-between px-2 py-1.5 rounded-lg ${p.bg}`}
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className={`w-1.5 h-1.5 rounded-full ${p.color}`}
+                          />
+                          <span className="text-[10px] font-medium text-gray-700">
+                            {p.label}
+                          </span>
+                        </div>
+                        <span
+                          className={`text-[10px] font-bold tabular-nums ${p.text}`}
+                        >
+                          {p.count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* List cards */}
+              <div>
+                <div className="flex items-center gap-2 mb-2.5">
+                  <div className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <FolderOpen size={12} className="text-blue-600" />
+                  </div>
+                  <p className="text-[11px] font-semibold text-gray-800">
+                    Mis listas
+                  </p>
+                  <span className="text-[9px] text-gray-400">3 listas</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {listCards.map((list, i) => (
+                    <motion.div
+                      key={list.name}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.4 + i * 0.07 }}
+                      className="p-3 rounded-xl border border-gray-200 bg-white hover:border-blue-200 hover:shadow-sm transition-all cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className={`w-2 h-2 rounded-full ${list.color}`} />
+                        <span className="text-[10px] font-semibold text-gray-800 truncate flex-1">
+                          {list.name}
+                        </span>
+                        {list.shared && (
+                          <div className="w-4 h-4 rounded bg-blue-50 flex items-center justify-center flex-shrink-0">
+                            <Users size={9} className="text-blue-500" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[9px] text-gray-400">
+                          {list.tasks} tareas
+                        </span>
+                        <span className="text-[9px] text-orange-500 font-medium">
+                          {list.pending} pend.
+                        </span>
+                      </div>
+                      <div className="h-0.5 rounded-full bg-gray-100 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${list.color}`}
+                          style={{
+                            width: `${Math.round(((list.tasks - list.pending) / list.tasks) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <div className="flex -space-x-1 mt-2">
+                        {list.members.map((m, mi) => (
+                          <div
+                            key={mi}
+                            className="w-4 h-4 rounded-full bg-gradient-to-br from-slate-400 to-slate-500 flex items-center justify-center text-[7px] text-white border border-white"
+                          >
+                            {m[0]}
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
