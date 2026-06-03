@@ -80,6 +80,7 @@ export default function TaskItem({
   >([]);
   const [editRecurrence, setEditRecurrence] =
     useState<Task["recurrence"]>(null);
+  const [editPriority, setEditPriority] = useState<Task["priority"]>(undefined);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const { user } = useAuthStore();
@@ -114,6 +115,7 @@ export default function TaskItem({
     setEditDueTime(task.dueTime || null);
     setEditReminders(task.reminders || []);
     setEditRecurrence(task.recurrence || null);
+    setEditPriority(task.priority);
     setShowEditModal(true);
   };
 
@@ -133,6 +135,7 @@ export default function TaskItem({
           dueTime: editDueTime,
           reminders: editReminders.length > 0 ? editReminders : undefined,
           recurrence: editRecurrence,
+          priority: editPriority,
         },
         user.id,
         user.name,
@@ -578,6 +581,26 @@ export default function TaskItem({
               <Plus size={12} />
               Agregar teléfono
             </button>
+          </div>
+
+          {/* Priority Selector */}
+          <div className="flex items-center gap-2">
+            <Flag size={14} className="text-gray-300 flex-shrink-0" />
+            <select
+              value={editPriority || ""}
+              onChange={(e) =>
+                setEditPriority(
+                  (e.target.value as Task["priority"]) || undefined,
+                )
+              }
+              className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 flex-1"
+            >
+              <option value="">Sin prioridad</option>
+              <option value="urgent">🔴 Crítica</option>
+              <option value="high">🟠 Alta</option>
+              <option value="medium">🟡 Media</option>
+              <option value="low">🟢 Baja</option>
+            </select>
           </div>
 
           {/* Options Bar */}
