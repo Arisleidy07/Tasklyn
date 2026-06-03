@@ -171,7 +171,9 @@ export default function NotificationsPage() {
   const { getInvitation, acceptInvitation, rejectInvitation } =
     useInvitationStore();
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [showArchived, setShowArchived] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "unread" | "invitations" | "archived"
+  >("all");
 
   if (!user) return null;
 
@@ -193,6 +195,16 @@ export default function NotificationsPage() {
   const otherNotifications = notifications.filter(
     (n) => n.type !== "invitation" && (!n.status || n.status === "pending"),
   );
+  const unreadNotifications = notifications.filter(
+    (n) => !n.read && n.status !== "archived",
+  );
+
+  // Determine which sections to show based on active filter
+  const showInvitations =
+    activeFilter === "all" || activeFilter === "invitations";
+  const showUnread = activeFilter === "all" || activeFilter === "unread";
+  const showArchived = activeFilter === "all" || activeFilter === "archived";
+  const showOther = activeFilter === "all" || activeFilter === "unread";
 
   const handleAcceptInvitation = async (
     notifId: string,
@@ -293,13 +305,6 @@ export default function NotificationsPage() {
         showMenuButton={true}
         actions={
           <>
-            <button
-              onClick={() => setShowArchived(!showArchived)}
-              className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center active:scale-90"
-              title="Archivados"
-            >
-              <Archive size={20} />
-            </button>
             {unreadCount > 0 ? (
               <>
                 <button
@@ -325,8 +330,57 @@ export default function NotificationsPage() {
       />
 
       <div className="p-3 sm:p-4 md:p-8 max-w-3xl mx-auto space-y-6 sm:space-y-8">
+        {/* Filter Tabs */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {[
+            { id: "all", label: "Todas", count: notifications.length },
+            { id: "unread", label: "No leídas", count: unreadCount },
+            {
+              id: "invitations",
+              label: "Invitaciones",
+              count: pendingNotifications.length,
+            },
+            {
+              id: "archived",
+              label: "Archivadas",
+              count: archivedNotifications.length,
+            },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveFilter(tab.id as any)}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                activeFilter === tab.id
+                  ? isDark
+                    ? "bg-blue-500/20 text-blue-300 border border-blue-400/30"
+                    : "bg-blue-100 text-blue-700 border border-blue-200"
+                  : isDark
+                    ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              }`}
+            >
+              {tab.label}
+              {tab.count > 0 && (
+                <span
+                  className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                    activeFilter === tab.id
+                      ? isDark
+                        ? "bg-blue-400/20 text-blue-200"
+                        : "bg-blue-200 text-blue-700"
+                      : isDark
+                        ? "bg-slate-700 text-slate-400"
+                        : "bg-gray-200 text-gray-500"
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
         {/* Pending Invitations */}
-        {pendingNotifications.length > 0 && (
+        {showInvitations && pendingNotifications.length > 0 && (
           <section>
             <h3
               className={`text-sm font-semibold mb-3 ${isDark ? "text-slate-100" : "text-gray-900"}`}
@@ -469,7 +523,7 @@ export default function NotificationsPage() {
         )}
 
         {/* Other Notifications */}
-        {otherNotifications.length > 0 && (
+        {showOther && otherNotifications.length > 0 && (
           <section>
             <h3
               className={`text-sm font-semibold mb-3 ${isDark ? "text-slate-100" : "text-gray-900"}`}
@@ -688,13 +742,10 @@ export default function NotificationsPage() {
         )}
 
         {/* Archived Notifications */}
-        {archivedNotifications.length > 0 && (
-          <section>
-            <button
-              onClick={() => setShowArchived(!showArchived)}
-              className="flex items-center gap-2 w-full text-left group"
-            >
-              <div className="flex items-center gap-2 flex-1">
+        {(activeFilter === "all" || activeFilter === "archived") &&
+          archivedNotifications.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
                 <Archive
                   size={16}
                   className={isDark ? "text-slate-400" : "text-gray-400"}
@@ -714,83 +765,73 @@ export default function NotificationsPage() {
                   {archivedNotifications.length}
                 </span>
               </div>
-            </button>
-            <AnimatePresence>
-              {showArchived && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <div className="space-y-2 pt-3">
-                    {archivedNotifications.map((notif) => {
-                      const cfg = typeConfig[notif.type];
-                      const Icon = cfg.icon;
-                      return (
-                        <div
-                          key={notif.id}
-                          className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border ${
-                            isDark
-                              ? "border-slate-700 bg-slate-800/50"
-                              : "border-gray-200 bg-gray-50/50"
-                          }`}
+              <div className="space-y-2 pt-3">
+                {archivedNotifications.map((notif) => {
+                  const cfg = typeConfig[notif.type];
+                  const Icon = cfg.icon;
+                  return (
+                    <motion.div
+                      key={notif.id}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: -16 }}
+                      transition={{ duration: 0.2 }}
+                      className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border ${
+                        isDark
+                          ? "border-slate-700 bg-slate-800/50"
+                          : "border-gray-200 bg-gray-50/50"
+                      }`}
+                    >
+                      <div
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                          isDark ? cfg.dark.bg : cfg.light.bg
+                        } border ${isDark ? cfg.dark.border : cfg.light.border}`}
+                      >
+                        <Icon
+                          size={14}
+                          className={isDark ? cfg.dark.color : cfg.light.color}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`text-sm leading-snug ${isDark ? "text-slate-300" : "text-gray-600"}`}
                         >
-                          <div
-                            className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                              isDark ? cfg.dark.bg : cfg.light.bg
-                            } border ${isDark ? cfg.dark.border : cfg.light.border}`}
-                          >
-                            <Icon
-                              size={14}
-                              className={
-                                isDark ? cfg.dark.color : cfg.light.color
-                              }
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p
-                              className={`text-sm leading-snug ${isDark ? "text-slate-300" : "text-gray-600"}`}
-                            >
-                              {notif.title}
-                            </p>
-                            <p
-                              className={`text-xs mt-0.5 leading-snug ${isDark ? "text-slate-400" : "text-gray-500"}`}
-                            >
-                              {notif.body}
-                            </p>
-                            <p
-                              className={`text-[11px] mt-1.5 ${isDark ? "text-slate-500" : "text-gray-400"}`}
-                            >
-                              {timeAgo(notif.createdAt)}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => unarchive(notif.id)}
-                              className="p-2 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
-                              title="Desarchivar"
-                            >
-                              <Archive size={14} className="rotate-180" />
-                            </button>
-                            <button
-                              onClick={() => remove(notif.id)}
-                              className="p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
-                              title="Eliminar"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </section>
-        )}
+                          {notif.title}
+                        </p>
+                        <p
+                          className={`text-xs mt-0.5 leading-snug ${isDark ? "text-slate-400" : "text-gray-500"}`}
+                        >
+                          {notif.body}
+                        </p>
+                        <p
+                          className={`text-[11px] mt-1.5 ${isDark ? "text-slate-500" : "text-gray-400"}`}
+                        >
+                          {timeAgo(notif.createdAt)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => unarchive(notif.id)}
+                          className="p-2 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          title="Desarchivar"
+                        >
+                          <Archive size={14} className="rotate-180" />
+                        </button>
+                        <button
+                          onClick={() => remove(notif.id)}
+                          className="p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          title="Eliminar"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
         {/* Empty State */}
         {pendingNotifications.length === 0 &&
