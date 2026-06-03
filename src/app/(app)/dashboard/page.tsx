@@ -68,10 +68,6 @@ export default function DashboardPage() {
   const userTasks = tasks.filter((t) => allListIds.has(t.listId));
   const completedTasks = userTasks.filter((t) => t.status === "completed");
   const pendingTasks = userTasks.filter((t) => t.status === "pending");
-  const completionRate =
-    userTasks.length > 0
-      ? Math.round((completedTasks.length / userTasks.length) * 100)
-      : 0;
 
   // --- Smart Dashboard data ---
   const today = new Date();
@@ -155,6 +151,15 @@ export default function DashboardPage() {
 
   const listNameMap = new Map(allLists.map((l) => [l.id, l.name]));
 
+  // Calculate dynamic trends based on actual ratios
+  const totalTasks = completedTasks.length + pendingTasks.length;
+  const completionRate =
+    totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
+  const sharedRatio =
+    allLists.length > 0
+      ? Math.round((sharedLists.length / allLists.length) * 100)
+      : 0;
+
   const stats = [
     {
       label: "Listas totales",
@@ -163,7 +168,8 @@ export default function DashboardPage() {
       color: "blue",
       bg: "bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/25",
       text: "text-white",
-      trend: allLists.length > 0 ? 12 : 0,
+      trend: allLists.length,
+      trendLabel: "totales",
     },
     {
       label: "Compartidas",
@@ -172,16 +178,18 @@ export default function DashboardPage() {
       color: "purple",
       bg: "bg-gradient-to-br from-purple-500 to-pink-600 shadow-purple-500/25",
       text: "text-white",
-      trend: sharedLists.length > 0 ? 8 : 0,
+      trend: sharedRatio,
+      trendLabel: "% del total",
     },
     {
-      label: "Completadas",
-      value: completedTasks.length,
+      label: "Tasa de éxito",
+      value: `${completionRate}%`,
       icon: CheckCircle2,
       color: "green",
       bg: "bg-gradient-to-br from-green-500 to-emerald-600 shadow-green-500/25",
       text: "text-white",
-      trend: completedTasks.length > 0 ? 15 : 0,
+      trend: completionRate,
+      trendLabel: "completadas",
     },
     {
       label: "Pendientes",
@@ -190,7 +198,8 @@ export default function DashboardPage() {
       color: "yellow",
       bg: "bg-gradient-to-br from-yellow-500 to-orange-600 shadow-yellow-500/25",
       text: "text-white",
-      trend: pendingTasks.length > 0 ? -5 : 0,
+      trend: pendingTasks.length,
+      trendLabel: "por hacer",
     },
   ];
 
@@ -305,21 +314,19 @@ export default function DashboardPage() {
                     />
                   </div>
 
-                  {stat.trend !== undefined && (
+                  {stat.trend !== undefined && stat.trendLabel && (
                     <div
                       className={cn(
-                        "flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full",
-                        stat.trend > 0
+                        "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full",
+                        stat.color === "green"
                           ? "bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400"
-                          : "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400",
+                          : stat.color === "yellow"
+                            ? "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400"
+                            : "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400",
                       )}
                     >
-                      {stat.trend > 0 ? (
-                        <TrendingUp size={10} />
-                      ) : (
-                        <ArrowDown size={10} />
-                      )}
-                      {Math.abs(stat.trend)}%
+                      {stat.trend}
+                      <span className="opacity-75">{stat.trendLabel}</span>
                     </div>
                   )}
                 </div>

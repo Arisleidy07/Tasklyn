@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Activity,
   Target,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -370,6 +371,80 @@ export default function TeamsPage() {
       />
 
       <div className="p-3 sm:p-4 md:p-8 space-y-6 max-w-[1400px] mx-auto">
+        {/* Productivity Stats Panel */}
+        {teams.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-2 sm:grid-cols-4 gap-4"
+          >
+            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-4 text-white shadow-lg shadow-blue-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Users size={18} className="opacity-80" />
+                <span className="text-xs font-medium opacity-80">
+                  Miembros totales
+                </span>
+              </div>
+              <div className="text-2xl font-bold">
+                {teams.reduce((acc, t) => acc + (t.members?.length || 0), 0)}
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl p-4 text-white shadow-lg shadow-purple-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Target size={18} className="opacity-80" />
+                <span className="text-xs font-medium opacity-80">
+                  Tareas completadas
+                </span>
+              </div>
+              <div className="text-2xl font-bold">
+                {teams.reduce(
+                  (acc, t) => acc + (t.stats?.completedTasks || 0),
+                  0,
+                )}
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 text-white shadow-lg shadow-green-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Activity size={18} className="opacity-80" />
+                <span className="text-xs font-medium opacity-80">
+                  Productividad
+                </span>
+              </div>
+              <div className="text-2xl font-bold">
+                {Math.round(
+                  (teams.reduce((acc, t) => {
+                    const total = t.stats?.totalTasks || 0;
+                    return (
+                      acc +
+                      (total > 0 ? (t.stats?.completedTasks || 0) / total : 0)
+                    );
+                  }, 0) /
+                    (teams.length || 1)) *
+                    100,
+                )}
+                %
+              </div>
+            </div>
+            <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl p-4 text-white shadow-lg shadow-amber-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap size={18} className="opacity-80" />
+                <span className="text-xs font-medium opacity-80">
+                  Tareas pendientes
+                </span>
+              </div>
+              <div className="text-2xl font-bold">
+                {teams.reduce(
+                  (acc, t) =>
+                    acc +
+                    ((t.stats?.totalTasks || 0) -
+                      (t.stats?.completedTasks || 0)),
+                  0,
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Search and Filters */}
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="relative flex-1 max-w-md">
