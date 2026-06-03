@@ -15,8 +15,6 @@ import {
   ClipboardList,
   Sun,
   Moon,
-  Sparkles,
-  Layers,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -24,8 +22,6 @@ import { cn } from "@/lib/utils";
 const themes: { id: AppTheme; label: string; icon: React.ReactNode }[] = [
   { id: "light", label: "Claro", icon: <Sun size={18} /> },
   { id: "dark", label: "Oscuro", icon: <Moon size={18} /> },
-  { id: "glass", label: "Cristal", icon: <Sparkles size={18} /> },
-  { id: "dark-glass", label: "Cristal Oscuro", icon: <Layers size={18} /> },
 ];
 
 export default function SettingsPage() {
@@ -137,8 +133,6 @@ export default function SettingsPage() {
                     : "border-transparent hover:scale-[1.02]",
                   t.id === "light" && "theme-preview-light",
                   t.id === "dark" && "theme-preview-dark",
-                  t.id === "glass" && "theme-preview-glass",
-                  t.id === "dark-glass" && "theme-preview-dark-glass",
                 )}
               >
                 <div
