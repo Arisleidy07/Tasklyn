@@ -336,12 +336,11 @@ export default function DemoHub() {
                   className="absolute inset-0 -m-12 rounded-[2.5rem] border border-blue-500/15"
                 />
 
-                {/* Logo card — clean, no blue circle background */}
+                {/* Logo card — sin texto, sin círculo azul */}
                 <motion.div
                   whileHover={{ scale: 1.05 }}
-                  className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-slate-900 border border-slate-700/80 flex items-center justify-center shadow-[0_0_40px_rgba(37,99,235,0.3)]"
+                  className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-slate-900 border border-slate-700/60 flex items-center justify-center shadow-[0_0_32px_rgba(37,99,235,0.2)]"
                 >
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-blue-500/8 via-transparent to-transparent" />
                   <Logo size="md" showText={false} className="relative z-10" />
                 </motion.div>
               </div>
