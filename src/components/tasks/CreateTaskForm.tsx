@@ -6,7 +6,7 @@ import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import type { Task } from "@/types";
-import { Plus, X, Phone, MapPin } from "lucide-react";
+import { Plus, X, Phone, MapPin, Tag, Flag } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface CreateTaskFormProps {
@@ -23,6 +23,11 @@ export default function CreateTaskForm({
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>([""]);
+  const [priority, setPriority] = useState<
+    "low" | "medium" | "high" | "urgent" | undefined
+  >(undefined);
+  const [tagInput, setTagInput] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
 
   const { user } = useAuthStore();
   const { createTask } = useTaskStore();
@@ -55,13 +60,17 @@ export default function CreateTaskForm({
       createdBy: user.id,
       location: location.trim() || undefined,
       phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
-      // Options (reminder, due date, recurrence) are configured after creation
+      priority: priority || undefined,
+      tags: tags.length > 0 ? tags : undefined,
     });
 
     setTitle("");
     setDescription("");
     setLocation("");
     setPhoneNumbers([""]);
+    setPriority(undefined);
+    setTags([]);
+    setTagInput("");
     setIsOpen(false);
     onCreated?.();
   };
@@ -151,6 +160,62 @@ export default function CreateTaskForm({
             Agregar teléfono
           </button>
         </div>
+
+        {/* Priority + Tags row */}
+        <div className="flex items-center gap-3 pt-1 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <Flag size={13} className="text-gray-300" />
+            <select
+              value={priority || ""}
+              onChange={(e) =>
+                setPriority((e.target.value as any) || undefined)
+              }
+              className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400"
+            >
+              <option value="">Prioridad</option>
+              <option value="urgent">🔴 Crítica</option>
+              <option value="high">🟠 Alta</option>
+              <option value="medium">🟡 Media</option>
+              <option value="low">🟢 Baja</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-1.5 flex-1 min-w-[140px]">
+            <Tag size={13} className="text-gray-300 flex-shrink-0" />
+            <input
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === ",") {
+                  e.preventDefault();
+                  const t = tagInput.trim().replace(/^#/, "");
+                  if (t && !tags.includes(t)) setTags([...tags, t]);
+                  setTagInput("");
+                }
+              }}
+              placeholder="#etiqueta + Enter"
+              className="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400"
+            />
+          </div>
+        </div>
+        {tags.length > 0 && (
+          <div className="flex gap-1.5 flex-wrap">
+            {tags.map((t) => (
+              <span
+                key={t}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-medium"
+              >
+                #{t}
+                <button
+                  type="button"
+                  onClick={() => setTags(tags.filter((x) => x !== t))}
+                  className="hover:text-red-500"
+                >
+                  <X size={9} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">

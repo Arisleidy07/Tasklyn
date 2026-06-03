@@ -54,6 +54,11 @@ const roleConfig: Record<
     icon: <Crown size={11} />,
     pill: "bg-blue-100 text-blue-700",
   },
+  admin: {
+    label: "Admin",
+    icon: <Crown size={11} />,
+    pill: "bg-purple-100 text-purple-700",
+  },
   editor: {
     label: "Editor",
     icon: <Edit3 size={11} />,

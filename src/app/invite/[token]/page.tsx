@@ -124,8 +124,8 @@ export default function InvitePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="w-full border-b border-gray-200 bg-white">
+    <div className="min-h-screen bg-slate-950 flex flex-col">
+      <header className="w-full border-b border-slate-800 bg-slate-900/50">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
           <Logo size="md" showText={false} />
         </div>
@@ -137,24 +137,24 @@ export default function InvitePage() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
-          <div className="bg-white rounded-xl border border-gray-200 shadow-xl p-8">
+          <div className="bg-slate-900 rounded-xl border border-slate-800 shadow-xl p-8">
             {status === "loading" && (
               <div className="text-center py-8">
                 <Loader2
                   size={32}
                   className="animate-spin mx-auto text-blue-600 mb-4"
                 />
-                <p className="text-gray-500">Cargando invitación...</p>
+                <p className="text-slate-400">Cargando invitación...</p>
               </div>
             )}
 
             {status === "invalid" && (
               <div className="text-center py-8">
                 <XCircle size={48} className="mx-auto text-red-500 mb-4" />
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                <h2 className="text-xl font-bold text-slate-100 mb-2">
                   Invitación inválida
                 </h2>
-                <p className="text-gray-500 mb-6">
+                <p className="text-slate-400 mb-6">
                   Este enlace de invitación es inválido o ha sido eliminado.
                 </p>
                 <Button onClick={() => router.push("/")} className="w-full">
@@ -165,11 +165,14 @@ export default function InvitePage() {
 
             {status === "expired" && (
               <div className="text-center py-8">
-                <AlertCircle size={48} className="mx-auto text-gray-400 mb-4" />
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                <AlertCircle
+                  size={48}
+                  className="mx-auto text-slate-400 mb-4"
+                />
+                <h2 className="text-xl font-bold text-slate-100 mb-2">
                   Invitación expirada
                 </h2>
-                <p className="text-gray-500 mb-6">
+                <p className="text-slate-400 mb-6">
                   Esta invitación ha expirado. Pide al propietario de la lista
                   que cree una nueva.
                 </p>
@@ -182,13 +185,13 @@ export default function InvitePage() {
             {status === "not-logged-in" && (
               <div className="text-center py-8">
                 <Users size={48} className="mx-auto text-blue-500 mb-4" />
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                <h2 className="text-xl font-bold text-slate-100 mb-2">
                   ¡Has sido invitado!
                 </h2>
-                <p className="text-gray-500 mb-2">
+                <p className="text-slate-400 mb-2">
                   Unirse a &quot;{listName || "una lista compartida"}&quot;
                 </p>
-                <p className="text-sm text-gray-400 mb-6">
+                <p className="text-sm text-slate-500 mb-6">
                   Inicia sesión con Google para aceptar esta invitación.
                 </p>
                 {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
@@ -205,10 +208,10 @@ export default function InvitePage() {
             {status === "already-member" && (
               <div className="text-center py-8">
                 <CheckCircle size={48} className="mx-auto text-blue-500 mb-4" />
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                <h2 className="text-xl font-bold text-slate-100 mb-2">
                   Ya eres miembro
                 </h2>
-                <p className="text-gray-500 mb-6">
+                <p className="text-slate-400 mb-6">
                   Ya formas parte de esta lista.
                 </p>
                 <Button
@@ -225,10 +228,10 @@ export default function InvitePage() {
             {(status === "ready" || status === "accepting") && (
               <div className="text-center py-8">
                 <Users size={48} className="mx-auto text-blue-500 mb-4" />
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                <h2 className="text-xl font-bold text-slate-100 mb-2">
                   ¿Unirse a &quot;{listName}&quot;?
                 </h2>
-                <p className="text-gray-500 mb-6">
+                <p className="text-slate-400 mb-6">
                   Has sido invitado a colaborar en esta lista compartida.
                 </p>
                 {error && <p className="text-red-500 text-sm mb-4">{error}</p>}

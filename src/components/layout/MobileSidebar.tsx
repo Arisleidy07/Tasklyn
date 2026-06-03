@@ -15,6 +15,13 @@ import {
   User,
   Bell,
   X,
+  Users,
+  BarChart3,
+  Trophy,
+  Calendar,
+  History,
+  Activity,
+  UserSquare2,
 } from "lucide-react";
 import { useNotificationStore } from "@/stores/notificationStore";
 import Logo from "@/components/shared/Logo";
@@ -47,6 +54,13 @@ export default function MobileSidebar() {
 
   const mainNav = [
     { name: "Panel de control", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Actividad", href: "/activity", icon: Activity },
+    { name: "Equipos", href: "/teams", icon: Users },
+    { name: "Panel de Equipo", href: "/team-dashboard", icon: BarChart3 },
+    { name: "Ranking", href: "/ranking", icon: Trophy },
+    { name: "Clientes", href: "/clients", icon: UserSquare2 },
+    { name: "Calendario", href: "/calendar", icon: Calendar },
+    { name: "Historial", href: "/history", icon: History },
     {
       name: "Notificaciones",
       href: "/notifications",
@@ -259,7 +273,7 @@ export default function MobileSidebar() {
               </nav>
 
               {/* Tarjeta de actualización */}
-              {user.plan === "FREE" && (
+              {user.plan === "free" && (
                 <div className="px-3 pb-3 flex-shrink-0">
                   <div className="p-4 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />

@@ -32,6 +32,13 @@ import type {
   ListMember,
   MemberRole,
   Notification,
+  Team,
+  TeamMember,
+  TeamRole,
+  Goal,
+  Achievement,
+  TaskComment,
+  Client,
 } from "@/types";
 
 // ============================================
@@ -511,6 +518,278 @@ export const deleteInvitationsByList = async (
 };
 
 // ============================================
+// TEAMS
+// ============================================
+
+export const teamsCollection = collection(db, "teams");
+
+export const createTeam = async (
+  team: Omit<Team, "id" | "createdAt" | "updatedAt">,
+): Promise<string> => {
+  const teamRef = doc(teamsCollection);
+  const memberIds = team.members.map((m) => m.userId);
+  await setDoc(teamRef, {
+    ...team,
+    memberIds,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return teamRef.id;
+};
+
+export const getTeam = async (teamId: string): Promise<Team | null> => {
+  const teamRef = doc(db, "teams", teamId);
+  const snap = await getDoc(teamRef);
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  return {
+    ...data,
+    id: snap.id,
+    createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
+    members: data.members || [],
+  } as Team;
+};
+
+export const updateTeam = async (
+  teamId: string,
+  updates: Partial<Team>,
+): Promise<void> => {
+  const teamRef = doc(db, "teams", teamId);
+  const { id, createdAt, updatedAt, ...rest } = updates;
+  await updateDoc(teamRef, {
+    ...rest,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const addTeamMember = async (
+  teamId: string,
+  userId: string,
+  role: TeamRole,
+  invitedBy?: string,
+): Promise<void> => {
+  const teamRef = doc(db, "teams", teamId);
+  const teamSnap = await getDoc(teamRef);
+  if (!teamSnap.exists()) throw new Error("Team not found");
+
+  const data = teamSnap.data();
+  const members: TeamMember[] = data.members || [];
+
+  if (members.some((m) => m.userId === userId)) return; // Already member
+
+  members.push({
+    userId,
+    role,
+    joinedAt: new Date().toISOString(),
+    invitedBy,
+  });
+
+  const memberIds = members.map((m) => m.userId);
+
+  await updateDoc(teamRef, {
+    members,
+    memberIds,
+    "stats.totalMembers": members.length,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const removeTeamMember = async (
+  teamId: string,
+  userId: string,
+): Promise<void> => {
+  const teamRef = doc(db, "teams", teamId);
+  const teamSnap = await getDoc(teamRef);
+  if (!teamSnap.exists()) throw new Error("Team not found");
+
+  const data = teamSnap.data();
+  const members: TeamMember[] = (data.members || []).filter(
+    (m: TeamMember) => m.userId !== userId,
+  );
+
+  const memberIds = members.map((m) => m.userId);
+
+  await updateDoc(teamRef, {
+    members,
+    memberIds,
+    "stats.totalMembers": members.length,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const updateTeamMemberRole = async (
+  teamId: string,
+  userId: string,
+  role: TeamRole,
+): Promise<void> => {
+  const teamRef = doc(db, "teams", teamId);
+  const teamSnap = await getDoc(teamRef);
+  if (!teamSnap.exists()) throw new Error("Team not found");
+
+  const data = teamSnap.data();
+  const members: TeamMember[] = (data.members || []).map((m: TeamMember) =>
+    m.userId === userId ? { ...m, role } : m,
+  );
+
+  await updateDoc(teamRef, {
+    members,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const subscribeToUserTeams = (
+  userId: string,
+  callback: (teams: Team[]) => void,
+): Unsubscribe => {
+  const q = query(
+    teamsCollection,
+    where("memberIds", "array-contains", userId),
+  );
+
+  return onSnapshot(q, (snap) => {
+    const teams = snap.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: doc.id,
+        createdAt: toDate(data.createdAt),
+        updatedAt: toDate(data.updatedAt),
+        members: data.members || [],
+      } as Team;
+    });
+    callback(teams);
+  });
+};
+
+export const getUserTeams = async (userId: string): Promise<Team[]> => {
+  const q = query(
+    teamsCollection,
+    where("memberIds", "array-contains", userId),
+  );
+  const snap = await getDocsFromServer(q);
+
+  return snap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      ...data,
+      id: doc.id,
+      createdAt: toDate(data.createdAt),
+      updatedAt: toDate(data.updatedAt),
+      members: data.members || [],
+    } as Team;
+  });
+};
+
+// ============================================
+// GOALS
+// ============================================
+
+export const goalsCollection = collection(db, "goals");
+
+export const createGoal = async (
+  goal: Omit<Goal, "id" | "createdAt">,
+): Promise<string> => {
+  const goalRef = doc(goalsCollection);
+  await setDoc(goalRef, {
+    ...goal,
+    createdAt: serverTimestamp(),
+  });
+  return goalRef.id;
+};
+
+export const updateGoal = async (
+  goalId: string,
+  updates: Partial<Goal>,
+): Promise<void> => {
+  const goalRef = doc(db, "goals", goalId);
+  const { id, createdAt, ...rest } = updates;
+  await updateDoc(goalRef, rest);
+};
+
+export const subscribeToTeamGoals = (
+  teamId: string,
+  callback: (goals: Goal[]) => void,
+): Unsubscribe => {
+  const q = query(goalsCollection, where("teamId", "==", teamId));
+
+  return onSnapshot(q, (snap) => {
+    const goals = snap.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: doc.id,
+        createdAt: toDate(data.createdAt),
+      } as Goal;
+    });
+    callback(goals);
+  });
+};
+
+// ============================================
+// ACHIEVEMENTS
+// ============================================
+
+export const achievementsCollection = collection(db, "achievements");
+
+export const createAchievement = async (
+  achievement: Omit<Achievement, "id" | "createdAt">,
+): Promise<string> => {
+  const achievementRef = doc(achievementsCollection);
+  await setDoc(achievementRef, {
+    ...achievement,
+    createdAt: serverTimestamp(),
+  });
+  return achievementRef.id;
+};
+
+export const subscribeToUserAchievements = (
+  userId: string,
+  callback: (achievements: Achievement[]) => void,
+): Unsubscribe => {
+  const q = query(achievementsCollection, where("userId", "==", userId));
+
+  return onSnapshot(q, (snap) => {
+    const achievements = snap.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: doc.id,
+        createdAt: toDate(data.createdAt),
+      } as Achievement;
+    });
+    achievements.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    callback(achievements);
+  });
+};
+
+export const subscribeToTeamAchievements = (
+  teamId: string,
+  callback: (achievements: Achievement[]) => void,
+): Unsubscribe => {
+  const q = query(achievementsCollection, where("teamId", "==", teamId));
+
+  return onSnapshot(q, (snap) => {
+    const achievements = snap.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        ...data,
+        id: doc.id,
+        createdAt: toDate(data.createdAt),
+      } as Achievement;
+    });
+    achievements.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    callback(achievements);
+  });
+};
+
+// ============================================
 // BATCH OPERATIONS
 // ============================================
 
@@ -690,6 +969,105 @@ export const deleteNotification = async (
   notificationId: string,
 ): Promise<void> => {
   await deleteDoc(doc(db, "notifications", notificationId));
+};
+
+// ============================================
+// COMMENTS
+// ============================================
+
+export const addComment = async (
+  comment: Omit<TaskComment, "id" | "createdAt">,
+): Promise<string> => {
+  const ref = doc(collection(db, "comments"));
+  await setDoc(ref, {
+    ...stripUndefined(comment),
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
+export const updateComment = async (
+  commentId: string,
+  content: string,
+): Promise<void> => {
+  await updateDoc(doc(db, "comments", commentId), {
+    content,
+    editedAt: serverTimestamp(),
+  });
+};
+
+export const deleteComment = async (commentId: string): Promise<void> => {
+  await deleteDoc(doc(db, "comments", commentId));
+};
+
+export const subscribeToTaskComments = (
+  taskId: string,
+  callback: (comments: TaskComment[]) => void,
+): Unsubscribe => {
+  const q = query(collection(db, "comments"), where("taskId", "==", taskId));
+  return onSnapshot(q, (snap) => {
+    const comments = snap.docs.map((d) => ({
+      ...d.data(),
+      id: d.id,
+      createdAt: toDate(d.data().createdAt),
+      editedAt: d.data().editedAt ? toDate(d.data().editedAt) : undefined,
+    })) as TaskComment[];
+    comments.sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+    callback(comments);
+  });
+};
+
+// ============================================
+// CLIENTS
+// ============================================
+
+export const createClient = async (
+  client: Omit<Client, "id" | "createdAt" | "updatedAt">,
+): Promise<string> => {
+  const ref = doc(collection(db, "clients"));
+  await setDoc(ref, {
+    ...stripUndefined(client),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
+export const updateClient = async (
+  clientId: string,
+  updates: Partial<Omit<Client, "id" | "createdAt">>,
+): Promise<void> => {
+  await updateDoc(doc(db, "clients", clientId), {
+    ...stripUndefined(updates),
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const deleteClient = async (clientId: string): Promise<void> => {
+  await deleteDoc(doc(db, "clients", clientId));
+};
+
+export const subscribeToUserClients = (
+  userId: string,
+  callback: (clients: Client[]) => void,
+): Unsubscribe => {
+  const q = query(collection(db, "clients"), where("ownerId", "==", userId));
+  return onSnapshot(q, (snap) => {
+    const clients = snap.docs.map((d) => ({
+      ...d.data(),
+      id: d.id,
+      createdAt: toDate(d.data().createdAt),
+      updatedAt: toDate(d.data().updatedAt),
+    })) as Client[];
+    clients.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
+    callback(clients);
+  });
 };
 
 export const subscribeToNotifications = (

@@ -69,7 +69,7 @@ export default function SettingsPage() {
               <div
                 className={cn(
                   "w-12 h-12 rounded-xl flex items-center justify-center",
-                  user.plan === "PRO"
+                  user.plan === "pro" || user.plan === "business"
                     ? "bg-blue-100 dark:bg-blue-500/20"
                     : "bg-gray-100 dark:bg-slate-800",
                 )}
@@ -77,7 +77,7 @@ export default function SettingsPage() {
                 <Crown
                   size={24}
                   className={
-                    user.plan === "PRO"
+                    user.plan === "pro" || user.plan === "business"
                       ? "text-blue-600 dark:text-blue-400"
                       : "text-gray-500 dark:text-slate-500"
                   }
@@ -85,12 +85,19 @@ export default function SettingsPage() {
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
-                  Plan {user.plan === "PRO" ? "PRO" : "Gratis"}
+                  Plan{" "}
+                  {user.plan === "business"
+                    ? "BUSINESS"
+                    : user.plan === "pro"
+                      ? "PRO"
+                      : "Gratis"}
                 </h2>
                 <p className="text-sm text-gray-500 dark:text-slate-400">
-                  {user.plan === "PRO"
-                    ? "Acceso ilimitado a todas las funciones"
-                    : "5 listas máximo, 20 tareas por lista"}
+                  {user.plan === "business"
+                    ? "Plan empresarial con todas las funciones"
+                    : user.plan === "pro"
+                      ? "Acceso ilimitado a todas las funciones"
+                      : "3 listas máximo, 50 tareas por lista"}
                 </p>
               </div>
             </div>

@@ -35,7 +35,8 @@ const firebaseToUser = (firebaseUser: FirebaseUser): User => ({
   name: firebaseUser.displayName || "Anonymous",
   email: firebaseUser.email || "",
   photoURL: firebaseUser.photoURL || "",
-  plan: "FREE",
+  plan: "free",
+  subscriptionStatus: "active",
   createdAt: new Date().toISOString(),
 });
 

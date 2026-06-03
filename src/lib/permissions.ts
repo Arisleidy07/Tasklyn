@@ -1,4 +1,4 @@
-import { MemberRole, TaskList, PLAN_LIMITS, Plan } from "@/types";
+import { MemberRole, TaskList, PLAN_FEATURES, Plan } from "@/types";
 
 export function getUserRole(list: TaskList, userId: string): MemberRole | null {
   const member = list.members.find((m) => m.userId === userId);
@@ -59,17 +59,17 @@ export function canViewMembers(role: MemberRole | null): boolean {
 
 // Plan-based checks
 export function canCreateMoreLists(currentCount: number, plan: Plan): boolean {
-  return currentCount < PLAN_LIMITS[plan].maxLists;
+  return currentCount < PLAN_FEATURES[plan].maxLists;
 }
 
 export function canAddMoreTasks(currentCount: number, plan: Plan): boolean {
-  return currentCount < PLAN_LIMITS[plan].maxTasksPerList;
+  return currentCount < PLAN_FEATURES[plan].maxTasksPerList;
 }
 
 export function canAddMoreMembers(currentCount: number, plan: Plan): boolean {
-  return currentCount < PLAN_LIMITS[plan].maxMembersPerList;
+  return currentCount < PLAN_FEATURES[plan].maxCollaborators;
 }
 
 export function canAssignTasks(plan: Plan): boolean {
-  return PLAN_LIMITS[plan].canAssign;
+  return PLAN_FEATURES[plan].canAssign;
 }

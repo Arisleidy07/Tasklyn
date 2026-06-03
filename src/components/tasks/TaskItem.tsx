@@ -16,6 +16,7 @@ import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import TaskOptionsBar from "./TaskOptionsBar";
+import TaskComments from "./TaskComments";
 import { notifyMentionsFromText } from "@/lib/notify";
 import {
   CheckCircle2,
@@ -37,6 +38,8 @@ import {
   Bell,
   CalendarDays,
   Repeat,
+  Flag,
+  Tag,
 } from "lucide-react";
 import {
   cn,
@@ -237,6 +240,46 @@ export default function TaskItem({
                     __html: linkifyPhoneNumbers(task.title),
                   }}
                 />
+
+                {/* Priority badge */}
+                {task.priority && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1",
+                      task.priority === "urgent" &&
+                        "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400",
+                      task.priority === "high" &&
+                        "bg-orange-50 text-orange-600 dark:bg-orange-950/30 dark:text-orange-400",
+                      task.priority === "medium" &&
+                        "bg-yellow-50 text-yellow-600 dark:bg-yellow-950/30 dark:text-yellow-400",
+                      task.priority === "low" &&
+                        "bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400",
+                    )}
+                  >
+                    <Flag size={8} />
+                    {task.priority === "urgent"
+                      ? "Crítica"
+                      : task.priority === "high"
+                        ? "Alta"
+                        : task.priority === "medium"
+                          ? "Media"
+                          : "Baja"}
+                  </span>
+                )}
+
+                {/* Tags */}
+                {task.tags && task.tags.length > 0 && (
+                  <div className="flex gap-1 flex-wrap mt-1">
+                    {task.tags.map((t) => (
+                      <span
+                        key={t}
+                        className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400 font-medium"
+                      >
+                        <Tag size={7} />#{t}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {/* Option badges (always shown when set) */}
                 {(task.dueDate ||
@@ -450,6 +493,13 @@ export default function TaskItem({
                     </div>
                   ))}
                 </div>
+
+                {/* Comments */}
+                <TaskComments
+                  taskId={task.id}
+                  listId={task.listId}
+                  memberNames={memberNames}
+                />
               </div>
             </motion.div>
           )}

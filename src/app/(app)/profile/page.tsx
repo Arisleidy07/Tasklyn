@@ -271,9 +271,17 @@ export default function ProfilePage() {
                           <Edit2 size={14} />
                         </button>
                         <Badge
-                          variant={user.plan === "PRO" ? "blue" : "default"}
+                          variant={
+                            user.plan === "pro" || user.plan === "business"
+                              ? "blue"
+                              : "default"
+                          }
                         >
-                          {user.plan === "PRO" ? "PRO" : "Gratis"}
+                          {user.plan === "business"
+                            ? "BUSINESS"
+                            : user.plan === "pro"
+                              ? "PRO"
+                              : "Gratis"}
                         </Badge>
                       </div>
                       <div className="flex items-center gap-1.5 text-sm text-gray-500 mt-1">
@@ -286,7 +294,7 @@ export default function ProfilePage() {
                       </p>
                     </div>
                     <div className="flex flex-col gap-2 flex-shrink-0">
-                      {user.plan === "FREE" && (
+                      {user.plan === "free" && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -467,17 +475,27 @@ export default function ProfilePage() {
                         Plan actual
                       </p>
                       <p className="text-xs text-gray-500">
-                        {user.plan === "PRO"
-                          ? "Acceso ilimitado"
-                          : "5 listas · 20 tareas"}
+                        {user.plan === "business"
+                          ? "Plan empresarial completo"
+                          : user.plan === "pro"
+                            ? "Acceso ilimitado"
+                            : "3 listas · 50 tareas"}
                       </p>
                     </div>
                   </div>
                   <Badge
-                    variant={user.plan === "PRO" ? "blue" : "default"}
+                    variant={
+                      user.plan === "pro" || user.plan === "business"
+                        ? "blue"
+                        : "default"
+                    }
                     className="text-[10px]"
                   >
-                    {user.plan === "PRO" ? "PRO" : "Gratis"}
+                    {user.plan === "business"
+                      ? "BUSINESS"
+                      : user.plan === "pro"
+                        ? "PRO"
+                        : "Gratis"}
                   </Badge>
                 </div>
 

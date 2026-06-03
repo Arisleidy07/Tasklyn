@@ -18,6 +18,12 @@ import {
   FolderKanban,
   Calendar,
   Share2,
+  TrendingUp,
+  Activity,
+  BarChart3,
+  PieChart,
+  AlertCircle,
+  Repeat,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -137,15 +143,17 @@ export default function LandingPage() {
             </div>
 
             <h1 className="text-3.5xl sm:text-5xl lg:text-6xl font-semibold tracking-tight mb-5 leading-tight">
-              <span className="text-slate-50">Organiza tu trabajo</span>
+              <span className="text-slate-50">Control total del trabajo</span>
               <br className="hidden sm:block" />
-              <span className="text-blue-400">y colabora en tiempo real.</span>
+              <span className="text-blue-400">
+                y gestión colaborativa en tiempo real.
+              </span>
             </h1>
 
             <p className="text-base sm:text-lg text-slate-200 mb-7 max-w-xl">
-              Tasklyn centraliza listas, tareas, miembros y notificaciones en un
-              panel moderno, para que tu equipo se mantenga alineado desde
-              cualquier dispositivo.
+              Tasklyn centraliza operaciones, seguimiento de tareas,
+              recordatorios automáticos y calendario inteligente para empresas
+              que necesitan resultados.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-5">
@@ -161,7 +169,7 @@ export default function LandingPage() {
             </div>
           </motion.div>
 
-          {/* Hero demo — Representación real de app en funcionamiento */}
+          {/* Hero demo — Tasklyn real para empresas */}
           <motion.div
             initial={{ opacity: 0, y: 30, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -169,35 +177,163 @@ export default function LandingPage() {
             className="relative"
           >
             <div className="absolute -inset-6 rounded-[2.5rem] bg-blue-500/10 blur-3xl" />
-            <div className="relative overflow-hidden rounded-[2rem] border border-slate-700/70 bg-slate-900/80 p-4 sm:p-5 shadow-[0_30px_90px_rgba(15,23,42,0.95)] backdrop-blur-xl">
+            <div className="relative overflow-hidden rounded-[2rem] border border-slate-700/70 bg-slate-900/90 p-4 sm:p-5 shadow-[0_30px_90px_rgba(15,23,42,0.95)] backdrop-blur-xl">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(59,130,246,0.22),transparent_32%),radial-gradient(circle_at_80%_10%,rgba(99,102,241,0.16),transparent_30%)]" />
               <div className="absolute inset-0 opacity-[0.08] bg-[linear-gradient(rgba(148,163,184,0.25)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.25)_1px,transparent_1px)] bg-[size:36px_36px]" />
 
               <div className="relative">
-                {/* Header de app */}
+                {/* Header profesional con logo real */}
                 <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-blue-500 flex items-center justify-center">
-                      <ListTodo size={18} className="text-white" />
+                  <div className="flex items-center gap-3">
+                    <Logo size="sm" className="w-8 h-8" />
+                    <div>
+                      <span className="font-semibold text-slate-100">
+                        Tasklyn
+                      </span>
+                      <span className="ml-2 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-400">
+                        Pro
+                      </span>
                     </div>
-                    <span className="font-semibold text-slate-100">
-                      Tasklyn
-                    </span>
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                    <Clock size={12} />
-                    <span>
-                      {new Date().toLocaleTimeString("es-ES", {
-                        hour: "2-digit",
-                        minute: "2-digit",
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-800/50 text-[11px] text-slate-400">
+                      <Activity size={12} className="text-emerald-400" />
+                      <span>Sistema activo</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      {new Date().toLocaleDateString("es-ES", {
+                        day: "numeric",
+                        month: "short",
                       })}
-                    </span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Grid principal */}
+                {/* Stats Cards tipo SaaS mejoradas */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                  {[
+                    {
+                      label: "Listas activas",
+                      value: "12",
+                      trend: "+2",
+                      icon: FolderKanban,
+                      color: "blue",
+                      chart: [65, 78, 82, 75, 88, 92],
+                    },
+                    {
+                      label: "Tareas hoy",
+                      value: "24",
+                      trend: "85%",
+                      icon: ListTodo,
+                      color: "emerald",
+                      chart: [45, 52, 48, 65, 72, 85],
+                    },
+                    {
+                      label: "Completadas",
+                      value: "18",
+                      trend: "+5",
+                      icon: CheckCircle2,
+                      color: "cyan",
+                      chart: [70, 75, 68, 82, 78, 75],
+                    },
+                    {
+                      label: "Pendientes",
+                      value: "6",
+                      trend: "urgente",
+                      icon: AlertCircle,
+                      color: "amber",
+                      urgent: true,
+                      chart: [30, 25, 32, 18, 15, 25],
+                    },
+                  ].map((stat, i) => (
+                    <motion.div
+                      key={stat.label}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.2 + i * 0.1 }}
+                      className="rounded-xl border border-slate-700/50 bg-slate-950/70 p-2.5"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                            stat.color === "blue"
+                              ? "bg-blue-500/10 text-blue-400"
+                              : stat.color === "emerald"
+                                ? "bg-emerald-500/10 text-emerald-400"
+                                : stat.color === "cyan"
+                                  ? "bg-cyan-500/10 text-cyan-400"
+                                  : "bg-amber-500/10 text-amber-400"
+                          }`}
+                        >
+                          <stat.icon size={14} />
+                        </div>
+                        <span
+                          className={`text-[10px] ${stat.urgent ? "text-amber-400" : "text-emerald-400"} flex items-center gap-0.5`}
+                        >
+                          {stat.urgent ? (
+                            <AlertCircle size={10} />
+                          ) : (
+                            <TrendingUp size={10} />
+                          )}
+                          {stat.trend}
+                        </span>
+                      </div>
+                      <p className="text-xl font-bold text-slate-100">
+                        {stat.value}
+                      </p>
+                      <p className="text-[10px] text-slate-500">{stat.label}</p>
+
+                      {/* Mini sparkline chart */}
+                      <div className="mt-2 h-6 flex items-end gap-0.5">
+                        {stat.chart.map((value, index) => (
+                          <motion.div
+                            key={index}
+                            initial={{ height: 0 }}
+                            animate={{ height: `${(value / 100) * 100}%` }}
+                            transition={{
+                              delay: 0.5 + i * 0.1 + index * 0.05,
+                              duration: 0.6,
+                              ease: "easeOut",
+                            }}
+                            className={`flex-1 rounded-t-sm ${
+                              stat.color === "blue"
+                                ? "bg-blue-500/60"
+                                : stat.color === "emerald"
+                                  ? "bg-emerald-500/60"
+                                  : stat.color === "cyan"
+                                    ? "bg-cyan-500/60"
+                                    : "bg-amber-500/60"
+                            }`}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Barra de progreso mejorada */}
+                      <div className="mt-2 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{
+                            width: `${stat.chart[stat.chart.length - 1]}%`,
+                          }}
+                          transition={{ delay: 0.8 + i * 0.1, duration: 1 }}
+                          className={`h-full rounded-full ${
+                            stat.color === "blue"
+                              ? "bg-gradient-to-r from-blue-500 to-blue-400"
+                              : stat.color === "emerald"
+                                ? "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                                : stat.color === "cyan"
+                                  ? "bg-gradient-to-r from-cyan-500 to-cyan-400"
+                                  : "bg-gradient-to-r from-amber-500 to-amber-400"
+                          }`}
+                        />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Grid principal: Tareas + Calendario */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Panel Lista Principal */}
+                  {/* Panel Tareas Operativas Reales */}
                   <motion.div
                     whileHover={{ y: -2 }}
                     className="rounded-2xl border border-slate-700/60 bg-slate-950/70 p-3"
@@ -208,51 +344,76 @@ export default function LandingPage() {
                           <ListTodo size={14} className="text-blue-300" />
                         </div>
                         <span className="text-sm font-medium text-slate-200">
-                          Proyecto Alpha
+                          Operaciones Junio
                         </span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Users size={12} className="text-slate-500" />
-                        <span className="text-[10px] text-slate-400">4</span>
+                      <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                        <Users size={11} />
+                        <span>6 miembros</span>
                       </div>
                     </div>
 
-                    {/* Barra de progreso */}
+                    {/* Progreso de operaciones */}
                     <div className="mb-3">
                       <div className="flex justify-between text-[10px] mb-1">
-                        <span className="text-slate-400">Progreso</span>
-                        <span className="text-blue-300">75%</span>
+                        <span className="text-slate-400">Progreso semanal</span>
+                        <span className="text-emerald-400">78%</span>
                       </div>
                       <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
-                          animate={{ width: "75%" }}
+                          animate={{ width: "78%" }}
                           transition={{ duration: 1.2, ease: "easeOut" }}
-                          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-400"
+                          className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500"
                         />
                       </div>
                     </div>
 
-                    {/* Tareas */}
+                    {/* Tareas reales de empresa mejoradas */}
                     <div className="space-y-2">
                       {[
                         {
-                          label: "Revisar diseño UI",
+                          label: "Comprar suministros oficina",
                           done: true,
-                          time: "09:00",
+                          time: "09:30",
+                          assignee: "AR",
+                          priority: "medium",
+                          category: "Operaciones",
                         },
                         {
-                          label: "Aprobar presupuesto",
+                          label: "Reunión con cliente Corporativo",
                           done: true,
-                          time: "10:30",
+                          time: "11:00",
+                          assignee: "JL",
+                          priority: "high",
+                          category: "Ventas",
                         },
                         {
-                          label: "Reunión con cliente",
+                          label: "Inventario sucursal Norte",
                           done: false,
-                          time: "14:00",
+                          time: "14:30",
+                          assignee: "MR",
                           urgent: true,
+                          priority: "urgent",
+                          category: "Logística",
                         },
-                        { label: "Enviar reporte", done: false, time: "16:00" },
+                        {
+                          label: "Seguimiento proveedores",
+                          done: false,
+                          time: "16:00",
+                          assignee: "CP",
+                          priority: "medium",
+                          category: "Compras",
+                        },
+                        {
+                          label: "Facturas pendientes por pagar",
+                          done: false,
+                          time: "17:00",
+                          assignee: "AR",
+                          urgent: true,
+                          priority: "urgent",
+                          category: "Finanzas",
+                        },
                       ].map((task, index) => (
                         <motion.div
                           key={task.label}
@@ -262,14 +423,20 @@ export default function LandingPage() {
                           className={`flex items-center gap-2 p-2 rounded-xl ${
                             task.done
                               ? "bg-slate-900/40"
-                              : "bg-slate-800/60 border border-slate-700/50"
+                              : task.priority === "urgent"
+                                ? "bg-rose-500/5 border border-rose-500/20"
+                                : "bg-slate-800/60 border border-slate-700/50"
                           }`}
                         >
                           <div
                             className={`w-4 h-4 rounded-full flex items-center justify-center ${
                               task.done
-                                ? "bg-blue-500"
-                                : "border-2 border-slate-500"
+                                ? "bg-emerald-500"
+                                : task.priority === "urgent"
+                                  ? "bg-rose-500"
+                                  : task.priority === "high"
+                                    ? "bg-amber-500"
+                                    : "border-2 border-slate-500"
                             }`}
                           >
                             {task.done && (
@@ -278,21 +445,25 @@ export default function LandingPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p
-                              className={`text-[11px] truncate ${
-                                task.done
-                                  ? "text-slate-500 line-through"
-                                  : "text-slate-200"
-                              }`}
+                              className={`text-[11px] truncate ${task.done ? "text-slate-500 line-through" : "text-slate-200"}`}
                             >
                               {task.label}
                             </p>
+                            <span className="text-[8px] text-slate-600">
+                              {task.category}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-2">
                             {task.urgent && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
                             )}
                             <span
-                              className={`text-[9px] ${task.urgent ? "text-amber-300" : "text-slate-500"}`}
+                              className={`w-5 h-5 rounded-full bg-slate-700 flex items-center justify-center text-[8px] text-slate-300`}
+                            >
+                              {task.assignee}
+                            </span>
+                            <span
+                              className={`text-[9px] ${task.urgent ? "text-rose-400" : "text-slate-500"}`}
                             >
                               {task.time}
                             </span>
@@ -302,161 +473,206 @@ export default function LandingPage() {
                     </div>
                   </motion.div>
 
-                  {/* Panel Listas y Compartidas */}
-                  <div className="space-y-3">
-                    {/* Mis Listas */}
-                    <motion.div
-                      whileHover={{ y: -2 }}
-                      className="rounded-2xl border border-slate-700/60 bg-slate-950/70 p-3"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <FolderKanban size={14} className="text-slate-400" />
-                        <span className="text-[11px] font-medium text-slate-300">
-                          Mis Listas
+                  {/* Panel Calendario Inteligente */}
+                  <motion.div
+                    whileHover={{ y: -2 }}
+                    className="rounded-2xl border border-slate-700/60 bg-slate-950/70 p-3"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-xl bg-amber-500/15 border border-amber-400/20 flex items-center justify-center">
+                          <Calendar size={14} className="text-amber-300" />
+                        </div>
+                        <span className="text-sm font-medium text-slate-200">
+                          Calendario
                         </span>
                       </div>
-                      <div className="space-y-1.5">
-                        {[
-                          {
-                            name: "Personal",
-                            count: 8,
-                            color: "bg-emerald-500",
-                          },
-                          { name: "Trabajo", count: 12, color: "bg-blue-500" },
-                          { name: "Compras", count: 5, color: "bg-amber-500" },
-                        ].map((list, i) => (
-                          <div
-                            key={list.name}
-                            className="flex items-center justify-between p-1.5 rounded-lg bg-slate-900/50"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div
-                                className={`w-2 h-2 rounded-full ${list.color}`}
-                              />
-                              <span className="text-[11px] text-slate-300">
-                                {list.name}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-slate-500">
-                              {list.count}
-                            </span>
-                          </div>
-                        ))}
+                      <div className="flex gap-1">
+                        <span className="px-2 py-0.5 rounded bg-slate-800 text-[9px] text-slate-400">
+                          M
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-blue-500/20 text-[9px] text-blue-300">
+                          S
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-slate-800 text-[9px] text-slate-400">
+                          D
+                        </span>
                       </div>
-                    </motion.div>
+                    </div>
 
-                    {/* Compartidas */}
-                    <motion.div
-                      whileHover={{ y: -2 }}
-                      className="rounded-2xl border border-slate-700/60 bg-slate-950/70 p-3"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <Share2 size={14} className="text-slate-400" />
-                          <span className="text-[11px] font-medium text-slate-300">
-                            Compartidas
-                          </span>
-                        </div>
-                        <div className="flex -space-x-1.5">
-                          {[1, 2, 3].map((i) => (
-                            <div
-                              key={i}
-                              className="w-5 h-5 rounded-full bg-slate-700 border border-slate-600"
-                            />
-                          ))}
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        {[
-                          { name: "Marketing Q4", members: 5 },
-                          { name: "Desarrollo App", members: 8 },
-                        ].map((list) => (
-                          <div
-                            key={list.name}
-                            className="flex items-center justify-between p-1.5 rounded-lg bg-slate-900/50"
+                    {/* Vista semana */}
+                    <div className="grid grid-cols-7 gap-1 mb-3">
+                      {["L", "M", "X", "J", "V", "S", "D"].map((day, i) => (
+                        <div
+                          key={day}
+                          className={`text-center py-1.5 rounded-lg ${
+                            i === 2
+                              ? "bg-blue-500/20 border border-blue-500/30"
+                              : "bg-slate-900/50"
+                          }`}
+                        >
+                          <p
+                            className={`text-[10px] ${i === 2 ? "text-blue-300 font-medium" : "text-slate-500"}`}
                           >
-                            <span className="text-[11px] text-slate-300">
-                              {list.name}
-                            </span>
+                            {day}
+                          </p>
+                          <p
+                            className={`text-xs ${i === 2 ? "text-slate-100" : "text-slate-400"}`}
+                          >
+                            {10 + i}
+                          </p>
+                          {i === 2 && (
+                            <div className="mx-auto mt-1 w-1 h-1 rounded-full bg-blue-400" />
+                          )}
+                          {i === 4 && (
+                            <div className="mx-auto mt-1 w-1 h-1 rounded-full bg-amber-400" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Eventos del día mejorados */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] text-slate-500 mb-2">
+                        Miércoles, 12 de junio
+                      </p>
+                      {[
+                        {
+                          time: "09:30",
+                          title: "Comprar suministros",
+                          type: "task",
+                          completed: true,
+                          list: "Operaciones",
+                        },
+                        {
+                          time: "11:00",
+                          title: "Reunión clientes",
+                          type: "meeting",
+                          list: "Ventas",
+                          attendees: 5,
+                        },
+                        {
+                          time: "14:30",
+                          title: "Inventario almacén",
+                          type: "urgent",
+                          repeat: true,
+                          list: "Logística",
+                        },
+                        {
+                          time: "17:00",
+                          title: "Facturas pendientes",
+                          type: "deadline",
+                          list: "Finanzas",
+                          amount: "$12,450",
+                        },
+                      ].map((event, i) => (
+                        <div
+                          key={i}
+                          className={`flex items-center gap-2 p-2 rounded-lg ${
+                            event.type === "urgent"
+                              ? "bg-rose-500/10 border border-rose-500/20"
+                              : event.type === "deadline"
+                                ? "bg-amber-500/10 border border-amber-500/20"
+                                : event.type === "meeting"
+                                  ? "bg-blue-500/10 border border-blue-500/20"
+                                  : "bg-slate-900/50"
+                          }`}
+                        >
+                          <div
+                            className={`w-1 h-8 rounded-full ${
+                              event.type === "urgent"
+                                ? "bg-rose-400"
+                                : event.type === "deadline"
+                                  ? "bg-amber-400"
+                                  : event.type === "meeting"
+                                    ? "bg-blue-400"
+                                    : "bg-emerald-400"
+                            }`}
+                          />
+                          <div className="flex-1">
                             <div className="flex items-center gap-1">
-                              <Users size={10} className="text-slate-500" />
-                              <span className="text-[10px] text-slate-500">
-                                {list.members}
+                              <span className="text-[10px] text-slate-400">
+                                {event.time}
                               </span>
+                              {event.repeat && (
+                                <Repeat size={10} className="text-slate-500" />
+                              )}
+                              {event.completed && (
+                                <CheckCircle2
+                                  size={10}
+                                  className="text-emerald-400"
+                                />
+                              )}
+                              {event.attendees && (
+                                <Users size={10} className="text-blue-400" />
+                              )}
                             </div>
+                            <p
+                              className={`text-[11px] ${event.completed ? "text-slate-500 line-through" : "text-slate-200"}`}
+                            >
+                              {event.title}
+                            </p>
+                            <span className="text-[8px] text-slate-600">
+                              {event.list}
+                              {event.amount && ` • ${event.amount}`}
+                              {event.attendees &&
+                                ` • ${event.attendees} personas`}
+                            </span>
                           </div>
-                        ))}
-                      </div>
-                    </motion.div>
-
-                    {/* Recordatorios Próximos */}
-                    <motion.div
-                      whileHover={{ y: -2 }}
-                      className="rounded-2xl border border-slate-700/60 bg-slate-950/70 p-3"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <Bell size={14} className="text-amber-400" />
-                        <span className="text-[11px] font-medium text-slate-300">
-                          Próximos
-                        </span>
-                      </div>
-                      <div className="space-y-2">
-                        {[
-                          {
-                            label: "Vence: Reporte mensual",
-                            time: "Hoy 17:00",
-                            urgent: true,
-                          },
-                          {
-                            label: "Reunión equipo",
-                            time: "Mañana 10:00",
-                            urgent: false,
-                          },
-                        ].map((reminder, i) => (
-                          <div key={i} className="flex items-start gap-2">
-                            <div
-                              className={`w-1 h-1 rounded-full mt-1.5 ${reminder.urgent ? "bg-red-400" : "bg-blue-400"}`}
-                            />
-                            <div className="flex-1">
-                              <p className="text-[10px] text-slate-300">
-                                {reminder.label}
-                              </p>
-                              <p
-                                className={`text-[9px] ${reminder.urgent ? "text-red-400" : "text-slate-500"}`}
-                              >
-                                {reminder.time}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
                 </div>
 
-                {/* Barra inferior con estados */}
-                <div className="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                      <span className="text-[10px] text-slate-400">6 done</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full bg-blue-500" />
-                      <span className="text-[10px] text-slate-400">
-                        4 pending
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                      <span className="text-[10px] text-slate-400">
-                        2 urgent
-                      </span>
-                    </div>
+                {/* Actividad reciente */}
+                <div className="mt-3 pt-3 border-t border-slate-800">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-medium text-slate-400">
+                      Actividad reciente
+                    </span>
+                    <span className="text-[9px] text-slate-500">
+                      Hace 2 minutos
+                    </span>
                   </div>
-                  <div className="flex items-center gap-1 text-[10px] text-slate-500">
-                    <Calendar size={12} />
-                    <span>Actualizado ahora</span>
+                  <div className="flex items-center gap-3">
+                    {[
+                      {
+                        action: "Tarea completada",
+                        item: "Comprar suministros",
+                        user: "AR",
+                        time: "2m",
+                      },
+                      {
+                        action: "Nueva tarea",
+                        item: "Facturas pendientes",
+                        user: "JL",
+                        time: "15m",
+                      },
+                      {
+                        action: "Comentario",
+                        item: "Inventario",
+                        user: "MR",
+                        time: "1h",
+                      },
+                    ].map((activity, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg bg-slate-900/50"
+                      >
+                        <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center text-[8px] text-blue-300">
+                          {activity.user}
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-slate-300">
+                            {activity.item}
+                          </p>
+                          <p className="text-[9px] text-slate-500">
+                            {activity.action} • {activity.time}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -589,15 +805,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Demo 2 — Hub central Tasklyn con identidad real y conexiones tecnológicas */}
-      <section className="py-16 sm:py-20 bg-slate-950 border-t border-slate-800/70">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-semibold text-slate-50 mb-2">
-              Todo conectado en un flujo visual
+      {/* Demo 2 — Hub Premium Tasklyn con conexiones fibra óptica */}
+      <section className="py-20 sm:py-24 bg-slate-950 border-t border-slate-800/70 overflow-hidden">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-2xl sm:text-4xl font-bold text-slate-50 mb-3 tracking-tight">
+              Seguimiento de tareas en tiempo real
             </h2>
-            <p className="text-sm text-slate-400 max-w-md mx-auto">
-              Las funciones de Tasklyn se interconectan para mantener a tu equipo sincronizado sin fricción.
+            <p className="text-sm sm:text-base text-slate-400 max-w-lg mx-auto">
+              Tasklyn conecta todas las operaciones de tu empresa con gestión
+              colaborativa, calendario inteligente y recordatorios automáticos.
             </p>
           </div>
 
@@ -605,54 +822,233 @@ export default function LandingPage() {
           <div className="relative">
             {/* Líneas de conexión con flujo de energía */}
             <div className="absolute inset-0 flex items-center justify-center">
-              <svg className="w-full h-full absolute" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid meet">
+              <svg
+                className="w-full h-full absolute"
+                viewBox="0 0 800 400"
+                preserveAspectRatio="xMidYMid meet"
+              >
                 <defs>
-                  {/* Gradiente de flujo azul */}
-                  <linearGradient id="flowBlue" x1="0%" y1="0%" x2="100%" y2="0%">
+                  {/* Gradiente de flujo azul con brillo */}
+                  <linearGradient
+                    id="flowBlue"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="0%"
+                  >
                     <stop offset="0%" stopColor="rgba(59,130,246,0)">
-                      <animate attributeName="offset" values="-0.5;1.5" dur="3s" repeatCount="indefinite" />
+                      <animate
+                        attributeName="offset"
+                        values="-0.5;1.5"
+                        dur="3s"
+                        repeatCount="indefinite"
+                      />
                     </stop>
-                    <stop offset="50%" stopColor="rgba(59,130,246,0.8)">
-                      <animate attributeName="offset" values="-0.5;1.5" dur="3s" repeatCount="indefinite" />
+                    <stop offset="30%" stopColor="rgba(59,130,246,0.3)">
+                      <animate
+                        attributeName="offset"
+                        values="-0.5;1.5"
+                        dur="3s"
+                        repeatCount="indefinite"
+                      />
+                    </stop>
+                    <stop offset="50%" stopColor="rgba(59,130,246,1)">
+                      <animate
+                        attributeName="offset"
+                        values="-0.5;1.5"
+                        dur="3s"
+                        repeatCount="indefinite"
+                      />
+                    </stop>
+                    <stop offset="70%" stopColor="rgba(59,130,246,0.3)">
+                      <animate
+                        attributeName="offset"
+                        values="-0.5;1.5"
+                        dur="3s"
+                        repeatCount="indefinite"
+                      />
                     </stop>
                     <stop offset="100%" stopColor="rgba(59,130,246,0)">
-                      <animate attributeName="offset" values="-0.5;1.5" dur="3s" repeatCount="indefinite" />
+                      <animate
+                        attributeName="offset"
+                        values="-0.5;1.5"
+                        dur="3s"
+                        repeatCount="indefinite"
+                      />
                     </stop>
                   </linearGradient>
-                  
-                  {/* Gradiente de flujo cian */}
-                  <linearGradient id="flowCyan" x1="0%" y1="0%" x2="100%" y2="0%">
+
+                  {/* Gradiente de flujo cian con brillo */}
+                  <linearGradient
+                    id="flowCyan"
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="0%"
+                  >
                     <stop offset="0%" stopColor="rgba(6,182,212,0)">
-                      <animate attributeName="offset" values="-0.5;1.5" dur="2.5s" repeatCount="indefinite" />
+                      <animate
+                        attributeName="offset"
+                        values="-0.5;1.5"
+                        dur="2.5s"
+                        repeatCount="indefinite"
+                      />
                     </stop>
-                    <stop offset="50%" stopColor="rgba(6,182,212,0.7)">
-                      <animate attributeName="offset" values="-0.5;1.5" dur="2.5s" repeatCount="indefinite" />
+                    <stop offset="30%" stopColor="rgba(6,182,212,0.3)">
+                      <animate
+                        attributeName="offset"
+                        values="-0.5;1.5"
+                        dur="2.5s"
+                        repeatCount="indefinite"
+                      />
+                    </stop>
+                    <stop offset="50%" stopColor="rgba(6,182,212,1)">
+                      <animate
+                        attributeName="offset"
+                        values="-0.5;1.5"
+                        dur="2.5s"
+                        repeatCount="indefinite"
+                      />
+                    </stop>
+                    <stop offset="70%" stopColor="rgba(6,182,212,0.3)">
+                      <animate
+                        attributeName="offset"
+                        values="-0.5;1.5"
+                        dur="2.5s"
+                        repeatCount="indefinite"
+                      />
                     </stop>
                     <stop offset="100%" stopColor="rgba(6,182,212,0)">
-                      <animate attributeName="offset" values="-0.5;1.5" dur="2.5s" repeatCount="indefinite" />
+                      <animate
+                        attributeName="offset"
+                        values="-0.5;1.5"
+                        dur="2.5s"
+                        repeatCount="indefinite"
+                      />
                     </stop>
                   </linearGradient>
+
+                  {/* Filtro de brillo para efecto fibra óptica */}
+                  <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                    <feMerge>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
                 </defs>
-                
-                {/* Líneas horizontales con flujo */}
-                <line x1="100" y1="200" x2="350" y2="200" stroke="url(#flowBlue)" strokeWidth="2" />
-                <line x1="450" y1="200" x2="700" y2="200" stroke="url(#flowBlue)" strokeWidth="2" />
-                
-                {/* Líneas verticales con flujo */}
-                <line x1="400" y1="50" x2="400" y2="150" stroke="url(#flowCyan)" strokeWidth="2" />
-                <line x1="400" y1="250" x2="400" y2="350" stroke="url(#flowCyan)" strokeWidth="2" />
-                
+
+                {/* Líneas horizontales con flujo de fibra óptica */}
+                <line
+                  x1="100"
+                  y1="200"
+                  x2="350"
+                  y2="200"
+                  stroke="url(#flowBlue)"
+                  strokeWidth="3"
+                  filter="url(#glow)"
+                  opacity="0.9"
+                />
+                <line
+                  x1="450"
+                  y1="200"
+                  x2="700"
+                  y2="200"
+                  stroke="url(#flowBlue)"
+                  strokeWidth="3"
+                  filter="url(#glow)"
+                  opacity="0.9"
+                />
+
+                {/* Líneas verticales con flujo de fibra óptica */}
+                <line
+                  x1="400"
+                  y1="50"
+                  x2="400"
+                  y2="150"
+                  stroke="url(#flowCyan)"
+                  strokeWidth="3"
+                  filter="url(#glow)"
+                  opacity="0.9"
+                />
+                <line
+                  x1="400"
+                  y1="250"
+                  x2="400"
+                  y2="350"
+                  stroke="url(#flowCyan)"
+                  strokeWidth="3"
+                  filter="url(#glow)"
+                  opacity="0.9"
+                />
+
+                {/* Partículas de energía moviéndose por las líneas */}
+                <circle r="2" fill="rgba(59,130,246,1)">
+                  <animateMotion dur="3s" repeatCount="indefinite">
+                    <mpath href="#path1" />
+                  </animateMotion>
+                  <animate
+                    attributeName="opacity"
+                    values="0;1;1;0"
+                    dur="3s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+                <circle r="2" fill="rgba(6,182,212,1)">
+                  <animateMotion dur="2.5s" repeatCount="indefinite">
+                    <mpath href="#path2" />
+                  </animateMotion>
+                  <animate
+                    attributeName="opacity"
+                    values="0;1;1;0"
+                    dur="2.5s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+
+                {/* Rutas para las partículas */}
+                <path id="path1" d="M 100 200 L 350 200" fill="none" />
+                <path id="path2" d="M 400 50 L 400 150" fill="none" />
+
                 {/* Líneas diagonales sutiles */}
-                <line x1="120" y1="80" x2="350" y2="170" stroke="rgba(148,163,184,0.15)" strokeWidth="1" />
-                <line x1="680" y1="80" x2="450" y2="170" stroke="rgba(148,163,184,0.15)" strokeWidth="1" />
-                <line x1="120" y1="320" x2="350" y2="230" stroke="rgba(148,163,184,0.15)" strokeWidth="1" />
-                <line x1="680" y1="320" x2="450" y2="230" stroke="rgba(148,163,184,0.15)" strokeWidth="1" />
+                <line
+                  x1="120"
+                  y1="80"
+                  x2="350"
+                  y2="170"
+                  stroke="rgba(148,163,184,0.15)"
+                  strokeWidth="1"
+                />
+                <line
+                  x1="680"
+                  y1="80"
+                  x2="450"
+                  y2="170"
+                  stroke="rgba(148,163,184,0.15)"
+                  strokeWidth="1"
+                />
+                <line
+                  x1="120"
+                  y1="320"
+                  x2="350"
+                  y2="230"
+                  stroke="rgba(148,163,184,0.15)"
+                  strokeWidth="1"
+                />
+                <line
+                  x1="680"
+                  y1="320"
+                  x2="450"
+                  y2="230"
+                  stroke="rgba(148,163,184,0.15)"
+                  strokeWidth="1"
+                />
               </svg>
             </div>
 
             {/* Nodos de funciones distribuidos */}
             <div className="relative h-[420px] sm:h-[380px]">
-              {/* Nodo superior — Equipo */}
+              {/* Nodo superior — Equipo con efectos */}
               <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -661,10 +1057,17 @@ export default function LandingPage() {
                 className="absolute left-1/2 -translate-x-1/2 top-0"
               >
                 <div className="flex flex-col items-center">
-                  <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg shadow-slate-900/50">
-                    <Users size={24} className="text-blue-400" />
-                  </div>
-                  <span className="mt-2 text-xs font-medium text-slate-400">Equipo</span>
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg shadow-slate-900/50 relative overflow-hidden"
+                  >
+                    {/* Efecto de brillo en hover */}
+                    <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/10 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
+                    <Users size={24} className="text-blue-400 relative z-10" />
+                  </motion.div>
+                  <span className="mt-2 text-xs font-medium text-slate-400">
+                    Equipo
+                  </span>
                 </div>
               </motion.div>
 
@@ -680,7 +1083,9 @@ export default function LandingPage() {
                   <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg shadow-slate-900/50">
                     <FolderKanban size={24} className="text-emerald-400" />
                   </div>
-                  <span className="mt-2 text-xs font-medium text-slate-400">Listas</span>
+                  <span className="mt-2 text-xs font-medium text-slate-400">
+                    Listas
+                  </span>
                 </div>
               </motion.div>
 
@@ -696,7 +1101,9 @@ export default function LandingPage() {
                   <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg shadow-slate-900/50">
                     <CheckCircle2 size={24} className="text-cyan-400" />
                   </div>
-                  <span className="mt-2 text-xs font-medium text-slate-400">Tareas</span>
+                  <span className="mt-2 text-xs font-medium text-slate-400">
+                    Tareas
+                  </span>
                 </div>
               </motion.div>
 
@@ -712,7 +1119,9 @@ export default function LandingPage() {
                   <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg shadow-slate-900/50">
                     <Bell size={24} className="text-amber-400" />
                   </div>
-                  <span className="mt-2 text-xs font-medium text-slate-400">Recordatorios</span>
+                  <span className="mt-2 text-xs font-medium text-slate-400">
+                    Recordatorios
+                  </span>
                 </div>
               </motion.div>
 
@@ -728,11 +1137,13 @@ export default function LandingPage() {
                   <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center shadow-lg shadow-slate-900/50">
                     <Clock size={24} className="text-rose-400" />
                   </div>
-                  <span className="mt-2 text-xs font-medium text-slate-400">Vencimientos</span>
+                  <span className="mt-2 text-xs font-medium text-slate-400">
+                    Vencimientos
+                  </span>
                 </div>
               </motion.div>
 
-              {/* Centro — Logo Tasklyn con identidad real */}
+              {/* Centro — Logo Tasklyn con identidad real y efectos */}
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 whileInView={{ scale: 1, opacity: 1 }}
@@ -741,41 +1152,92 @@ export default function LandingPage() {
                 className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10"
               >
                 <div className="relative">
-                  {/* Anillos pulsantes */}
+                  {/* Anillos pulsantes mejorados */}
                   <motion.div
-                    animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                    className="absolute inset-0 -m-6 rounded-[2rem] border border-blue-400/20"
+                    animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.6, 0.4] }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                    className="absolute inset-0 -m-6 rounded-[2rem] border border-blue-400/30"
                   />
                   <motion.div
-                    animate={{ scale: [1, 1.25, 1], opacity: [0.2, 0.3, 0.2] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                    className="absolute inset-0 -m-10 rounded-[2.5rem] border border-blue-400/10"
+                    animate={{ scale: [1, 1.25, 1], opacity: [0.3, 0.4, 0.3] }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: 0.5,
+                    }}
+                    className="absolute inset-0 -m-10 rounded-[2.5rem] border border-blue-400/20"
                   />
-                  
-                  {/* Logo principal */}
-                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-[1.5rem] bg-gradient-to-br from-blue-500 to-blue-600 flex flex-col items-center justify-center shadow-[0_0_60px_rgba(37,99,235,0.4)] border border-blue-400/30">
-                    <ListTodo size={36} className="text-white" strokeWidth={2} />
+                  <motion.div
+                    animate={{ scale: [1, 1.35, 1], opacity: [0.2, 0.3, 0.2] }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: 1,
+                    }}
+                    className="absolute inset-0 -m-14 rounded-[3rem] border border-blue-400/10"
+                  />
+
+                  {/* Logo principal con brillo */}
+                  <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-[1.5rem] bg-gradient-to-br from-blue-500 to-blue-600 flex flex-col items-center justify-center shadow-[0_0_80px_rgba(37,99,235,0.6)] border border-blue-400/40 backdrop-blur-sm">
+                    {/* Efecto de brillo interno */}
+                    <div className="absolute inset-0 rounded-[1.5rem] bg-gradient-to-tr from-white/10 to-transparent" />
+                    <ListTodo
+                      size={36}
+                      className="text-white relative z-10"
+                      strokeWidth={2}
+                    />
                   </div>
-                  
-                  {/* Nombre debajo */}
+
+                  {/* Nombre debajo con efecto */}
                   <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-center whitespace-nowrap">
-                    <p className="text-base font-bold text-slate-100">Tasklyn</p>
+                    <p className="text-base font-bold text-slate-100 drop-shadow-lg">
+                      Tasklyn
+                    </p>
                   </div>
                 </div>
               </motion.div>
             </div>
           </div>
 
-          {/* Leyenda de funciones */}
+          {/* Leyenda de funciones con beneficios reales */}
           <div className="mt-12 grid grid-cols-2 sm:grid-cols-3 gap-4">
             {[
-              { icon: FolderKanban, label: "Organiza por listas", color: "text-emerald-400" },
-              { icon: CheckCircle2, label: "Gestiona tareas", color: "text-cyan-400" },
-              { icon: Users, label: "Colabora en equipo", color: "text-blue-400" },
-              { icon: Bell, label: "Recibe recordatorios", color: "text-amber-400" },
-              { icon: Clock, label: "Controla vencimientos", color: "text-rose-400" },
-              { icon: Share2, label: "Comparte listas", color: "text-slate-400" },
+              {
+                icon: FolderKanban,
+                label: "Gestión por listas",
+                color: "text-emerald-400",
+              },
+              {
+                icon: CheckCircle2,
+                label: "Control de tareas",
+                color: "text-cyan-400",
+              },
+              {
+                icon: Users,
+                label: "Colaboración en equipo",
+                color: "text-blue-400",
+              },
+              {
+                icon: Bell,
+                label: "Recordatorios automáticos",
+                color: "text-amber-400",
+              },
+              {
+                icon: Clock,
+                label: "Calendario inteligente",
+                color: "text-rose-400",
+              },
+              {
+                icon: Share2,
+                label: "Historial de actividad",
+                color: "text-slate-400",
+              },
             ].map((item, i) => (
               <motion.div
                 key={item.label}
@@ -801,51 +1263,51 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
           <div>
             <h2 className="text-2xl sm:text-3xl font-semibold text-slate-50 mb-4">
-              Ahorra tiempo y gana visibilidad real
+              Optimización operativa para empresas
             </h2>
             <p className="text-sm sm:text-base text-slate-400 mb-6">
-              Tasklyn está diseñado para operación diaria: empresas de
-              servicios, equipos de campo, agencias y cualquier negocio que viva
-              de cumplir tareas a tiempo.
+              Tasklyn está diseñado para operación diaria intensiva: servicios,
+              logística, equipos de campo y cualquier negocio que viva de
+              cumplir tareas a tiempo con trazabilidad completa.
             </p>
             <div className="space-y-4 text-sm text-slate-300">
               <div className="flex gap-3">
                 <span className="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Ahorro de tiempo</p>
+                  <p className="font-medium">Reducción 40% en seguimiento</p>
                   <p className="text-slate-400 text-sm">
-                    Centraliza la comunicación y reduce llamadas y mensajes
-                    dispersos. Cada tarea tiene dueño, vencimiento y contexto.
+                    Centraliza comunicación y elimina llamadas dispersas. Cada
+                    tarea tiene dueño, contexto y trazabilidad completa.
                   </p>
                 </div>
               </div>
               <div className="flex gap-3">
                 <span className="mt-1 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Trabajo colaborativo</p>
+                  <p className="font-medium">Sincronización en tiempo real</p>
                   <p className="text-slate-400 text-sm">
-                    Equipos completos conectados al mismo tablero, con roles y
-                    permisos claros para evitar errores.
+                    Equipos conectados al mismo panel con roles claros y
+                    notificaciones instantáneas para evitar errores.
                   </p>
                 </div>
               </div>
               <div className="flex gap-3">
                 <span className="mt-1 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Organización empresarial</p>
+                  <p className="font-medium">Gestión multi-área</p>
                   <p className="text-slate-400 text-sm">
-                    Gestiona múltiples listas por cliente, proyecto o área y
-                    mantén trazabilidad con historial de actividad.
+                    Organiza por cliente, proyecto o departamento con historial
+                    completo y métricas de rendimiento.
                   </p>
                 </div>
               </div>
               <div className="flex gap-3">
                 <span className="mt-1 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Control de tareas</p>
+                  <p className="font-medium">Automatización inteligente</p>
                   <p className="text-slate-400 text-sm">
-                    Vencimientos, archivados visibles y métricas de completado
-                    para que nada se pierda.
+                    Recordatorios automáticos, calendario integrado y alertas de
+                    vencimiento para garantizar cumplimiento.
                   </p>
                 </div>
               </div>

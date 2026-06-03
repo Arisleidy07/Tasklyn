@@ -40,6 +40,8 @@ interface TaskState {
     dueTime?: string | null;
     reminders?: TaskReminder[];
     recurrence?: RecurrenceConfig | null;
+    priority?: "low" | "medium" | "high" | "urgent";
+    tags?: string[];
   }) => Promise<Task>;
   updateTask: (
     id: string,
@@ -55,6 +57,8 @@ interface TaskState {
         | "dueTime"
         | "reminders"
         | "recurrence"
+        | "priority"
+        | "tags"
       >
     >,
     performedBy: string,
@@ -179,7 +183,7 @@ function calculateNextDueDate(
 }
 
 function createHistoryEntry(
-  action: string,
+  action: TaskHistoryEntry["action"],
   performedBy: string,
   details?: string,
 ): TaskHistoryEntry {

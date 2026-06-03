@@ -15,6 +15,23 @@ service cloud.firestore {
       return getAuthUid() in resource.data.memberIds;
     }
 
+    // Helper to check if user is a team member
+    function isTeamMember(teamId) {
+      return getAuthUid() in get(/databases/$(database)/documents/teams/$(teamId)).data.memberIds;
+    }
+
+    // Helper to check if user is team owner
+    function isTeamOwner(teamId) {
+      return get(/databases/$(database)/documents/teams/$(teamId)).data.owner == getAuthUid();
+    }
+
+    // Helper to check if user is team admin or owner
+    function isTeamAdmin(teamId) {
+      var team = get(/databases/$(database)/documents/teams/$(teamId)).data;
+      var member = team.members[getAuthUid()];
+      return member && (member.role == "owner" || member.role == "admin");
+    }
+
     // Helper to check if user is the owner
     function isListOwner() {
       return resource.data.owner == getAuthUid();
@@ -60,9 +77,63 @@ service cloud.firestore {
       allow update, delete: if isAuth();
     }
 
-    match /notifications/{notificationId} {
-      allow read, update, delete: if isAuth() && resource.data.userId == getAuthUid();
+    match /teams/{teamId} {
+      allow read: if isAuth() && isTeamMember(teamId);
       allow create: if isAuth();
+      allow update: if isAuth() && isTeamAdmin(teamId);
+      allow delete: if isAuth() && isTeamOwner(teamId);
+    }
+
+    match /goals/{goalId} {
+      allow read, create, update, delete: if isAuth();
+    }
+
+    match /achievements/{achievementId} {
+      allow read, create, update, delete: if isAuth();
+    }
+
+    // Subscriptions - only user can read their own, server can write
+    match /subscriptions/{subscriptionId} {
+      allow read: if isAuth() && (
+        resource.data.userId == getAuthUid() ||
+        request.auth.token.admin == true
+      );
+      allow create, update: if request.auth.token.admin == true ||
+        (isAuth() && resource.data.userId == getAuthUid());
+      allow delete: if false;
+    }
+
+    // Payments - read-only for users, server writes
+    match /payments/{paymentId} {
+      allow read: if isAuth() && resource.data.userId == getAuthUid();
+      allow create, update, delete: if request.auth.token.admin == true;
+    }
+
+    // Notifications - users can read their own, system can create
+    match /notifications/{notificationId} {
+      allow read: if isAuth() && resource.data.userId == getAuthUid();
+      allow create: if request.auth.token.admin == true;
+      allow update: if isAuth() && resource.data.userId == getAuthUid();
+      allow delete: if isAuth() && resource.data.userId == getAuthUid();
+    }
+
+    // Comments - readable by list members
+    match /comments/{commentId} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.authorId == getAuthUid();
+      allow update: if isAuth() && resource.data.authorId == getAuthUid();
+      allow delete: if isAuth() && resource.data.authorId == getAuthUid();
+    }
+
+    // Clients - owner and team members can access
+    match /clients/{clientId} {
+      allow read: if isAuth() && (
+        resource.data.ownerId == getAuthUid() ||
+        (resource.data.teamId != null && isTeamMember(resource.data.teamId))
+      );
+      allow create: if isAuth() && request.resource.data.ownerId == getAuthUid();
+      allow update: if isAuth() && resource.data.ownerId == getAuthUid();
+      allow delete: if isAuth() && resource.data.ownerId == getAuthUid();
     }
 
   }

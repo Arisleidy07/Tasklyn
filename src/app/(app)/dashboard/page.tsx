@@ -19,10 +19,23 @@ import {
   Clock,
   ArrowRight,
   TrendingUp,
+  ArrowDown,
+  Flag,
+  CalendarDays,
+  Zap,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { PLAN_LIMITS } from "@/types";
 import { cn } from "@/lib/utils";
+import {
+  format,
+  subDays,
+  isSameDay,
+  parseISO,
+  isBefore,
+  addDays,
+} from "date-fns";
+import { es } from "date-fns/locale";
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
@@ -58,38 +71,124 @@ export default function DashboardPage() {
       ? Math.round((completedTasks.length / userTasks.length) * 100)
       : 0;
 
+  // --- Smart Dashboard data ---
+  const today = new Date();
+
+  const createdToday = userTasks.filter((t) => {
+    try {
+      return isSameDay(parseISO(t.createdAt), today);
+    } catch {
+      return false;
+    }
+  }).length;
+
+  const completedToday = completedTasks.filter((t) => {
+    try {
+      return t.completedAt && isSameDay(parseISO(t.completedAt), today);
+    } catch {
+      return false;
+    }
+  }).length;
+
+  // Last 7 days chart data
+  const weekData = Array.from({ length: 7 }).map((_, i) => {
+    const day = subDays(today, 6 - i);
+    const done = completedTasks.filter((t) => {
+      try {
+        return t.completedAt && isSameDay(parseISO(t.completedAt), day);
+      } catch {
+        return false;
+      }
+    }).length;
+    const created = userTasks.filter((t) => {
+      try {
+        return isSameDay(parseISO(t.createdAt), day);
+      } catch {
+        return false;
+      }
+    }).length;
+    return {
+      label: format(day, "EEE", { locale: es }).slice(0, 3),
+      done,
+      created,
+      isToday: isSameDay(day, today),
+    };
+  });
+
+  const maxWeek = Math.max(
+    ...weekData.map((d) => Math.max(d.done, d.created)),
+    1,
+  );
+
+  // Upcoming deadlines (next 7 days)
+  const upcoming = userTasks
+    .filter((t) => t.status === "pending" && t.dueDate)
+    .filter((t) => {
+      try {
+        const d = parseISO(t.dueDate!);
+        return !isBefore(d, today) && isBefore(d, addDays(today, 8));
+      } catch {
+        return false;
+      }
+    })
+    .sort(
+      (a, b) => parseISO(a.dueDate!).getTime() - parseISO(b.dueDate!).getTime(),
+    )
+    .slice(0, 5);
+
+  // Priority breakdown
+  const priorityCounts = {
+    urgent: userTasks.filter(
+      (t) => t.priority === "urgent" && t.status === "pending",
+    ).length,
+    high: userTasks.filter(
+      (t) => t.priority === "high" && t.status === "pending",
+    ).length,
+    medium: userTasks.filter(
+      (t) => t.priority === "medium" && t.status === "pending",
+    ).length,
+    low: userTasks.filter((t) => t.priority === "low" && t.status === "pending")
+      .length,
+  };
+
+  const listNameMap = new Map(allLists.map((l) => [l.id, l.name]));
+
   const stats = [
     {
       label: "Listas totales",
       value: allLists.length,
       icon: FolderOpen,
       color: "blue",
-      bg: "bg-blue-50",
-      text: "text-blue-600",
+      bg: "bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/25",
+      text: "text-white",
+      trend: allLists.length > 0 ? 12 : 0,
     },
     {
       label: "Compartidas",
       value: sharedLists.length,
       icon: Users,
-      color: "blue",
-      bg: "bg-gray-100",
-      text: "text-gray-600",
+      color: "purple",
+      bg: "bg-gradient-to-br from-purple-500 to-pink-600 shadow-purple-500/25",
+      text: "text-white",
+      trend: sharedLists.length > 0 ? 8 : 0,
     },
     {
       label: "Completadas",
       value: completedTasks.length,
       icon: CheckCircle2,
-      color: "blue",
-      bg: "bg-blue-50",
-      text: "text-blue-600",
+      color: "green",
+      bg: "bg-gradient-to-br from-green-500 to-emerald-600 shadow-green-500/25",
+      text: "text-white",
+      trend: completedTasks.length > 0 ? 15 : 0,
     },
     {
       label: "Pendientes",
       value: pendingTasks.length,
       icon: Clock,
-      color: "gray",
-      bg: "bg-gray-100",
-      text: "text-gray-600",
+      color: "yellow",
+      bg: "bg-gradient-to-br from-yellow-500 to-orange-600 shadow-yellow-500/25",
+      text: "text-white",
+      trend: pendingTasks.length > 0 ? -5 : 0,
     },
   ];
 
@@ -190,31 +289,269 @@ export default function DashboardPage() {
                 className="group relative p-4 sm:p-5 rounded-2xl border border-gray-200/80 bg-white hover:border-blue-200 transition-all duration-300 overflow-hidden dark:bg-slate-900 dark:border-slate-800 dark:hover:border-blue-500/30"
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent to-blue-50/0 group-hover:to-blue-50/20 dark:to-blue-500/0 dark:group-hover:to-blue-500/10 transition-all duration-500 pointer-events-none" />
+
                 <div className="flex items-center justify-between mb-4">
                   <div
-                    className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm ${
-                      i % 2 === 0
-                        ? "bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/25"
-                        : "bg-gradient-to-br from-gray-700 to-gray-900 shadow-gray-500/20"
-                    }`}
+                    className={cn(
+                      "w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm",
+                      stat.bg,
+                    )}
                   >
-                    <stat.icon size={18} className="text-white" />
+                    <stat.icon
+                      size={18}
+                      className={cn("text-white", stat.text)}
+                    />
                   </div>
-                  {stat.label === "Completadas" && userTasks.length > 0 && (
-                    <span className="flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                      <TrendingUp size={10} />
-                      {completionRate}%
-                    </span>
+
+                  {stat.trend !== undefined && (
+                    <div
+                      className={cn(
+                        "flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full",
+                        stat.trend > 0
+                          ? "bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400"
+                          : "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400",
+                      )}
+                    >
+                      {stat.trend > 0 ? (
+                        <TrendingUp size={10} />
+                      ) : (
+                        <ArrowDown size={10} />
+                      )}
+                      {Math.abs(stat.trend)}%
+                    </div>
                   )}
                 </div>
+
                 <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100 tracking-tight tabular-nums">
                   {stat.value}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-slate-400 font-medium mt-1">
                   {stat.label}
                 </p>
+
+                {/* Animated background effect */}
+                <div className="absolute -bottom-2 -right-2 w-16 h-16 rounded-full bg-gradient-to-br from-blue-400/10 to-indigo-400/10 animate-pulse" />
               </motion.div>
             ))}
+          </div>
+        )}
+
+        {/* Smart widgets — only in overview */}
+        {!isListsSection && userTasks.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Weekly activity chart */}
+            <div className="lg:col-span-2 p-5 rounded-2xl border border-gray-200/80 bg-white dark:bg-slate-900 dark:border-slate-800">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                    Actividad semanal
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                    Últimos 7 días
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 text-[11px]">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block" />
+                    <span className="text-gray-500">Creadas</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
+                    <span className="text-gray-500">Completadas</span>
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-end gap-1.5 h-32">
+                {weekData.map((d, i) => (
+                  <div
+                    key={i}
+                    className="flex-1 flex flex-col items-center gap-1"
+                  >
+                    <div className="w-full flex gap-0.5 items-end h-24">
+                      <div
+                        className="flex-1 rounded-t-md bg-blue-200 dark:bg-blue-900/50 transition-all duration-500"
+                        style={{
+                          height: `${Math.round((d.created / maxWeek) * 96)}px`,
+                          minHeight: d.created > 0 ? "4px" : "0",
+                        }}
+                      />
+                      <div
+                        className="flex-1 rounded-t-md bg-green-400 dark:bg-green-600 transition-all duration-500"
+                        style={{
+                          height: `${Math.round((d.done / maxWeek) * 96)}px`,
+                          minHeight: d.done > 0 ? "4px" : "0",
+                        }}
+                      />
+                    </div>
+                    <span
+                      className={cn(
+                        "text-[10px] font-medium capitalize",
+                        d.isToday
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-gray-400 dark:text-slate-500",
+                      )}
+                    >
+                      {d.label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {/* Today summary */}
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center">
+                    <Zap size={13} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-slate-100">
+                      {createdToday}
+                    </p>
+                    <p className="text-[10px] text-gray-400 dark:text-slate-500">
+                      creadas hoy
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-green-50 dark:bg-green-950/30 flex items-center justify-center">
+                    <CheckCircle2 size={13} className="text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-900 dark:text-slate-100">
+                      {completedToday}
+                    </p>
+                    <p className="text-[10px] text-gray-400 dark:text-slate-500">
+                      completadas hoy
+                    </p>
+                  </div>
+                </div>
+                <div className="ml-auto text-right">
+                  <p className="text-lg font-bold text-gray-900 dark:text-slate-100">
+                    {completionRate}%
+                  </p>
+                  <p className="text-[10px] text-gray-400 dark:text-slate-500">
+                    productividad
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Right column: Priorities + Upcoming */}
+            <div className="space-y-4">
+              {/* Priority breakdown */}
+              <div className="p-5 rounded-2xl border border-gray-200/80 bg-white dark:bg-slate-900 dark:border-slate-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <Flag size={13} className="text-gray-500" />
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                    Prioridades pendientes
+                  </h3>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    {
+                      key: "urgent",
+                      label: "Crítica",
+                      color: "bg-red-500",
+                      text: "text-red-600",
+                      bg: "bg-red-50 dark:bg-red-950/20",
+                    },
+                    {
+                      key: "high",
+                      label: "Alta",
+                      color: "bg-orange-500",
+                      text: "text-orange-600",
+                      bg: "bg-orange-50 dark:bg-orange-950/20",
+                    },
+                    {
+                      key: "medium",
+                      label: "Media",
+                      color: "bg-yellow-500",
+                      text: "text-yellow-600",
+                      bg: "bg-yellow-50 dark:bg-yellow-950/20",
+                    },
+                    {
+                      key: "low",
+                      label: "Baja",
+                      color: "bg-green-500",
+                      text: "text-green-600",
+                      bg: "bg-green-50 dark:bg-green-950/20",
+                    },
+                  ].map(({ key, label, color, text, bg }) => {
+                    const count =
+                      priorityCounts[key as keyof typeof priorityCounts];
+                    return (
+                      <div
+                        key={key}
+                        className={cn(
+                          "flex items-center justify-between px-2.5 py-1.5 rounded-lg",
+                          bg,
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className={cn("w-2 h-2 rounded-full", color)} />
+                          <span className="text-xs font-medium text-gray-700 dark:text-slate-300">
+                            {label}
+                          </span>
+                        </div>
+                        <span
+                          className={cn("text-xs font-bold tabular-nums", text)}
+                        >
+                          {count}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Upcoming deadlines */}
+              {upcoming.length > 0 && (
+                <div className="p-5 rounded-2xl border border-gray-200/80 bg-white dark:bg-slate-900 dark:border-slate-800">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CalendarDays size={13} className="text-gray-500" />
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                      Próximos vencimientos
+                    </h3>
+                  </div>
+                  <div className="space-y-2">
+                    {upcoming.map((t) => {
+                      const daysLeft = Math.ceil(
+                        (parseISO(t.dueDate!).getTime() - today.getTime()) /
+                          86400000,
+                      );
+                      return (
+                        <div key={t.id} className="flex items-center gap-2">
+                          <div
+                            className={cn(
+                              "w-1.5 h-1.5 rounded-full flex-shrink-0",
+                              daysLeft === 0
+                                ? "bg-red-500"
+                                : daysLeft <= 2
+                                  ? "bg-orange-500"
+                                  : "bg-blue-500",
+                            )}
+                          />
+                          <p className="text-xs text-gray-700 dark:text-slate-300 truncate flex-1">
+                            {t.title}
+                          </p>
+                          <span
+                            className={cn(
+                              "text-[10px] font-semibold tabular-nums flex-shrink-0",
+                              daysLeft === 0
+                                ? "text-red-600"
+                                : daysLeft <= 2
+                                  ? "text-orange-600"
+                                  : "text-blue-600",
+                            )}
+                          >
+                            {daysLeft === 0 ? "Hoy" : `${daysLeft}d`}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

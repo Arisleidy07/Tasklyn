@@ -16,12 +16,21 @@ import {
   Sparkles,
   User,
   Bell,
+  Users,
+  Trophy,
+  Target,
+  Calendar,
+  BarChart3,
+  History,
+  Activity,
+  UserSquare2,
 } from "lucide-react";
 import { useNotificationStore } from "@/stores/notificationStore";
 import Logo from "@/components/shared/Logo";
 import Avatar from "@/components/ui/Avatar";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
+import { useTeamStore } from "@/stores/teamStore";
 import CreateListModal from "@/components/lists/CreateListModal";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -30,6 +39,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const { getUserLists } = useListStore();
+  const { teams } = useTeamStore();
   const searchParams = useSearchParams();
   const view = searchParams.get("view");
   const section = searchParams.get("section");
@@ -56,6 +66,13 @@ export default function Sidebar() {
 
   const mainNav = [
     { name: "Panel de control", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Actividad", href: "/activity", icon: Activity },
+    { name: "Equipos", href: "/teams", icon: Users },
+    { name: "Panel de Equipo", href: "/team-dashboard", icon: BarChart3 },
+    { name: "Ranking", href: "/ranking", icon: Trophy },
+    { name: "Clientes", href: "/clients", icon: UserSquare2 },
+    { name: "Calendario", href: "/calendar", icon: Calendar },
+    { name: "Historial", href: "/history", icon: History },
     {
       name: "Notificaciones",
       href: "/notifications",
@@ -170,6 +187,63 @@ export default function Sidebar() {
                 </motion.div>
               );
             })}
+          </div>
+
+          {/* Teams */}
+          <div className="space-y-1">
+            {!collapsed && (
+              <p
+                className={cn(
+                  "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
+                  "text-gray-400",
+                  "dark:text-slate-500",
+                )}
+              >
+                👥 Equipos
+              </p>
+            )}
+            {teams.slice(0, 3).map((team) => {
+              const active = pathname === `/teams/${team.id}`;
+              return (
+                <Link
+                  key={team.id}
+                  href={`/teams/${team.id}`}
+                  className={cn(
+                    "sidebar-item flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200",
+                    active
+                      ? "bg-white text-gray-900 font-medium shadow-sm dark:bg-slate-800 dark:text-slate-100"
+                      : "text-gray-500 hover:bg-white hover:text-gray-700 hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300",
+                  )}
+                >
+                  {active && <div className="sidebar-indicator" />}
+                  <div className="w-2 h-2 rounded-full flex-shrink-0 bg-gradient-to-br from-blue-400 to-indigo-600" />
+                  <span className="truncate flex-1">{team.name}</span>
+                  {!collapsed && (
+                    <span
+                      className={cn(
+                        "text-[10px] font-medium min-w-[16px] h-4 flex items-center justify-center rounded px-1",
+                        active
+                          ? "bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-slate-300"
+                          : "bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-slate-400",
+                      )}
+                    >
+                      {team.members.length}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+            {teams.length > 3 && (
+              <Link
+                href="/teams"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200",
+                  "text-gray-400 hover:bg-white hover:text-gray-600 hover:shadow-sm dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-400",
+                )}
+              >
+                <span className="text-xs">+{teams.length - 3} más</span>
+              </Link>
+            )}
           </div>
 
           {/* Workspace */}
@@ -330,7 +404,7 @@ export default function Sidebar() {
         </nav>
 
         {/* Tarjeta de actualización */}
-        {!collapsed && user.plan === "FREE" && (
+        {!collapsed && user.plan === "free" && (
           <div className="px-3 pb-3 flex-shrink-0">
             <div className="p-4 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />

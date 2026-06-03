@@ -45,6 +45,7 @@ const roleOptions: { value: string; label: string }[] = [
 
 const roleBadgeVariant: Record<MemberRole, "blue" | "sky" | "default"> = {
   owner: "blue",
+  admin: "blue",
   editor: "sky",
   viewer: "default",
 };

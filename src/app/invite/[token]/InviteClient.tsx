@@ -86,7 +86,7 @@ export default function InviteClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 p-6">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
       </div>
     );
@@ -95,19 +95,19 @@ export default function InviteClient() {
   // Not found
   if (!invitation || !list) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 p-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-sm w-full text-center"
         >
-          <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center text-red-500 mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-400 mx-auto mb-4">
             <AlertTriangle size={24} />
           </div>
-          <h1 className="text-lg font-semibold text-gray-900">
+          <h1 className="text-lg font-semibold text-slate-100">
             Invalid invitation
           </h1>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-slate-400 mt-2">
             This invitation link is invalid or has expired.
           </p>
           <Button
@@ -125,23 +125,23 @@ export default function InviteClient() {
   // Not logged in
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 via-white to-blue-50 p-6">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="max-w-sm w-full text-center"
         >
           <Logo size="lg" className="justify-center mb-8" />
-          <div className="p-6 rounded-2xl border border-gray-200 bg-white shadow-xl">
-            <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 mx-auto mb-4">
+          <div className="p-6 rounded-2xl border border-slate-800 bg-slate-900 shadow-xl">
+            <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 mx-auto mb-4">
               <UserPlus size={22} />
             </div>
-            <h1 className="text-lg font-semibold text-gray-900">
+            <h1 className="text-lg font-semibold text-slate-100">
               You&apos;ve been invited
             </h1>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-slate-400 mt-2">
               Sign in to join{" "}
-              <strong className="text-gray-700">{list.name}</strong>
+              <strong className="text-slate-200">{list.name}</strong>
             </p>
             <Button
               className="mt-6 w-full"
@@ -180,21 +180,21 @@ export default function InviteClient() {
   // Already a member
   if (alreadyMember) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 p-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-sm w-full text-center"
         >
-          <div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-500 mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 mx-auto mb-4">
             <CheckCircle2 size={24} />
           </div>
-          <h1 className="text-lg font-semibold text-gray-900">
+          <h1 className="text-lg font-semibold text-slate-100">
             Already a member
           </h1>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-slate-400 mt-2">
             You&apos;re already a member of{" "}
-            <strong className="text-gray-700">{list.name}</strong>.
+            <strong className="text-slate-200">{list.name}</strong>.
           </p>
           <Button
             className="mt-6"
@@ -210,19 +210,19 @@ export default function InviteClient() {
   // Expired
   if (isExpired) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6">
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 p-6">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="max-w-sm w-full text-center"
         >
-          <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-500 mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-400 mx-auto mb-4">
             <AlertTriangle size={24} />
           </div>
-          <h1 className="text-lg font-semibold text-gray-900">
+          <h1 className="text-lg font-semibold text-slate-100">
             Invitation expired
           </h1>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-slate-400 mt-2">
             This invitation link has expired. Ask the list owner for a new one.
           </p>
           <Button

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
+import { useTeamStore } from "@/stores/teamStore";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useUIStore } from "@/stores/uiStore";
 import AppLayout from "@/components/layout/AppLayout";
@@ -16,6 +17,7 @@ export default function AuthenticatedLayout({
   const router = useRouter();
   const { isAuthenticated, isAuthReady, user } = useAuthStore();
   const { subscribeToLists, unsubscribeFromLists } = useListStore();
+  const { subscribeToTeams, unsubscribeFromTeams } = useTeamStore();
   const { subscribe: subscribeNotifs, unsubscribe: unsubscribeNotifs } =
     useNotificationStore();
   const { theme } = useUIStore();
@@ -35,6 +37,16 @@ export default function AuthenticatedLayout({
       };
     }
   }, [user?.id, subscribeToLists, unsubscribeFromLists]);
+
+  // Subscribe to teams when user is authenticated
+  useEffect(() => {
+    if (user?.id) {
+      subscribeToTeams(user.id);
+      return () => {
+        unsubscribeFromTeams();
+      };
+    }
+  }, [user?.id, subscribeToTeams, unsubscribeFromTeams]);
 
   // Subscribe to notifications
   useEffect(() => {
