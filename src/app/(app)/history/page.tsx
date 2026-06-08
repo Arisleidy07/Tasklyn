@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { useTeamStore } from "@/stores/teamStore";
 import { useListStore } from "@/stores/listStore";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 import Header from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
@@ -256,143 +257,127 @@ export default function HistoryPage() {
   const { tasks } = useTaskStore();
   const { currentTeam } = useTeamStore();
   const { getUserLists } = useListStore();
-  const [historyData, setHistoryData] = useState<HistoryEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedAction, setSelectedAction] = useState<string>("all");
   const [selectedUser, setSelectedUser] = useState<string>("all");
 
-  useEffect(() => {
-    const generateHistoryData = () => {
-      if (!user) return;
+  // Collect all foreign UIDs for batch profile resolution (before early return)
+  const allUids = useMemo(() => {
+    if (!user) return [];
+    const uids = new Set<string>();
+    tasks.forEach((task) => {
+      if (task.createdBy) uids.add(task.createdBy);
+      if (task.completedBy) uids.add(task.completedBy);
+      if ((task as any).performedBy) uids.add((task as any).performedBy);
+      if (task.assignedTo) uids.add(task.assignedTo);
+      task.history?.forEach((h) => {
+        if (h.performedBy) uids.add(h.performedBy);
+        if (h.completedBy) uids.add(h.completedBy);
+        if (h.assignedTo) uids.add(h.assignedTo);
+      });
+    });
+    uids.delete(user.id);
+    return [...uids];
+  }, [tasks, user]);
 
-      const allLists = getUserLists(user.id);
-      const listNameMap = new Map(allLists.map((l) => [l.id, l.name]));
-      const getListName = (listId: string) =>
-        listNameMap.get(listId) || `Lista ${listId.slice(0, 6)}`;
+  const { profiles } = useUserProfiles(allUids);
 
-      const history: HistoryEntry[] = [];
+  const historyData = useMemo<HistoryEntry[]>(() => {
+    if (!user) return [];
+    const allLists = getUserLists(user.id);
+    const listNameMap = new Map(allLists.map((l) => [l.id, l.name]));
+    const getListName = (listId: string) => listNameMap.get(listId) || "Lista";
+    const resolveName = (uid: string | undefined) => {
+      if (!uid) return undefined;
+      if (uid === user.id) return user.name;
+      return profiles.get(uid)?.name ?? "...";
+    };
+    const resolvePhoto = (uid: string | undefined) => {
+      if (!uid) return undefined;
+      if (uid === user.id) return user.photoURL;
+      return profiles.get(uid)?.photoURL;
+    };
 
-      tasks.forEach((task) => {
-        // Created entry
+    const history: HistoryEntry[] = [];
+
+    tasks.forEach((task) => {
+      history.push({
+        id: `${task.id}-created`,
+        action: "created",
+        performedBy: task.createdBy,
+        performedByName: resolveName(task.createdBy) ?? "...",
+        performedByPhoto: resolvePhoto(task.createdBy),
+        performedAt: task.createdAt,
+        taskTitle: task.title,
+        taskId: task.id,
+        listName: getListName(task.listId),
+        listId: task.listId,
+        details: "Tarea creada",
+      });
+
+      if (task.completedAt && task.completedBy) {
         history.push({
-          id: `${task.id}-created`,
-          action: "created",
+          id: `${task.id}-completed`,
+          action: "completed",
+          performedBy: task.completedBy,
+          performedByName: resolveName(task.completedBy) ?? "...",
+          performedByPhoto: resolvePhoto(task.completedBy),
+          performedAt: task.completedAt,
+          taskTitle: task.title,
+          taskId: task.id,
+          listName: getListName(task.listId),
+          listId: task.listId,
+          details: "Tarea marcada como completada",
+          completedBy: (task as any).performedBy,
+          completedByName: resolveName((task as any).performedBy),
+        });
+      }
+
+      if (task.assignedTo) {
+        history.push({
+          id: `${task.id}-assigned`,
+          action: "assigned",
           performedBy: task.createdBy,
-          performedByName:
-            task.createdBy === user.id
-              ? user.name
-              : `Usuario ${task.createdBy.slice(0, 6)}`,
-          performedByPhoto:
-            task.createdBy === user.id ? user.photoURL : undefined,
+          performedByName: resolveName(task.createdBy) ?? "...",
+          performedByPhoto: resolvePhoto(task.createdBy),
           performedAt: task.createdAt,
           taskTitle: task.title,
           taskId: task.id,
           listName: getListName(task.listId),
           listId: task.listId,
-          details: "Tarea creada",
+          details: "Tarea asignada",
+          assignedTo: task.assignedTo,
+          assignedToName: resolveName(task.assignedTo),
         });
+      }
 
-        // Completed entry
-        if (task.completedAt && task.completedBy) {
-          history.push({
-            id: `${task.id}-completed`,
-            action: "completed",
-            performedBy: task.completedBy,
-            performedByName:
-              task.completedBy === user.id
-                ? user.name
-                : `Usuario ${task.completedBy.slice(0, 6)}`,
-            performedByPhoto:
-              task.completedBy === user.id ? user.photoURL : undefined,
-            performedAt: task.completedAt,
-            taskTitle: task.title,
-            taskId: task.id,
-            listName: getListName(task.listId),
-            listId: task.listId,
-            details: "Tarea marcada como completada",
-            completedBy: task.performedBy,
-            completedByName:
-              task.performedBy === user.id
-                ? user.name
-                : `Usuario ${task.performedBy?.slice(0, 6)}`,
-          });
-        }
-
-        // Assigned entry
-        if (task.assignedTo) {
-          history.push({
-            id: `${task.id}-assigned`,
-            action: "assigned",
-            performedBy: task.createdBy,
-            performedByName:
-              task.createdBy === user.id
-                ? user.name
-                : `Usuario ${task.createdBy.slice(0, 6)}`,
-            performedByPhoto:
-              task.createdBy === user.id ? user.photoURL : undefined,
-            performedAt: task.createdAt,
-            taskTitle: task.title,
-            taskId: task.id,
-            listName: getListName(task.listId),
-            listId: task.listId,
-            details: "Tarea asignada",
-            assignedTo: task.assignedTo,
-            assignedToName:
-              task.assignedTo === user.id
-                ? user.name
-                : `Usuario ${task.assignedTo.slice(0, 6)}`,
-          });
-        }
-
-        // History entries from task history
-        if (task.history && task.history.length > 0) {
-          task.history.forEach((historyEntry) => {
-            history.push({
-              id: `${task.id}-history-${historyEntry.id}`,
-              action: historyEntry.action,
-              performedBy: historyEntry.performedBy,
-              performedByName:
-                historyEntry.performedBy === user.id
-                  ? user.name
-                  : `Usuario ${historyEntry.performedBy.slice(0, 6)}`,
-              performedByPhoto:
-                historyEntry.performedBy === user.id
-                  ? user.photoURL
-                  : undefined,
-              performedAt: historyEntry.performedAt,
-              taskTitle: task.title,
-              taskId: task.id,
-              listName: getListName(task.listId),
-              listId: task.listId,
-              details: historyEntry.details,
-              completedBy: historyEntry.completedBy,
-              completedByName:
-                historyEntry.completedBy === user.id
-                  ? user.name
-                  : `Usuario ${historyEntry.completedBy?.slice(0, 6)}`,
-              assignedTo: historyEntry.assignedTo,
-              assignedToName:
-                historyEntry.assignedTo === user.id
-                  ? user.name
-                  : `Usuario ${historyEntry.assignedTo?.slice(0, 6)}`,
-            });
-          });
-        }
+      task.history?.forEach((historyEntry) => {
+        history.push({
+          id: `${task.id}-history-${historyEntry.id}`,
+          action: historyEntry.action,
+          performedBy: historyEntry.performedBy,
+          performedByName: resolveName(historyEntry.performedBy) ?? "...",
+          performedByPhoto: resolvePhoto(historyEntry.performedBy),
+          performedAt: historyEntry.performedAt,
+          taskTitle: task.title,
+          taskId: task.id,
+          listName: getListName(task.listId),
+          listId: task.listId,
+          details: historyEntry.details,
+          completedBy: historyEntry.completedBy,
+          completedByName: resolveName(historyEntry.completedBy),
+          assignedTo: historyEntry.assignedTo,
+          assignedToName: resolveName(historyEntry.assignedTo),
+        });
       });
+    });
 
-      // Sort by date (newest first)
-      history.sort(
-        (a, b) =>
-          new Date(b.performedAt).getTime() - new Date(a.performedAt).getTime(),
-      );
-
-      setHistoryData(history);
-      setLoading(false);
-    };
-
-    generateHistoryData();
-  }, [user, tasks]);
+    history.sort(
+      (a, b) =>
+        new Date(b.performedAt).getTime() - new Date(a.performedAt).getTime(),
+    );
+    return history;
+  }, [tasks, profiles, user, getUserLists]);
 
   // Filter history data
   const filteredHistory = historyData.filter((entry) => {
@@ -487,11 +472,7 @@ export default function HistoryPage() {
         </div>
 
         {/* History Content */}
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full" />
-          </div>
-        ) : Object.keys(groupedHistory).length === 0 ? (
+        {Object.keys(groupedHistory).length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

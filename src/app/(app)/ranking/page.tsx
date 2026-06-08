@@ -243,7 +243,7 @@ export default function RankingPage() {
             ? { id: p.id, name: p.name, email: p.email, photoURL: p.photoURL }
             : {
                 id: uid,
-                name: `Miembro ${uid.slice(0, 8)}`,
+                name: "Miembro",
                 email: "",
                 photoURL: undefined,
               };

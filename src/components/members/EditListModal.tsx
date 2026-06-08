@@ -52,22 +52,22 @@ const roleConfig: Record<
   owner: {
     label: "Owner",
     icon: <Crown size={11} />,
-    pill: "bg-blue-100 text-blue-700",
+    pill: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
   },
   admin: {
     label: "Admin",
     icon: <Crown size={11} />,
-    pill: "bg-purple-100 text-purple-700",
+    pill: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400",
   },
   editor: {
     label: "Editor",
     icon: <Edit3 size={11} />,
-    pill: "bg-sky-100 text-sky-700",
+    pill: "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400",
   },
   viewer: {
     label: "Viewer",
     icon: <Eye size={11} />,
-    pill: "bg-gray-100 text-gray-600",
+    pill: "bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-300",
   },
 };
 
@@ -147,7 +147,7 @@ export default function EditListModal({
       size="xl"
     >
       {/* Tabs */}
-      <div className="flex bg-gray-100/80 rounded-xl p-1 mb-6 gap-1">
+      <div className="flex bg-gray-100/80 dark:bg-slate-800/80 rounded-xl p-1 mb-6 gap-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -155,8 +155,8 @@ export default function EditListModal({
             className={cn(
               "flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer",
               activeTab === tab.id
-                ? "bg-white shadow-sm text-gray-900"
-                : "text-gray-500 hover:text-gray-700",
+                ? "bg-white shadow-sm text-gray-900 dark:bg-slate-700 dark:text-slate-100 dark:shadow-black/30"
+                : "text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200",
             )}
           >
             {tab.icon}
@@ -177,7 +177,7 @@ export default function EditListModal({
             className="space-y-5"
           >
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 block">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block">
                 Nombre de la lista
               </label>
               <input
@@ -186,14 +186,16 @@ export default function EditListModal({
                 onKeyDown={(e) => e.key === "Enter" && handleSaveDetails()}
                 placeholder="Mi lista de tareas"
                 disabled={!canEdit}
-                className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 block">
+              <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block">
                 Descripción{" "}
-                <span className="text-gray-400 font-normal">(opcional)</span>
+                <span className="text-gray-400 dark:text-slate-500 font-normal">
+                  (opcional)
+                </span>
               </label>
               <textarea
                 value={description}
@@ -201,20 +203,24 @@ export default function EditListModal({
                 placeholder="Describe el propósito de esta lista..."
                 disabled={!canEdit}
                 rows={3}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all resize-none disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all resize-none disabled:opacity-60 disabled:cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500"
               />
             </div>
 
             {/* List meta */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
-                <p className="text-xs text-gray-500 mb-1">Tipo</p>
-                <p className="text-sm font-semibold text-gray-900 capitalize">
+              <div className="bg-gray-50 dark:bg-slate-800/60 rounded-xl p-3.5 border border-gray-100 dark:border-slate-700">
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-1">
+                  Tipo
+                </p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-slate-100 capitalize">
                   {list.type === "shared" ? "Compartida" : "Personal"}
                 </p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-3.5 border border-gray-100">
-                <p className="text-xs text-gray-500 mb-1">Tu rol</p>
+              <div className="bg-gray-50 dark:bg-slate-800/60 rounded-xl p-3.5 border border-gray-100 dark:border-slate-700">
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-1">
+                  Tu rol
+                </p>
                 <span
                   className={cn(
                     "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full",
@@ -280,8 +286,8 @@ export default function EditListModal({
                   className={cn(
                     "rounded-xl border transition-all duration-200 overflow-hidden",
                     isConfirmingRemove
-                      ? "border-red-200 bg-red-50"
-                      : "border-gray-100 bg-gray-50/60 hover:bg-white hover:border-gray-200 hover:shadow-sm",
+                      ? "border-red-200 bg-red-50 dark:border-red-800/50 dark:bg-red-950/20"
+                      : "border-gray-100 bg-gray-50/60 hover:bg-white hover:border-gray-200 hover:shadow-sm dark:border-slate-700 dark:bg-slate-800/60 dark:hover:bg-slate-800 dark:hover:border-slate-600",
                   )}
                 >
                   {isConfirmingRemove ? (
@@ -290,14 +296,14 @@ export default function EditListModal({
                         size={18}
                         className="text-red-500 flex-shrink-0"
                       />
-                      <p className="flex-1 text-sm text-red-700 font-medium">
+                      <p className="flex-1 text-sm text-red-700 dark:text-red-400 font-medium">
                         ¿Eliminar a{" "}
                         <span className="font-bold">{displayName}</span>?
                       </p>
                       <div className="flex gap-2 flex-shrink-0">
                         <button
                           onClick={() => setConfirmRemove(null)}
-                          className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                          className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors dark:text-slate-300 dark:bg-slate-700 dark:border-slate-600 dark:hover:bg-slate-600"
                         >
                           Cancelar
                         </button>
@@ -323,11 +329,11 @@ export default function EditListModal({
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-semibold text-gray-900 text-sm truncate">
+                          <p className="font-semibold text-gray-900 dark:text-slate-100 text-sm truncate">
                             {displayName}
                           </p>
                           {isSelf && (
-                            <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-md font-semibold flex-shrink-0">
+                            <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-md font-semibold flex-shrink-0">
                               Tú
                             </span>
                           )}
@@ -336,9 +342,9 @@ export default function EditListModal({
                           <div className="flex items-center gap-1 mt-0.5">
                             <Mail
                               size={9}
-                              className="text-gray-400 flex-shrink-0"
+                              className="text-gray-400 dark:text-slate-500 flex-shrink-0"
                             />
-                            <p className="text-[11px] text-gray-500 truncate">
+                            <p className="text-[11px] text-gray-500 dark:text-slate-400 truncate">
                               {displayEmail}
                             </p>
                           </div>
@@ -369,7 +375,7 @@ export default function EditListModal({
                         {canRemove && !isSelf && !isOwnerMember && (
                           <button
                             onClick={() => setConfirmRemove(member.userId)}
-                            className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+                            className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:text-slate-500 dark:hover:text-red-400 dark:hover:bg-red-950/20 transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
                             title="Eliminar miembro"
                           >
                             <Trash2 size={14} />
@@ -383,7 +389,7 @@ export default function EditListModal({
             })}
 
             {list.members.length === 0 && (
-              <div className="text-center py-10 text-gray-400 text-sm">
+              <div className="text-center py-10 text-gray-400 dark:text-slate-500 text-sm">
                 No hay miembros en esta lista
               </div>
             )}

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { X, Crown, Sparkles, Check } from "lucide-react";
@@ -36,14 +37,15 @@ export function UpgradeModal({
     router.push("/pricing");
   };
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99998] flex items-center justify-center p-4"
           onClick={onClose}
         >
           <motion.div
@@ -133,7 +135,8 @@ export function UpgradeModal({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 
@@ -143,10 +146,7 @@ export function useUpgradeModal() {
   const [feature, setFeature] = React.useState("");
   const [description, setDescription] = React.useState("");
 
-  const openUpgradeModal = (
-    featureName: string,
-    desc?: string
-  ) => {
+  const openUpgradeModal = (featureName: string, desc?: string) => {
     setFeature(featureName);
     setDescription(desc || "");
     setIsOpen(true);

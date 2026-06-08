@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
@@ -36,6 +36,36 @@ import {
   addDays,
 } from "date-fns";
 import { es } from "date-fns/locale";
+
+function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
+  const [count, setCount] = useState(0);
+  const rafRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (target === 0) {
+      setCount(0);
+      return;
+    }
+    const duration = 900;
+    let startTime: number | null = null;
+    const step = (ts: number) => {
+      if (!startTime) startTime = ts;
+      const pct = Math.min((ts - startTime) / duration, 1);
+      const ease = 1 - Math.pow(1 - pct, 3);
+      setCount(Math.round(ease * target));
+      if (pct < 1) rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [target]);
+  return (
+    <>
+      {count}
+      {suffix}
+    </>
+  );
+}
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
@@ -160,46 +190,57 @@ export default function DashboardPage() {
       ? Math.round((sharedLists.length / allLists.length) * 100)
       : 0;
 
+  const pendingRatio =
+    totalTasks > 0 ? Math.round((pendingTasks.length / totalTasks) * 100) : 0;
+
   const stats = [
     {
       label: "Listas totales",
-      value: allLists.length,
+      numericValue: allLists.length,
+      suffix: "",
       icon: FolderOpen,
-      color: "blue",
       bg: "bg-gradient-to-br from-blue-500 to-indigo-600 shadow-blue-500/25",
-      text: "text-white",
-      trend: allLists.length,
-      trendLabel: "totales",
+      barColor: "from-blue-500 to-indigo-500",
+      progress: Math.min(allLists.length * 10, 100),
+      badge: `${allLists.length} total`,
+      badgeColor:
+        "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400",
     },
     {
       label: "Compartidas",
-      value: sharedLists.length,
+      numericValue: sharedLists.length,
+      suffix: "",
       icon: Users,
-      color: "purple",
       bg: "bg-gradient-to-br from-purple-500 to-pink-600 shadow-purple-500/25",
-      text: "text-white",
-      trend: sharedRatio,
-      trendLabel: "% del total",
+      barColor: "from-purple-500 to-pink-500",
+      progress: sharedRatio,
+      badge: `${sharedRatio}% del total`,
+      badgeColor:
+        "bg-purple-50 text-purple-600 dark:bg-purple-950/30 dark:text-purple-400",
     },
     {
       label: "Tasa de éxito",
-      value: `${completionRate}%`,
+      numericValue: completionRate,
+      suffix: "%",
       icon: CheckCircle2,
-      color: "green",
       bg: "bg-gradient-to-br from-green-500 to-emerald-600 shadow-green-500/25",
-      text: "text-white",
-      trend: completionRate,
-      trendLabel: "completadas",
+      barColor: "from-green-500 to-emerald-500",
+      progress: completionRate,
+      badge: `${completedTasks.length} de ${userTasks.length}`,
+      badgeColor:
+        "bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400",
     },
     {
       label: "Pendientes",
-      value: pendingTasks.length,
+      numericValue: pendingTasks.length,
+      suffix: "",
       icon: Clock,
-      color: "yellow",
       bg: "bg-gradient-to-br from-yellow-500 to-orange-600 shadow-yellow-500/25",
-      text: "text-white",
-      trend: pendingTasks.length,
-      trendLabel: "por hacer",
+      barColor: "from-amber-500 to-orange-500",
+      progress: pendingRatio,
+      badge: `${pendingRatio}% del total`,
+      badgeColor:
+        "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400",
     },
   ];
 
@@ -301,44 +342,55 @@ export default function DashboardPage() {
               >
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent to-blue-50/0 group-hover:to-blue-50/20 dark:to-blue-500/0 dark:group-hover:to-blue-500/10 transition-all duration-500 pointer-events-none" />
 
-                <div className="flex items-center justify-between mb-4">
+                {/* Icon + badge */}
+                <div className="flex items-center justify-between mb-3">
                   <div
                     className={cn(
                       "w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm",
                       stat.bg,
                     )}
                   >
-                    <stat.icon
-                      size={18}
-                      className={cn("text-white", stat.text)}
-                    />
+                    <stat.icon size={18} className="text-white" />
                   </div>
-
-                  {stat.trend !== undefined && stat.trendLabel && (
-                    <div
-                      className={cn(
-                        "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full",
-                        stat.color === "green"
-                          ? "bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400"
-                          : stat.color === "yellow"
-                            ? "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400"
-                            : "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400",
-                      )}
-                    >
-                      {stat.trend}
-                      <span className="opacity-75">{stat.trendLabel}</span>
-                    </div>
-                  )}
+                  <span
+                    className={cn(
+                      "text-[11px] font-semibold px-2 py-0.5 rounded-full",
+                      stat.badgeColor,
+                    )}
+                  >
+                    {stat.badge}
+                  </span>
                 </div>
 
+                {/* Animated number */}
                 <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-slate-100 tracking-tight tabular-nums">
-                  {stat.value}
+                  <CountUp target={stat.numericValue} suffix={stat.suffix} />
                 </p>
-                <p className="text-xs text-gray-500 dark:text-slate-400 font-medium mt-1">
+                <p className="text-xs text-gray-500 dark:text-slate-400 font-medium mt-0.5">
                   {stat.label}
                 </p>
 
-                {/* Animated background effect */}
+                {/* Animated progress bar */}
+                <div className="mt-3 h-1.5 rounded-full bg-gray-100 dark:bg-slate-800 overflow-hidden">
+                  <motion.div
+                    className={cn(
+                      "h-full rounded-full bg-gradient-to-r",
+                      stat.barColor,
+                    )}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${stat.progress}%` }}
+                    transition={{
+                      delay: 0.4 + i * 0.07,
+                      duration: 0.9,
+                      ease: "easeOut",
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 dark:text-slate-600 mt-1 tabular-nums">
+                  {stat.progress}%
+                </p>
+
+                {/* Decorative orb */}
                 <div className="absolute -bottom-2 -right-2 w-16 h-16 rounded-full bg-gradient-to-br from-blue-400/10 to-indigo-400/10 animate-pulse" />
               </motion.div>
             ))}

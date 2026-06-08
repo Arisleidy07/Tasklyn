@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { useSubscriptionStore } from "@/stores/subscriptionStore";
@@ -49,7 +50,8 @@ function PlanCard({
         isPopular
           ? "border-blue-500/50 bg-gradient-to-b from-blue-500/10 to-blue-600/5 shadow-[0_20px_60px_-15px_rgba(59,130,246,0.3)]"
           : "border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 hover:border-blue-300 dark:hover:border-blue-500/30",
-        isCurrentPlan && "ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-950"
+        isCurrentPlan &&
+          "ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-950",
       )}
     >
       {/* Popular badge */}
@@ -80,7 +82,7 @@ function PlanCard({
             ? "bg-gray-100 dark:bg-slate-800"
             : isPopular
               ? "bg-gradient-to-br from-blue-500 to-indigo-600"
-              : "bg-gradient-to-br from-violet-500 to-purple-600"
+              : "bg-gradient-to-br from-violet-500 to-purple-600",
         )}
       >
         {isFree ? (
@@ -131,7 +133,7 @@ function PlanCard({
             ? "bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-slate-500 cursor-default"
             : isPopular
               ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25"
-              : "bg-gray-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-gray-800 dark:hover:bg-white"
+              : "bg-gray-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-gray-800 dark:hover:bg-white",
         )}
       >
         {isCurrentPlan
@@ -156,7 +158,7 @@ function PlanCard({
                   "w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
                   isPopular
                     ? "bg-blue-100 dark:bg-blue-500/20"
-                    : "bg-gray-100 dark:bg-slate-800"
+                    : "bg-gray-100 dark:bg-slate-800",
                 )}
               >
                 <Check
@@ -192,7 +194,7 @@ function PayPalModal({ isOpen, onClose, plan }: PayPalModalProps) {
   const { user } = useAuthStore();
   const { upgradePlan } = useSubscriptionStore();
 
-  if (!isOpen || !plan) return null;
+  if (!isOpen || !plan || typeof document === "undefined") return null;
 
   const handleSubscribe = async () => {
     if (!user || !plan.paypalPlanId) return;
@@ -230,13 +232,13 @@ function PayPalModal({ isOpen, onClose, plan }: PayPalModalProps) {
     }
   };
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99998] flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
@@ -318,11 +320,13 @@ function PayPalModal({ isOpen, onClose, plan }: PayPalModalProps) {
           </div>
 
           <p className="text-xs text-gray-400 dark:text-slate-500 text-center mt-4">
-            Pago seguro procesado por PayPal. Puedes cancelar en cualquier momento.
+            Pago seguro procesado por PayPal. Puedes cancelar en cualquier
+            momento.
           </p>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 

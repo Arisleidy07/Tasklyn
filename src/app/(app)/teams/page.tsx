@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { useTeamStore } from "@/stores/teamStore";
 import Header from "@/components/layout/Header";
@@ -217,19 +218,19 @@ function CreateTeamModal({ onClose, onSubmit, loading }: CreateTeamModalProps) {
     await onSubmit({ name: name.trim(), description: description.trim() });
   };
 
-  return (
-    <div className="fixed inset-0 z-[99998]">
+  return createPortal(
+    <>
       {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="fixed inset-0 z-[99998] bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal Content */}
-      <div className="relative z-[99999] flex items-center justify-center min-h-screen p-4">
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 8 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -317,7 +318,8 @@ function CreateTeamModal({ onClose, onSubmit, loading }: CreateTeamModalProps) {
           </form>
         </motion.div>
       </div>
-    </div>
+    </>,
+    document.body,
   );
 }
 

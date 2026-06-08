@@ -4,13 +4,10 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import Logo from "@/components/shared/Logo";
-import HeroDemo from "@/components/landing/HeroDemo";
-import DemoHub from "@/components/landing/DemoHub";
 import PricingSection from "@/components/landing/PricingSection";
 import Button from "@/components/ui/Button";
 import { motion } from "framer-motion";
 import {
-  CheckCircle2,
   ArrowRight,
   ListTodo,
   Users,
@@ -18,12 +15,6 @@ import {
   Zap,
   Clock,
   Bell,
-  FolderKanban,
-  Share2,
-  TrendingUp,
-  Activity,
-  BarChart3,
-  PieChart,
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -131,14 +122,14 @@ export default function LandingPage() {
           <div className="animate-float-gentle absolute bottom-[25%] left-[45%] w-2.5 h-2.5 rounded-full bg-indigo-300/50" />
         </div>
 
-        <div className="relative max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-10 lg:gap-16 items-center">
+        <div className="relative max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
             {/* Logo grande */}
-            <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center justify-center gap-3 mb-6">
               <Logo size="lg" textClassName="text-slate-50" />
             </div>
 
@@ -150,13 +141,13 @@ export default function LandingPage() {
               </span>
             </h1>
 
-            <p className="text-base sm:text-lg text-slate-200 mb-7 max-w-xl">
+            <p className="text-base sm:text-lg text-slate-200 mb-7 max-w-2xl mx-auto">
               Tasklyn centraliza operaciones, seguimiento de tareas,
               recordatorios automáticos y calendario inteligente para empresas
               que necesitan resultados.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-5">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-5">
               <Button
                 onClick={login}
                 isLoading={isLoading}
@@ -168,9 +159,6 @@ export default function LandingPage() {
               </Button>
             </div>
           </motion.div>
-
-          {/* Hero demo — Tasklyn Dashboard Profesional */}
-          <HeroDemo />
         </div>
       </section>
 
@@ -298,8 +286,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <DemoHub />
-
       {/* Sección de productividad */}
       <section
         id="productivity"
@@ -372,19 +358,27 @@ export default function LandingPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-slate-950 border border-slate-800 p-3">
                 <p className="text-xs text-slate-400 mb-1">Tareas de hoy</p>
-                <p className="text-2xl font-semibold text-slate-50">14</p>
+                <p className="text-sm font-medium text-slate-500 italic">
+                  Datos en tiempo real
+                </p>
               </div>
               <div className="rounded-2xl bg-slate-950 border border-slate-800 p-3">
                 <p className="text-xs text-slate-400 mb-1">Completadas</p>
-                <p className="text-2xl font-semibold text-emerald-400">11</p>
+                <p className="text-sm font-medium text-slate-500 italic">
+                  Datos en tiempo real
+                </p>
               </div>
               <div className="rounded-2xl bg-slate-950 border border-slate-800 p-3">
                 <p className="text-xs text-slate-400 mb-1">Listas activas</p>
-                <p className="text-2xl font-semibold text-slate-50">8</p>
+                <p className="text-sm font-medium text-slate-500 italic">
+                  Datos en tiempo real
+                </p>
               </div>
               <div className="rounded-2xl bg-slate-950 border border-slate-800 p-3">
                 <p className="text-xs text-slate-400 mb-1">Miembros</p>
-                <p className="text-2xl font-semibold text-slate-50">24</p>
+                <p className="text-sm font-medium text-slate-500 italic">
+                  Datos en tiempo real
+                </p>
               </div>
             </div>
           </div>

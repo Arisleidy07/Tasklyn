@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useAuthStore } from "@/stores/authStore";
 import { useTeamStore } from "@/stores/teamStore";
 import { useTaskStore } from "@/stores/taskStore";
@@ -221,112 +223,124 @@ function CreateGoalModal({
       setSaving(false);
     }
   };
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-gray-200/80 dark:border-slate-800 shadow-2xl"
-      >
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-              <Target size={18} className="text-white" />
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[99998] bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-gray-200/80 dark:border-slate-800 shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
+                <Target size={18} className="text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                  Nueva Meta
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-slate-400">
+                  Define un objetivo para el equipo
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
-                Nueva Meta
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-slate-400">
-                Define un objetivo para el equipo
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X size={16} />
-          </button>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
-              Título *
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej: 200 tareas este mes"
-              autoFocus
-              maxLength={80}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
-                Tipo
-              </label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value as any)}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="tasks">Tareas</option>
-                <option value="completion">% Cumplimiento</option>
-                <option value="custom">Personalizado</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
-                Período
-              </label>
-              <select
-                value={period}
-                onChange={(e) => setPeriod(e.target.value as any)}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="weekly">Semanal</option>
-                <option value="monthly">Mensual</option>
-                <option value="quarterly">Trimestral</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
-              Meta ({type === "completion" ? "% objetivo" : "cantidad"})
-            </label>
-            <input
-              type="number"
-              value={targetValue}
-              onChange={(e) => setTargetValue(e.target.value)}
-              min={1}
-              max={type === "completion" ? 100 : 99999}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            />
-          </div>
-          <div className="flex gap-3 pt-1">
             <button
-              type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+              className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={saving || !title.trim()}
-              className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
-            >
-              {saving ? "Guardando..." : "Crear meta"}
+              <X size={16} />
             </button>
           </div>
-        </form>
-      </motion.div>
-    </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                Título *
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Ej: 200 tareas este mes"
+                autoFocus
+                maxLength={80}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                  Tipo
+                </label>
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value as any)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="tasks">Tareas</option>
+                  <option value="completion">% Cumplimiento</option>
+                  <option value="custom">Personalizado</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                  Período
+                </label>
+                <select
+                  value={period}
+                  onChange={(e) => setPeriod(e.target.value as any)}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="weekly">Semanal</option>
+                  <option value="monthly">Mensual</option>
+                  <option value="quarterly">Trimestral</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                Meta ({type === "completion" ? "% objetivo" : "cantidad"})
+              </label>
+              <input
+                type="number"
+                value={targetValue}
+                onChange={(e) => setTargetValue(e.target.value)}
+                min={1}
+                max={type === "completion" ? 100 : 99999}
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={saving || !title.trim()}
+                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+              >
+                {saving ? "Guardando..." : "Crear meta"}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+      </div>
+    </>,
+    document.body,
   );
 }
 
@@ -431,6 +445,15 @@ export default function TeamDashboardPage() {
       return () => unsubscribeFromGoals();
     }
   }, [currentTeam?.id]);
+
+  const memberUids = useMemo(() => {
+    if (!currentTeam || !user) return [];
+    return currentTeam.members
+      .map((m) => m.userId)
+      .filter((uid) => uid !== user.id);
+  }, [currentTeam, user]);
+
+  const { getProfile: getMemberProfile } = useUserProfiles(memberUids);
 
   if (!user) return null;
 
@@ -889,7 +912,7 @@ export default function TeamDashboardPage() {
                           <p className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate">
                             {m.userId === user.id
                               ? `${user.name} (Tú)`
-                              : `Miembro ${m.userId.slice(0, 8)}`}
+                              : getMemberProfile(m.userId).name}
                           </p>
                           <span className="text-sm font-bold text-gray-900 dark:text-slate-100 tabular-nums ml-2">
                             {m.completed}

@@ -25,21 +25,26 @@ export default function Select({
       <div className="relative">
         <select
           className={cn(
-            "w-full h-10 pl-3 pr-8 rounded-lg border bg-white text-sm text-gray-900 appearance-none transition-colors cursor-pointer",
-            "border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none",
+            "w-full h-10 pl-3 pr-8 rounded-lg border text-sm appearance-none transition-colors cursor-pointer",
+            "bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none",
+            "dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600 dark:focus:border-blue-400",
             className,
           )}
           {...props}
         >
           {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
+            <option
+              key={opt.value}
+              value={opt.value}
+              className="bg-white dark:bg-slate-800"
+            >
               {opt.label}
             </option>
           ))}
         </select>
         <ChevronDown
           size={16}
-          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500 pointer-events-none"
         />
       </div>
     </div>
