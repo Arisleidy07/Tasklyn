@@ -119,7 +119,7 @@ export default function PremiumMembersPanel({
               <Share2 size={18} className="text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm">
+              <h3 className="font-semibold text-gray-900 text-sm dark:text-slate-100">
                 Colaboración en tiempo real
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
@@ -178,7 +178,7 @@ export default function PremiumMembersPanel({
               <div className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                 <UserPlus size={15} className="text-blue-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 text-sm">
+              <h3 className="font-semibold text-gray-900 text-sm dark:text-slate-100">
                 Invitar por correo
               </h3>
             </div>

@@ -312,7 +312,7 @@ export default function MembersPanel({
                   ) : (
                     <div className="flex-1 min-w-0 flex items-center gap-1.5">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-gray-900 truncate dark:text-slate-100">
                           {displayName}
                           {isSelf && (
                             <span className="text-gray-400 ml-1">(you)</span>

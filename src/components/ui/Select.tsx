@@ -26,8 +26,7 @@ export default function Select({
         <select
           className={cn(
             "w-full h-10 pl-3 pr-8 rounded-lg border text-sm appearance-none transition-colors cursor-pointer",
-            "bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none",
-            "dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600 dark:focus:border-blue-400",
+            "bg-white text-gray-900 border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 focus:outline-none dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600 dark:focus:border-blue-500",
             className,
           )}
           {...props}
