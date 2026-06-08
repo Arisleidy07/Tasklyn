@@ -88,26 +88,29 @@ export default function DueDatePicker({
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative z-10 w-full max-w-[340px] bg-white rounded-2xl shadow-2xl overflow-hidden"
+              className="relative z-10 w-full max-w-[340px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
                 <div className="flex items-center gap-2">
-                  <Calendar size={18} className="text-gray-500" />
-                  <h3 className="text-sm font-semibold text-gray-900">
+                  <Calendar
+                    size={18}
+                    className="text-gray-500 dark:text-slate-400"
+                  />
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                     Vencimiento
                   </h3>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
                 >
                   <X size={18} />
                 </button>
               </div>
 
               {/* Quick options */}
-              <div className="px-5 py-3 border-b border-gray-100 space-y-1">
+              <div className="px-5 py-3 border-b border-gray-100 dark:border-slate-800 space-y-1">
                 {quickOptions.map((opt) => (
                   <button
                     key={opt.label}
@@ -115,10 +118,12 @@ export default function DueDatePicker({
                       onSelect(opt.getDate());
                       onClose();
                     }}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors dark:text-slate-300 dark:hover:bg-slate-800"
                   >
-                    <span className="font-medium">{opt.label}</span>
-                    <span className="text-gray-400 text-xs">
+                    <span className="font-medium dark:text-slate-200">
+                      {opt.label}
+                    </span>
+                    <span className="text-gray-400 text-xs dark:text-slate-500">
                       {formatDate(opt.getDate(), { short: true })}
                     </span>
                   </button>
@@ -128,7 +133,7 @@ export default function DueDatePicker({
                     onSelect(null);
                     onClose();
                   }}
-                  className="w-full px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
+                  className="w-full px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium dark:hover:bg-red-950/30"
                 >
                   Sin fecha
                 </button>
@@ -139,18 +144,24 @@ export default function DueDatePicker({
                 <div className="flex items-center justify-between mb-4">
                   <button
                     onClick={handlePrevMonth}
-                    className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="p-1 rounded-lg hover:bg-gray-100 transition-colors dark:hover:bg-slate-800"
                   >
-                    <ChevronLeft size={18} className="text-gray-500" />
+                    <ChevronLeft
+                      size={18}
+                      className="text-gray-500 dark:text-slate-400"
+                    />
                   </button>
-                  <span className="text-sm font-semibold text-gray-900">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                     {MONTHS[month]} {year}
                   </span>
                   <button
                     onClick={handleNextMonth}
-                    className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="p-1 rounded-lg hover:bg-gray-100 transition-colors dark:hover:bg-slate-800"
                   >
-                    <ChevronRight size={18} className="text-gray-500" />
+                    <ChevronRight
+                      size={18}
+                      className="text-gray-500 dark:text-slate-400"
+                    />
                   </button>
                 </div>
 
@@ -159,7 +170,7 @@ export default function DueDatePicker({
                   {["D", "L", "M", "M", "J", "V", "S"].map((d) => (
                     <div
                       key={d}
-                      className="text-center text-[10px] font-medium text-gray-400 uppercase tracking-wider py-1"
+                      className="text-center text-[10px] font-medium text-gray-400 uppercase tracking-wider py-1 dark:text-slate-500"
                     >
                       {d}
                     </div>
@@ -182,8 +193,8 @@ export default function DueDatePicker({
                         className={`
                         aspect-square flex items-center justify-center rounded-full text-sm font-medium transition-all
                         ${!day.currentMonth ? "text-gray-200 cursor-default" : "text-gray-700 hover:bg-gray-100 cursor-pointer"}
-                        ${isSelected ? "bg-gray-900 text-white hover:bg-gray-800" : ""}
-                        ${isToday && !isSelected ? "ring-2 ring-gray-900 ring-offset-1" : ""}
+                        ${isSelected ? "bg-gray-900 text-white hover:bg-gray-800 dark:bg-slate-700 dark:hover:bg-slate-600" : "text-gray-700 dark:text-slate-300"}
+                        ${isToday && !isSelected ? "ring-2 ring-gray-900 ring-offset-1 dark:ring-slate-500 dark:ring-offset-slate-900" : ""}
                       `}
                       >
                         {day.date}

@@ -96,19 +96,22 @@ export default function ReminderPicker({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="relative z-10 w-full max-w-[340px] bg-white rounded-2xl shadow-2xl overflow-hidden"
+                className="relative z-10 w-full max-w-[340px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
               >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
                   <div className="flex items-center gap-2">
-                    <Bell size={18} className="text-gray-500" />
-                    <h3 className="text-sm font-semibold text-gray-900">
+                    <Bell
+                      size={18}
+                      className="text-gray-500 dark:text-slate-400"
+                    />
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                       Recordarme
                     </h3>
                   </div>
                   <button
                     onClick={onClose}
-                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
                   >
                     <X size={18} />
                   </button>
@@ -123,19 +126,24 @@ export default function ReminderPicker({
                         onSelect(opt.getReminders());
                         onClose();
                       }}
-                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors dark:text-slate-300 dark:hover:bg-slate-800"
                     >
-                      <span className="font-medium">{opt.label}</span>
+                      <span className="font-medium dark:text-slate-200">
+                        {opt.label}
+                      </span>
                     </button>
                   ))}
 
                   {taskDueDate && (
                     <button
                       onClick={handleAddToDueDate}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors dark:text-slate-300 dark:hover:bg-slate-800"
                     >
-                      <Clock size={14} className="text-gray-400" />
-                      <span className="font-medium">
+                      <Clock
+                        size={14}
+                        className="text-gray-400 dark:text-slate-500"
+                      />
+                      <span className="font-medium dark:text-slate-200">
                         1 hora antes del vencimiento
                       </span>
                     </button>
@@ -143,7 +151,7 @@ export default function ReminderPicker({
 
                   <button
                     onClick={() => setShowCustom(true)}
-                    className="w-full px-3 py-2.5 rounded-xl text-sm text-gray-900 hover:bg-gray-50 transition-colors font-medium"
+                    className="w-full px-3 py-2.5 rounded-xl text-sm text-gray-900 hover:bg-gray-50 transition-colors font-medium dark:text-slate-100 dark:hover:bg-slate-800"
                   >
                     Elegir fecha y hora
                   </button>
@@ -154,7 +162,7 @@ export default function ReminderPicker({
                         onSelect([]);
                         onClose();
                       }}
-                      className="w-full px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
+                      className="w-full px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium dark:hover:bg-red-950/30"
                     >
                       Eliminar recordatorio
                     </button>
@@ -166,15 +174,15 @@ export default function ReminderPicker({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="relative z-10 w-full max-w-[340px] bg-white rounded-2xl shadow-2xl overflow-hidden"
+                className="relative z-10 w-full max-w-[340px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
               >
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                  <h3 className="text-sm font-semibold text-gray-900">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                     Elegir fecha y hora
                   </h3>
                   <button
                     onClick={() => setShowCustom(false)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
                   >
                     <X size={18} />
                   </button>
@@ -183,20 +191,20 @@ export default function ReminderPicker({
                 <div className="p-5 space-y-4">
                   {/* Date */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide dark:text-slate-400">
                       Fecha
                     </label>
                     <input
                       type="date"
                       value={customDate}
                       onChange={(e) => setCustomDate(e.target.value)}
-                      className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                      className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500 dark:focus:border-blue-500"
                     />
                   </div>
 
                   {/* Time */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide dark:text-slate-400">
                       Hora
                     </label>
                     <div className="flex gap-2">
@@ -204,14 +212,14 @@ export default function ReminderPicker({
                         type="time"
                         value={customTime}
                         onChange={(e) => setCustomTime(e.target.value)}
-                        className="flex-1 h-11 px-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                        className="flex-1 h-11 px-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500 dark:focus:border-blue-500"
                       />
-                      <div className="flex bg-gray-100 rounded-xl overflow-hidden">
+                      <div className="flex bg-gray-100 rounded-xl overflow-hidden dark:bg-slate-800">
                         {(["AM", "PM"] as const).map((a) => (
                           <button
                             key={a}
                             onClick={() => setCustomAmPm(a)}
-                            className={`px-4 text-sm font-medium transition-colors ${customAmPm === a ? "bg-gray-900 text-white" : "text-gray-600 hover:text-gray-900"}`}
+                            className={`px-4 text-sm font-medium transition-colors ${customAmPm === a ? "bg-gray-900 text-white dark:bg-slate-700 dark:text-white" : "text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-200"}`}
                           >
                             {a}
                           </button>
@@ -222,7 +230,7 @@ export default function ReminderPicker({
 
                   <button
                     onClick={handleCustomSave}
-                    className="w-full h-11 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
+                    className="w-full h-11 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors dark:bg-slate-700 dark:hover:bg-slate-600"
                   >
                     Guardar recordatorio
                   </button>

@@ -102,19 +102,22 @@ export default function RecurrencePicker({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="relative z-10 w-full max-w-[340px] bg-white rounded-2xl shadow-2xl overflow-hidden"
+                className="relative z-10 w-full max-w-[340px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
               >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
                   <div className="flex items-center gap-2">
-                    <Repeat size={18} className="text-gray-500" />
-                    <h3 className="text-sm font-semibold text-gray-900">
+                    <Repeat
+                      size={18}
+                      className="text-gray-500 dark:text-slate-400"
+                    />
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                       Repetir
                     </h3>
                   </div>
                   <button
                     onClick={onClose}
-                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
                   >
                     <X size={18} />
                   </button>
@@ -166,15 +169,15 @@ export default function RecurrencePicker({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="relative z-10 w-full max-w-[360px] bg-white rounded-2xl shadow-2xl overflow-hidden"
+                className="relative z-10 w-full max-w-[360px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
               >
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
                   <h3 className="text-sm font-semibold text-gray-900">
                     Personalizar repetición
                   </h3>
                   <button
                     onClick={() => setShowCustom(false)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
                   >
                     <X size={18} />
                   </button>
