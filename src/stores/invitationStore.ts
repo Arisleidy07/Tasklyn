@@ -75,13 +75,12 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
 
     // Get the list to check if it has a teamId
     const list = await getList(listId);
-    const teamId = list?.teamId || undefined;
+    const teamId = list?.teamId;
 
     console.log("[invitationStore] List teamId:", teamId || "none");
 
-    const invitationData = {
+    const invitationData: any = {
       listId,
-      teamId,
       invitedBy,
       defaultRole,
       token:
@@ -89,6 +88,11 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
         Math.random().toString(36).slice(2),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     };
+
+    // Only include teamId if it exists (Firestore doesn't accept undefined)
+    if (teamId) {
+      invitationData.teamId = teamId;
+    }
 
     const id = await createInvitationInDb(invitationData);
 
@@ -113,7 +117,7 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
 
     // Get the list to check if it has a teamId
     const list = await getList(listId);
-    const teamId = list?.teamId || undefined;
+    const teamId = list?.teamId;
 
     console.log(
       "[invitationStore] List teamId for email invite:",
@@ -123,15 +127,19 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
     const token =
       Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
 
-    const invitationData = {
+    const invitationData: any = {
       listId,
-      teamId,
       invitedBy,
       invitedEmail: email,
       defaultRole: role,
       token,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     };
+
+    // Only include teamId if it exists (Firestore doesn't accept undefined)
+    if (teamId) {
+      invitationData.teamId = teamId;
+    }
 
     await createInvitationInDb(invitationData);
 
