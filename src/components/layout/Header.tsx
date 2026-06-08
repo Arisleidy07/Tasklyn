@@ -30,8 +30,7 @@ export default function Header({
     <header
       className={cn(
         "border-b sticky top-0 z-20 safe-top backdrop-blur-xl",
-        "border-gray-200 bg-white/95",
-        "dark:bg-slate-900/95 dark:border-slate-800",
+        "border-gray-200 bg-white/95 dark:border-slate-800 dark:bg-slate-900/95",
       )}
     >
       <div className="flex items-center gap-2 px-3 md:px-8 py-3 md:py-5 max-w-full min-h-[60px] md:min-h-[72px]">

@@ -95,8 +95,7 @@ export default function Sidebar() {
         <div
           className={cn(
             "h-16 flex items-center justify-between px-4 border-b flex-shrink-0",
-            "border-gray-200 bg-white/90",
-            "dark:bg-slate-900/90 dark:border-slate-800",
+            "border-gray-200 bg-white/90 dark:border-slate-800 dark:bg-slate-900/90",
           )}
         >
           <Link href="/dashboard" className="flex items-center">
@@ -119,8 +118,7 @@ export default function Sidebar() {
               onClick={toggleSidebar}
               className={cn(
                 "absolute -right-3 top-5 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-colors z-40",
-                "bg-white border border-gray-200 text-gray-400 hover:text-gray-600 shadow-sm",
-                "dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:text-slate-300",
+                "bg-white border border-gray-200 text-gray-400 hover:text-gray-600 shadow-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:text-slate-300",
               )}
             >
               <ChevronRight size={12} />
@@ -430,8 +428,7 @@ export default function Sidebar() {
         <div
           className={cn(
             "px-3 py-3 border-t flex-shrink-0",
-            "border-gray-200 bg-white/90",
-            "dark:bg-slate-900/90 dark:border-slate-800",
+            "border-gray-200 bg-white/90 dark:border-slate-800 dark:bg-slate-900/90",
           )}
         >
           <Link

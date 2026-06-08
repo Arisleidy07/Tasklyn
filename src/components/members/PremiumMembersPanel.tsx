@@ -153,7 +153,7 @@ export default function PremiumMembersPanel({
             ].map((item) => (
               <div
                 key={item.role}
-                className="bg-white/70 rounded-xl p-2.5 text-center"
+                className="bg-white/70 rounded-xl p-2.5 text-center dark:bg-slate-800/70"
               >
                 <span
                   className={cn(
@@ -198,7 +198,7 @@ export default function PremiumMembersPanel({
                 }}
                 onKeyDown={(e) => e.key === "Enter" && handleSendInvitation()}
                 placeholder="correo@ejemplo.com"
-                className="w-full h-11 pl-10 pr-4 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                className="w-full h-11 pl-10 pr-4 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500"
               />
             </div>
 
