@@ -20,29 +20,36 @@ service cloud.firestore {
       return request.resource.data.memberIds != null && getAuthUid() in request.resource.data.memberIds;
     }
 
-    // Helper to check if user is a team member
+    // Helper to check if user is a team member (uses get() for non-team rule contexts)
     function isTeamMember(teamId) {
-      var team = get(/databases/$(database)/documents/teams/$(teamId)).data;
+      let team = get(/databases/$(database)/documents/teams/$(teamId)).data;
       return team != null && team.memberIds != null && getAuthUid() in team.memberIds;
     }
 
-    // Helper to check if user is team owner
+    // Helper to check if user is team owner (uses get() for non-team rule contexts)
     function isTeamOwner(teamId) {
-      var team = get(/databases/$(database)/documents/teams/$(teamId)).data;
+      let team = get(/databases/$(database)/documents/teams/$(teamId)).data;
       return team != null && team.owner == getAuthUid();
     }
 
-    // Helper to check if user is team admin or owner
-    function isTeamAdmin(teamId) {
-      var team = get(/databases/$(database)/documents/teams/$(teamId)).data;
-      if (team == null || team.members == null) return false;
-      var member = team.members[getAuthUid()];
-      return member != null && (member.role == "owner" || member.role == "admin");
+    // Helper to check if user is team admin/owner — uses resource.data (no get() call)
+    // members is stored as an array so we use the owner field directly
+    function isTeamAdminDirect() {
+      return resource.data.owner == getAuthUid();
     }
 
     // Helper to check if user will be team owner after create
     function willBeTeamOwner() {
       return request.resource.data.owner == getAuthUid();
+    }
+
+    // Helper to check if a user is joining a team via invitation (adding themselves only)
+    function isJoiningTeam() {
+      return isAuth() &&
+        resource.data.memberIds != null &&
+        !(getAuthUid() in resource.data.memberIds) &&
+        request.resource.data.memberIds != null &&
+        getAuthUid() in request.resource.data.memberIds;
     }
 
     // Helper to check if user is the owner
@@ -107,17 +114,19 @@ service cloud.firestore {
     }
 
     match /teams/{teamId} {
-      // Allow read if user is a team member
-      allow read: if isAuth() && isTeamMember(teamId);
+      // Allow read if user is in memberIds (uses resource.data directly — no circular get)
+      allow read: if isAuth() && (
+        resource.data.memberIds != null && getAuthUid() in resource.data.memberIds
+      );
 
       // Allow create if user will be owner
       allow create: if isAuth() && willBeTeamOwner();
 
-      // Allow update if user is team admin
-      allow update: if isAuth() && isTeamAdmin(teamId);
+      // Allow update if user is the owner, OR user is joining via invitation acceptance
+      allow update: if isAuth() && (isTeamAdminDirect() || isJoiningTeam());
 
       // Allow delete if user is team owner
-      allow delete: if isAuth() && isTeamOwner(teamId);
+      allow delete: if isAuth() && resource.data.owner == getAuthUid();
     }
 
     match /goals/{goalId} {

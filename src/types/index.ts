@@ -279,6 +279,7 @@ export interface Invitation {
   id: string;
   token: string;
   listId: string;
+  teamId?: string; // optional teamId if list belongs to a team
   invitedBy: string; // userId
   invitedEmail?: string; // email of invited user (for email-based invitations)
   createdAt: string;

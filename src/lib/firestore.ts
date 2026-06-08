@@ -19,6 +19,8 @@ import {
   serverTimestamp,
   Timestamp,
   writeBatch,
+  runTransaction,
+  Transaction,
   DocumentReference,
   DocumentData,
   Unsubscribe,
@@ -892,25 +894,32 @@ export const subscribeToTeamAchievements = (
 // ============================================
 
 /**
- * Accept an invitation with retry logic and comprehensive error handling.
+ * Accept an invitation using a Firestore transaction for atomicity.
  * This function:
- * 1. Verifies the list exists
- * 2. Adds the user as a member with the correct role
- * 3. Updates the list type to "shared"
- * 4. Deletes the invitation document
- * 5. Verifies all writes succeeded
+ * 1. Verifies the list exists and user is not already a member
+ * 2. Adds the user as a list member with the correct role
+ * 3. If the list has a teamId, adds the user to the team
+ * 4. Updates the list type to "shared"
+ * 5. Deletes the invitation document
+ * 6. All operations are atomic - either all succeed or all fail
  */
 export const acceptInvitation = async (
   invitation: Invitation,
   userId: string,
 ): Promise<void> => {
   const debugPrefix = `[acceptInvitation ${userId.substring(0, 6)}...]`;
-  console.log(
-    `${debugPrefix} Starting acceptance for list ${invitation.listId}`,
-  );
+  console.log(`${debugPrefix} ===== STARTING INVITATION ACCEPTANCE =====`);
+  console.log(`${debugPrefix} Invitation ID: ${invitation.id}`);
+  console.log(`${debugPrefix} List ID: ${invitation.listId}`);
+  console.log(`${debugPrefix} Team ID: ${invitation.teamId || "none"}`);
+  console.log(`${debugPrefix} User ID: ${userId}`);
+  console.log(`${debugPrefix} Default Role: ${invitation.defaultRole}`);
 
   const listRef = doc(db, "lists", invitation.listId);
   const invitationRef = doc(db, "invitations", invitation.id);
+  const teamRef = invitation.teamId
+    ? doc(db, "teams", invitation.teamId)
+    : null;
 
   // Retry configuration
   const MAX_RETRIES = 3;
@@ -918,98 +927,221 @@ export const acceptInvitation = async (
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      console.log(`${debugPrefix} Attempt ${attempt}/${MAX_RETRIES}`);
-
-      // Step 1: Read the list with fresh data from server
-      console.log(`${debugPrefix} Fetching list document from server...`);
-      const listSnap = await getDocFromServer(listRef);
-
-      if (!listSnap.exists()) {
-        throw new Error(`List ${invitation.listId} not found`);
-      }
-
-      const listData = listSnap.data();
-      const currentMembers: ListMember[] = listData.members || [];
-      const existingMember = currentMembers.find((m) => m.userId === userId);
-
-      if (existingMember) {
-        console.log(
-          `${debugPrefix} User already member with role ${existingMember.role}`,
-        );
-        // User is already a member, just delete the invitation
-        await deleteDoc(invitationRef);
-        console.log(
-          `${debugPrefix} Deleted invitation (user was already member)`,
-        );
-        return;
-      }
-
-      // Step 2: Prepare updated members array
-      const newMember: ListMember = {
-        userId,
-        role: invitation.defaultRole,
-        joinedAt: new Date().toISOString(),
-      };
-      const updatedMembers = [...currentMembers, newMember];
-      const updatedMemberIds = updatedMembers.map((m) => m.userId);
-
       console.log(
-        `${debugPrefix} Adding member with role ${invitation.defaultRole}`,
-      );
-      console.log(
-        `${debugPrefix} Members before: ${currentMembers.length}, after: ${updatedMembers.length}`,
+        `${debugPrefix} ----- ATTEMPT ${attempt}/${MAX_RETRIES} -----`,
       );
 
-      // Step 3: Update the list document
-      const updateData = {
-        members: updatedMembers,
-        memberIds: updatedMemberIds,
-        type: "shared" as const,
-        updatedAt: serverTimestamp(),
-      };
+      // Use transaction for atomicity
+      await runTransaction(db, async (transaction) => {
+        console.log(`${debugPrefix} Transaction started`);
 
-      console.log(`${debugPrefix} Updating list document...`);
-      await updateDoc(listRef, updateData);
-      console.log(`${debugPrefix} List updated successfully`);
+        // Step 1: Read the list document
+        console.log(`${debugPrefix} Reading list document...`);
+        const listSnap = await transaction.get(listRef);
 
-      // Step 4: Verify the write succeeded from server (critical!)
-      console.log(`${debugPrefix} Verifying list update from server...`);
-      const verifySnap = await getDocFromServer(listRef);
-      if (!verifySnap.exists()) {
-        throw new Error("List disappeared after update");
+        if (!listSnap.exists()) {
+          console.error(
+            `${debugPrefix} ERROR: List ${invitation.listId} not found`,
+          );
+          throw new Error(`List ${invitation.listId} not found`);
+        }
+        console.log(`${debugPrefix} List document found`);
+
+        const listData = listSnap.data();
+        const currentMembers: ListMember[] = listData.members || [];
+        const existingMember = currentMembers.find((m) => m.userId === userId);
+
+        console.log(
+          `${debugPrefix} Current members count: ${currentMembers.length}`,
+        );
+        console.log(`${debugPrefix} User already member: ${!!existingMember}`);
+
+        if (existingMember) {
+          console.log(
+            `${debugPrefix} User is already a member, skipping list update`,
+          );
+          // User is already a member, just delete the invitation
+          transaction.delete(invitationRef);
+          console.log(
+            `${debugPrefix} Transaction: deleted invitation (user already member)`,
+          );
+          return;
+        }
+
+        // Step 2: Prepare updated members array for list
+        const newMember: ListMember = {
+          userId,
+          role: invitation.defaultRole,
+          joinedAt: new Date().toISOString(),
+        };
+        const updatedMembers = [...currentMembers, newMember];
+        const updatedMemberIds = updatedMembers.map((m) => m.userId);
+
+        console.log(
+          `${debugPrefix} Adding user to list with role: ${invitation.defaultRole}`,
+        );
+        console.log(
+          `${debugPrefix} Members after add: ${updatedMembers.length}`,
+        );
+
+        // Step 3: Update the list document
+        const listUpdateData = {
+          members: updatedMembers,
+          memberIds: updatedMemberIds,
+          type: "shared" as const,
+          updatedAt: serverTimestamp(),
+        };
+
+        console.log(`${debugPrefix} Transaction: updating list document`);
+        transaction.update(listRef, listUpdateData);
+        console.log(`${debugPrefix} Transaction: list update queued`);
+
+        // Step 4: If list has a team, add user to team
+        if (invitation.teamId) {
+          console.log(
+            `${debugPrefix} List has team ${invitation.teamId}, adding user to team`,
+          );
+          const teamSnap = await transaction.get(teamRef!);
+
+          if (!teamSnap.exists()) {
+            console.error(
+              `${debugPrefix} ERROR: Team ${invitation.teamId} not found`,
+            );
+            throw new Error(`Team ${invitation.teamId} not found`);
+          }
+          console.log(`${debugPrefix} Team document found`);
+
+          const teamData = teamSnap.data();
+          const currentTeamMembers: TeamMember[] = teamData.members || [];
+          const existingTeamMember = currentTeamMembers.find(
+            (m) => m.userId === userId,
+          );
+
+          console.log(
+            `${debugPrefix} Current team members count: ${currentTeamMembers.length}`,
+          );
+          console.log(
+            `${debugPrefix} User already in team: ${!!existingTeamMember}`,
+          );
+
+          if (!existingTeamMember) {
+            const newTeamMember: TeamMember = {
+              userId,
+              role: "member" as TeamRole,
+              joinedAt: new Date().toISOString(),
+              invitedBy: invitation.invitedBy,
+            };
+            const updatedTeamMembers = [...currentTeamMembers, newTeamMember];
+            const updatedTeamMemberIds = updatedTeamMembers.map(
+              (m) => m.userId,
+            );
+
+            console.log(`${debugPrefix} Adding user to team as member`);
+            console.log(
+              `${debugPrefix} Team members after add: ${updatedTeamMembers.length}`,
+            );
+
+            const teamUpdateData = {
+              members: updatedTeamMembers,
+              memberIds: updatedTeamMemberIds,
+              "stats.totalMembers": updatedTeamMembers.length,
+              updatedAt: serverTimestamp(),
+            };
+
+            console.log(`${debugPrefix} Transaction: updating team document`);
+            transaction.update(teamRef!, teamUpdateData);
+            console.log(`${debugPrefix} Transaction: team update queued`);
+          } else {
+            console.log(
+              `${debugPrefix} User already in team, skipping team update`,
+            );
+          }
+        } else {
+          console.log(`${debugPrefix} List has no team, skipping team update`);
+        }
+
+        // Step 5: Delete the invitation document
+        console.log(`${debugPrefix} Transaction: deleting invitation document`);
+        transaction.delete(invitationRef);
+        console.log(`${debugPrefix} Transaction: invitation deletion queued`);
+
+        console.log(
+          `${debugPrefix} Transaction: all operations queued successfully`,
+        );
+      });
+
+      console.log(`${debugPrefix} Transaction committed successfully`);
+
+      // Step 6: Verify the writes succeeded from server (critical!)
+      console.log(`${debugPrefix} Verifying writes from server...`);
+
+      const verifyListSnap = await getDocFromServer(listRef);
+      if (!verifyListSnap.exists()) {
+        console.error(
+          `${debugPrefix} ERROR: List disappeared after transaction`,
+        );
+        throw new Error("List disappeared after transaction");
       }
 
-      const verifyData = verifySnap.data();
-      const verifyMembers: ListMember[] = verifyData.members || [];
-      const isMemberAdded = verifyMembers.some((m) => m.userId === userId);
+      const verifyListData = verifyListSnap.data();
+      const verifyListMembers: ListMember[] = verifyListData.members || [];
+      const isListMemberAdded = verifyListMembers.some(
+        (m) => m.userId === userId,
+      );
 
-      if (!isMemberAdded) {
-        throw new Error("Member was not added to list after update");
+      if (!isListMemberAdded) {
+        console.error(
+          `${debugPrefix} ERROR: User not in list members after transaction`,
+        );
+        throw new Error("User was not added to list after transaction");
+      }
+      console.log(`${debugPrefix} ✓ Verified: user is in list members`);
+
+      // Verify team membership if applicable
+      if (invitation.teamId) {
+        const verifyTeamSnap = await getDocFromServer(teamRef!);
+        if (!verifyTeamSnap.exists()) {
+          console.error(
+            `${debugPrefix} ERROR: Team disappeared after transaction`,
+          );
+          throw new Error("Team disappeared after transaction");
+        }
+
+        const verifyTeamData = verifyTeamSnap.data();
+        const verifyTeamMembers: TeamMember[] = verifyTeamData.members || [];
+        const isTeamMemberAdded = verifyTeamMembers.some(
+          (m) => m.userId === userId,
+        );
+
+        if (!isTeamMemberAdded) {
+          console.error(
+            `${debugPrefix} ERROR: User not in team members after transaction`,
+          );
+          throw new Error("User was not added to team after transaction");
+        }
+        console.log(`${debugPrefix} ✓ Verified: user is in team members`);
       }
 
-      console.log(`${debugPrefix} Verified: user is now in members array`);
-
-      // Step 5: Delete the invitation document
-      console.log(`${debugPrefix} Deleting invitation ${invitation.id}...`);
-      await deleteDoc(invitationRef);
-      console.log(`${debugPrefix} Invitation deleted`);
-
-      // Step 6: Verify invitation deletion
+      // Verify invitation deletion
       const inviteVerify = await getDoc(invitationRef);
       if (inviteVerify.exists()) {
         console.warn(
-          `${debugPrefix} Warning: Invitation still exists after deletion`,
+          `${debugPrefix} WARNING: Invitation still exists after deletion`,
         );
-        // Don't throw here, the main operation succeeded
       } else {
-        console.log(`${debugPrefix} Verified: invitation deleted`);
+        console.log(`${debugPrefix} ✓ Verified: invitation deleted`);
       }
 
-      console.log(`${debugPrefix} SUCCESS: Invitation accepted completely`);
+      console.log(
+        `${debugPrefix} ===== SUCCESS: INVITATION ACCEPTED COMPLETELY =====`,
+      );
       return; // Success! Exit retry loop
     } catch (error) {
       lastError = error as Error;
-      console.error(`${debugPrefix} Attempt ${attempt} failed:`, error);
+      console.error(`${debugPrefix} ----- ATTEMPT ${attempt} FAILED -----`);
+      console.error(`${debugPrefix} Error:`, error);
+      console.error(`${debugPrefix} Error message:`, (error as Error).message);
+      console.error(`${debugPrefix} Error code:`, (error as any).code);
 
       if (attempt < MAX_RETRIES) {
         const delay = attempt * 1000; // 1s, 2s, 3s
@@ -1020,7 +1152,8 @@ export const acceptInvitation = async (
   }
 
   // All retries exhausted
-  console.error(`${debugPrefix} ALL RETRIES FAILED`);
+  console.error(`${debugPrefix} ===== ALL RETRIES FAILED =====`);
+  console.error(`${debugPrefix} Final error:`, lastError?.message);
   throw new Error(
     `Failed to accept invitation after ${MAX_RETRIES} attempts: ${lastError?.message}`,
   );

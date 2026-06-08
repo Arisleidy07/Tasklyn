@@ -210,19 +210,22 @@ export default function NotificationsPage() {
     notifId: string,
     data: Record<string, string>,
   ) => {
-    console.log(`[Notifications] Accepting invitation ${notifId}`);
+    console.log(`[Notifications] ===== STARTING ACCEPT INVITATION =====`);
+    console.log(`[Notifications] Notification ID: ${notifId}`);
+    console.log(`[Notifications] User ID: ${user.id}`);
+    console.log(`[Notifications] User Name: ${user.name}`);
     setProcessingId(notifId);
 
     try {
       // Step 1: Get the invitation
       console.log(
-        `[Notifications] Fetching invitation with token ${data.token}...`,
+        `[Notifications] Step 1: Fetching invitation with token ${data.token}...`,
       );
       const invitation = await getInvitation(data.token);
 
       if (!invitation) {
         console.error(
-          `[Notifications] Invitation not found for token ${data.token}`,
+          `[Notifications] ERROR: Invitation not found for token ${data.token}`,
         );
         alert(
           "No se encontró la invitación. Puede haber expirado o sido eliminada.",
@@ -231,41 +234,51 @@ export default function NotificationsPage() {
         return;
       }
 
-      console.log(`[Notifications] Found invitation:`, {
+      console.log(`[Notifications] Step 1: Found invitation:`, {
         id: invitation.id,
         listId: invitation.listId,
+        teamId: invitation.teamId || "none",
         role: invitation.defaultRole,
       });
 
-      // Step 2: Accept the invitation (adds to list, deletes invitation)
-      console.log(`[Notifications] Calling acceptInvitation...`);
+      // Step 2: Accept the invitation (adds to list + team, deletes invitation)
+      console.log(`[Notifications] Step 2: Calling acceptInvitation...`);
       await acceptInvitation(invitation, user.id, user.name);
-      console.log(`[Notifications] acceptInvitation completed successfully`);
+      console.log(
+        `[Notifications] Step 2: acceptInvitation completed successfully`,
+      );
 
       // Step 3: Verify by fetching the updated list
-      console.log(`[Notifications] Verifying list membership...`);
+      console.log(`[Notifications] Step 3: Verifying list membership...`);
       const list = await getList(invitation.listId);
       const isNowMember = list?.members?.some((m) => m.userId === user.id);
 
       if (!isNowMember) {
         console.error(
-          `[Notifications] Verification failed: user not in list members`,
+          `[Notifications] ERROR: Verification failed - user not in list members`,
         );
         throw new Error("No se pudo verificar la membresía en la lista");
       }
 
       console.log(
-        `[Notifications] Verified: user is now member of list ${invitation.listId}`,
+        `[Notifications] Step 3: Verified - user is now member of list ${invitation.listId}`,
       );
 
       // Step 4: Only mark notification as accepted after successful verification
-      console.log(`[Notifications] Marking notification as accepted...`);
+      console.log(
+        `[Notifications] Step 4: Marking notification as accepted...`,
+      );
       await setStatus(notifId, "accepted");
       await markRead(notifId);
+      console.log(`[Notifications] Step 4: Notification marked as accepted`);
 
-      console.log(`[Notifications] SUCCESS: Invitation flow completed`);
+      console.log(
+        `[Notifications] ===== SUCCESS: INVITATION FLOW COMPLETED =====`,
+      );
     } catch (error) {
-      console.error("[Notifications] Error accepting invitation:", error);
+      console.error("[Notifications] ===== ERROR ACCEPTING INVITATION =====");
+      console.error("[Notifications] Error:", error);
+      console.error("[Notifications] Error message:", (error as Error).message);
       alert("Error al aceptar la invitación. Por favor, inténtalo de nuevo.");
     } finally {
       setProcessingId(null);

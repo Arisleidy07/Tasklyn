@@ -9,6 +9,7 @@ import {
   acceptInvitation as acceptInvitationInDb,
   getUserByEmail,
   createNotification,
+  getList,
 } from "@/lib/firestore";
 import {
   notifyInvitationAccepted,
@@ -19,6 +20,7 @@ import {
   playNotificationSound,
 } from "@/lib/notifications";
 import { useListStore } from "./listStore";
+import { useTeamStore } from "./teamStore";
 import type { Invitation, MemberRole } from "@/types";
 
 interface SendEmailInviteParams {
@@ -69,8 +71,17 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
   },
 
   createInvitation: async (listId, invitedBy, defaultRole = "viewer") => {
+    console.log("[invitationStore] Creating invitation for list:", listId);
+
+    // Get the list to check if it has a teamId
+    const list = await getList(listId);
+    const teamId = list?.teamId || undefined;
+
+    console.log("[invitationStore] List teamId:", teamId || "none");
+
     const invitationData = {
       listId,
+      teamId,
       invitedBy,
       defaultRole,
       token:
@@ -80,6 +91,8 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
     };
 
     const id = await createInvitationInDb(invitationData);
+
+    console.log("[invitationStore] Invitation created with ID:", id);
 
     return {
       id,
@@ -96,11 +109,23 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
     email,
     role,
   }) => {
+    console.log("[invitationStore] Sending email invitation to:", email);
+
+    // Get the list to check if it has a teamId
+    const list = await getList(listId);
+    const teamId = list?.teamId || undefined;
+
+    console.log(
+      "[invitationStore] List teamId for email invite:",
+      teamId || "none",
+    );
+
     const token =
       Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
 
     const invitationData = {
       listId,
+      teamId,
       invitedBy,
       invitedEmail: email,
       defaultRole: role,
@@ -157,40 +182,78 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
   },
 
   acceptInvitation: async (invitation, userId, accepterName) => {
-    console.log("[invitationStore] acceptInvitation starting", {
-      invitationId: invitation.id,
-      userId,
-      accepterName,
-    });
+    console.log("[invitationStore] ===== STARTING ACCEPT INVITATION =====");
+    console.log("[invitationStore] Invitation ID:", invitation.id);
+    console.log("[invitationStore] List ID:", invitation.listId);
+    console.log("[invitationStore] Team ID:", invitation.teamId || "none");
+    console.log("[invitationStore] User ID:", userId);
+    console.log("[invitationStore] Accepter Name:", accepterName);
 
-    // Step 1: Accept the invitation in Firestore (adds user to list members)
+    // Step 1: Accept the invitation in Firestore (adds user to list + team members)
+    console.log("[invitationStore] Step 1: Calling acceptInvitationInDb...");
     await acceptInvitationInDb(invitation, userId);
-    console.log("[invitationStore] acceptInvitationInDb completed");
+    console.log(
+      "[invitationStore] Step 1: acceptInvitationInDb completed successfully",
+    );
 
     // Step 2: Force refresh lists to include the newly joined list
     // This ensures the list appears immediately in "Shared Lists" without waiting
-    console.log("[invitationStore] Refreshing lists...");
+    console.log("[invitationStore] Step 2: Refreshing lists...");
     try {
       const listStore = useListStore.getState();
       await listStore.refreshLists(userId);
-      console.log("[invitationStore] Lists refreshed successfully");
+      console.log("[invitationStore] Step 2: Lists refreshed successfully");
     } catch (error) {
-      console.error("[invitationStore] Failed to refresh lists:", error);
+      console.error(
+        "[invitationStore] Step 2: Failed to refresh lists:",
+        error,
+      );
       // Don't throw - the subscription should eventually catch up
     }
 
-    // Step 3: Notify the inviter that invitation was accepted
+    // Step 3: If invitation has teamId, refresh teams as well
+    if (invitation.teamId) {
+      console.log(
+        "[invitationStore] Step 3: Refreshing teams (invitation has team)...",
+      );
+      try {
+        const teamStore = useTeamStore.getState();
+        await teamStore.refreshTeams(userId);
+        console.log("[invitationStore] Step 3: Teams refreshed successfully");
+      } catch (error) {
+        console.error(
+          "[invitationStore] Step 3: Failed to refresh teams:",
+          error,
+        );
+        // Don't throw - the subscription should eventually catch up
+      }
+    } else {
+      console.log(
+        "[invitationStore] Step 3: Skipping team refresh (no teamId)",
+      );
+    }
+
+    // Step 4: Notify the inviter that invitation was accepted
     if (accepterName) {
+      console.log(
+        "[invitationStore] Step 4: Sending notification to inviter...",
+      );
       await notifyInvitationAccepted(
         invitation.invitedBy,
         invitation.listId,
         accepterName,
         invitation.listId,
       );
-      console.log("[invitationStore] notifyInvitationAccepted sent to owner");
+      console.log("[invitationStore] Step 4: Notification sent to owner");
+    } else {
+      console.log(
+        "[invitationStore] Step 4: Skipping notification (no accepterName)",
+      );
     }
 
-    console.log("[invitationStore] acceptInvitation completed successfully");
+    console.log(
+      "[invitationStore] ===== ACCEPT INVITATION COMPLETED SUCCESSFULLY =====",
+    );
   },
 
   rejectInvitation: async (invitation, _userId, rejecterName) => {
