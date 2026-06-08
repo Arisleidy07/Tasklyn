@@ -8,7 +8,7 @@ import {
   subscribeToTeamAchievements,
   subscribeToUserAchievements,
 } from "@/lib/firestore";
-import { createNotification } from "@/lib/firestore";
+import { notifyUser } from "@/lib/notify";
 import type { Achievement, Team, Task } from "@/types";
 
 export interface RecognitionEvent {
@@ -235,19 +235,15 @@ class RecognitionService {
     type: string,
   ): Promise<void> {
     try {
-      await createNotification({
+      await notifyUser({
         userId,
         type: "task_completed" as any, // Could add new notification types
         title,
         body,
-        read: false,
-        priority: "high",
-        actionUrl: `/ranking`,
-        actionText: "Ver ranking",
-        teamId,
         data: {
           type: "recognition",
           category: type,
+          teamId,
         },
       });
       console.log(`✅ Recognition notification created for user: ${userId}`);
@@ -273,21 +269,16 @@ class RecognitionService {
         body = `La tarea "${task.title}" fue completada por el equipo.`;
       }
 
-      await createNotification({
+      await notifyUser({
         userId: completedBy,
         type: "task_completed",
         title,
         body,
-        read: false,
-        priority: "medium",
-        actionUrl: `/lists/${task.listId}`,
-        actionText: "Ver tarea",
-        teamId: task.teamId,
         data: {
           taskId: task.id,
           listId: task.listId,
-          performedBy: performedBy || undefined,
-        } as Record<string, string>,
+          ...(performedBy && { performedBy }),
+        },
       });
     } catch (error) {
       console.error("Failed to create completion notification:", error);
@@ -317,20 +308,15 @@ class RecognitionService {
 
     // Notify all team members
     for (const member of team.members) {
-      await createNotification({
+      await notifyUser({
         userId: member.userId,
         type: "task_completed" as any,
         title: "📊 Resumen Semanal del Equipo",
         body: `Este semana completamos ${summaryData.totalTasksCompleted} tareas con ${summaryData.teamCompletionRate}% de tasa de cumplimiento. ¡Felicidades ${summaryData.topPerformer.name} por ser el campeón semanal!`,
-        read: false,
-        priority: "medium",
-        actionUrl: "/team-dashboard",
-        actionText: "Ver dashboard",
-        teamId,
         data: {
           type: "weekly_summary",
           summary: JSON.stringify(summaryData),
-        } as Record<string, string>,
+        },
       });
     }
   }
