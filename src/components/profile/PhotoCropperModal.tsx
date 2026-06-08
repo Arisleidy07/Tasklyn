@@ -112,7 +112,7 @@ export default function PhotoCropperModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[2147483647] flex flex-col"
+          className="fixed inset-0 z-[99999] flex flex-col"
           style={{ isolation: "isolate" }}
         >
           {/* Fullscreen dark overlay - ABSOLUTE BLACK */}

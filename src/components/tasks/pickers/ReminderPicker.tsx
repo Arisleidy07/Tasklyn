@@ -16,7 +16,12 @@ interface ReminderPickerProps {
 }
 
 export default function ReminderPicker({
-  isOpen, onClose, onSelect, currentReminders, taskDueDate, taskDueTime,
+  isOpen,
+  onClose,
+  onSelect,
+  currentReminders,
+  taskDueDate,
+  taskDueTime,
 }: ReminderPickerProps) {
   const [showCustom, setShowCustom] = useState(false);
   const [customDate, setCustomDate] = useState(toISODate(new Date()));
@@ -57,7 +62,9 @@ export default function ReminderPicker({
   const handleAddToDueDate = () => {
     if (!taskDueDate) return;
     // Remind 1 hour before due
-    const due = new Date(taskDueDate + (taskDueTime ? `T${taskDueTime}` : "T00:00:00"));
+    const due = new Date(
+      taskDueDate + (taskDueTime ? `T${taskDueTime}` : "T00:00:00"),
+    );
     due.setHours(due.getHours() - 1);
     const at = due.toISOString();
     onSelect([{ id: genId(), at, sent: false }]);
@@ -67,132 +74,163 @@ export default function ReminderPicker({
   return (
     <AnimatePresence>
       {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4"
-          style={{ isolation: "isolate" }}
-        >
-          <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-
-          {!showCustom ? (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative z-10 w-full max-w-[340px] bg-white rounded-2xl shadow-2xl overflow-hidden"
-            >
-              {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <div className="flex items-center gap-2">
-                  <Bell size={18} className="text-gray-500" />
-                  <h3 className="text-sm font-semibold text-gray-900">Recordarme</h3>
-                </div>
-                <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Quick options */}
-              <div className="px-5 py-3 space-y-1">
-                {quickOptions.map(opt => (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[99998] bg-black/60"
+            onClick={onClose}
+          />
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[99999] flex items-center justify-center p-4"
+            style={{ isolation: "isolate" }}
+          >
+            {!showCustom ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="relative z-10 w-full max-w-[340px] bg-white rounded-2xl shadow-2xl overflow-hidden"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                  <div className="flex items-center gap-2">
+                    <Bell size={18} className="text-gray-500" />
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      Recordarme
+                    </h3>
+                  </div>
                   <button
-                    key={opt.label}
-                    onClick={() => { onSelect(opt.getReminders()); onClose(); }}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    onClick={onClose}
+                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
                   >
-                    <span className="font-medium">{opt.label}</span>
+                    <X size={18} />
                   </button>
-                ))}
-
-                {taskDueDate && (
-                  <button
-                    onClick={handleAddToDueDate}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    <Clock size={14} className="text-gray-400" />
-                    <span className="font-medium">1 hora antes del vencimiento</span>
-                  </button>
-                )}
-
-                <button
-                  onClick={() => setShowCustom(true)}
-                  className="w-full px-3 py-2.5 rounded-xl text-sm text-gray-900 hover:bg-gray-50 transition-colors font-medium"
-                >
-                  Elegir fecha y hora
-                </button>
-
-                {currentReminders && currentReminders.length > 0 && (
-                  <button
-                    onClick={() => { onSelect([]); onClose(); }}
-                    className="w-full px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
-                  >
-                    Eliminar recordatorio
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative z-10 w-full max-w-[340px] bg-white rounded-2xl shadow-2xl overflow-hidden"
-            >
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h3 className="text-sm font-semibold text-gray-900">Elegir fecha y hora</h3>
-                <button onClick={() => setShowCustom(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="p-5 space-y-4">
-                {/* Date */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Fecha</label>
-                  <input
-                    type="date"
-                    value={customDate}
-                    onChange={(e) => setCustomDate(e.target.value)}
-                    className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-                  />
                 </div>
 
-                {/* Time */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Hora</label>
-                  <div className="flex gap-2">
+                {/* Quick options */}
+                <div className="px-5 py-3 space-y-1">
+                  {quickOptions.map((opt) => (
+                    <button
+                      key={opt.label}
+                      onClick={() => {
+                        onSelect(opt.getReminders());
+                        onClose();
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <span className="font-medium">{opt.label}</span>
+                    </button>
+                  ))}
+
+                  {taskDueDate && (
+                    <button
+                      onClick={handleAddToDueDate}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <Clock size={14} className="text-gray-400" />
+                      <span className="font-medium">
+                        1 hora antes del vencimiento
+                      </span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => setShowCustom(true)}
+                    className="w-full px-3 py-2.5 rounded-xl text-sm text-gray-900 hover:bg-gray-50 transition-colors font-medium"
+                  >
+                    Elegir fecha y hora
+                  </button>
+
+                  {currentReminders && currentReminders.length > 0 && (
+                    <button
+                      onClick={() => {
+                        onSelect([]);
+                        onClose();
+                      }}
+                      className="w-full px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
+                    >
+                      Eliminar recordatorio
+                    </button>
+                  )}
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                className="relative z-10 w-full max-w-[340px] bg-white rounded-2xl shadow-2xl overflow-hidden"
+              >
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    Elegir fecha y hora
+                  </h3>
+                  <button
+                    onClick={() => setShowCustom(false)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="p-5 space-y-4">
+                  {/* Date */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Fecha
+                    </label>
                     <input
-                      type="time"
-                      value={customTime}
-                      onChange={(e) => setCustomTime(e.target.value)}
-                      className="flex-1 h-11 px-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                      type="date"
+                      value={customDate}
+                      onChange={(e) => setCustomDate(e.target.value)}
+                      className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
                     />
-                    <div className="flex bg-gray-100 rounded-xl overflow-hidden">
-                      {(["AM", "PM"] as const).map(a => (
-                        <button
-                          key={a}
-                          onClick={() => setCustomAmPm(a)}
-                          className={`px-4 text-sm font-medium transition-colors ${customAmPm === a ? "bg-gray-900 text-white" : "text-gray-600 hover:text-gray-900"}`}
-                        >
-                          {a}
-                        </button>
-                      ))}
+                  </div>
+
+                  {/* Time */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      Hora
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="time"
+                        value={customTime}
+                        onChange={(e) => setCustomTime(e.target.value)}
+                        className="flex-1 h-11 px-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+                      />
+                      <div className="flex bg-gray-100 rounded-xl overflow-hidden">
+                        {(["AM", "PM"] as const).map((a) => (
+                          <button
+                            key={a}
+                            onClick={() => setCustomAmPm(a)}
+                            className={`px-4 text-sm font-medium transition-colors ${customAmPm === a ? "bg-gray-900 text-white" : "text-gray-600 hover:text-gray-900"}`}
+                          >
+                            {a}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <button
-                  onClick={handleCustomSave}
-                  className="w-full h-11 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
-                >
-                  Guardar recordatorio
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </motion.div>
+                  <button
+                    onClick={handleCustomSave}
+                    className="w-full h-11 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
+                  >
+                    Guardar recordatorio
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        </>
       )}
     </AnimatePresence>
   );
