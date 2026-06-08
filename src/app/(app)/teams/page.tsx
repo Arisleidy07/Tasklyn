@@ -96,7 +96,7 @@ function TeamCard({ team, userRole, onEdit, onManage }: TeamCardProps) {
               ? "Propietario"
               : userRole === "admin"
                 ? "Administrador"
-                : "Miembro"}
+                : "..."}
           </span>
 
           <button className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition-colors">

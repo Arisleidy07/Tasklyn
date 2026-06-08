@@ -139,7 +139,7 @@ export default function ListDetailPage() {
         const realName =
           profile?.name ||
           (m.userId === user?.id ? user?.name : undefined) ||
-          `Miembro`;
+          `...`;
         acc[m.userId] = getDisplayName(listId, m.userId, realName);
         return acc;
       },

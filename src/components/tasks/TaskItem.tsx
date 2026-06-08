@@ -94,8 +94,7 @@ export default function TaskItem({
   const canArchive = canArchiveTask(role);
   const canManageOptions = canManageTaskOptions(role);
 
-  const getUserName = (userId: string) =>
-    memberNames[userId] || "Usuario desconocido";
+  const getUserName = (userId: string) => memberNames[userId] || "...";
 
   const handleToggleComplete = () => {
     if (!user || !canComplete) return;

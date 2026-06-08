@@ -18,7 +18,8 @@ export function useUserProfiles(uids: string[]) {
   const [profiles, setProfiles] = useState<Map<string, UserProfile>>(() => {
     const initial = new Map<string, UserProfile>();
     uids.forEach((uid) => {
-      if (uid && profileCache.has(uid)) initial.set(uid, profileCache.get(uid)!);
+      if (uid && profileCache.has(uid))
+        initial.set(uid, profileCache.get(uid)!);
     });
     return initial;
   });
@@ -59,9 +60,9 @@ export function useUserProfiles(uids: string[]) {
                   photoURL: u.photoURL || undefined,
                   email: u.email,
                 }
-              : { name: "Usuario" },
+              : { name: "Usuario desconocido" },
           }))
-          .catch(() => ({ uid, profile: { name: "Usuario" } })),
+          .catch(() => ({ uid, profile: { name: "Usuario desconocido" } })),
       ),
     ).then((results) => {
       const updated = new Map<string, UserProfile>();

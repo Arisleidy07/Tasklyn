@@ -269,8 +269,7 @@ export default function EditListModal({
               const profile = memberProfiles[member.userId];
               const isOwnerMember = member.role === "owner";
               const isSelf = member.userId === user.id;
-              const displayName =
-                profile?.name || (isSelf ? user.name : `Miembro ${index + 1}`);
+              const displayName = profile?.name || (isSelf ? user.name : "...");
               const displayEmail = profile?.email || "";
               const photoURL = profile?.photoURL || "";
               const isConfirmingRemove = confirmRemove === member.userId;

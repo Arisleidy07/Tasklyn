@@ -84,7 +84,7 @@ export default function TeamDetailPage() {
           ).length;
           return {
             id: member.userId,
-            name: profile?.name || "Miembro",
+            name: profile?.name || "...",
             email: profile?.email || "",
             photoURL: profile?.photoURL || "",
             plan: profile?.plan || "FREE",
@@ -158,7 +158,7 @@ export default function TeamDetailPage() {
   const getRoleLabel = (role: string) => {
     if (role === "owner") return "Propietario";
     if (role === "admin") return "Administrador";
-    return "Miembro";
+    return "...";
   };
 
   const getRoleBadge = (role: string) => {

@@ -73,7 +73,7 @@ export default function PremiumMembersPanel({
         email: inviteEmail.trim(),
         listId: list.id,
         listName: list.name,
-        inviterName: user.name || user.email || "Un miembro",
+        inviterName: user.name || user.email || "...",
         role: inviteRole,
         invitedBy: user.id,
       });
