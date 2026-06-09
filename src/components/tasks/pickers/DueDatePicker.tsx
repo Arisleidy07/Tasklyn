@@ -192,7 +192,7 @@ export default function DueDatePicker({
                         disabled={!day.currentMonth}
                         className={`
                         aspect-square flex items-center justify-center rounded-full text-sm font-medium transition-all
-                        ${!day.currentMonth ? "text-gray-200 cursor-default" : "text-gray-700 hover:bg-gray-100 cursor-pointer"}
+                        ${!day.currentMonth ? "text-gray-200 dark:text-slate-700 cursor-default" : "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer"}
                         ${isSelected ? "bg-gray-900 text-white hover:bg-gray-800 dark:bg-slate-700 dark:hover:bg-slate-600" : "text-gray-700 dark:text-slate-300"}
                         ${isToday && !isSelected ? "ring-2 ring-gray-900 ring-offset-1 dark:ring-slate-500 dark:ring-offset-slate-900" : ""}
                       `}

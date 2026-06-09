@@ -4,12 +4,10 @@ import React, { useState } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useInvitationStore } from "@/stores/invitationStore";
-import { useUIStore } from "@/stores/uiStore";
 import { getList } from "@/lib/firestore";
 import Header from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import EmptyState from "@/components/ui/EmptyState";
-import Logo from "@/components/shared/Logo";
 import {
   Bell,
   CheckCheck,
@@ -26,116 +24,67 @@ import {
   Edit2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { MemberRole, NotificationType } from "@/types";
+import type { NotificationType } from "@/types";
 
-// Theme-aware notification type config
-const getTypeConfig = (isDark: boolean) =>
-  ({
-    invitation: {
-      icon: UserPlus,
-      light: {
-        color: "text-blue-600",
-        bg: "bg-blue-50",
-        border: "border-blue-200",
-      },
-      dark: {
-        color: "text-blue-400",
-        bg: "bg-blue-500/15",
-        border: "border-blue-400/25",
-      },
-    },
-    task_assigned: {
-      icon: ListTodo,
-      light: {
-        color: "text-blue-600",
-        bg: "bg-blue-50",
-        border: "border-blue-200",
-      },
-      dark: {
-        color: "text-blue-400",
-        bg: "bg-blue-500/15",
-        border: "border-blue-400/25",
-      },
-    },
-    task_completed: {
-      icon: CheckCircle2,
-      light: {
-        color: "text-emerald-600",
-        bg: "bg-emerald-50",
-        border: "border-emerald-200",
-      },
-      dark: {
-        color: "text-emerald-400",
-        bg: "bg-emerald-500/15",
-        border: "border-emerald-400/25",
-      },
-    },
-    task_edited: {
-      icon: Edit2,
-      light: {
-        color: "text-amber-600",
-        bg: "bg-amber-50",
-        border: "border-amber-200",
-      },
-      dark: {
-        color: "text-amber-400",
-        bg: "bg-amber-500/15",
-        border: "border-amber-400/25",
-      },
-    },
-    member_joined: {
-      icon: Users,
-      light: {
-        color: "text-blue-600",
-        bg: "bg-blue-50",
-        border: "border-blue-200",
-      },
-      dark: {
-        color: "text-blue-400",
-        bg: "bg-blue-500/15",
-        border: "border-blue-400/25",
-      },
-    },
-    list_shared: {
-      icon: Share2,
-      light: {
-        color: "text-amber-600",
-        bg: "bg-amber-50",
-        border: "border-amber-200",
-      },
-      dark: {
-        color: "text-amber-400",
-        bg: "bg-amber-500/15",
-        border: "border-amber-400/25",
-      },
-    },
-    reminder: {
-      icon: Bell,
-      light: {
-        color: "text-amber-600",
-        bg: "bg-amber-50",
-        border: "border-amber-200",
-      },
-      dark: {
-        color: "text-amber-400",
-        bg: "bg-amber-500/15",
-        border: "border-amber-400/25",
-      },
-    },
-    due_soon: {
-      icon: Clock,
-      light: {
-        color: "text-red-600",
-        bg: "bg-red-50",
-        border: "border-red-200",
-      },
-      dark: {
-        color: "text-red-400",
-        bg: "bg-red-500/15",
-        border: "border-red-400/25",
-      },
-    },
-  }) as const;
+// Static type config — uses Tailwind dark: classes, no runtime isDark needed
+const TYPE_CONFIG: Record<
+  NotificationType,
+  {
+    icon: React.ElementType;
+    iconClass: string;
+    bgClass: string;
+    borderClass: string;
+  }
+> = {
+  invitation: {
+    icon: UserPlus,
+    iconClass: "text-blue-600 dark:text-blue-400",
+    bgClass: "bg-blue-50 dark:bg-blue-500/15",
+    borderClass: "border-blue-200 dark:border-blue-400/25",
+  },
+  task_assigned: {
+    icon: ListTodo,
+    iconClass: "text-blue-600 dark:text-blue-400",
+    bgClass: "bg-blue-50 dark:bg-blue-500/15",
+    borderClass: "border-blue-200 dark:border-blue-400/25",
+  },
+  task_completed: {
+    icon: CheckCircle2,
+    iconClass: "text-emerald-600 dark:text-emerald-400",
+    bgClass: "bg-emerald-50 dark:bg-emerald-500/15",
+    borderClass: "border-emerald-200 dark:border-emerald-400/25",
+  },
+  task_edited: {
+    icon: Edit2,
+    iconClass: "text-amber-600 dark:text-amber-400",
+    bgClass: "bg-amber-50 dark:bg-amber-500/15",
+    borderClass: "border-amber-200 dark:border-amber-400/25",
+  },
+  member_joined: {
+    icon: Users,
+    iconClass: "text-blue-600 dark:text-blue-400",
+    bgClass: "bg-blue-50 dark:bg-blue-500/15",
+    borderClass: "border-blue-200 dark:border-blue-400/25",
+  },
+  list_shared: {
+    icon: Share2,
+    iconClass: "text-amber-600 dark:text-amber-400",
+    bgClass: "bg-amber-50 dark:bg-amber-500/15",
+    borderClass: "border-amber-200 dark:border-amber-400/25",
+  },
+  reminder: {
+    icon: Bell,
+    iconClass: "text-amber-600 dark:text-amber-400",
+    bgClass: "bg-amber-50 dark:bg-amber-500/15",
+    borderClass: "border-amber-200 dark:border-amber-400/25",
+  },
+  due_soon: {
+    icon: Clock,
+    iconClass: "text-red-600 dark:text-red-400",
+    bgClass: "bg-red-50 dark:bg-red-500/15",
+    borderClass: "border-red-200 dark:border-red-400/25",
+  },
+} as const;
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -155,9 +104,6 @@ function timeAgo(dateStr: string): string {
 
 export default function NotificationsPage() {
   const { user } = useAuthStore();
-  const { isDarkTheme } = useUIStore();
-  const isDark = isDarkTheme();
-  const typeConfig = getTypeConfig(isDark);
   const {
     notifications,
     unreadCount,
@@ -210,75 +156,26 @@ export default function NotificationsPage() {
     notifId: string,
     data: Record<string, string>,
   ) => {
-    console.log(`[Notifications] ===== STARTING ACCEPT INVITATION =====`);
-    console.log(`[Notifications] Notification ID: ${notifId}`);
-    console.log(`[Notifications] User ID: ${user.id}`);
-    console.log(`[Notifications] User Name: ${user.name}`);
     setProcessingId(notifId);
-
     try {
-      // Step 1: Get the invitation
-      console.log(
-        `[Notifications] Step 1: Fetching invitation with token ${data.token}...`,
-      );
       const invitation = await getInvitation(data.token);
-
       if (!invitation) {
-        console.error(
-          `[Notifications] ERROR: Invitation not found for token ${data.token}`,
-        );
         alert(
           "No se encontró la invitación. Puede haber expirado o sido eliminada.",
         );
         setProcessingId(null);
         return;
       }
-
-      console.log(`[Notifications] Step 1: Found invitation:`, {
-        id: invitation.id,
-        listId: invitation.listId,
-        teamId: invitation.teamId || "none",
-        role: invitation.defaultRole,
-      });
-
-      // Step 2: Accept the invitation (adds to list + team, deletes invitation)
-      console.log(`[Notifications] Step 2: Calling acceptInvitation...`);
       await acceptInvitation(invitation, user.id, user.name);
-      console.log(
-        `[Notifications] Step 2: acceptInvitation completed successfully`,
-      );
-
-      // Step 3: Verify by fetching the updated list
-      console.log(`[Notifications] Step 3: Verifying list membership...`);
       const list = await getList(invitation.listId);
       const isNowMember = list?.members?.some((m) => m.userId === user.id);
-
       if (!isNowMember) {
-        console.error(
-          `[Notifications] ERROR: Verification failed - user not in list members`,
-        );
         throw new Error("No se pudo verificar la membresía en la lista");
       }
-
-      console.log(
-        `[Notifications] Step 3: Verified - user is now member of list ${invitation.listId}`,
-      );
-
-      // Step 4: Only mark notification as accepted after successful verification
-      console.log(
-        `[Notifications] Step 4: Marking notification as accepted...`,
-      );
       await setStatus(notifId, "accepted");
       await markRead(notifId);
-      console.log(`[Notifications] Step 4: Notification marked as accepted`);
-
-      console.log(
-        `[Notifications] ===== SUCCESS: INVITATION FLOW COMPLETED =====`,
-      );
     } catch (error) {
-      console.error("[Notifications] ===== ERROR ACCEPTING INVITATION =====");
-      console.error("[Notifications] Error:", error);
-      console.error("[Notifications] Error message:", (error as Error).message);
+      console.error("Error accepting invitation:", error);
       alert("Error al aceptar la invitación. Por favor, inténtalo de nuevo.");
     } finally {
       setProcessingId(null);
@@ -362,14 +259,10 @@ export default function NotificationsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveFilter(tab.id as any)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
                 activeFilter === tab.id
-                  ? isDark
-                    ? "bg-blue-500/20 text-blue-300 border border-blue-400/30"
-                    : "bg-blue-100 text-blue-700 border border-blue-200"
-                  : isDark
-                    ? "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  ? "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-400/30"
+                  : "border-transparent text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
               }`}
             >
               {tab.label}
@@ -377,12 +270,8 @@ export default function NotificationsPage() {
                 <span
                   className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
                     activeFilter === tab.id
-                      ? isDark
-                        ? "bg-blue-400/20 text-blue-200"
-                        : "bg-blue-200 text-blue-700"
-                      : isDark
-                        ? "bg-slate-700 text-slate-400"
-                        : "bg-gray-200 text-gray-500"
+                      ? "bg-blue-200 dark:bg-blue-400/20 text-blue-700 dark:text-blue-200"
+                      : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
                   }`}
                 >
                   {tab.count}
@@ -395,9 +284,7 @@ export default function NotificationsPage() {
         {/* Pending Invitations */}
         {showInvitations && pendingNotifications.length > 0 && (
           <section>
-            <h3
-              className={`text-sm font-semibold mb-3 ${isDark ? "text-slate-100" : "text-gray-900"}`}
-            >
+            <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-slate-100">
               Invitaciones Pendientes
             </h3>
             <motion.div
@@ -407,7 +294,7 @@ export default function NotificationsPage() {
               variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
             >
               {pendingNotifications.map((notif) => {
-                const cfg = typeConfig[notif.type];
+                const cfg = TYPE_CONFIG[notif.type];
                 const Icon = cfg.icon;
                 return (
                   <motion.div
@@ -425,24 +312,15 @@ export default function NotificationsPage() {
                     }}
                     className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-colors cursor-pointer ${
                       notif.read
-                        ? isDark
-                          ? "bg-slate-900/60 border-slate-700"
-                          : "bg-white border-gray-200"
-                        : isDark
-                          ? "bg-blue-500/10 border-blue-400/30"
-                          : "bg-blue-50/50 border-blue-200"
+                        ? "bg-white dark:bg-slate-900/60 border-gray-200 dark:border-slate-700"
+                        : "bg-blue-50/50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-400/30"
                     }`}
                     onClick={() => !notif.read && markRead(notif.id)}
                   >
                     <div
-                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                        isDark ? cfg.dark.bg : cfg.light.bg
-                      } border ${isDark ? cfg.dark.border : cfg.light.border}`}
+                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 border ${cfg.bgClass} ${cfg.borderClass}`}
                     >
-                      <Icon
-                        size={14}
-                        className={isDark ? cfg.dark.color : cfg.light.color}
-                      />
+                      <Icon size={14} className={cfg.iconClass} />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -450,12 +328,8 @@ export default function NotificationsPage() {
                         <p
                           className={`text-sm leading-snug ${
                             notif.read
-                              ? isDark
-                                ? "text-slate-400 font-normal"
-                                : "text-gray-700 font-normal"
-                              : isDark
-                                ? "text-slate-100 font-semibold"
-                                : "text-gray-900 font-semibold"
+                              ? "text-gray-700 dark:text-slate-400 font-normal"
+                              : "text-gray-900 dark:text-slate-100 font-semibold"
                           }`}
                         >
                           {notif.title}
@@ -464,14 +338,10 @@ export default function NotificationsPage() {
                           <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
                         )}
                       </div>
-                      <p
-                        className={`text-xs mt-0.5 leading-snug ${isDark ? "text-slate-400" : "text-gray-500"}`}
-                      >
+                      <p className="text-xs mt-0.5 leading-snug text-gray-500 dark:text-slate-400">
                         {notif.body}
                       </p>
-                      <p
-                        className={`text-[11px] mt-1.5 ${isDark ? "text-slate-500" : "text-gray-400"}`}
-                      >
+                      <p className="text-[11px] mt-1.5 text-gray-400 dark:text-slate-500">
                         {timeAgo(notif.createdAt)}
                       </p>
 
@@ -495,7 +365,7 @@ export default function NotificationsPage() {
                               handleDeclineInvitation(notif.id, notif.data);
                             }}
                             disabled={processingId === notif.id}
-                            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold hover:bg-gray-200 transition-colors disabled:opacity-60 min-h-[36px]"
+                            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-60 min-h-[36px]"
                           >
                             <X size={12} />
                             Rechazar
@@ -511,7 +381,7 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             archive(notif.id);
                           }}
-                          className="p-2 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg text-gray-300 dark:text-slate-600 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/15 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
                           title="Archivar"
                         >
                           <Archive size={14} />
@@ -521,7 +391,7 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             remove(notif.id);
                           }}
-                          className="p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
                           title="Eliminar"
                         >
                           <Trash2 size={14} />
@@ -538,9 +408,7 @@ export default function NotificationsPage() {
         {/* Other Notifications */}
         {showOther && otherNotifications.length > 0 && (
           <section>
-            <h3
-              className={`text-sm font-semibold mb-3 ${isDark ? "text-slate-100" : "text-gray-900"}`}
-            >
+            <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-slate-100">
               Otras Notificaciones
             </h3>
             <motion.div
@@ -551,7 +419,7 @@ export default function NotificationsPage() {
             >
               <AnimatePresence mode="popLayout">
                 {otherNotifications.map((notif) => {
-                  const cfg = typeConfig[notif.type];
+                  const cfg = TYPE_CONFIG[notif.type];
                   const Icon = cfg.icon;
                   return (
                     <motion.div
@@ -569,24 +437,15 @@ export default function NotificationsPage() {
                       }}
                       className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-colors cursor-pointer ${
                         notif.read
-                          ? isDark
-                            ? "bg-slate-900/60 border-slate-700"
-                            : "bg-white border-gray-200"
-                          : isDark
-                            ? "bg-blue-500/10 border-blue-400/30"
-                            : "bg-blue-50/50 border-blue-200"
+                          ? "bg-white dark:bg-slate-900/60 border-gray-200 dark:border-slate-700"
+                          : "bg-blue-50/50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-400/30"
                       }`}
                       onClick={() => !notif.read && markRead(notif.id)}
                     >
                       <div
-                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                          isDark ? cfg.dark.bg : cfg.light.bg
-                        } border ${isDark ? cfg.dark.border : cfg.light.border}`}
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 border ${cfg.bgClass} ${cfg.borderClass}`}
                       >
-                        <Icon
-                          size={14}
-                          className={isDark ? cfg.dark.color : cfg.light.color}
-                        />
+                        <Icon size={14} className={cfg.iconClass} />
                       </div>
 
                       <div className="flex-1 min-w-0">
@@ -594,12 +453,8 @@ export default function NotificationsPage() {
                           <p
                             className={`text-sm leading-snug ${
                               notif.read
-                                ? isDark
-                                  ? "text-slate-400 font-normal"
-                                  : "text-gray-700 font-normal"
-                                : isDark
-                                  ? "text-slate-100 font-semibold"
-                                  : "text-gray-900 font-semibold"
+                                ? "text-gray-700 dark:text-slate-400 font-normal"
+                                : "text-gray-900 dark:text-slate-100 font-semibold"
                             }`}
                           >
                             {notif.title}
@@ -608,14 +463,10 @@ export default function NotificationsPage() {
                             <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
                           )}
                         </div>
-                        <p
-                          className={`text-xs mt-0.5 leading-snug ${isDark ? "text-slate-400" : "text-gray-500"}`}
-                        >
+                        <p className="text-xs mt-0.5 leading-snug text-gray-500 dark:text-slate-400">
                           {notif.body}
                         </p>
-                        <p
-                          className={`text-[11px] mt-1.5 ${isDark ? "text-slate-500" : "text-gray-400"}`}
-                        >
+                        <p className="text-[11px] mt-1.5 text-gray-400 dark:text-slate-500">
                           {timeAgo(notif.createdAt)}
                         </p>
                       </div>
@@ -626,7 +477,7 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             archive(notif.id);
                           }}
-                          className="p-2 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg text-gray-300 dark:text-slate-600 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/15 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
                           title="Archivar"
                         >
                           <Archive size={14} />
@@ -636,7 +487,7 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             remove(notif.id);
                           }}
-                          className="p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
                           title="Eliminar"
                         >
                           <Trash2 size={14} />
@@ -653,42 +504,26 @@ export default function NotificationsPage() {
         {/* Accepted Invitations */}
         {acceptedNotifications.length > 0 && (
           <section>
-            <h3
-              className={`text-sm font-semibold mb-3 ${isDark ? "text-emerald-400" : "text-emerald-700"}`}
-            >
+            <h3 className="text-sm font-semibold mb-3 text-emerald-700 dark:text-emerald-400">
               Invitaciones Aceptadas
             </h3>
             <div className="space-y-2">
               {acceptedNotifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`flex items-start gap-4 p-4 rounded-xl border ${
-                    isDark
-                      ? "border-emerald-400/30 bg-emerald-500/10"
-                      : "border-emerald-200 bg-emerald-50/30"
-                  }`}
+                  className="flex items-start gap-4 p-4 rounded-xl border border-emerald-200 dark:border-emerald-400/30 bg-emerald-50/30 dark:bg-emerald-500/10"
                 >
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      isDark ? "bg-emerald-500/20" : "bg-emerald-100"
-                    }`}
-                  >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-100 dark:bg-emerald-500/20">
                     <CheckCircle2
                       size={18}
-                      className={
-                        isDark ? "text-emerald-400" : "text-emerald-600"
-                      }
+                      className="text-emerald-600 dark:text-emerald-400"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-sm font-semibold ${isDark ? "text-emerald-300" : "text-emerald-800"}`}
-                    >
+                    <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
                       {notif.title}
                     </p>
-                    <p
-                      className={`text-xs mt-1 ${isDark ? "text-emerald-400/80" : "text-emerald-600"}`}
-                    >
+                    <p className="text-xs mt-1 text-emerald-600 dark:text-emerald-400/80">
                       Ya tienes acceso a este espacio
                     </p>
                   </div>
@@ -701,50 +536,32 @@ export default function NotificationsPage() {
         {/* Rejected Invitations */}
         {rejectedNotifications.length > 0 && (
           <section>
-            <h3
-              className={`text-sm font-semibold mb-3 ${isDark ? "text-slate-400" : "text-gray-600"}`}
-            >
+            <h3 className="text-sm font-semibold mb-3 text-gray-600 dark:text-slate-400">
               Invitaciones Rechazadas
             </h3>
             <div className="space-y-2">
               {rejectedNotifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`flex items-start gap-4 p-4 rounded-xl border ${
-                    isDark
-                      ? "border-slate-700 bg-slate-800/50"
-                      : "border-gray-200 bg-gray-50/50"
-                  }`}
+                  className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50"
                 >
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                      isDark ? "bg-slate-700" : "bg-gray-100"
-                    }`}
-                  >
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 dark:bg-slate-700">
                     <X
                       size={18}
-                      className={isDark ? "text-slate-400" : "text-gray-500"}
+                      className="text-gray-500 dark:text-slate-400"
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p
-                      className={`text-sm ${isDark ? "text-slate-300" : "text-gray-600"}`}
-                    >
+                    <p className="text-sm text-gray-600 dark:text-slate-300">
                       {notif.title}
                     </p>
-                    <p
-                      className={`text-xs mt-1 ${isDark ? "text-slate-400" : "text-gray-500"}`}
-                    >
+                    <p className="text-xs mt-1 text-gray-500 dark:text-slate-400">
                       Rechazaste esta invitación
                     </p>
                   </div>
                   <button
                     onClick={() => remove(notif.id)}
-                    className={`p-1.5 rounded-lg transition-colors ${
-                      isDark
-                        ? "text-slate-500 hover:text-red-400 hover:bg-red-500/15"
-                        : "text-gray-300 hover:text-red-500 hover:bg-red-50"
-                    }`}
+                    className="p-1.5 rounded-lg transition-colors text-gray-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -761,26 +578,18 @@ export default function NotificationsPage() {
               <div className="flex items-center gap-2 mb-3">
                 <Archive
                   size={16}
-                  className={isDark ? "text-slate-400" : "text-gray-400"}
+                  className="text-gray-400 dark:text-slate-400"
                 />
-                <h3
-                  className={`text-sm font-semibold ${isDark ? "text-slate-300" : "text-gray-700"}`}
-                >
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300">
                   Archivados
                 </h3>
-                <span
-                  className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${
-                    isDark
-                      ? "bg-slate-700 text-slate-400"
-                      : "bg-gray-200 text-gray-500"
-                  }`}
-                >
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400">
                   {archivedNotifications.length}
                 </span>
               </div>
               <div className="space-y-2 pt-3">
                 {archivedNotifications.map((notif) => {
-                  const cfg = typeConfig[notif.type];
+                  const cfg = TYPE_CONFIG[notif.type];
                   const Icon = cfg.icon;
                   return (
                     <motion.div
@@ -790,50 +599,35 @@ export default function NotificationsPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -16 }}
                       transition={{ duration: 0.2 }}
-                      className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border ${
-                        isDark
-                          ? "border-slate-700 bg-slate-800/50"
-                          : "border-gray-200 bg-gray-50/50"
-                      }`}
+                      className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50"
                     >
                       <div
-                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                          isDark ? cfg.dark.bg : cfg.light.bg
-                        } border ${isDark ? cfg.dark.border : cfg.light.border}`}
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 border ${cfg.bgClass} ${cfg.borderClass}`}
                       >
-                        <Icon
-                          size={14}
-                          className={isDark ? cfg.dark.color : cfg.light.color}
-                        />
+                        <Icon size={14} className={cfg.iconClass} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p
-                          className={`text-sm leading-snug ${isDark ? "text-slate-300" : "text-gray-600"}`}
-                        >
+                        <p className="text-sm leading-snug text-gray-600 dark:text-slate-300">
                           {notif.title}
                         </p>
-                        <p
-                          className={`text-xs mt-0.5 leading-snug ${isDark ? "text-slate-400" : "text-gray-500"}`}
-                        >
+                        <p className="text-xs mt-0.5 leading-snug text-gray-500 dark:text-slate-400">
                           {notif.body}
                         </p>
-                        <p
-                          className={`text-[11px] mt-1.5 ${isDark ? "text-slate-500" : "text-gray-400"}`}
-                        >
+                        <p className="text-[11px] mt-1.5 text-gray-400 dark:text-slate-500">
                           {timeAgo(notif.createdAt)}
                         </p>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => unarchive(notif.id)}
-                          className="p-2 rounded-lg text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg text-gray-300 dark:text-slate-600 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/15 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
                           title="Desarchivar"
                         >
                           <Archive size={14} className="rotate-180" />
                         </button>
                         <button
                           onClick={() => remove(notif.id)}
-                          className="p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
                           title="Eliminar"
                         >
                           <Trash2 size={14} />

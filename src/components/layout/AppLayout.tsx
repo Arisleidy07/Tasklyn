@@ -8,6 +8,8 @@ import MobileNav from "./MobileNav";
 import ToastOverlay from "@/components/ui/ToastOverlay";
 import { useNotificationEngine } from "@/hooks/useNotificationEngine";
 import { useUIStore } from "@/stores/uiStore";
+import { useAuthStore } from "@/stores/authStore";
+import { useTeamStore } from "@/stores/teamStore";
 import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
@@ -17,7 +19,24 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   useNotificationEngine();
   const { sidebarCollapsed, theme } = useUIStore();
+  const { user } = useAuthStore();
+  const { ensurePersonalTeam } = useTeamStore();
   const [mounted] = useState(() => typeof window !== "undefined");
+
+  useEffect(() => {
+    const html = document.documentElement;
+    if (theme === "dark") {
+      html.classList.add("dark");
+    } else {
+      html.classList.remove("dark");
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    if (user?.id) {
+      ensurePersonalTeam(user.id).catch(() => {});
+    }
+  }, [user?.id]);
 
   return (
     <div
@@ -27,9 +46,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
         theme === "light" && "app-theme-light bg-gray-50 text-gray-900",
       )}
     >
-      {/* Premium animated background */}
+      {/* Premium animated background — only shown in dark theme */}
       <div
-        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+        className={cn(
+          "pointer-events-none fixed inset-0 z-0 overflow-hidden",
+          theme === "light" && "opacity-0",
+        )}
         aria-hidden
       >
         {/* Primary large glow orbs */}

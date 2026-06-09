@@ -74,8 +74,8 @@ export default function TaskOptionsBar({
           className={cn(
             "flex items-center justify-center w-8 h-8 rounded-lg transition-all",
             hasReminder
-              ? "text-blue-600 bg-blue-50 hover:bg-blue-100"
-              : "text-gray-400 hover:bg-gray-100 hover:text-gray-600",
+              ? "text-blue-600 bg-blue-50 dark:bg-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/30"
+              : "text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-slate-300",
           )}
           title="Recordatorio"
         >
@@ -111,8 +111,8 @@ export default function TaskOptionsBar({
           className={cn(
             "flex items-center justify-center w-8 h-8 rounded-lg transition-all",
             hasDueDate
-              ? "text-amber-600 bg-amber-50 hover:bg-amber-100"
-              : "text-gray-400 hover:bg-gray-100 hover:text-gray-600",
+              ? "text-amber-600 bg-amber-50 dark:bg-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/30"
+              : "text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-slate-300",
           )}
           title="Vencimiento"
         >
@@ -144,8 +144,8 @@ export default function TaskOptionsBar({
           className={cn(
             "flex items-center justify-center w-8 h-8 rounded-lg transition-all",
             hasRecurrence
-              ? "text-green-600 bg-green-50 hover:bg-green-100"
-              : "text-gray-400 hover:bg-gray-100 hover:text-gray-600",
+              ? "text-green-600 bg-green-50 dark:bg-green-500/20 hover:bg-green-100 dark:hover:bg-green-500/30"
+              : "text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-slate-300",
           )}
           title="Repetir"
         >
@@ -210,13 +210,13 @@ function ReminderDropdown({
   ];
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-[9999] w-[260px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+    <div className="absolute left-0 top-full mt-2 z-[9999] w-[260px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden">
       {!showCustom ? (
         <div className="p-1.5 space-y-0.5">
           {reminders && reminders.length > 0 && (
             <button
               onClick={onClear}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors font-medium"
             >
               <span>Eliminar aviso</span>
               <X size={14} className="text-red-400" />
@@ -226,7 +226,7 @@ function ReminderDropdown({
             <button
               key={opt.label}
               onClick={() => onSelect(opt.get())}
-              className="w-full text-left px-3 py-2 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              className="w-full text-left px-3 py-2 rounded-xl text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
             >
               {opt.label}
             </button>
@@ -240,15 +240,15 @@ function ReminderDropdown({
                 due.setHours(due.getHours() - 1);
                 onSelect([{ id: genId(), at: due.toISOString(), sent: false }]);
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
             >
-              <Clock size={13} className="text-gray-400" />1 hora antes del
-              vencimiento
+              <Clock size={13} className="text-gray-400 dark:text-slate-500" />1
+              hora antes del vencimiento
             </button>
           )}
           <button
             onClick={() => setShowCustom(true)}
-            className="w-full text-left px-3 py-2 rounded-xl text-sm text-gray-900 hover:bg-gray-50 transition-colors font-medium"
+            className="w-full text-left px-3 py-2 rounded-xl text-sm text-gray-900 dark:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors font-medium"
           >
             Elegir fecha y hora
           </button>
@@ -256,12 +256,12 @@ function ReminderDropdown({
       ) : (
         <div className="p-3 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-700">
+            <span className="text-xs font-semibold text-gray-700 dark:text-slate-300">
               Elegir fecha y hora
             </span>
             <button
               onClick={() => setShowCustom(false)}
-              className="p-1 rounded-lg hover:bg-gray-100"
+              className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
             >
               <X size={14} className="text-gray-400" />
             </button>
@@ -270,20 +270,20 @@ function ReminderDropdown({
             type="date"
             value={customDate}
             onChange={(e) => setCustomDate(e.target.value)}
-            className="w-full h-9 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-1 focus:ring-gray-900"
+            className="w-full h-9 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
           <input
             type="time"
             value={customTime}
             onChange={(e) => setCustomTime(e.target.value)}
-            className="w-full h-9 px-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-1 focus:ring-gray-900"
+            className="w-full h-9 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
           <button
             onClick={() => {
               const at = `${customDate}T${customTime}:00`;
               onSelect([{ id: genId(), at, sent: false }]);
             }}
-            className="w-full h-9 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
+            className="w-full h-9 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-500 transition-colors"
           >
             Guardar
           </button>
@@ -341,13 +341,13 @@ function DueDateDropdown({
   };
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-[9999] w-[280px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+    <div className="absolute left-0 top-full mt-2 z-[9999] w-[280px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden">
       {/* Quick options */}
-      <div className="p-2 space-y-0.5 border-b border-gray-100">
+      <div className="p-2 space-y-0.5 border-b border-gray-100 dark:border-slate-800">
         {selectedDate && (
           <button
             onClick={() => onSelect(null)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors font-medium"
           >
             <span>Eliminar vencimiento</span>
             <X size={14} className="text-red-400" />
@@ -357,7 +357,7 @@ function DueDateDropdown({
           <button
             key={opt.label}
             onClick={() => onSelect(opt.get())}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
           >
             <span>{opt.label}</span>
             <span className="text-gray-400 text-xs">
@@ -380,18 +380,24 @@ function DueDateDropdown({
         <div className="flex items-center justify-between mb-3">
           <button
             onClick={handlePrevMonth}
-            className="p-1 rounded-lg hover:bg-gray-100"
+            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
           >
-            <ChevronLeft size={16} className="text-gray-500" />
+            <ChevronLeft
+              size={16}
+              className="text-gray-500 dark:text-slate-400"
+            />
           </button>
-          <span className="text-xs font-semibold text-gray-900">
+          <span className="text-xs font-semibold text-gray-900 dark:text-slate-100">
             {MONTHS[month]} {year}
           </span>
           <button
             onClick={handleNextMonth}
-            className="p-1 rounded-lg hover:bg-gray-100"
+            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
           >
-            <ChevronRight size={16} className="text-gray-500" />
+            <ChevronRight
+              size={16}
+              className="text-gray-500 dark:text-slate-400"
+            />
           </button>
         </div>
         <div className="grid grid-cols-7 mb-1">
@@ -415,13 +421,14 @@ function DueDateDropdown({
                 disabled={!day.currentMonth}
                 className={cn(
                   "aspect-square flex items-center justify-center rounded-full text-xs font-medium transition-all",
-                  !day.currentMonth && "text-gray-200 cursor-default",
+                  !day.currentMonth &&
+                    "text-gray-200 dark:text-slate-700 cursor-default",
                   day.currentMonth &&
-                    "text-gray-700 hover:bg-gray-100 cursor-pointer",
-                  isSelected && "bg-gray-900 text-white hover:bg-gray-800",
+                    "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer",
+                  isSelected && "bg-blue-600 text-white hover:bg-blue-500",
                   isToday &&
                     !isSelected &&
-                    "ring-2 ring-gray-900 ring-offset-1",
+                    "ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-slate-900",
                 )}
               >
                 {day.date}
@@ -481,19 +488,19 @@ function RecurrenceDropdown({
 
   if (showCustom) {
     return (
-      <div className="absolute left-0 top-full mt-2 z-[9999] w-[260px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden p-3 space-y-3">
+      <div className="absolute left-0 top-full mt-2 z-[9999] w-[260px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden p-3 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-700">
+          <span className="text-xs font-semibold text-gray-700 dark:text-slate-300">
             Personalizado
           </span>
           <button
             onClick={() => setShowCustom(false)}
-            className="p-1 rounded-lg hover:bg-gray-100"
+            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
           >
             <X size={14} className="text-gray-400" />
           </button>
         </div>
-        <div className="flex bg-gray-100 rounded-xl p-1">
+        <div className="flex bg-gray-100 dark:bg-slate-800 rounded-xl p-1">
           {(
             [
               { key: "days", label: "Días" },
@@ -507,8 +514,8 @@ function RecurrenceDropdown({
               className={cn(
                 "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all",
                 customType === f.key
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700",
+                  ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm"
+                  : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200",
               )}
             >
               {f.label}
@@ -518,16 +525,16 @@ function RecurrenceDropdown({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setInterval(Math.max(1, interval - 1))}
-            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 text-sm"
+            className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 font-semibold hover:bg-gray-200 dark:hover:bg-slate-700 text-sm"
           >
             −
           </button>
-          <span className="flex-1 text-center text-sm font-semibold text-gray-900">
+          <span className="flex-1 text-center text-sm font-semibold text-gray-900 dark:text-slate-100">
             {interval}
           </span>
           <button
             onClick={() => setInterval(interval + 1)}
-            className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 text-sm"
+            className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 font-semibold hover:bg-gray-200 dark:hover:bg-slate-700 text-sm"
           >
             +
           </button>
@@ -543,8 +550,8 @@ function RecurrenceDropdown({
                   className={cn(
                     "flex-1 aspect-square rounded-lg text-xs font-semibold transition-all",
                     active
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-100 text-gray-500 hover:bg-gray-200",
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700",
                   )}
                 >
                   {d.label}
@@ -570,7 +577,7 @@ function RecurrenceDropdown({
             });
             setShowCustom(false);
           }}
-          className="w-full h-9 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
+          className="w-full h-9 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-500 transition-colors"
         >
           Guardar
         </button>
@@ -579,7 +586,7 @@ function RecurrenceDropdown({
   }
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-[9999] w-[220px] bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+    <div className="absolute left-0 top-full mt-2 z-[9999] w-[220px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden">
       <div className="p-1.5 space-y-0.5">
         {currentRecurrence && (
           <button
@@ -590,7 +597,7 @@ function RecurrenceDropdown({
                 onSelect(null);
               }
             }}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors font-medium"
           >
             <span>Eliminar repetición</span>
             <X size={14} className="text-red-400" />
@@ -605,8 +612,8 @@ function RecurrenceDropdown({
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors",
                 isActive
-                  ? "bg-gray-900 text-white font-medium"
-                  : "text-gray-700 hover:bg-gray-50",
+                  ? "bg-blue-600 text-white font-medium"
+                  : "text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800",
               )}
             >
               <span>{opt.label}</span>
@@ -616,7 +623,7 @@ function RecurrenceDropdown({
         })}
         <button
           onClick={() => setShowCustom(true)}
-          className="w-full text-left px-3 py-2 rounded-xl text-sm text-gray-900 hover:bg-gray-50 transition-colors font-medium"
+          className="w-full text-left px-3 py-2 rounded-xl text-sm text-gray-900 dark:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors font-medium"
         >
           Personalizado...
         </button>

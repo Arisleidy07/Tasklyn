@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { TaskList, MemberRole } from "@/types";
 import { useListStore } from "@/stores/listStore";
 import { useAuthStore } from "@/stores/authStore";
+import { useTeamStore } from "@/stores/teamStore";
 import {
   getUserRole,
   canChangeRoles,
@@ -80,10 +81,12 @@ export default function EditListModal({
 }: EditListModalProps) {
   const { user } = useAuthStore();
   const { updateList, updateMemberRole, removeMember } = useListStore();
+  const { teams } = useTeamStore();
 
   const [activeTab, setActiveTab] = useState<TabId>("details");
   const [name, setName] = useState(list.name);
   const [description, setDescription] = useState(list.description || "");
+  const [teamId, setTeamId] = useState(list.teamId || "");
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
@@ -93,10 +96,11 @@ export default function EditListModal({
       setActiveTab(defaultTab ?? "details");
       setName(list.name);
       setDescription(list.description || "");
+      setTeamId(list.teamId || "");
       setSaved(false);
       setConfirmRemove(null);
     }
-  }, [isOpen, defaultTab, list.name, list.description]);
+  }, [isOpen, defaultTab, list.name, list.description, list.teamId]);
 
   if (!user) return null;
 
@@ -112,6 +116,7 @@ export default function EditListModal({
       await updateList(list.id, {
         name: name.trim(),
         description: description.trim(),
+        teamId: teamId || undefined,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -206,6 +211,28 @@ export default function EditListModal({
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all resize-none disabled:opacity-60 disabled:cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500"
               />
             </div>
+
+            {/* Team assignment */}
+            {teams.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block">
+                  Equipo
+                </label>
+                <select
+                  value={teamId}
+                  onChange={(e) => setTeamId(e.target.value)}
+                  disabled={!canEdit}
+                  className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-white text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all disabled:opacity-60 disabled:cursor-not-allowed dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:border-blue-500"
+                >
+                  <option value="">Sin equipo</option>
+                  {teams.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* List meta */}
             <div className="grid grid-cols-2 gap-3">

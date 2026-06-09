@@ -57,16 +57,16 @@ export default function ArchivedTaskItem({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -6 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="rounded-xl border border-gray-200 bg-gray-50/60 overflow-hidden opacity-70 hover:opacity-100 transition-opacity"
+        className="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/60 dark:bg-slate-800/40 overflow-hidden opacity-70 hover:opacity-100 transition-opacity"
       >
         <div className="flex items-start gap-3 p-4">
           <div className="flex-1 min-w-0 space-y-2">
             {/* Tarea */}
             <div className="flex items-start gap-2">
-              <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5">
+              <span className="text-xs font-bold text-gray-700 dark:text-slate-400 uppercase tracking-wide flex-shrink-0 mt-0.5">
                 Tarea
               </span>
-              <p className="text-sm font-medium text-gray-700 flex-1 leading-relaxed line-through break-words whitespace-normal">
+              <p className="text-sm font-medium text-gray-700 dark:text-slate-400 flex-1 leading-relaxed line-through break-words whitespace-normal">
                 {task.title}
               </p>
             </div>
@@ -74,7 +74,7 @@ export default function ArchivedTaskItem({
             {/* Teléfonos */}
             {task.phoneNumbers && task.phoneNumbers.length > 0 && (
               <div className="flex items-start gap-2">
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                <span className="text-xs font-bold text-gray-700 dark:text-slate-400 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
                   <Phone size={10} className="text-blue-500" />
                   Teléfonos
                 </span>
@@ -92,7 +92,7 @@ export default function ArchivedTaskItem({
             {/* Ubicación */}
             {task.location && (
               <div className="flex items-start gap-2">
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                <span className="text-xs font-bold text-gray-700 dark:text-slate-400 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
                   <MapPin size={10} className="text-blue-500" />
                   Ubicación
                 </span>
@@ -108,18 +108,21 @@ export default function ArchivedTaskItem({
             {/* Descripción */}
             {task.description && (
               <div className="flex items-start gap-2">
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
-                  <FileText size={10} className="text-gray-400" />
+                <span className="text-xs font-bold text-gray-700 dark:text-slate-400 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                  <FileText
+                    size={10}
+                    className="text-gray-400 dark:text-slate-500"
+                  />
                   Descripción
                 </span>
-                <p className="text-sm text-gray-700 flex-1 leading-relaxed">
+                <p className="text-sm text-gray-700 dark:text-slate-300 flex-1 leading-relaxed">
                   {task.description}
                 </p>
               </div>
             )}
 
             {/* Meta */}
-            <div className="flex items-center gap-2 text-[11px] text-gray-400 pt-1">
+            <div className="flex items-center gap-2 text-[11px] text-gray-400 dark:text-slate-500 pt-1">
               <Clock size={10} />
               Archivada {timeAgo(task.archivedAt || task.createdAt)}
               {task.archivedBy && (
@@ -133,7 +136,7 @@ export default function ArchivedTaskItem({
             {canEdit && (
               <button
                 onClick={handleRestore}
-                className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center active:scale-90"
+                className="p-2 rounded-lg text-gray-400 dark:text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/20 transition-colors cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center active:scale-90"
                 title="Restaurar tarea"
               >
                 <RotateCcw size={14} />
@@ -142,7 +145,7 @@ export default function ArchivedTaskItem({
             {canDelete && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center active:scale-90"
+                className="p-2 rounded-lg text-gray-400 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 transition-colors cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center active:scale-90"
                 title="Eliminar permanentemente"
               >
                 <Trash2 size={14} />
@@ -159,22 +162,22 @@ export default function ArchivedTaskItem({
         title="Eliminar tarea archivada"
       >
         <div className="space-y-4">
-          <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-100">
+          <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/40">
             <AlertTriangle
               size={18}
               className="text-red-500 flex-shrink-0 mt-0.5"
             />
             <div>
-              <p className="text-sm font-semibold text-red-800">
+              <p className="text-sm font-semibold text-red-800 dark:text-red-400">
                 Esta acción es permanente
               </p>
-              <p className="text-sm text-red-600 mt-0.5 leading-relaxed">
+              <p className="text-sm text-red-600 dark:text-red-400/80 mt-0.5 leading-relaxed">
                 ¿Deseas eliminar esta nota permanentemente? No podrás
                 recuperarla.
               </p>
             </div>
           </div>
-          <p className="text-sm text-gray-600 font-medium line-clamp-2 px-1">
+          <p className="text-sm text-gray-600 dark:text-slate-300 font-medium line-clamp-2 px-1">
             &quot;{task.title}&quot;
           </p>
           <div className="flex gap-3 pt-1">

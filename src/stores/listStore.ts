@@ -30,10 +30,13 @@ interface ListState {
     owner: string,
     type: ListType,
     description?: string,
+    teamId?: string,
   ) => Promise<TaskList>;
   updateList: (
     id: string,
-    updates: Partial<Pick<TaskList, "name" | "description">>,
+    updates: Partial<
+      Pick<TaskList, "name" | "description" | "teamId" | "color" | "icon">
+    >,
   ) => Promise<void>;
   deleteList: (id: string) => Promise<void>;
   addMember: (
@@ -83,12 +86,13 @@ export const useListStore = create<ListState>((set, get) => ({
       (l) => l.type === "shared" && l.members.some((m) => m.userId === userId),
     ),
 
-  createList: async (name, owner, type, description) => {
-    const newListData = {
+  createList: async (name, owner, type, description, teamId) => {
+    const newListData: Omit<TaskList, "id" | "createdAt"> = {
       name,
       owner,
       type,
       description: description || "",
+      teamId: teamId || undefined,
       members: [
         {
           userId: owner,
@@ -101,7 +105,6 @@ export const useListStore = create<ListState>((set, get) => ({
 
     const id = await createListInDb(newListData);
 
-    // Return optimistic list
     const newList: TaskList = {
       id,
       ...newListData,

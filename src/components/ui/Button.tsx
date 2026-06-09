@@ -23,7 +23,7 @@ const variantStyles: Record<ButtonVariant, string> = {
     "bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200",
   danger: "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm",
   outline:
-    "border border-gray-300 bg-white text-gray-700 hover:border-gray-400 hover:bg-gray-50",
+    "border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:border-gray-400 dark:hover:border-slate-500 hover:bg-gray-50 dark:hover:bg-slate-700",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

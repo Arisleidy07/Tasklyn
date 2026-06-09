@@ -31,6 +31,9 @@ export interface Team {
   members: TeamMember[];
   createdAt: string;
   updatedAt: string;
+  isPersonal?: boolean; // true = equipo Personal (no eliminable, privado)
+  color?: string; // hex color for team avatar
+  icon?: string; // emoji icon
   settings: {
     allowInvites: boolean;
     requireApproval: boolean;

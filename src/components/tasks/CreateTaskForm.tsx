@@ -79,7 +79,7 @@ export default function CreateTaskForm({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50/30 transition-all duration-200 cursor-pointer group"
+        className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-500 hover:border-blue-300 dark:hover:border-blue-600 hover:text-blue-500 hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition-all duration-200 cursor-pointer group"
       >
         <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
           <Plus size={14} className="text-blue-600" />
@@ -94,7 +94,7 @@ export default function CreateTaskForm({
       initial={{ opacity: 0, y: -8, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="rounded-2xl border border-blue-200 bg-white p-5 shadow-xl shadow-gray-200/50"
+      className="rounded-2xl border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900 p-5 shadow-xl shadow-gray-200/50 dark:shadow-black/30"
     >
       <form onSubmit={handleSubmit} className="space-y-3">
         {/* Título */}
@@ -103,7 +103,7 @@ export default function CreateTaskForm({
           onChange={setTitle}
           placeholder="¿Qué necesitas hacer?"
           autoFocus
-          className="text-base font-semibold text-gray-900 placeholder:text-gray-300"
+          className="text-base font-semibold text-gray-900 dark:text-slate-100 placeholder:text-gray-300 dark:placeholder:text-slate-600"
           minRows={1}
         />
 
@@ -112,7 +112,7 @@ export default function CreateTaskForm({
           value={description}
           onChange={setDescription}
           placeholder="Añade una descripción..."
-          className="text-sm text-gray-600 placeholder:text-gray-300"
+          className="text-sm text-gray-600 dark:text-slate-300 placeholder:text-gray-300 dark:placeholder:text-slate-600"
           minRows={1}
         />
 
@@ -123,7 +123,7 @@ export default function CreateTaskForm({
             value={location}
             onChange={setLocation}
             placeholder="Ubicación o dirección"
-            className="text-sm text-gray-700 placeholder:text-gray-300"
+            className="text-sm text-gray-700 dark:text-slate-300 placeholder:text-gray-300 dark:placeholder:text-slate-600"
             minRows={1}
           />
         </div>
@@ -137,14 +137,14 @@ export default function CreateTaskForm({
                 value={phone}
                 onChange={(v) => handlePhoneChange(index, v)}
                 placeholder={`Teléfono ${index + 1}`}
-                className="flex-1 text-sm text-gray-700 placeholder:text-gray-300"
+                className="flex-1 text-sm text-gray-700 dark:text-slate-300 placeholder:text-gray-300 dark:placeholder:text-slate-600"
                 minRows={1}
               />
               {phoneNumbers.length > 1 && (
                 <button
                   type="button"
                   onClick={() => handleRemovePhone(index)}
-                  className="p-1 rounded-md text-gray-300 hover:text-red-400 transition-colors flex-shrink-0"
+                  className="p-1 rounded-md text-gray-300 dark:text-slate-600 hover:text-red-400 transition-colors flex-shrink-0"
                 >
                   <X size={14} />
                 </button>
@@ -154,55 +154,105 @@ export default function CreateTaskForm({
           <button
             type="button"
             onClick={handleAddPhone}
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors ml-6"
+            className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors ml-6"
           >
             <Plus size={12} />
             Agregar teléfono
           </button>
         </div>
 
-        {/* Priority + Tags row */}
-        <div className="flex items-center gap-3 pt-1 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <Flag size={13} className="text-gray-300" />
-            <select
-              value={priority || ""}
-              onChange={(e) =>
-                setPriority((e.target.value as any) || undefined)
-              }
-              className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400"
-            >
-              <option value="">Prioridad</option>
-              <option value="urgent">🔴 Crítica</option>
-              <option value="high">🟠 Alta</option>
-              <option value="medium">🟡 Media</option>
-              <option value="low">🟢 Baja</option>
-            </select>
+        {/* Priority selector */}
+        <div className="space-y-1.5 pt-1">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Flag size={13} className="text-gray-300 dark:text-slate-600" />
+            <span className="text-xs font-medium text-gray-400 dark:text-slate-500">
+              Prioridad
+            </span>
           </div>
-          <div className="flex items-center gap-1.5 flex-1 min-w-[140px]">
-            <Tag size={13} className="text-gray-300 flex-shrink-0" />
-            <input
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === ",") {
-                  e.preventDefault();
-                  const t = tagInput.trim().replace(/^#/, "");
-                  if (t && !tags.includes(t)) setTags([...tags, t]);
-                  setTagInput("");
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {(
+              [
+                {
+                  value: "urgent",
+                  label: "Crítica",
+                  activeClass: "bg-red-500 text-white border-red-500",
+                  inactiveClass:
+                    "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50 hover:bg-red-100 dark:hover:bg-red-950/50",
+                },
+                {
+                  value: "high",
+                  label: "Alta",
+                  activeClass: "bg-orange-500 text-white border-orange-500",
+                  inactiveClass:
+                    "bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50 hover:bg-orange-100 dark:hover:bg-orange-950/50",
+                },
+                {
+                  value: "medium",
+                  label: "Media",
+                  activeClass: "bg-yellow-500 text-white border-yellow-500",
+                  inactiveClass:
+                    "bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800/50 hover:bg-yellow-100 dark:hover:bg-yellow-950/50",
+                },
+                {
+                  value: "low",
+                  label: "Baja",
+                  activeClass: "bg-green-500 text-white border-green-500",
+                  inactiveClass:
+                    "bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800/50 hover:bg-green-100 dark:hover:bg-green-950/50",
+                },
+              ] as const
+            ).map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() =>
+                  setPriority(priority === p.value ? undefined : p.value)
                 }
-              }}
-              placeholder="#etiqueta + Enter"
-              className="flex-1 text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400"
-            />
+                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${priority === p.value ? p.activeClass : p.inactiveClass}`}
+              >
+                {p.label}
+              </button>
+            ))}
+            {priority && (
+              <button
+                type="button"
+                onClick={() => setPriority(undefined)}
+                className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-500 hover:text-red-500 hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all flex items-center gap-1"
+              >
+                <X size={9} />
+                Quitar
+              </button>
+            )}
           </div>
+        </div>
+
+        {/* Tags row */}
+        <div className="flex items-center gap-1.5">
+          <Tag
+            size={13}
+            className="text-gray-300 dark:text-slate-600 flex-shrink-0"
+          />
+          <input
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === ",") {
+                e.preventDefault();
+                const t = tagInput.trim().replace(/^#/, "");
+                if (t && !tags.includes(t)) setTags([...tags, t]);
+                setTagInput("");
+              }
+            }}
+            placeholder="#etiqueta + Enter"
+            className="flex-1 text-xs border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-400"
+          />
         </div>
         {tags.length > 0 && (
           <div className="flex gap-1.5 flex-wrap">
             {tags.map((t) => (
               <span
                 key={t}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-medium"
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 text-[10px] font-medium"
               >
                 #{t}
                 <button
@@ -218,7 +268,7 @@ export default function CreateTaskForm({
         )}
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100">
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-slate-800">
           <Button
             type="button"
             variant="ghost"

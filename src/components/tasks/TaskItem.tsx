@@ -192,8 +192,8 @@ export default function TaskItem({
         className={cn(
           "group rounded-xl border transition-colors relative",
           isCompleted
-            ? "border-blue-200 bg-blue-50/30"
-            : "border-gray-200 bg-white hover:border-blue-200",
+            ? "border-blue-200 dark:border-blue-500/30 bg-blue-50/30 dark:bg-blue-500/5"
+            : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:border-blue-200 dark:hover:border-blue-500/40",
           dropdownOpen && "z-20",
         )}
       >
@@ -230,8 +230,8 @@ export default function TaskItem({
                   className={cn(
                     "text-[15px] font-medium transition-colors leading-snug",
                     isCompleted
-                      ? "text-gray-400 line-through"
-                      : "text-gray-900",
+                      ? "text-gray-400 dark:text-slate-500 line-through"
+                      : "text-gray-900 dark:text-slate-100",
                   )}
                   style={{
                     overflowWrap: "anywhere",
@@ -298,7 +298,7 @@ export default function TaskItem({
                       <ReminderBadge reminder={task.reminders[0]} />
                     )}
                     {task.recurrence && (
-                      <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">
+                      <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                         <Repeat size={8} />
                         {getRecurrenceShortLabel(task.recurrence)}
                       </span>
@@ -312,7 +312,7 @@ export default function TaskItem({
                 {canEdit && (
                   <button
                     onClick={handleOpenEdit}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                    className="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/20 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
                     title="Editar"
                   >
                     <Edit2 size={14} />
@@ -321,7 +321,7 @@ export default function TaskItem({
                 {canArchive && (
                   <button
                     onClick={handleArchive}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                    className="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/20 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
                     title="Archivar"
                   >
                     <Archive size={14} />
@@ -329,7 +329,7 @@ export default function TaskItem({
                 )}
                 <button
                   onClick={() => setExpanded(!expanded)}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                  className="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
                   title="Historial"
                 >
                   {expanded ? (
@@ -341,7 +341,7 @@ export default function TaskItem({
                 {canDelete && (
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                    className="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
                     title="Eliminar"
                   >
                     <Trash2 size={14} />
@@ -353,7 +353,7 @@ export default function TaskItem({
             {/* ── Details: phones, location, description ── */}
             {task.phoneNumbers && task.phoneNumbers.length > 0 && (
               <div className="flex items-start gap-2 mt-2">
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                <span className="text-xs font-bold text-gray-700 dark:text-slate-400 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
                   <Phone size={10} className="text-blue-500" />
                   Teléfonos
                 </span>
@@ -369,7 +369,7 @@ export default function TaskItem({
             )}
             {task.location && (
               <div className="flex items-start gap-2 mt-2">
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                <span className="text-xs font-bold text-gray-700 dark:text-slate-400 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
                   <MapPin size={10} className="text-blue-500" />
                   Ubicación
                 </span>
@@ -383,12 +383,15 @@ export default function TaskItem({
             )}
             {task.description && (
               <div className="flex items-start gap-2 mt-2">
-                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
-                  <FileText size={10} className="text-gray-400" />
+                <span className="text-xs font-bold text-gray-700 dark:text-slate-400 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                  <FileText
+                    size={10}
+                    className="text-gray-400 dark:text-slate-500"
+                  />
                   Descripción
                 </span>
                 <p
-                  className="text-sm text-gray-700 flex-1 leading-relaxed break-words whitespace-normal"
+                  className="text-sm text-gray-700 dark:text-slate-300 flex-1 leading-relaxed break-words whitespace-normal"
                   dangerouslySetInnerHTML={{
                     __html: linkifyPhoneNumbers(task.description),
                   }}
@@ -440,18 +443,18 @@ export default function TaskItem({
 
             {/* ── Meta ── */}
             <div className="flex items-center flex-wrap gap-2 mt-2">
-              <span className="flex items-center gap-1 text-[11px] text-gray-400">
+              <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-slate-500">
                 <Clock size={10} />
                 {timeAgo(task.createdAt)}
               </span>
               {task.assignedTo && (
-                <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-slate-500">
                   <User size={10} />
                   {getUserName(task.assignedTo)}
                 </span>
               )}
               {isCompleted && task.completedBy && (
-                <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400">
                   <CheckCircle2 size={8} />
                   Completado por {getUserName(task.completedBy)} •{" "}
                   {formatActivityDateTime(task.completedAt || task.createdAt)}
@@ -469,10 +472,10 @@ export default function TaskItem({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="border-t border-gray-100"
+              className="border-t border-gray-100 dark:border-slate-700"
             >
               <div className="p-4 pt-3">
-                <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-3">
+                <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-slate-400 mb-3">
                   <History size={12} />
                   Actividad
                 </p>
@@ -480,15 +483,15 @@ export default function TaskItem({
                   {task.history.slice(-8).map((entry) => (
                     <div
                       key={entry.id}
-                      className="flex items-start gap-2 text-[11px] text-gray-500"
+                      className="flex items-start gap-2 text-[11px] text-gray-500 dark:text-slate-400"
                     >
-                      <div className="w-1.5 h-1.5 rounded-full bg-gray-300 mt-1.5 flex-shrink-0" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-slate-600 mt-1.5 flex-shrink-0" />
                       <span className="leading-relaxed">
-                        <span className="font-semibold text-gray-700">
+                        <span className="font-semibold text-gray-700 dark:text-slate-300">
                           {getUserName(entry.performedBy)}
                         </span>{" "}
                         {entry.details || entry.action}
-                        <span className="text-gray-400 ml-1">
+                        <span className="text-gray-400 dark:text-slate-500 ml-1">
                           · {formatActivityDateTime(entry.performedAt)}
                         </span>
                       </span>
@@ -521,7 +524,7 @@ export default function TaskItem({
             onChange={setEditTitle}
             placeholder="Título de la tarea"
             autoFocus
-            className="text-base font-semibold text-gray-900 placeholder:text-gray-300"
+            className="text-base font-semibold text-gray-900 dark:text-slate-100 placeholder:text-gray-300 dark:placeholder:text-slate-600"
             minRows={1}
           />
 
@@ -530,7 +533,7 @@ export default function TaskItem({
             value={editDescription}
             onChange={setEditDescription}
             placeholder="Añade una descripción..."
-            className="text-sm text-gray-600 placeholder:text-gray-300"
+            className="text-sm text-gray-600 dark:text-slate-300 placeholder:text-gray-300 dark:placeholder:text-slate-600"
             minRows={1}
           />
 
@@ -541,7 +544,7 @@ export default function TaskItem({
               value={editLocation}
               onChange={setEditLocation}
               placeholder="Ubicación o dirección"
-              className="text-sm text-gray-700 placeholder:text-gray-300"
+              className="text-sm text-gray-700 dark:text-slate-300 placeholder:text-gray-300 dark:placeholder:text-slate-600"
               minRows={1}
             />
           </div>
@@ -558,14 +561,14 @@ export default function TaskItem({
                   value={phone}
                   onChange={(v) => handlePhoneChange(index, v)}
                   placeholder={`Teléfono ${index + 1}`}
-                  className="flex-1 text-sm text-gray-700 placeholder:text-gray-300"
+                  className="flex-1 text-sm text-gray-700 dark:text-slate-300 placeholder:text-gray-300 dark:placeholder:text-slate-600"
                   minRows={1}
                 />
                 {editPhones.length > 1 && (
                   <button
                     type="button"
                     onClick={() => handleRemovePhone(index)}
-                    className="p-1 rounded-md text-gray-300 hover:text-red-400 transition-colors flex-shrink-0"
+                    className="p-1 rounded-md text-gray-300 dark:text-slate-600 hover:text-red-400 transition-colors flex-shrink-0"
                   >
                     <X size={14} />
                   </button>
@@ -575,7 +578,7 @@ export default function TaskItem({
             <button
               type="button"
               onClick={handleAddPhone}
-              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition-colors ml-6"
+              className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors ml-6"
             >
               <Plus size={12} />
               Agregar teléfono
@@ -592,7 +595,7 @@ export default function TaskItem({
                   (e.target.value as Task["priority"]) || undefined,
                 )
               }
-              className="text-sm border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-blue-400 flex-1"
+              className="text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-400 flex-1"
             >
               <option value="">Sin prioridad</option>
               <option value="urgent">🔴 Crítica</option>
@@ -603,7 +606,7 @@ export default function TaskItem({
           </div>
 
           {/* Options Bar */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-800">
             <TaskOptionsBar
               dueDate={editDueDate}
               dueTime={editDueTime}
@@ -641,22 +644,22 @@ export default function TaskItem({
         title="Eliminar tarea"
       >
         <div className="space-y-4">
-          <div className="flex items-start gap-3 p-4 bg-red-50 rounded-xl border border-red-100">
+          <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/40">
             <AlertTriangle
               size={18}
               className="text-red-500 flex-shrink-0 mt-0.5"
             />
             <div>
-              <p className="text-sm font-semibold text-red-800">
+              <p className="text-sm font-semibold text-red-800 dark:text-red-400">
                 Esta acción es permanente
               </p>
-              <p className="text-sm text-red-600 mt-0.5 leading-relaxed">
+              <p className="text-sm text-red-600 dark:text-red-400/80 mt-0.5 leading-relaxed">
                 ¿Estás seguro de que deseas eliminar esta tarea? No podrás
                 recuperarla.
               </p>
             </div>
           </div>
-          <p className="text-sm text-gray-600 font-medium line-clamp-2 px-1">
+          <p className="text-sm text-gray-600 dark:text-slate-300 font-medium line-clamp-2 px-1">
             &quot;{task.title}&quot;
           </p>
           <div className="flex gap-3 pt-1">
@@ -695,14 +698,15 @@ function DueDateBadge({
   const diffMs = due.getTime() - now.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  let bgClass = "bg-blue-50 text-blue-600";
+  let bgClass =
+    "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400";
   let label = dueTime ? `${dueDate} · ${dueTime}` : dueDate;
 
   if (diffMs < 0) {
-    bgClass = "bg-red-50 text-red-600";
+    bgClass = "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400";
     label = "Vencida";
   } else if (diffDays === 0) {
-    bgClass = "bg-blue-50 text-blue-600";
+    bgClass = "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400";
     label = dueTime ? `Hoy · ${dueTime}` : "Vence hoy";
   } else if (diffDays === 1) {
     label = "Mañana";
@@ -781,7 +785,7 @@ function ReminderBadge({
   }
 
   return (
-    <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">
+    <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400">
       <Bell size={8} />
       {label}
     </span>

@@ -18,7 +18,7 @@ export default function Select({
   return (
     <div className="space-y-1.5">
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
           {label}
         </label>
       )}

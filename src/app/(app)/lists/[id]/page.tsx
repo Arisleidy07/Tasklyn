@@ -223,7 +223,7 @@ export default function ListDetailPage() {
         }
         badge={
           archivedCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-[10px] font-medium text-gray-600 border border-gray-200">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700 text-[10px] font-medium text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-slate-600">
               <Archive size={10} className="text-gray-500" />
               {archivedCount} archivada
               {archivedCount !== 1 ? "s" : ""}
@@ -289,7 +289,7 @@ export default function ListDetailPage() {
 
       <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto pb-6">
         {/* Filtros - Segmented Control (Pendientes, Completadas, Todas) */}
-        <div className="flex bg-gray-50 border border-gray-200/80 rounded-2xl p-1.5 mb-6 gap-1 shadow-sm">
+        <div className="flex bg-gray-50 dark:bg-slate-800 border border-gray-200/80 dark:border-slate-700 rounded-2xl p-1.5 mb-6 gap-1 shadow-sm">
           {[
             {
               key: "pending" as const,
@@ -314,10 +314,10 @@ export default function ListDetailPage() {
               key={key}
               onClick={() => setFilter(key)}
               className={cn(
-                "relative flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight transition-all duration-200 min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 focus-visible:ring-offset-gray-50",
+                "relative flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight transition-all duration-200 min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1",
                 filter === key
-                  ? "bg-white text-gray-900 shadow-sm border border-gray-200"
-                  : "text-gray-500 hover:text-gray-800 hover:bg-white/40 border border-transparent",
+                  ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm border border-gray-200 dark:border-slate-600"
+                  : "text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-slate-700/40 border border-transparent",
               )}
             >
               {Icon && (
@@ -329,7 +329,7 @@ export default function ListDetailPage() {
                   "text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none tracking-wide",
                   filter === key
                     ? "bg-blue-600 text-white shadow-sm"
-                    : "bg-gray-100 text-gray-500",
+                    : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400",
                 )}
               >
                 {count}
@@ -384,7 +384,7 @@ export default function ListDetailPage() {
                         Pendientes
                       </span>
                     </div>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400">
                       {pendingTasks.length}
                     </span>
                   </div>
@@ -420,7 +420,7 @@ export default function ListDetailPage() {
                         Completadas
                       </span>
                     </div>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500">
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400">
                       {completedTasks.length}
                     </span>
                   </div>
@@ -492,24 +492,24 @@ export default function ListDetailPage() {
 
         {/* Área de archivados dentro de la lista */}
         {archivedCount > 0 && (
-          <div className="mt-10 pt-6 border-t border-dashed border-gray-200">
+          <div className="mt-10 pt-6 border-t border-dashed border-gray-200 dark:border-slate-700">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-500 text-[11px] font-semibold">
+                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 text-[11px] font-semibold">
                   A
                 </span>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
                     Área de archivados
                   </p>
-                  <p className="text-[11px] text-gray-400">
+                  <p className="text-[11px] text-gray-400 dark:text-slate-500">
                     Tareas guardadas para referencia. Puedes restaurar o
                     eliminar.
                   </p>
                 </div>
               </div>
               {!showArchived && (
-                <span className="text-[11px] text-gray-400 hidden sm:inline-flex">
+                <span className="text-[11px] text-gray-400 dark:text-slate-500 hidden sm:inline-flex">
                   {archivedCount} archivada{archivedCount !== 1 ? "s" : ""}{" "}
                   ocultas
                 </span>
@@ -518,20 +518,20 @@ export default function ListDetailPage() {
 
             <button
               onClick={() => setShowArchived(!showArchived)}
-              className="mt-3 flex items-center gap-2 w-full text-left group px-3 py-2 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors border border-transparent hover:border-gray-200"
+              className="mt-3 flex items-center gap-2 w-full text-left group px-3 py-2 rounded-2xl bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-slate-600"
             >
               <div className="flex items-center gap-2 flex-1">
-                <div className="w-7 h-7 rounded-xl bg-gray-900 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-xl bg-gray-900 dark:bg-slate-600 flex items-center justify-center">
                   <Archive size={14} className="text-white" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-gray-800 flex items-center gap-1">
+                  <span className="text-sm font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-1">
                     Ver tareas archivadas
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-gray-900 text-white">
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-gray-900 dark:bg-slate-500 text-white">
                       {archivedCount}
                     </span>
                   </span>
-                  <span className="text-[11px] text-gray-500">
+                  <span className="text-[11px] text-gray-500 dark:text-slate-400">
                     Toca para desplegar todas las tareas archivadas de esta
                     lista.
                   </span>
@@ -540,7 +540,7 @@ export default function ListDetailPage() {
               <ChevronDown
                 size={14}
                 className={cn(
-                  "text-gray-400 transition-transform group-hover:text-gray-600",
+                  "text-gray-400 dark:text-slate-500 transition-transform group-hover:text-gray-600 dark:group-hover:text-slate-300",
                   showArchived && "rotate-180",
                 )}
               />
@@ -590,8 +590,8 @@ export default function ListDetailPage() {
         <div className="space-y-5">
           {/* Título de la tarea */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-              <span className="w-4 h-4 rounded bg-gray-100 flex items-center justify-center text-[10px]">
+            <label className="text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+              <span className="w-4 h-4 rounded bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-[10px]">
                 1
               </span>
               Título de la tarea
@@ -607,8 +607,8 @@ export default function ListDetailPage() {
 
           {/* Teléfonos dinámicos */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-              <Phone size={12} className="text-gray-400" />
+            <label className="text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+              <Phone size={12} className="text-gray-400 dark:text-slate-500" />
               Teléfonos de contacto
             </label>
             <AnimatePresence mode="popLayout">
@@ -631,7 +631,7 @@ export default function ListDetailPage() {
                     <button
                       type="button"
                       onClick={() => handleRemovePhone(index)}
-                      className="p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                      className="p-2 rounded-lg text-gray-400 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 transition-colors flex-shrink-0"
                     >
                       <X size={16} />
                     </button>
@@ -653,8 +653,8 @@ export default function ListDetailPage() {
 
           {/* Ubicación */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-              <MapPin size={12} className="text-gray-400" />
+            <label className="text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+              <MapPin size={12} className="text-gray-400 dark:text-slate-500" />
               Ubicación / Dirección
             </label>
             <Input
@@ -667,8 +667,11 @@ export default function ListDetailPage() {
 
           {/* Descripción */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-gray-700 uppercase tracking-wide flex items-center gap-1.5">
-              <FileText size={12} className="text-gray-400" />
+            <label className="text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+              <FileText
+                size={12}
+                className="text-gray-400 dark:text-slate-500"
+              />
               Descripción
             </label>
             <textarea
@@ -680,12 +683,12 @@ export default function ListDetailPage() {
                 e.target.style.height = e.target.scrollHeight + "px";
               }}
               rows={2}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all resize-none overflow-hidden min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none overflow-hidden min-h-[44px]"
             />
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2 border-t border-gray-100">
+          <div className="flex gap-3 pt-2 border-t border-gray-100 dark:border-slate-800">
             <Button
               variant="ghost"
               onClick={() => {

@@ -47,11 +47,7 @@ export default function Avatar({
       <img
         src={photoURL}
         alt={name}
-        className={cn(
-          "rounded-full object-cover ring-2 ring-white",
-          sizeMap[size],
-          className,
-        )}
+        className={cn("rounded-full object-cover", sizeMap[size], className)}
       />
     );
   }
@@ -59,7 +55,7 @@ export default function Avatar({
   return (
     <div
       className={cn(
-        "rounded-full flex items-center justify-center font-semibold text-white ring-2 ring-white",
+        "rounded-full flex items-center justify-center font-semibold text-white",
         sizeMap[size],
         getColorFromName(name),
         className,

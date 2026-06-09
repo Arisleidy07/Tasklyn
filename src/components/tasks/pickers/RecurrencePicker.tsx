@@ -172,7 +172,7 @@ export default function RecurrencePicker({
                 className="relative z-10 w-full max-w-[360px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
               >
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
-                  <h3 className="text-sm font-semibold text-gray-900">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
                     Personalizar repetición
                   </h3>
                   <button
@@ -186,10 +186,10 @@ export default function RecurrencePicker({
                 <div className="p-5 space-y-5">
                   {/* Frequency type */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    <label className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                       Frecuencia
                     </label>
-                    <div className="flex bg-gray-100 rounded-xl p-1">
+                    <div className="flex bg-gray-100 dark:bg-slate-800 rounded-xl p-1">
                       {(
                         [
                           { key: "days", label: "Días" },
@@ -203,8 +203,8 @@ export default function RecurrencePicker({
                           className={cn(
                             "flex-1 py-2 rounded-lg text-sm font-medium transition-all",
                             customType === f.key
-                              ? "bg-white text-gray-900 shadow-sm"
-                              : "text-gray-500 hover:text-gray-700",
+                              ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm"
+                              : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200",
                           )}
                         >
                           {f.label}
@@ -215,7 +215,7 @@ export default function RecurrencePicker({
 
                   {/* Interval */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    <label className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                       Cada{" "}
                       {customType === "days"
                         ? "cuántos días"
@@ -226,16 +226,16 @@ export default function RecurrencePicker({
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => setInterval(Math.max(1, interval - 1))}
-                        className="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 transition-colors"
+                        className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                       >
                         −
                       </button>
-                      <span className="flex-1 text-center text-lg font-semibold text-gray-900">
+                      <span className="flex-1 text-center text-lg font-semibold text-gray-900 dark:text-slate-100">
                         {interval}
                       </span>
                       <button
                         onClick={() => setInterval(interval + 1)}
-                        className="w-10 h-10 rounded-xl bg-gray-100 text-gray-600 font-semibold hover:bg-gray-200 transition-colors"
+                        className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                       >
                         +
                       </button>
@@ -245,7 +245,7 @@ export default function RecurrencePicker({
                   {/* Days of week (only for weeks) */}
                   {customType === "weeks" && (
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                      <label className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                         Días de la semana
                       </label>
                       <div className="flex gap-1.5">
@@ -258,8 +258,8 @@ export default function RecurrencePicker({
                               className={cn(
                                 "flex-1 aspect-square rounded-xl text-sm font-semibold transition-all",
                                 active
-                                  ? "bg-gray-900 text-white"
-                                  : "bg-gray-100 text-gray-500 hover:bg-gray-200",
+                                  ? "bg-gray-900 dark:bg-blue-600 text-white"
+                                  : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600",
                               )}
                             >
                               {d.label}
@@ -272,7 +272,7 @@ export default function RecurrencePicker({
 
                   <button
                     onClick={handleCustomSave}
-                    className="w-full h-11 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors"
+                    className="w-full h-11 bg-gray-900 dark:bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-gray-800 dark:hover:bg-blue-700 transition-colors"
                   >
                     Guardar repetición
                   </button>

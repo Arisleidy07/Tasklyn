@@ -16,6 +16,8 @@ import {
   onSnapshot,
   query,
   where,
+  orderBy,
+  limit as firestoreLimit,
   serverTimestamp,
   Timestamp,
   writeBatch,
@@ -26,6 +28,7 @@ import {
   Unsubscribe,
   arrayUnion,
   increment,
+  deleteField,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type {
@@ -427,7 +430,10 @@ export const updateTask = async (
 ): Promise<void> => {
   const taskRef = doc(db, "tasks", taskId);
   const { id, createdAt, ...rest } = updates;
-  const cleanUpdates = stripUndefined(rest);
+  const cleanUpdates = stripUndefined(rest) as Record<string, unknown>;
+  if ("priority" in updates && updates.priority === undefined) {
+    cleanUpdates.priority = deleteField();
+  }
   await updateDoc(taskRef, withTimestamps(cleanUpdates));
 };
 
@@ -600,6 +606,86 @@ export const createTeam = async (
 
   console.log("✅ Team created with full configuration:", teamRef.id);
   return teamRef.id;
+};
+
+/**
+ * Ensures every user has a "Personal" team on first login.
+ * Idempotent — safe to call on every login.
+ */
+export const ensurePersonalTeam = async (userId: string): Promise<string> => {
+  const q = query(
+    teamsCollection,
+    where("owner", "==", userId),
+    where("isPersonal", "==", true),
+  );
+  const snap = await getDocs(q);
+  if (!snap.empty) return snap.docs[0].id;
+
+  const teamRef = doc(teamsCollection);
+  const now = new Date().toISOString();
+  await setDoc(teamRef, {
+    name: "Personal",
+    description: "Tu espacio de trabajo personal",
+    owner: userId,
+    isPersonal: true,
+    color: "#6366f1",
+    icon: "👤",
+    members: [{ userId, role: "owner", joinedAt: now }],
+    memberIds: [userId],
+    settings: { allowInvites: false, requireApproval: false },
+    stats: { totalTasks: 0, completedTasks: 0, totalMembers: 1, totalLists: 0 },
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return teamRef.id;
+};
+
+// ============================================
+// TEAM ACTIVITY
+// ============================================
+
+export interface TeamActivityEntry {
+  id: string;
+  teamId: string;
+  userId: string;
+  userName: string;
+  userPhoto?: string;
+  action: string; // e.g. "completed_task", "created_task", "joined_team"
+  detail: string; // human-readable: "completó Diseño de logo"
+  entityId?: string;
+  entityType?: "task" | "list" | "member";
+  createdAt: string;
+}
+
+export const addTeamActivity = async (
+  teamId: string,
+  entry: Omit<TeamActivityEntry, "id" | "createdAt">,
+): Promise<void> => {
+  const ref = doc(collection(db, "teams", teamId, "activity"));
+  await setDoc(ref, {
+    ...entry,
+    createdAt: serverTimestamp(),
+  });
+};
+
+export const subscribeToTeamActivity = (
+  teamId: string,
+  callback: (entries: TeamActivityEntry[]) => void,
+  limitCount = 30,
+): Unsubscribe => {
+  const q = query(
+    collection(db, "teams", teamId, "activity"),
+    orderBy("createdAt", "desc"),
+    firestoreLimit(limitCount),
+  );
+  return onSnapshot(q, (snap) => {
+    const entries = snap.docs.map((d) => ({
+      ...d.data(),
+      id: d.id,
+      createdAt: toDate(d.data().createdAt),
+    })) as TeamActivityEntry[];
+    callback(entries);
+  });
 };
 
 export const getTeam = async (teamId: string): Promise<Team | null> => {

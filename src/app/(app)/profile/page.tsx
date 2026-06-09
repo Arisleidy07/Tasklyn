@@ -212,29 +212,29 @@ export default function ProfilePage() {
       label: "Listas creadas",
       value: createdLists.length,
       icon: FolderOpen,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
+      color: "text-blue-600 dark:text-blue-400",
+      bg: "bg-blue-50 dark:bg-blue-500/20",
     },
     {
       label: "Listas compartidas",
       value: sharedLists.length,
       icon: Users,
-      color: "text-gray-600",
-      bg: "bg-gray-100",
+      color: "text-gray-600 dark:text-slate-400",
+      bg: "bg-gray-100 dark:bg-slate-700",
     },
     {
       label: "Tareas completadas",
       value: completedTasks.length,
       icon: CheckCircle2,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
+      color: "text-blue-600 dark:text-blue-400",
+      bg: "bg-blue-50 dark:bg-blue-500/20",
     },
     {
       label: "Tareas pendientes",
       value: pendingTasks.length,
       icon: Clock,
-      color: "text-gray-600",
-      bg: "bg-gray-100",
+      color: "text-gray-600 dark:text-slate-400",
+      bg: "bg-gray-100 dark:bg-slate-700",
     },
   ];
 
@@ -344,17 +344,17 @@ export default function ProfilePage() {
                       y: -2,
                       boxShadow: "0 4px 16px -4px rgba(59,130,246,0.12)",
                     }}
-                    className="p-3 sm:p-4 rounded-xl bg-gray-50 border border-gray-100 transition-colors hover:border-blue-100"
+                    className="p-3 sm:p-4 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 transition-colors hover:border-blue-100 dark:hover:border-slate-600"
                   >
                     <div
                       className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mb-2`}
                     >
                       <s.icon size={16} className={s.color} />
                     </div>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100">
                       {s.value}
                     </p>
-                    <p className="text-xs text-gray-500 mt-0.5 leading-tight">
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 leading-tight">
                       {s.label}
                     </p>
                   </motion.div>
@@ -364,7 +364,7 @@ export default function ProfilePage() {
 
             {/* Barra de progreso de tareas */}
             {userTasks.length > 0 && (
-              <div className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 border-t border-gray-100 bg-gray-50/50">
+              <div className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-medium text-gray-500 flex items-center gap-1">
                     <TrendingUp size={12} />
@@ -374,7 +374,7 @@ export default function ProfilePage() {
                     {completionRate}%
                   </span>
                 </div>
-                <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-blue-600 rounded-full transition-all duration-700"
                     style={{ width: `${completionRate}%` }}
@@ -391,10 +391,10 @@ export default function ProfilePage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6"
+              className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm p-4 sm:p-6"
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
                   <FolderOpen size={16} className="text-blue-600" />
                   Mis listas recientes
                 </h2>
@@ -415,15 +415,15 @@ export default function ProfilePage() {
                     <Link
                       key={list.id}
                       href={`/lists/${list.id}`}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors group"
+                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors group"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center flex-shrink-0">
                         <FolderOpen size={14} className="text-blue-600" />
                       </div>
-                      <span className="text-sm text-gray-700 font-medium truncate flex-1 group-hover:text-gray-900">
+                      <span className="text-sm text-gray-700 dark:text-slate-300 font-medium truncate flex-1 group-hover:text-gray-900 dark:group-hover:text-slate-100">
                         {list.name}
                       </span>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-gray-400 dark:text-slate-500">
                         {list.members.length} miembro
                         {list.members.length !== 1 ? "s" : ""}
                       </span>
@@ -438,23 +438,23 @@ export default function ProfilePage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 sm:p-6"
+              className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm p-4 sm:p-6"
             >
-              <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-4">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2 mb-4">
                 <Shield size={16} className="text-blue-600" />
                 Cuenta
               </h2>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-800">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center">
                       <Mail size={14} className="text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-700">
+                      <p className="text-xs font-medium text-gray-700 dark:text-slate-300">
                         Correo electrónico
                       </p>
-                      <p className="text-xs text-gray-500 truncate max-w-[160px]">
+                      <p className="text-xs text-gray-500 dark:text-slate-400 truncate max-w-[160px]">
                         {user.email}
                       </p>
                     </div>
@@ -465,16 +465,16 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-800">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center">
                       <Crown size={14} className="text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-700">
+                      <p className="text-xs font-medium text-gray-700 dark:text-slate-300">
                         Plan actual
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-slate-400">
                         {user.plan === "business"
                           ? "Plan empresarial completo"
                           : user.plan === "pro"
@@ -500,12 +500,12 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Toggle de tema rápido en el perfil */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-800">
                   <div className="flex flex-col gap-0.5">
-                    <p className="text-xs font-medium text-gray-700">
+                    <p className="text-xs font-medium text-gray-700 dark:text-slate-300">
                       Tema de Tasklyn
                     </p>
-                    <p className="text-[11px] text-gray-500">
+                    <p className="text-[11px] text-gray-500 dark:text-slate-400">
                       Alterna entre modo claro y oscuro desde tu perfil.
                     </p>
                   </div>
@@ -564,13 +564,16 @@ export default function ProfilePage() {
 
                 <Link
                   href="/settings"
-                  className="flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                      <Settings size={14} className="text-gray-500" />
+                    <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
+                      <Settings
+                        size={14}
+                        className="text-gray-500 dark:text-slate-400"
+                      />
                     </div>
-                    <p className="text-xs font-medium text-gray-700">
+                    <p className="text-xs font-medium text-gray-700 dark:text-slate-300">
                       Configuración
                     </p>
                   </div>
@@ -621,19 +624,19 @@ export default function ProfilePage() {
                   transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                   className={cn(
                     "relative z-10 w-full max-w-[400px]",
-                    "bg-white rounded-2xl shadow-2xl overflow-hidden",
-                    "border border-gray-100",
+                    "bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden",
+                    "border border-gray-100 dark:border-slate-800",
                     "flex flex-col max-h-[90vh]",
                   )}
                 >
                   {/* Header minimalista */}
-                  <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-                    <h2 className="text-base font-semibold text-gray-900 tracking-tight">
+                  <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-slate-800">
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 tracking-tight">
                       Editar perfil
                     </h2>
                     <button
                       onClick={() => setShowEditProfile(false)}
-                      className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                      className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
                     >
                       <X size={18} />
                     </button>
@@ -644,7 +647,7 @@ export default function ProfilePage() {
                     {/* Photo Section - elegante */}
                     <div className="flex flex-col items-center">
                       <div className="relative group">
-                        <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden ring-4 ring-gray-50 group-hover:ring-gray-100 transition-all">
+                        <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden ring-4 ring-gray-50 dark:ring-slate-900 group-hover:ring-gray-100 dark:group-hover:ring-slate-800 transition-all">
                           {editPhotoURL ? (
                             <img
                               src={editPhotoURL}
@@ -652,12 +655,15 @@ export default function ProfilePage() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <User size={36} className="text-gray-300" />
+                            <User
+                              size={36}
+                              className="text-gray-300 dark:text-slate-600"
+                            />
                           )}
                         </div>
                         <button
                           onClick={() => fileInputRef.current?.click()}
-                          className="absolute -bottom-1 -right-1 w-8 h-8 bg-gray-900 hover:bg-gray-800 text-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+                          className="absolute -bottom-1 -right-1 w-8 h-8 bg-gray-900 dark:bg-blue-600 hover:bg-gray-800 dark:hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
                         >
                           <Camera size={14} />
                         </button>
@@ -670,7 +676,7 @@ export default function ProfilePage() {
                         onChange={handleFileSelect}
                         className="hidden"
                       />
-                      <p className="text-xs text-gray-500 mt-3 font-medium">
+                      <p className="text-xs text-gray-500 dark:text-slate-400 mt-3 font-medium">
                         {editPhotoURL
                           ? "Cambiar foto de perfil"
                           : "Agregar foto de perfil"}
@@ -689,11 +695,11 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Divider */}
-                    <div className="h-px bg-gray-100" />
+                    <div className="h-px bg-gray-100 dark:bg-slate-800" />
 
                     {/* Name Input - limpio */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">
+                      <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
                         Nombre completo
                       </label>
                       <Input
@@ -704,30 +710,30 @@ export default function ProfilePage() {
                           e.key === "Enter" && handleSaveProfile()
                         }
                         autoFocus
-                        className="h-11 bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                        className="h-11 bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-800 transition-colors"
                       />
                     </div>
 
                     {/* Email (read only) - sutil */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-500">
+                      <label className="text-sm font-medium text-gray-500 dark:text-slate-500">
                         Correo electrónico
                       </label>
-                      <div className="h-11 px-3 flex items-center bg-gray-100 rounded-lg text-sm text-gray-500 border border-transparent">
+                      <div className="h-11 px-3 flex items-center bg-gray-100 dark:bg-slate-800 rounded-lg text-sm text-gray-500 dark:text-slate-400 border border-transparent">
                         {user.email}
                       </div>
-                      <p className="text-[11px] text-gray-400">
+                      <p className="text-[11px] text-gray-400 dark:text-slate-500">
                         El correo no se puede cambiar
                       </p>
                     </div>
                   </div>
 
                   {/* Actions - modernas */}
-                  <div className="p-6 pt-4 border-t border-gray-100 bg-gray-50/50">
+                  <div className="p-6 pt-4 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50">
                     <div className="flex gap-3">
                       <button
                         onClick={() => setShowEditProfile(false)}
-                        className="flex-1 h-11 px-4 rounded-xl text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                        className="flex-1 h-11 px-4 rounded-xl text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
                       >
                         Cancelar
                       </button>
@@ -737,8 +743,8 @@ export default function ProfilePage() {
                         className={cn(
                           "flex-1 h-11 px-4 rounded-xl text-sm font-medium text-white transition-all",
                           !editName.trim() || isSavingProfile
-                            ? "bg-gray-300 cursor-not-allowed"
-                            : "bg-gray-900 hover:bg-gray-800 hover:shadow-lg active:scale-[0.98]",
+                            ? "bg-gray-300 dark:bg-slate-700 cursor-not-allowed"
+                            : "bg-blue-600 hover:bg-blue-500 hover:shadow-lg active:scale-[0.98]",
                         )}
                       >
                         {isSavingProfile ? (

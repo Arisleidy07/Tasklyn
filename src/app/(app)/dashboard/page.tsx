@@ -19,10 +19,10 @@ import {
   Clock,
   ArrowRight,
   TrendingUp,
-  ArrowDown,
   Flag,
   CalendarDays,
   Zap,
+  Activity,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { PLAN_FEATURES, type Plan } from "@/types";
@@ -33,7 +33,9 @@ import {
   isSameDay,
   parseISO,
   isBefore,
+  isAfter,
   addDays,
+  startOfDay,
 } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -79,6 +81,9 @@ export default function DashboardPage() {
   const { getPersonalLists, getSharedLists, getUserLists } = useListStore();
   const { tasks } = useTaskStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [timeFilter, setTimeFilter] = useState<
+    "today" | "week" | "month" | "year"
+  >("week");
 
   if (!user) return null;
 
@@ -181,6 +186,56 @@ export default function DashboardPage() {
 
   const listNameMap = new Map(allLists.map((l) => [l.id, l.name]));
 
+  // Time filter boundary
+  const filterBoundary = (() => {
+    const d = new Date();
+    if (timeFilter === "today") return startOfDay(d);
+    if (timeFilter === "week") return subDays(d, 7);
+    if (timeFilter === "month") return subDays(d, 30);
+    return subDays(d, 365);
+  })();
+
+  const filteredTasks = userTasks.filter((t) => {
+    try {
+      return isAfter(parseISO(t.createdAt), filterBoundary);
+    } catch {
+      return false;
+    }
+  });
+  const filteredCompleted = completedTasks.filter((t) => {
+    try {
+      return t.completedAt && isAfter(parseISO(t.completedAt), filterBoundary);
+    } catch {
+      return false;
+    }
+  });
+  const filteredPending = filteredTasks.filter((t) => t.status === "pending");
+  const filteredRate =
+    filteredTasks.length > 0
+      ? Math.round((filteredCompleted.length / filteredTasks.length) * 100)
+      : 0;
+
+  // Recent activity — last 10 events across all tasks
+  const recentActivity = [...userTasks]
+    .filter((t) => t.completedAt || t.createdAt)
+    .sort((a, b) => {
+      const ta = a.completedAt || a.createdAt;
+      const tb = b.completedAt || b.createdAt;
+      try {
+        return parseISO(tb).getTime() - parseISO(ta).getTime();
+      } catch {
+        return 0;
+      }
+    })
+    .slice(0, 8)
+    .map((t) => ({
+      id: t.id,
+      title: t.title,
+      listName: listNameMap.get(t.listId) || "Lista",
+      isCompleted: t.status === "completed",
+      date: t.completedAt || t.createdAt,
+    }));
+
   // Calculate dynamic trends based on actual ratios
   const totalTasks = completedTasks.length + pendingTasks.length;
   const completionRate =
@@ -207,38 +262,41 @@ export default function DashboardPage() {
         "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400",
     },
     {
-      label: "Compartidas",
-      numericValue: sharedLists.length,
+      label: "Tareas creadas",
+      numericValue: filteredTasks.length,
       suffix: "",
-      icon: Users,
+      icon: TrendingUp,
       bg: "bg-gradient-to-br from-purple-500 to-pink-600 shadow-purple-500/25",
       barColor: "from-purple-500 to-pink-500",
-      progress: sharedRatio,
-      badge: `${sharedRatio}% del total`,
+      progress: Math.min(filteredTasks.length * 5, 100),
+      badge: `en el período`,
       badgeColor:
         "bg-purple-50 text-purple-600 dark:bg-purple-950/30 dark:text-purple-400",
     },
     {
       label: "Tasa de éxito",
-      numericValue: completionRate,
+      numericValue: filteredRate,
       suffix: "%",
       icon: CheckCircle2,
       bg: "bg-gradient-to-br from-green-500 to-emerald-600 shadow-green-500/25",
       barColor: "from-green-500 to-emerald-500",
-      progress: completionRate,
-      badge: `${completedTasks.length} de ${userTasks.length}`,
+      progress: filteredRate,
+      badge: `${filteredCompleted.length} completadas`,
       badgeColor:
         "bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400",
     },
     {
       label: "Pendientes",
-      numericValue: pendingTasks.length,
+      numericValue: filteredPending.length,
       suffix: "",
       icon: Clock,
       bg: "bg-gradient-to-br from-yellow-500 to-orange-600 shadow-yellow-500/25",
       barColor: "from-amber-500 to-orange-500",
-      progress: pendingRatio,
-      badge: `${pendingRatio}% del total`,
+      progress:
+        filteredTasks.length > 0
+          ? Math.round((filteredPending.length / filteredTasks.length) * 100)
+          : 0,
+      badge: `por completar`,
       badgeColor:
         "bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400",
     },
@@ -280,7 +338,7 @@ export default function DashboardPage() {
                   className={`relative flex items-center gap-2 py-3.5 px-4 sm:px-5 text-sm font-medium transition-all duration-200 ${
                     isTabActive
                       ? "text-blue-600"
-                      : "text-gray-500 hover:text-gray-800"
+                      : "text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200"
                   }`}
                 >
                   {tab === "personal" ? (
@@ -295,7 +353,7 @@ export default function DashboardPage() {
                     className={`text-xs px-1.5 py-0.5 rounded-md font-semibold transition-colors ${
                       isTabActive
                         ? "bg-blue-100 text-blue-700"
-                        : "bg-gray-100 text-gray-500"
+                        : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400"
                     }`}
                   >
                     {tab === "personal"
@@ -321,6 +379,33 @@ export default function DashboardPage() {
       )}
 
       <div className="p-3 sm:p-4 md:p-8 space-y-6 sm:space-y-8 md:space-y-10 max-w-[1400px] mx-auto">
+        {/* Time filter — only in overview */}
+        {!isListsSection && (
+          <div className="flex items-center gap-2">
+            {(
+              [
+                { id: "today", label: "Hoy" },
+                { id: "week", label: "Semana" },
+                { id: "month", label: "Mes" },
+                { id: "year", label: "Año" },
+              ] as const
+            ).map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setTimeFilter(f.id)}
+                className={cn(
+                  "px-3.5 py-1.5 rounded-lg text-sm font-medium transition-all duration-200",
+                  timeFilter === f.id
+                    ? "bg-blue-600 text-white shadow-sm shadow-blue-600/25"
+                    : "text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-800 dark:hover:text-slate-200",
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Stats - solo mostrar en vista general */}
         {!isListsSection && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -616,6 +701,87 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Actividad reciente */}
+        {!isListsSection && recentActivity.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-500/20 flex items-center justify-center">
+                  <Activity
+                    size={15}
+                    className="text-violet-600 dark:text-violet-400"
+                  />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                    Actividad reciente
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                    Últimas acciones
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden">
+              {recentActivity.map((item, i) => (
+                <div
+                  key={item.id}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-slate-800/50",
+                    i < recentActivity.length - 1 &&
+                      "border-b border-gray-100 dark:border-slate-800",
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0",
+                      item.isCompleted
+                        ? "bg-green-100 dark:bg-green-500/20"
+                        : "bg-blue-100 dark:bg-blue-500/20",
+                    )}
+                  >
+                    {item.isCompleted ? (
+                      <CheckCircle2
+                        size={13}
+                        className="text-green-600 dark:text-green-400"
+                      />
+                    ) : (
+                      <Plus
+                        size={13}
+                        className="text-blue-600 dark:text-blue-400"
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-800 dark:text-slate-200 truncate font-medium">
+                      {item.title}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-slate-500">
+                      {item.isCompleted ? "Completada en" : "Creada en"} ·{" "}
+                      {item.listName}
+                    </p>
+                  </div>
+                  <span className="text-[11px] text-gray-400 dark:text-slate-500 flex-shrink-0">
+                    {(() => {
+                      try {
+                        const diff = Date.now() - parseISO(item.date).getTime();
+                        const mins = Math.floor(diff / 60000);
+                        if (mins < 1) return "ahora";
+                        if (mins < 60) return `${mins}m`;
+                        const h = Math.floor(mins / 60);
+                        if (h < 24) return `${h}h`;
+                        return `${Math.floor(h / 24)}d`;
+                      } catch {
+                        return "";
+                      }
+                    })()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Listas personales */}
         {(!isListsSection || activeTab === "personal") && (
           <section>
@@ -629,10 +795,10 @@ export default function DashboardPage() {
                     />
                   </div>
                   <div>
-                    <h2 className="text-base font-semibold text-gray-900">
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">
                       Mis listas
                     </h2>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
                       {personalLists.length}{" "}
                       {personalLists.length === 1 ? "lista" : "listas"}
                     </p>
@@ -688,14 +854,17 @@ export default function DashboardPage() {
             {!isListsSection && (
               <div className="flex items-center justify-between mb-4 sm:mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                    <Users size={16} className="text-gray-600" />
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
+                    <Users
+                      size={16}
+                      className="text-gray-600 dark:text-slate-400"
+                    />
                   </div>
                   <div>
-                    <h2 className="text-base font-semibold text-gray-900">
+                    <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">
                       Listas compartidas
                     </h2>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
                       {sharedLists.length}{" "}
                       {sharedLists.length === 1 ? "lista" : "listas"}
                     </p>
@@ -752,15 +921,15 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="p-8 rounded-xl border-2 border-dashed border-gray-200 text-center"
+            className="p-8 rounded-xl border-2 border-dashed border-gray-200 dark:border-slate-700 text-center"
           >
             <div className="w-14 h-14 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
               <Plus size={24} className="text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
               Crea tu primera lista
             </h3>
-            <p className="text-sm text-gray-500 mt-1.5 max-w-sm mx-auto">
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1.5 max-w-sm mx-auto">
               Empieza creando una lista personal o compartida para organizar tus
               tareas.
             </p>
@@ -780,13 +949,13 @@ export default function DashboardPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="p-5 rounded-xl bg-gray-50 border border-gray-200"
+            className="p-5 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700"
           >
-            <p className="text-sm text-gray-700 font-semibold">
+            <p className="text-sm text-gray-700 dark:text-slate-300 font-semibold">
               Has alcanzado el límite de {limits.maxLists} listas en el plan{" "}
               {userPlan}.
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
               Actualiza a PRO para listas ilimitadas, tareas y miembros del
               equipo.
             </p>

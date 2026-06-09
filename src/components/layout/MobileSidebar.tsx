@@ -21,7 +21,6 @@ import {
   Calendar,
   History,
   Activity,
-  UserSquare2,
 } from "lucide-react";
 import { useNotificationStore } from "@/stores/notificationStore";
 import Logo from "@/components/shared/Logo";
@@ -58,7 +57,6 @@ export default function MobileSidebar() {
     { name: "Equipos", href: "/teams", icon: Users },
     { name: "Panel de Equipo", href: "/team-dashboard", icon: BarChart3 },
     { name: "Ranking", href: "/ranking", icon: Trophy },
-    { name: "Clientes", href: "/clients", icon: UserSquare2 },
     { name: "Calendario", href: "/calendar", icon: Calendar },
     { name: "Historial", href: "/history", icon: History },
     {

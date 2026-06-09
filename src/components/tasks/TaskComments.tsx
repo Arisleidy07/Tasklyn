@@ -160,7 +160,7 @@ export default function TaskComments({
                       })}
                     </span>
                     {c.editedAt && (
-                      <span className="text-[10px] text-gray-400 italic">
+                      <span className="text-[10px] text-gray-400 dark:text-slate-500 italic">
                         (editado)
                       </span>
                     )}
@@ -175,7 +175,7 @@ export default function TaskComments({
                 {c.authorId === user.id && (
                   <button
                     onClick={() => deleteComment(c.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 hover:text-red-400 transition-all flex-shrink-0"
+                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 dark:text-slate-600 hover:text-red-400 transition-all flex-shrink-0"
                   >
                     <Trash2 size={11} />
                   </button>
@@ -228,8 +228,8 @@ export default function TaskComments({
               className={cn(
                 "absolute right-2 bottom-1.5 p-1 rounded-lg transition-colors",
                 text.trim()
-                  ? "text-blue-600 hover:bg-blue-50"
-                  : "text-gray-300 cursor-not-allowed",
+                  ? "text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/20"
+                  : "text-gray-300 dark:text-slate-600 cursor-not-allowed",
               )}
             >
               <Send size={13} />

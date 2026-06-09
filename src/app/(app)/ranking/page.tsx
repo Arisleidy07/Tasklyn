@@ -13,17 +13,13 @@ import {
   Medal,
   Award,
   TrendingUp,
-  Calendar,
-  Filter,
   Crown,
-  Star,
   Target,
-  Activity,
   ChevronUp,
   ChevronDown,
-  MoreHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { subDays, startOfDay, parseISO, isAfter } from "date-fns";
 
 interface RankingUser {
   userId: string;
@@ -250,10 +246,28 @@ export default function RankingPage() {
         }),
       );
 
+      // Compute period boundary
+      const periodBoundary = (() => {
+        const now = new Date();
+        if (selectedPeriod === "today") return startOfDay(now);
+        if (selectedPeriod === "week") return subDays(now, 7);
+        if (selectedPeriod === "month") return subDays(now, 30);
+        return subDays(now, 365);
+      })();
+
       const ranking: RankingUser[] = profiles.map((profile) => {
-        const memberTasks = tasks.filter(
-          (t) => t.assignedTo === profile.id || t.completedBy === profile.id,
-        );
+        const memberTasks = tasks.filter((t) => {
+          const isOwner =
+            t.assignedTo === profile.id ||
+            t.completedBy === profile.id ||
+            t.createdBy === profile.id;
+          if (!isOwner) return false;
+          try {
+            return isAfter(parseISO(t.createdAt), periodBoundary);
+          } catch {
+            return false;
+          }
+        });
         const completedTasks = memberTasks.filter(
           (t) => t.status === "completed",
         ).length;
@@ -308,22 +322,28 @@ export default function RankingPage() {
         }
         showMenuButton={true}
         actions={
-          <div className="flex items-center gap-2">
-            <select
-              value={selectedTeam}
-              onChange={(e) => setSelectedTeam(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
-            >
-              <option value="all">Todos los equipos</option>
-              {teams.map((team) => (
-                <option key={team.id} value={team.id}>
-                  {team.name}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center gap-2 flex-wrap">
+            {teams.length > 0 && (
+              <select
+                value={selectedTeam}
+                onChange={(e) => setSelectedTeam(e.target.value)}
+                className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 max-w-[140px] sm:max-w-none"
+              >
+                <option value="all">Todos los equipos</option>
+                {teams.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+            )}
             <select
               value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value as any)}
+              onChange={(e) =>
+                setSelectedPeriod(
+                  e.target.value as "today" | "week" | "month" | "year",
+                )
+              }
               className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
             >
               <option value="today">Hoy</option>
@@ -331,9 +351,6 @@ export default function RankingPage() {
               <option value="month">Mes</option>
               <option value="year">Año</option>
             </select>
-            <Button variant="ghost" size="sm">
-              <Filter size={14} />
-            </Button>
           </div>
         }
       />

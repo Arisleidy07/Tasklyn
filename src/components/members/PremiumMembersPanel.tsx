@@ -113,7 +113,7 @@ export default function PremiumMembersPanel({
     >
       <div className="space-y-6">
         {/* Role guide */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-blue-100/80">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-2xl p-5 border border-blue-100/80 dark:border-blue-900/40">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
               <Share2 size={18} className="text-white" />
@@ -122,7 +122,7 @@ export default function PremiumMembersPanel({
               <h3 className="font-semibold text-gray-900 text-sm dark:text-slate-100">
                 Colaboración en tiempo real
               </h3>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                 {list.members.length}{" "}
                 {list.members.length === 1
                   ? "miembro activo"
@@ -148,7 +148,8 @@ export default function PremiumMembersPanel({
                 icon: <Eye size={13} />,
                 role: "Viewer",
                 desc: "Solo ver",
-                color: "bg-gray-100 text-gray-600",
+                color:
+                  "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300",
               },
             ].map((item) => (
               <div
@@ -163,7 +164,7 @@ export default function PremiumMembersPanel({
                 >
                   {item.icon} {item.role}
                 </span>
-                <p className="text-[10px] text-gray-500 leading-tight">
+                <p className="text-[10px] text-gray-500 dark:text-slate-400 leading-tight">
                   {item.desc}
                 </p>
               </div>
@@ -175,7 +176,7 @@ export default function PremiumMembersPanel({
         {canInvite && (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div className="w-7 h-7 bg-blue-100 dark:bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                 <UserPlus size={15} className="text-blue-600" />
               </div>
               <h3 className="font-semibold text-gray-900 text-sm dark:text-slate-100">
@@ -225,7 +226,7 @@ export default function PremiumMembersPanel({
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3"
+                  className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/40 rounded-xl px-4 py-3"
                 >
                   {inviteError}
                 </motion.p>
@@ -235,17 +236,17 @@ export default function PremiumMembersPanel({
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="flex items-start gap-3 p-4 rounded-xl bg-green-50 border border-green-100"
+                  className="flex items-start gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/40"
                 >
                   <CheckCircle2
                     size={18}
                     className="text-green-600 flex-shrink-0 mt-0.5"
                   />
                   <div>
-                    <p className="text-sm font-medium text-green-800">
+                    <p className="text-sm font-medium text-green-800 dark:text-green-400">
                       Invitación enviada
                     </p>
-                    <p className="text-xs text-green-600 mt-0.5">
+                    <p className="text-xs text-green-600 dark:text-green-500 mt-0.5">
                       {inviteSent.notified
                         ? `Notificado a ${inviteSent.email} dentro de Tasklyn.`
                         : `Correo enviado a ${inviteSent.email}.`}
@@ -258,7 +259,7 @@ export default function PremiumMembersPanel({
         )}
 
         {/* Copy invite link */}
-        <div className="pt-2 border-t border-gray-100">
+        <div className="pt-2 border-t border-gray-100 dark:border-slate-700">
           <motion.button
             onClick={handleCopyLink}
             disabled={isCopyingLink}
@@ -267,12 +268,12 @@ export default function PremiumMembersPanel({
             className={cn(
               "w-full flex items-center justify-center gap-2 h-11 rounded-xl border text-sm font-medium transition-all duration-200",
               linkCopied
-                ? "border-green-300 bg-green-50 text-green-700"
-                : "border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:border-gray-300",
+                ? "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400"
+                : "border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 hover:border-gray-300 dark:hover:border-slate-600",
             )}
           >
             {isCopyingLink ? (
-              <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-gray-400 dark:border-slate-500 border-t-transparent rounded-full animate-spin" />
             ) : linkCopied ? (
               <Check size={15} className="text-green-600" />
             ) : (
@@ -284,10 +285,13 @@ export default function PremiumMembersPanel({
                 ? "Generando enlace..."
                 : "Copiar enlace de invitación"}
             {!linkCopied && !isCopyingLink && (
-              <Copy size={12} className="text-gray-400 ml-0.5" />
+              <Copy
+                size={12}
+                className="text-gray-400 dark:text-slate-500 ml-0.5"
+              />
             )}
           </motion.button>
-          <p className="text-[11px] text-gray-400 text-center mt-2">
+          <p className="text-[11px] text-gray-400 dark:text-slate-500 text-center mt-2">
             Expira en 7 días · Se une como Viewer
           </p>
         </div>
