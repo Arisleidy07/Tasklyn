@@ -221,7 +221,7 @@ export default function RankingPage() {
             : teams.flatMap((team) => team.members);
 
       const uniqueMemberIds = Array.from(
-        new Set([...teamMembers.map((m) => m.userId), user.id]),
+        new Set(teamMembers.map((m) => m.userId)),
       );
 
       // Fetch real profiles
@@ -255,38 +255,43 @@ export default function RankingPage() {
         return subDays(now, 365);
       })();
 
-      const ranking: RankingUser[] = profiles.map((profile) => {
-        const memberTasks = tasks.filter((t) => {
-          const isOwner =
-            t.assignedTo === profile.id ||
-            t.completedBy === profile.id ||
-            t.createdBy === profile.id;
-          if (!isOwner) return false;
-          try {
-            return isAfter(parseISO(t.createdAt), periodBoundary);
-          } catch {
-            return false;
-          }
-        });
-        const completedTasks = memberTasks.filter(
-          (t) => t.status === "completed",
-        ).length;
-        const totalTasks = memberTasks.length;
-        const completionRate =
-          totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-        return {
-          userId: profile.id,
-          name: profile.name,
-          email: profile.email,
-          photoURL: profile.photoURL,
-          completedTasks,
-          totalTasks,
-          completionRate,
-          trend: 0,
-          rank: 0,
-          previousRank: 0,
-        };
-      });
+      const ranking: RankingUser[] = profiles
+        .filter((p) => p.name !== "...") // skip unresolved profiles
+        .map((profile) => {
+          const memberTasks = tasks.filter((t) => {
+            const isOwner =
+              t.assignedTo === profile.id ||
+              t.completedBy === profile.id ||
+              t.createdBy === profile.id;
+            if (!isOwner) return false;
+            try {
+              return isAfter(parseISO(t.createdAt), periodBoundary);
+            } catch {
+              return false;
+            }
+          });
+          const completedTasks = memberTasks.filter(
+            (t) => t.status === "completed",
+          ).length;
+          const totalTasks = memberTasks.length;
+          const completionRate =
+            totalTasks > 0
+              ? Math.round((completedTasks / totalTasks) * 100)
+              : 0;
+          return {
+            userId: profile.id,
+            name: profile.name,
+            email: profile.email,
+            photoURL: profile.photoURL,
+            completedTasks,
+            totalTasks,
+            completionRate,
+            trend: 0,
+            rank: 0,
+            previousRank: 0,
+          };
+        })
+        .filter((r) => r.totalTasks > 0); // only include users with real activity
 
       ranking.sort((a, b) =>
         b.completedTasks !== a.completedTasks
