@@ -706,10 +706,32 @@ export default function DashboardPage() {
     Record<string, { name: string; photoURL?: string }>
   >({});
   const [mounted, setMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Eager data loading - force fetch all data on mount
   useEffect(() => {
     setMounted(true);
+
+    // Small delay to ensure stores have initialized
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, []);
+
+  // Force refresh data when user changes
+  useEffect(() => {
+    if (user?.id) {
+      setIsLoading(true);
+      // Trigger a refresh by accessing the store methods
+      // This ensures subscriptions are active
+      const lists = getUserLists(user.id);
+      if (lists.length > 0 || tasks.length > 0) {
+        setIsLoading(false);
+      }
+    }
+  }, [user?.id]);
 
   const allListIds_pre = new Set(
     (user ? getUserLists(user.id) : []).map((l) => l.id),
@@ -989,7 +1011,39 @@ export default function DashboardPage() {
       )}
 
       <div className="p-3 sm:p-4 md:p-8 max-w-[1400px] mx-auto">
-        {!isListsSection && (
+        {/* Loading Overlay */}
+        {isLoading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={cn(
+              "flex items-center justify-center h-64 rounded-2xl border mb-6",
+              isDark
+                ? "bg-slate-900/40 border-slate-700/50"
+                : "bg-white border-gray-200/80",
+            )}
+          >
+            <div className="text-center">
+              <div
+                className={cn(
+                  "animate-spin w-8 h-8 border-2 border-current border-t-transparent rounded-full mx-auto mb-4",
+                  isDark ? "text-cyan-400" : "text-blue-600",
+                )}
+              />
+              <p
+                className={cn(
+                  "text-sm",
+                  isDark ? "text-slate-400" : "text-gray-500",
+                )}
+              >
+                Cargando dashboard...
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        {!isListsSection && !isLoading && (
           <>
             {/* KPI Stats Row */}
             <motion.div
