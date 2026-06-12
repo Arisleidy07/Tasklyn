@@ -53,142 +53,124 @@ export default function Modal({
     if (isOpen) {
       document.addEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "hidden";
+      document.body.style.touchAction = "none";
     }
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
+      document.body.style.touchAction = "";
     };
   }, [isOpen, handleKeyDown]);
 
   if (!mounted) return null;
 
-  const content = (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Single backdrop */}
+  // Mobile: Full screen modal
+  if (isMobile) {
+    return createPortal(
+      <AnimatePresence>
+        {isOpen && (
           <motion.div
-            key="modal-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            className="fixed inset-0 z-[99998] bg-black/65 backdrop-blur-sm"
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[2147483647] flex flex-col bg-white dark:bg-slate-900"
+            style={{
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: "100vh",
+              width: "100vw",
+              maxHeight: "-webkit-fill-available",
+            }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex-shrink-0">
+              <div className="flex-1 min-w-0 pr-3">
+                {title && (
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">
+                    {title}
+                  </h2>
+                )}
+                {description && (
+                  <p className="text-sm text-gray-500 dark:text-slate-400 truncate">
+                    {description}
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={onClose}
+                className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto overscroll-contain bg-white dark:bg-slate-900">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>,
+      document.body,
+    );
+  }
+
+  // Desktop: Centered modal
+  return createPortal(
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={onClose}
           />
-
-          {isMobile ? (
-            /* Mobile: true fullscreen, slides from bottom */
-            <motion.div
-              key="modal-mobile"
-              initial={{ y: "100%", opacity: 0.6 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "100%", opacity: 0 }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className={cn(
-                "fixed inset-0 z-[99999] flex flex-col",
-                "bg-white dark:bg-slate-900",
-              )}
-              style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
-            >
-              <div
-                className={cn(
-                  "flex items-center justify-between px-5 py-4 border-b flex-shrink-0",
-                  "border-gray-100 bg-white/95 backdrop-blur-sm",
-                  "dark:bg-slate-900/95 dark:border-slate-800",
-                )}
-              >
-                <div className="flex-1 min-w-0 pr-3">
-                  {title && (
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 leading-tight">
-                      {title}
-                    </h2>
-                  )}
+          {/* Modal */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className={cn(
+              "relative w-full max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col",
+              "bg-white border border-gray-200",
+              "dark:bg-slate-900 dark:border-slate-700",
+              sizeMap[size],
+            )}
+          >
+            {title && (
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex-shrink-0">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {title}
+                  </h2>
                   {description && (
-                    <p className="mt-0.5 text-sm text-gray-500 dark:text-slate-400 truncate">
+                    <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
                       {description}
                     </p>
                   )}
                 </div>
                 <button
                   onClick={onClose}
-                  className={cn(
-                    "flex-shrink-0 p-2.5 rounded-xl active:scale-90 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center",
-                    "text-gray-400 hover:text-gray-700 hover:bg-gray-100",
-                    "dark:text-slate-500 dark:hover:text-slate-300 dark:hover:bg-slate-800",
-                  )}
+                  className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-slate-500 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-colors"
                 >
                   <X size={20} />
                 </button>
               </div>
-              <div
-                className="flex-1 overflow-y-auto overscroll-contain px-5 py-5"
-                style={{
-                  paddingBottom:
-                    "calc(2rem + env(safe-area-inset-bottom, 0px))",
-                }}
-              >
-                {children}
-              </div>
-            </motion.div>
-          ) : (
-            /* Desktop: centered dialog */
-            <div
-              key="modal-desktop"
-              className="fixed inset-0 z-[99999] flex items-center justify-center p-6 md:p-8"
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 12 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 12 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                className={cn(
-                  "modal-panel relative w-full rounded-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.25)] border overflow-hidden flex flex-col max-h-[88vh]",
-                  "bg-white border-gray-200/60",
-                  "dark:bg-slate-900 dark:border-slate-700/60",
-                  sizeMap[size],
-                )}
-              >
-                {title && (
-                  <div
-                    className={cn(
-                      "flex items-start justify-between px-6 pt-5 pb-4 border-b flex-shrink-0 sticky top-0 z-10",
-                      "border-gray-100 bg-white",
-                      "dark:bg-slate-900 dark:border-slate-800",
-                    )}
-                  >
-                    <div>
-                      <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
-                        {title}
-                      </h2>
-                      {description && (
-                        <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-                          {description}
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      onClick={onClose}
-                      className={cn(
-                        "p-2 rounded-lg transition-all active:scale-90 cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center",
-                        "text-gray-400 hover:text-gray-700 hover:bg-gray-100",
-                        "dark:text-slate-500 dark:hover:text-slate-300 dark:hover:bg-slate-800",
-                      )}
-                    >
-                      <X size={20} />
-                    </button>
-                  </div>
-                )}
-                <div className="px-6 pb-6 pt-5 overflow-y-auto flex-1">
-                  {children}
-                </div>
-              </motion.div>
+            )}
+            <div className="flex-1 overflow-y-auto bg-white dark:bg-slate-900">
+              {children}
             </div>
-          )}
-        </>
+          </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
-
-  return createPortal(content, document.body);
 }

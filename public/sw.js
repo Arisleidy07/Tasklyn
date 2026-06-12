@@ -1,11 +1,42 @@
-const CACHE_NAME = "tasklyn-v1";
+const CACHE_NAME = "tasklyn-v2";
 const STATIC_ASSETS = [
   "/",
   "/dashboard",
+  "/ranking",
+  "/teams",
+  "/profile",
+  "/settings",
+  "/notifications",
   "/manifest.json",
   "/T.PNG",
   "/TA.PNG",
 ];
+
+// Force skip waiting on install
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(STATIC_ASSETS);
+    }),
+  );
+  self.skipWaiting();
+});
+
+// Clean up old caches and claim clients
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key)),
+        ),
+      )
+      .then(() => self.clients.claim()),
+  );
+});
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
