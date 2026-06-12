@@ -6,23 +6,25 @@
 
 :root {
   /* Light Theme (default) */
-  --bg: #ffffff;
-  --bg-secondary: #f9fafb;
-  --text: #111827;
+  --bg-primary: #f9fafb;
+  --bg-secondary: #f3f4f6;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --text-primary: #111827;
   --text-secondary: #6b7280;
-  --card: #ffffff;
-  --border: #e5e7eb;
+  --border-color: #e5e7eb;
   --border-secondary: #f3f4f6;
 }
 
 [data-theme="dark"] {
   /* Dark Theme */
-  --bg: #0f172a;
+  --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
-  --text: #f9fafb;
+  --bg-card: #1e293b;
+  --bg-input: #0f172a;
+  --text-primary: #f9fafb;
   --text-secondary: #9ca3af;
-  --card: #1e293b;
-  --border: #334155;
+  --border-color: #334155;
   --border-secondary: #1e293b;
 }
 

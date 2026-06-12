@@ -25,6 +25,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   useEffect(() => {
     const html = document.documentElement;
+    // Apply data-theme for CSS variable system
+    html.setAttribute("data-theme", theme);
+    // Also toggle dark class for Tailwind dark: prefix
     if (theme === "dark") {
       html.classList.add("dark");
     } else {
@@ -41,9 +44,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <div
       className={cn(
-        "min-h-screen relative overflow-x-hidden",
-        theme === "dark" && "app-theme-dark bg-slate-950 text-slate-50",
-        theme === "light" && "app-theme-light bg-gray-50 text-gray-900",
+        "min-h-screen relative overflow-x-hidden transition-colors duration-300",
+        "bg-[var(--bg-primary)] text-[var(--text-primary)]",
+        theme === "dark" && "app-theme-dark",
+        theme === "light" && "app-theme-light",
       )}
     >
       {/* Premium animated background — only shown in dark theme */}
