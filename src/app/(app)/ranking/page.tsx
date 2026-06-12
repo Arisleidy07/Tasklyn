@@ -434,21 +434,6 @@ export default function RankingPage() {
               </motion.div>
             )}
 
-            {/* Current User Highlight */}
-            {currentUserRanking && currentUserRanking.rank > 3 && (
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="mb-6"
-              >
-                <RankingCard
-                  user={currentUserRanking}
-                  isCurrentUser={true}
-                  showMedal={false}
-                />
-              </motion.div>
-            )}
-
             {/* Rest of Ranking */}
             {restOfRanking.length > 0 && (
               <div className="space-y-3">

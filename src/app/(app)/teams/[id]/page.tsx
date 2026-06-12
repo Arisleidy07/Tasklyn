@@ -104,6 +104,8 @@ export default function TeamDetailPage() {
   const [newTeamName, setNewTeamName] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const team = getTeamById(teamId);
 
@@ -225,6 +227,21 @@ export default function TeamDetailPage() {
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
     });
+  };
+
+  const handleDeleteTeam = async () => {
+    if (!team || userRole !== "owner") return;
+    setDeleteLoading(true);
+    try {
+      await useTeamStore.getState().deleteTeam(teamId);
+      router.push("/teams");
+    } catch (error) {
+      console.error("Failed to delete team:", error);
+      alert("Error al eliminar el equipo. Intenta nuevamente.");
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteModal(false);
+    }
   };
 
   // ── Ranking data: real, unbiased ─────────────────────────────────────────
@@ -1029,15 +1046,7 @@ export default function TeamDetailPage() {
                   variant="ghost"
                   size="sm"
                   className="text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-800"
-                  onClick={() => {
-                    if (
-                      confirm(
-                        `¿Seguro que deseas eliminar "${team.name}"? Esta acción es irreversible.`,
-                      )
-                    ) {
-                      router.push("/teams");
-                    }
-                  }}
+                  onClick={() => setShowDeleteModal(true)}
                 >
                   <Trash2 size={14} className="mr-1.5" /> Eliminar equipo
                 </Button>
@@ -1108,6 +1117,85 @@ export default function TeamDetailPage() {
                     </Button>
                     <Button className="flex-1" icon={<Mail size={14} />}>
                       Enviar invitación
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          </>,
+          document.body,
+        )}
+
+      {/* ── Delete Confirmation Modal ────────────────────────────────────────── */}
+      {showDeleteModal &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-[99998] bg-black/60 backdrop-blur-sm"
+              onClick={() => setShowDeleteModal(false)}
+            />
+            <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-slate-800"
+              >
+                <div className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                      <Trash2 className="w-6 h-6 text-red-600 dark:text-red-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        ¿Eliminar equipo?
+                      </h3>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-gray-600 dark:text-slate-300 mb-2">
+                    ¿Deseas eliminar el equipo{" "}
+                    <strong className="text-gray-900 dark:text-white">
+                      "{team?.name}"
+                    </strong>
+                    ?
+                  </p>
+
+                  <p className="text-sm text-red-600 dark:text-red-400 mb-6">
+                    Esta acción no se puede deshacer. Se eliminarán
+                    permanentemente:
+                  </p>
+
+                  <ul className="text-sm text-gray-500 dark:text-slate-400 space-y-1 mb-6 ml-4 list-disc">
+                    <li>El equipo y todos sus miembros</li>
+                    <li>Estadísticas y logros</li>
+                    <li>Registro de actividad</li>
+                    <li>Metas y objetivos</li>
+                  </ul>
+
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowDeleteModal(false)}
+                      disabled={deleteLoading}
+                      className="flex-1"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      className="flex-1 bg-red-600 hover:bg-red-700 text-white border-0"
+                      onClick={handleDeleteTeam}
+                      disabled={deleteLoading}
+                      icon={
+                        deleteLoading ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={14} />
+                        )
+                      }
+                    >
+                      {deleteLoading ? "Eliminando..." : "Eliminar equipo"}
                     </Button>
                   </div>
                 </div>

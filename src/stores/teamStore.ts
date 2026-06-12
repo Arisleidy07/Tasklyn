@@ -10,6 +10,7 @@ import {
   createTeam,
   getTeam,
   updateTeam,
+  deleteTeam,
   addTeamMember,
   removeTeamMember,
   updateTeamMemberRole,
@@ -51,6 +52,7 @@ interface TeamState {
     ownerId: string,
   ) => Promise<string>;
   updateTeam: (teamId: string, updates: Partial<Team>) => Promise<void>;
+  deleteTeam: (teamId: string) => Promise<void>;
   setCurrentTeam: (team: Team | null) => void;
   addTeamMember: (
     teamId: string,
@@ -160,6 +162,24 @@ export const useTeamStore = create<TeamState>()(
           console.log("✅ Team updated:", teamId);
         } catch (error) {
           console.error("Failed to update team:", error);
+          set({ error: (error as Error).message });
+          throw error;
+        }
+      },
+
+      deleteTeam: async (teamId: string) => {
+        try {
+          await deleteTeam(teamId);
+          // Remove team from local state
+          const currentTeams = get().teams;
+          set({
+            teams: currentTeams.filter((t) => t.id !== teamId),
+            currentTeam:
+              get().currentTeam?.id === teamId ? null : get().currentTeam,
+          });
+          console.log("✅ Team deleted:", teamId);
+        } catch (error) {
+          console.error("Failed to delete team:", error);
           set({ error: (error as Error).message });
           throw error;
         }

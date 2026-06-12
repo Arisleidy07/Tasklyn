@@ -17,6 +17,7 @@ import Button from "@/components/ui/Button";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import TaskOptionsBar from "./TaskOptionsBar";
 import TaskComments from "./TaskComments";
+import TaskCompletionModal from "./TaskCompletionModal";
 import { notifyMentionsFromText } from "@/lib/notify";
 import {
   CheckCircle2,
@@ -66,6 +67,7 @@ export default function TaskItem({
   const [expanded, setExpanded] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // Edit form state

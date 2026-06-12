@@ -714,6 +714,40 @@ export const updateTeam = async (
   });
 };
 
+export const deleteTeam = async (teamId: string): Promise<void> => {
+  const batch = writeBatch(db);
+
+  // Delete team document
+  const teamRef = doc(db, "teams", teamId);
+  batch.delete(teamRef);
+
+  // Delete all activity entries for this team
+  const activityQuery = query(collection(db, "teams", teamId, "activity"));
+  const activitySnap = await getDocs(activityQuery);
+  activitySnap.docs.forEach((doc) => {
+    batch.delete(doc.ref);
+  });
+
+  // Delete all goals for this team
+  const goalsQuery = query(goalsCollection, where("teamId", "==", teamId));
+  const goalsSnap = await getDocs(goalsQuery);
+  goalsSnap.docs.forEach((doc) => {
+    batch.delete(doc.ref);
+  });
+
+  // Delete all achievements for this team
+  const achievementsQuery = query(
+    collection(db, "teams", teamId, "achievements"),
+  );
+  const achievementsSnap = await getDocs(achievementsQuery);
+  achievementsSnap.docs.forEach((doc) => {
+    batch.delete(doc.ref);
+  });
+
+  await batch.commit();
+  console.log("✅ Team deleted:", teamId);
+};
+
 export const addTeamMember = async (
   teamId: string,
   userId: string,
