@@ -72,7 +72,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 function getRoleIcon(role: string) {
   if (role === "owner") return <Crown size={12} className="text-yellow-500" />;
   if (role === "admin") return <Shield size={12} className="text-blue-500" />;
-  return <User size={12} className="text-gray-400 dark:text-slate-500" />;
+  return <User size={12} className="text-[var(--text-tertiary)]" />;
 }
 function getRoleLabel(role: string) {
   if (role === "owner") return "Propietario";
@@ -154,10 +154,10 @@ export default function TeamDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
-            <Users size={24} className="text-gray-400 dark:text-slate-500" />
+          <div className="w-16 h-16 rounded-2xl bg-[var(--bg-secondary)] flex items-center justify-center mx-auto mb-4">
+            <Users size={24} className="text-[var(--text-tertiary)]" />
           </div>
-          <p className="text-gray-500 dark:text-slate-400 mb-4">
+          <p className="text-[var(--text-secondary)] mb-4">
             Equipo no encontrado
           </p>
           <Button variant="ghost" onClick={() => router.push("/teams")}>
@@ -323,7 +323,7 @@ export default function TeamDetailPage() {
 
       <div className="p-3 sm:p-4 md:p-8 max-w-[1200px] mx-auto pb-24 md:pb-8">
         {/* ── Tab bar ── */}
-        <div className="flex items-center gap-0.5 p-1 bg-gray-100 dark:bg-slate-800/80 rounded-xl w-full overflow-x-auto mb-8 scrollbar-none">
+        <div className="flex items-center gap-0.5 p-1 bg-[var(--bg-secondary)]/80 rounded-xl w-full overflow-x-auto mb-8 scrollbar-none">
           {TABS.filter(
             (t) =>
               !(team.isPersonal && (t.id === "ranking" || t.id === "activity")),
@@ -334,8 +334,8 @@ export default function TeamDetailPage() {
               className={cn(
                 "flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex-shrink-0",
                 activeTab === tab.id
-                  ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm"
-                  : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300",
+                  ? "bg-white dark:bg-slate-700 text-[var(--text-primary)] shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:text-[var(--text-primary)]",
               )}
             >
               <tab.icon size={14} />
@@ -388,7 +388,7 @@ export default function TeamDetailPage() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="p-4 rounded-2xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900"
+                  className="p-4 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-card)]"
                 >
                   <div
                     className={cn(
@@ -398,10 +398,10 @@ export default function TeamDetailPage() {
                   >
                     <s.Icon size={17} className={s.color} />
                   </div>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-slate-100 tabular-nums">
+                  <p className="text-2xl font-bold text-[var(--text-primary)] tabular-nums">
                     {s.value}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                     {s.label}
                   </p>
                 </motion.div>
@@ -409,11 +409,11 @@ export default function TeamDetailPage() {
             </div>
 
             {/* Progress bar */}
-            <div className="p-5 rounded-2xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <div className="p-5 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-card)]">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <TrendingUp size={16} className="text-blue-600" />
-                  <span className="font-semibold text-gray-900 dark:text-slate-100">
+                  <span className="font-semibold text-[var(--text-primary)]">
                     Productividad del equipo
                   </span>
                 </div>
@@ -421,7 +421,7 @@ export default function TeamDetailPage() {
                   {completionRate}%
                 </span>
               </div>
-              <div className="h-2.5 w-full bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-2.5 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${completionRate}%` }}
@@ -429,7 +429,7 @@ export default function TeamDetailPage() {
                   className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full"
                 />
               </div>
-              <div className="flex items-center gap-5 mt-3 text-xs text-gray-500 dark:text-slate-400">
+              <div className="flex items-center gap-5 mt-3 text-xs text-[var(--text-secondary)]">
                 <span className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   {completedCount} completadas
@@ -450,11 +450,11 @@ export default function TeamDetailPage() {
             {/* Top 3 + recent activity side by side */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Top performers preview */}
-              <div className="p-5 rounded-2xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <div className="p-5 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-card)]">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Star size={16} className="text-yellow-500" />
-                    <h3 className="font-semibold text-gray-900 dark:text-slate-100">
+                    <h3 className="font-semibold text-[var(--text-primary)]">
                       Destacados
                     </h3>
                   </div>
@@ -470,7 +470,7 @@ export default function TeamDetailPage() {
                     {[1, 2, 3].map((i) => (
                       <div
                         key={i}
-                        className="h-10 bg-gray-100 dark:bg-slate-800 rounded-lg animate-pulse"
+                        className="h-10 bg-[var(--bg-secondary)] rounded-lg animate-pulse"
                       />
                     ))}
                   </div>
@@ -482,32 +482,32 @@ export default function TeamDetailPage() {
                       </span>
                       <Avatar name={m.name} photoURL={m.photoURL} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
+                        <p className="text-sm font-medium text-[var(--text-primary)] truncate">
                           {m.name}
                         </p>
-                        <p className="text-[11px] text-gray-400 dark:text-slate-500">
+                        <p className="text-[11px] text-[var(--text-tertiary)]">
                           {m.completedTasks} tareas completadas
                         </p>
                       </div>
-                      <span className="text-xs font-bold text-gray-700 dark:text-slate-300 tabular-nums">
+                      <span className="text-xs font-bold text-[var(--text-secondary)] tabular-nums">
                         {m.score}pts
                       </span>
                     </div>
                   ))
                 )}
                 {rankingData.length === 0 && (
-                  <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-4">
+                  <p className="text-sm text-[var(--text-tertiary)] text-center py-4">
                     Sin datos aún
                   </p>
                 )}
               </div>
 
               {/* Recent activity preview */}
-              <div className="p-5 rounded-2xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <div className="p-5 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-card)]">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <Activity size={16} className="text-indigo-500" />
-                    <h3 className="font-semibold text-gray-900 dark:text-slate-100">
+                    <h3 className="font-semibold text-[var(--text-primary)]">
                       Actividad reciente
                     </h3>
                   </div>
@@ -519,14 +519,14 @@ export default function TeamDetailPage() {
                   </button>
                 </div>
                 {activityLog.length === 0 ? (
-                  <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-4">
+                  <p className="text-sm text-[var(--text-tertiary)] text-center py-4">
                     Sin actividad registrada
                   </p>
                 ) : (
                   <div className="space-y-3">
                     {activityLog.slice(0, 5).map((entry) => (
                       <div key={entry.id} className="flex items-start gap-3">
-                        <div className="w-7 h-7 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div className="w-7 h-7 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 mt-0.5">
                           {entry.userPhoto ? (
                             <img
                               src={entry.userPhoto}
@@ -534,19 +534,19 @@ export default function TeamDetailPage() {
                               className="w-7 h-7 rounded-full object-cover"
                             />
                           ) : (
-                            <span className="text-xs font-bold text-gray-500 dark:text-slate-400">
+                            <span className="text-xs font-bold text-[var(--text-secondary)]">
                               {entry.userName.charAt(0).toUpperCase()}
                             </span>
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-700 dark:text-slate-300">
-                            <span className="font-medium text-gray-900 dark:text-slate-100">
+                          <p className="text-sm text-[var(--text-secondary)]">
+                            <span className="font-medium text-[var(--text-primary)]">
                               {entry.userName}
                             </span>{" "}
                             {entry.detail}
                           </p>
-                          <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
+                          <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">
                             {new Date(entry.createdAt).toLocaleString("es-ES", {
                               day: "numeric",
                               month: "short",
@@ -575,12 +575,12 @@ export default function TeamDetailPage() {
               <div className="text-center py-16 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-2xl">
                 <FolderOpen
                   size={32}
-                  className="text-gray-300 dark:text-slate-600 mx-auto mb-3"
+                  className="text-[var(--text-tertiary)] mx-auto mb-3"
                 />
-                <p className="font-medium text-gray-500 dark:text-slate-400">
+                <p className="font-medium text-[var(--text-secondary)]">
                   Sin listas en este equipo
                 </p>
-                <p className="text-sm text-gray-400 dark:text-slate-500 mt-1">
+                <p className="text-sm text-[var(--text-tertiary)] mt-1">
                   Crea una lista y asígnala a este equipo para que aparezca
                   aquí.
                 </p>
@@ -601,7 +601,7 @@ export default function TeamDetailPage() {
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 group hover:border-blue-200 dark:hover:border-blue-500/30 transition-all"
+                    className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] group hover:border-blue-200 dark:hover:border-blue-500/30 transition-all"
                   >
                     <div
                       className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
@@ -612,14 +612,14 @@ export default function TeamDetailPage() {
                       {list.icon || "📋"}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 dark:text-slate-100 truncate">
+                      <p className="font-semibold text-[var(--text-primary)] truncate">
                         {list.name}
                       </p>
                       <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-gray-400 dark:text-slate-500">
+                        <span className="text-xs text-[var(--text-tertiary)]">
                           {listTasks.length} tareas · {done} completadas
                         </span>
-                        <div className="flex-1 h-1 bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden max-w-[80px]">
+                        <div className="flex-1 h-1 bg-[var(--bg-secondary)] rounded-full overflow-hidden max-w-[80px]">
                           <div
                             className="h-full bg-blue-500 rounded-full"
                             style={{ width: `${progress}%` }}
@@ -658,7 +658,7 @@ export default function TeamDetailPage() {
                 {team.members.map((_, i) => (
                   <div
                     key={i}
-                    className="h-20 bg-gray-100 dark:bg-slate-800 rounded-xl animate-pulse"
+                    className="h-20 bg-[var(--bg-secondary)] rounded-xl animate-pulse"
                   />
                 ))}
               </div>
@@ -668,7 +668,7 @@ export default function TeamDetailPage() {
                   key={member.id}
                   initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center gap-4 p-4 rounded-xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 group hover:border-gray-300 dark:hover:border-slate-700 transition-all"
+                  className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] group hover:border-gray-300 dark:hover:border-slate-700 transition-all"
                 >
                   <Avatar
                     name={member.name}
@@ -677,7 +677,7 @@ export default function TeamDetailPage() {
                   />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <p className="font-semibold text-gray-900 dark:text-slate-100 truncate">
+                      <p className="font-semibold text-[var(--text-primary)] truncate">
                         {member.name}
                       </p>
                       {member.id === user.id && (
@@ -686,10 +686,10 @@ export default function TeamDetailPage() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-slate-400 truncate">
+                    <p className="text-sm text-[var(--text-secondary)] truncate">
                       {member.email}
                     </p>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-gray-400 dark:text-slate-500">
+                    <div className="flex items-center gap-3 mt-1 text-xs text-[var(--text-tertiary)]">
                       <span className="flex items-center gap-1">
                         <CheckCircle2 size={11} />
                         {member.completedTasks} completadas
@@ -728,7 +728,7 @@ export default function TeamDetailPage() {
                               )
                             }
                             disabled={actionLoading === member.id}
-                            className="text-xs px-2 py-1 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-slate-300 cursor-pointer"
+                            className="text-xs px-2 py-1 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-[var(--text-secondary)] cursor-pointer"
                           >
                             <option value="admin">Admin</option>
                             <option value="member">Miembro</option>
@@ -755,7 +755,7 @@ export default function TeamDetailPage() {
             {isOwnerOrAdmin && !team.isPersonal && (
               <button
                 onClick={() => setShowInviteModal(true)}
-                className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-400 hover:border-blue-400 dark:hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
+                className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-gray-200 dark:border-slate-700 text-[var(--text-secondary)] hover:border-blue-400 dark:hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
               >
                 <Plus size={16} />
                 <span className="text-sm font-medium">
@@ -777,18 +777,18 @@ export default function TeamDetailPage() {
               <div className="text-center py-16">
                 <Activity
                   size={32}
-                  className="text-gray-300 dark:text-slate-600 mx-auto mb-3"
+                  className="text-[var(--text-tertiary)] mx-auto mb-3"
                 />
-                <p className="font-medium text-gray-500 dark:text-slate-400">
+                <p className="font-medium text-[var(--text-secondary)]">
                   Sin actividad registrada
                 </p>
-                <p className="text-sm text-gray-400 dark:text-slate-500 mt-1">
+                <p className="text-sm text-[var(--text-tertiary)] mt-1">
                   La actividad del equipo aparecerá aquí en tiempo real.
                 </p>
               </div>
             ) : (
               <div className="relative">
-                <div className="absolute left-5 top-0 bottom-0 w-px bg-gray-100 dark:bg-slate-800" />
+                <div className="absolute left-5 top-0 bottom-0 w-px bg-[var(--bg-secondary)]" />
                 <div className="space-y-0">
                   {activityLog.map((entry, i) => (
                     <motion.div
@@ -796,9 +796,9 @@ export default function TeamDetailPage() {
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.03 }}
-                      className="flex items-start gap-4 pl-11 pr-4 py-3.5 relative hover:bg-gray-50 dark:hover:bg-slate-800/50 rounded-xl transition-colors"
+                      className="flex items-start gap-4 pl-11 pr-4 py-3.5 relative hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--bg-hover)] rounded-xl transition-colors"
                     >
-                      <div className="absolute left-3.5 top-4 w-3 h-3 rounded-full border-2 border-white dark:border-slate-950 bg-blue-400 flex-shrink-0" />
+                      <div className="absolute left-3.5 top-4 w-3 h-3 rounded-full border-2 border-[var(--bg-card)] dark:border-[var(--bg-card)] bg-blue-400 flex-shrink-0" />
                       {entry.userPhoto ? (
                         <img
                           src={entry.userPhoto}
@@ -811,13 +811,13 @@ export default function TeamDetailPage() {
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-700 dark:text-slate-300">
-                          <span className="font-semibold text-gray-900 dark:text-slate-100">
+                        <p className="text-sm text-[var(--text-secondary)]">
+                          <span className="font-semibold text-[var(--text-primary)]">
                             {entry.userName}
                           </span>{" "}
                           {entry.detail}
                         </p>
-                        <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
+                        <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">
                           {new Date(entry.createdAt).toLocaleString("es-ES", {
                             weekday: "short",
                             day: "numeric",
@@ -844,7 +844,7 @@ export default function TeamDetailPage() {
           >
             <div className="flex items-center gap-2 mb-2">
               <Zap size={14} className="text-amber-500" />
-              <p className="text-xs text-gray-500 dark:text-slate-400">
+              <p className="text-xs text-[var(--text-secondary)]">
                 Puntuación = tareas completadas × 3 + total creadas. Datos en
                 tiempo real.
               </p>
@@ -854,7 +854,7 @@ export default function TeamDetailPage() {
                 {team.members.map((_, i) => (
                   <div
                     key={i}
-                    className="h-20 bg-gray-100 dark:bg-slate-800 rounded-xl animate-pulse"
+                    className="h-20 bg-[var(--bg-secondary)] rounded-xl animate-pulse"
                   />
                 ))}
               </div>
@@ -862,9 +862,9 @@ export default function TeamDetailPage() {
               <div className="text-center py-12">
                 <Trophy
                   size={32}
-                  className="text-gray-300 dark:text-slate-600 mx-auto mb-3"
+                  className="text-[var(--text-tertiary)] mx-auto mb-3"
                 />
-                <p className="text-gray-500 dark:text-slate-400">
+                <p className="text-[var(--text-secondary)]">
                   Sin datos de ranking aún
                 </p>
               </div>
@@ -883,14 +883,14 @@ export default function TeamDetailPage() {
                       "flex items-center gap-4 p-4 rounded-xl border transition-all",
                       idx === 0
                         ? "border-yellow-200 dark:border-yellow-800/50 bg-yellow-50/50 dark:bg-yellow-950/10"
-                        : "border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900",
+                        : "border-[var(--border-color)] bg-[var(--bg-card)]",
                     )}
                   >
                     <div className="w-8 text-center flex-shrink-0">
                       {medal ? (
                         <span className="text-xl">{medal.emoji}</span>
                       ) : (
-                        <span className="text-sm font-bold text-gray-400 dark:text-slate-500">
+                        <span className="text-sm font-bold text-[var(--text-tertiary)]">
                           #{idx + 1}
                         </span>
                       )}
@@ -902,7 +902,7 @@ export default function TeamDetailPage() {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="font-semibold text-gray-900 dark:text-slate-100 truncate">
+                        <p className="font-semibold text-[var(--text-primary)] truncate">
                           {member.name}
                         </p>
                         {member.id === user.id && (
@@ -911,7 +911,7 @@ export default function TeamDetailPage() {
                           </span>
                         )}
                       </div>
-                      <div className="h-1.5 w-full bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
@@ -928,17 +928,17 @@ export default function TeamDetailPage() {
                           )}
                         />
                       </div>
-                      <div className="flex items-center gap-3 mt-1 text-xs text-gray-400 dark:text-slate-500">
+                      <div className="flex items-center gap-3 mt-1 text-xs text-[var(--text-tertiary)]">
                         <span>{member.completedTasks} completadas</span>
                         <span>·</span>
                         <span>{member.totalTasks} total</span>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-lg font-bold text-gray-900 dark:text-slate-100 tabular-nums">
+                      <p className="text-lg font-bold text-[var(--text-primary)] tabular-nums">
                         {member.score}
                       </p>
-                      <p className="text-[10px] text-gray-400 dark:text-slate-500">
+                      <p className="text-[10px] text-[var(--text-tertiary)]">
                         puntos
                       </p>
                     </div>
@@ -957,12 +957,12 @@ export default function TeamDetailPage() {
             className="max-w-xl space-y-5"
           >
             {/* Name */}
-            <div className="p-5 rounded-2xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2">
+            <div className="p-5 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-card)]">
+              <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
                 <Edit3 size={15} className="text-gray-400" /> Nombre del equipo
               </h3>
               {team.isPersonal ? (
-                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400">
+                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                   <Lock size={13} />
                   El equipo Personal no puede ser renombrado.
                 </div>
@@ -995,7 +995,7 @@ export default function TeamDetailPage() {
                     </>
                   ) : (
                     <>
-                      <p className="flex-1 text-sm font-medium text-gray-900 dark:text-slate-100">
+                      <p className="flex-1 text-sm font-medium text-[var(--text-primary)]">
                         {team.name}
                       </p>
                       <button
@@ -1008,7 +1008,7 @@ export default function TeamDetailPage() {
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-gray-700 dark:text-slate-300">
+                <p className="text-sm text-[var(--text-secondary)]">
                   {team.name}
                 </p>
               )}
@@ -1287,7 +1287,7 @@ export default function TeamDetailPage() {
               <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-700 dark:text-slate-300">
+              <p className="text-sm text-[var(--text-secondary)]">
                 ¿Deseas eliminar el equipo{" "}
                 <strong className="text-gray-900 dark:text-white">
                   "{team?.name}"
@@ -1300,7 +1300,7 @@ export default function TeamDetailPage() {
             </div>
           </div>
 
-          <ul className="text-sm text-gray-500 dark:text-slate-400 space-y-1 ml-4 list-disc">
+          <ul className="text-sm text-[var(--text-secondary)] space-y-1 ml-4 list-disc">
             <li>El equipo y todos sus miembros</li>
             <li>Estadísticas y logros</li>
             <li>Registro de actividad</li>
