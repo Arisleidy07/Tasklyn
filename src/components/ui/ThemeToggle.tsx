@@ -11,7 +11,11 @@ interface ThemeToggleProps {
   className?: string;
 }
 
-export function ThemeToggle({ size = "md", variant = "segment", className }: ThemeToggleProps) {
+export function ThemeToggle({
+  size = "md",
+  variant = "segment",
+  className,
+}: ThemeToggleProps) {
   const { theme, toggleTheme, setTheme } = useUIStore();
 
   const sizeClasses = {
@@ -38,23 +42,27 @@ export function ThemeToggle({ size = "md", variant = "segment", className }: The
     return (
       <div
         className={cn(
-          "flex items-center",
-          "bg-gray-100 dark:bg-slate-800/80",
-          "border border-gray-200 dark:border-slate-700",
-          "backdrop-blur-sm",
+          "flex items-center backdrop-blur-sm",
           s.container,
-          className
+          className,
         )}
+        style={{
+          backgroundColor: "var(--bg-secondary)",
+          border: "1px solid var(--border-color)",
+        }}
       >
         <button
           onClick={() => setTheme("light")}
           className={cn(
             "flex items-center rounded-md font-medium transition-all duration-300",
             s.button,
-            theme === "light"
-              ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
-              : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
           )}
+          style={{
+            backgroundColor:
+              theme === "light" ? "var(--bg-card)" : "transparent",
+            color: theme === "light" ? "#2563eb" : "var(--text-secondary)",
+            boxShadow: theme === "light" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+          }}
         >
           <Sun size={s.icon} />
           <span>Claro</span>
@@ -64,10 +72,13 @@ export function ThemeToggle({ size = "md", variant = "segment", className }: The
           className={cn(
             "flex items-center rounded-md font-medium transition-all duration-300",
             s.button,
-            theme === "dark"
-              ? "bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm"
-              : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
           )}
+          style={{
+            backgroundColor:
+              theme === "dark" ? "var(--bg-card)" : "transparent",
+            color: theme === "dark" ? "#2563eb" : "var(--text-secondary)",
+            boxShadow: theme === "dark" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+          }}
         >
           <Moon size={s.icon} />
           <span>Oscuro</span>
@@ -82,20 +93,23 @@ export function ThemeToggle({ size = "md", variant = "segment", className }: The
       onClick={toggleTheme}
       className={cn(
         "flex items-center justify-center rounded-lg transition-all duration-300",
-        "bg-gray-100 dark:bg-slate-800",
-        "border border-gray-200 dark:border-slate-700",
-        "hover:bg-gray-200 dark:hover:bg-slate-700",
         size === "sm" && "w-8 h-8",
         size === "md" && "w-10 h-10",
         size === "lg" && "w-12 h-12",
-        className
+        className,
       )}
-      aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+      style={{
+        backgroundColor: "var(--bg-secondary)",
+        border: "1px solid var(--border-color)",
+      }}
+      aria-label={
+        theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"
+      }
     >
       {theme === "dark" ? (
-        <Sun size={s.icon} className="text-yellow-500" />
+        <Sun size={s.icon} style={{ color: "#f59e0b" }} />
       ) : (
-        <Moon size={s.icon} className="text-slate-600" />
+        <Moon size={s.icon} style={{ color: "#64748b" }} />
       )}
     </button>
   );

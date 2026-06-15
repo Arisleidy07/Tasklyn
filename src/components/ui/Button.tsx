@@ -14,16 +14,19 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   icon?: React.ReactNode;
 }
 
-const variantStyles: Record<ButtonVariant, string> = {
-  primary:
-    "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm",
-  secondary:
-    "bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 dark:active:bg-slate-600",
-  ghost:
-    "bg-transparent text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200",
-  danger: "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm",
-  outline:
-    "border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:border-gray-400 dark:hover:border-slate-500 hover:bg-gray-50 dark:hover:bg-slate-700",
+const getVariantStyles = (variant: ButtonVariant) => {
+  switch (variant) {
+    case "primary":
+      return "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm";
+    case "secondary":
+      return "bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] active:bg-[var(--bg-active)]";
+    case "ghost":
+      return "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]";
+    case "danger":
+      return "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm";
+    case "outline":
+      return "border border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-primary)] hover:border-[var(--border-secondary)] hover:bg-[var(--bg-hover)]";
+  }
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -49,7 +52,7 @@ export default function Button({
       transition={{ type: "spring", stiffness: 400, damping: 25 }}
       className={cn(
         "inline-flex items-center justify-center transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer",
-        variantStyles[variant],
+        getVariantStyles(variant),
         size === "lg" ? "rounded-xl" : "rounded-lg",
         sizeStyles[size],
         className,
