@@ -340,21 +340,12 @@ function KPICard({ stat, index, isDark }: KPICardProps) {
       className={cn(
         "group relative p-4 sm:p-5 rounded-2xl overflow-hidden",
         "border backdrop-blur-md transition-all duration-300",
-        isDark
-          ? "bg-slate-900/40 border-slate-700/50 hover:border-cyan-500/30"
-          : "bg-white border-gray-200/80 hover:border-blue-300/60 shadow-sm",
-        isDark && "hover:shadow-[0_0_30px_-5px_rgba(34,211,238,0.15)]",
       )}
+      style={{
+        backgroundColor: "var(--bg-card)",
+        borderColor: "var(--border-color)",
+      }}
     >
-      {isDark && (
-        <div
-          className={cn(
-            "absolute -inset-px opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none",
-            "bg-gradient-to-br from-cyan-500/10 via-purple-500/5 to-transparent",
-          )}
-        />
-      )}
-
       <div className="flex items-center justify-between mb-2 relative z-10">
         <div
           className={cn(
@@ -376,18 +367,14 @@ function KPICard({ stat, index, isDark }: KPICardProps) {
       </div>
 
       <p
-        className={cn(
-          "text-2xl sm:text-3xl font-bold tracking-tight relative z-10",
-          isDark ? "text-slate-100" : "text-gray-900",
-        )}
+        className="text-2xl sm:text-3xl font-bold tracking-tight relative z-10"
+        style={{ color: "var(--text-primary)" }}
       >
         <CountUp target={stat.numericValue} suffix={stat.suffix} />
       </p>
       <p
-        className={cn(
-          "text-xs font-medium relative z-10",
-          isDark ? "text-slate-400" : "text-gray-500",
-        )}
+        className="text-xs font-medium relative z-10"
+        style={{ color: "var(--text-secondary)" }}
       >
         {stat.label}
       </p>
@@ -442,10 +429,8 @@ function ActivityTimeline({
   return (
     <div className="relative">
       <div
-        className={cn(
-          "absolute left-[19px] top-3 bottom-3 w-[2px]",
-          isDark ? "bg-slate-800" : "bg-gray-200",
-        )}
+        className="absolute left-[19px] top-3 bottom-3 w-[2px]"
+        style={{ backgroundColor: "var(--border-divider)" }}
       />
 
       <div className="space-y-0">
@@ -463,23 +448,22 @@ function ActivityTimeline({
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.08, duration: 0.4 }}
               className={cn(
-                "flex items-start gap-3 pl-2 pr-3 py-3 relative group cursor-pointer",
-                "hover:bg-slate-800/30 transition-colors rounded-xl",
+                "flex items-start gap-3 pl-2 pr-3 py-3 relative group cursor-pointer transition-colors rounded-xl",
                 i < activities.length - 1 && "mb-1",
               )}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
               <div
-                className={cn(
-                  "relative z-10 w-2.5 h-2.5 rounded-full mt-2.5 flex-shrink-0 border-2",
-                  isDark ? "border-slate-950" : "border-white",
-                  item.isCompleted
-                    ? isDark
-                      ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"
-                      : "bg-emerald-500"
-                    : isDark
-                      ? "bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]"
-                      : "bg-blue-500",
-                )}
+                className="relative z-10 w-2.5 h-2.5 rounded-full mt-2.5 flex-shrink-0 border-2"
+                style={{
+                  backgroundColor: item.isCompleted ? "#10b981" : "#2563eb",
+                  borderColor: "var(--bg-primary)",
+                }}
               />
 
               <div
@@ -534,45 +518,36 @@ function ActivityTimeline({
 
               <div className="flex-1 min-w-0">
                 <p
-                  className={cn(
-                    "text-sm leading-snug",
-                    isDark ? "text-slate-200" : "text-gray-800",
-                  )}
+                  className="text-sm leading-snug"
+                  style={{ color: "var(--text-primary)" }}
                 >
                   <span className="font-semibold">{actor.name}</span>{" "}
                   <span
-                    className={cn(
-                      "font-medium",
-                      item.isCompleted
-                        ? isDark
-                          ? "text-emerald-400"
-                          : "text-emerald-600"
-                        : isDark
-                          ? "text-cyan-400"
-                          : "text-blue-600",
-                    )}
+                    className="font-medium"
+                    style={{
+                      color: item.isCompleted ? "#10b981" : "#2563eb",
+                    }}
                   >
                     {item.isCompleted ? "completó" : "creó"}
                   </span>{" "}
-                  <span className="font-medium text-slate-300">
+                  <span
+                    className="font-medium"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     "{item.title}"
                   </span>
                 </p>
                 <p
-                  className={cn(
-                    "text-[11px] mt-0.5",
-                    isDark ? "text-slate-500" : "text-gray-400",
-                  )}
+                  className="text-[11px] mt-0.5"
+                  style={{ color: "var(--text-tertiary)" }}
                 >
                   {item.listName}
                 </p>
               </div>
 
               <span
-                className={cn(
-                  "text-[10px] font-medium tabular-nums flex-shrink-0",
-                  isDark ? "text-slate-500" : "text-gray-400",
-                )}
+                className="text-[10px] font-medium tabular-nums flex-shrink-0"
+                style={{ color: "var(--text-tertiary)" }}
               >
                 {timeAgo}
               </span>
