@@ -16,7 +16,14 @@ import {
   CheckCircle2,
   ListTodo,
   AlertTriangle,
+  ExternalLink,
+  Copy,
 } from "lucide-react";
+import {
+  detectInAppBrowser,
+  copyToClipboard,
+  type InAppBrowserInfo,
+} from "@/lib/inAppBrowser";
 
 export default function InviteClient() {
   const params = useParams();
@@ -37,6 +44,29 @@ export default function InviteClient() {
   const [loading, setLoading] = useState(true);
   const [isExpired, setIsExpired] = useState(false);
   const [alreadyMember, setAlreadyMember] = useState(false);
+  const [inAppBrowser, setInAppBrowser] = useState<InAppBrowserInfo | null>(
+    null,
+  );
+  const [copied, setCopied] = useState(false);
+
+  // Detect in-app browser on mount
+  useEffect(() => {
+    const browserInfo = detectInAppBrowser();
+    setInAppBrowser(browserInfo);
+  }, []);
+
+  const handleOpenInBrowser = () => {
+    const currentUrl = window.location.href;
+    window.open(currentUrl, "_blank");
+  };
+
+  const handleCopyLink = async () => {
+    const success = await copyToClipboard(window.location.href);
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   // Load invitation and list data
   useEffect(() => {
@@ -88,6 +118,59 @@ export default function InviteClient() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 p-6">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  // In-app browser warning
+  if (inAppBrowser?.isInAppBrowser) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-sm w-full text-center"
+        >
+          <Logo size="lg" className="justify-center mb-8" />
+          <div className="p-6 rounded-2xl border border-amber-800/50 bg-amber-900/20 shadow-xl">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-400 mx-auto mb-4">
+              <ExternalLink size={22} />
+            </div>
+            <h1 className="text-lg font-semibold text-slate-100">
+              Abrir en navegador
+            </h1>
+            <p className="text-sm text-slate-400 mt-2">
+              Estás abriendo este enlace desde{" "}
+              <strong className="text-slate-200">
+                {inAppBrowser.browserName}
+              </strong>
+              . Para iniciar sesión correctamente, abre el enlace en tu
+              navegador predeterminado (Chrome o Safari).
+            </p>
+            <div className="flex flex-col gap-3 mt-6">
+              <Button
+                className="w-full"
+                onClick={handleOpenInBrowser}
+                icon={<ExternalLink size={18} />}
+                size="lg"
+              >
+                Abrir en navegador
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleCopyLink}
+                icon={copied ? <CheckCircle2 size={18} /> : <Copy size={18} />}
+              >
+                {copied ? "¡Enlace copiado!" : "Copiar enlace"}
+              </Button>
+            </div>
+            <p className="text-xs text-slate-500 mt-4">
+              Si el botón no funciona, copia el enlace y pégalo en Chrome o
+              Safari.
+            </p>
+          </div>
+        </motion.div>
       </div>
     );
   }

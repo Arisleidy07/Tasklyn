@@ -23,7 +23,6 @@ import {
   Clock,
   ArrowRight,
   TrendingUp,
-  Flag,
   CalendarDays,
   Zap,
   Activity,
@@ -34,6 +33,7 @@ import {
 import { motion } from "framer-motion";
 import { PLAN_FEATURES, type Plan } from "@/types";
 import { cn } from "@/lib/utils";
+import { PRIORITY_CONFIG } from "@/lib/priority";
 import {
   format,
   subDays,
@@ -1147,14 +1147,11 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-3 mb-4">
                     <div
                       className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center",
+                        "w-10 h-10 rounded-xl flex items-center justify-center text-lg",
                         isDark ? "bg-amber-500/20" : "bg-amber-50",
                       )}
                     >
-                      <Flag
-                        size={18}
-                        className={isDark ? "text-amber-400" : "text-amber-600"}
-                      />
+                      🎯
                     </div>
                     <h3
                       className={cn(
@@ -1166,63 +1163,41 @@ export default function DashboardPage() {
                     </h3>
                   </div>
                   <div className="space-y-2">
-                    {[
-                      {
-                        key: "urgent",
-                        label: "Crítica",
-                        color: "bg-red-500",
-                        text: isDark ? "text-red-400" : "text-red-600",
-                        bg: isDark ? "bg-red-500/10" : "bg-red-50",
-                      },
-                      {
-                        key: "high",
-                        label: "Alta",
-                        color: "bg-orange-500",
-                        text: isDark ? "text-orange-400" : "text-orange-600",
-                        bg: isDark ? "bg-orange-500/10" : "bg-orange-50",
-                      },
-                      {
-                        key: "medium",
-                        label: "Media",
-                        color: "bg-yellow-500",
-                        text: isDark ? "text-yellow-400" : "text-yellow-600",
-                        bg: isDark ? "bg-yellow-500/10" : "bg-yellow-50",
-                      },
-                      {
-                        key: "low",
-                        label: "Baja",
-                        color: "bg-green-500",
-                        text: isDark ? "text-green-400" : "text-green-600",
-                        bg: isDark ? "bg-green-500/10" : "bg-green-50",
-                      },
-                    ].map(({ key, label, color, text, bg }) => {
+                    {(
+                      Object.entries(PRIORITY_CONFIG) as [
+                        keyof typeof PRIORITY_CONFIG,
+                        (typeof PRIORITY_CONFIG)[keyof typeof PRIORITY_CONFIG],
+                      ][]
+                    ).map(([key, cfg]) => {
                       const count =
-                        priorityCounts[key as keyof typeof priorityCounts];
+                        priorityCounts[key as keyof typeof priorityCounts] ?? 0;
                       return (
                         <div
                           key={key}
                           className={cn(
                             "flex items-center justify-between px-3 py-2 rounded-lg",
-                            bg,
+                            cfg.bg,
+                            cfg.bgDark,
                           )}
                         >
                           <div className="flex items-center gap-2">
-                            <div
-                              className={cn("w-2 h-2 rounded-full", color)}
-                            />
+                            <span className="text-sm leading-none">
+                              {cfg.emoji}
+                            </span>
                             <span
                               className={cn(
                                 "text-xs font-medium",
                                 isDark ? "text-slate-300" : "text-gray-700",
                               )}
                             >
-                              {label}
+                              {cfg.label}
                             </span>
                           </div>
                           <span
                             className={cn(
                               "text-xs font-bold tabular-nums",
-                              text,
+                              cfg.text,
+                              cfg.textDark,
                             )}
                           >
                             {count}

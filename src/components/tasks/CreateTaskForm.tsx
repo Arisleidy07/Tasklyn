@@ -6,8 +6,9 @@ import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import type { Task } from "@/types";
-import { Plus, X, Phone, MapPin, Tag, Flag } from "lucide-react";
+import { Plus, X, Phone, MapPin, Tag } from "lucide-react";
 import { motion } from "framer-motion";
+import { getPriorityConfig, PRIORITY_CONFIG } from "@/lib/priority";
 
 interface CreateTaskFormProps {
   listId: string;
@@ -164,53 +165,52 @@ export default function CreateTaskForm({
         {/* Priority selector */}
         <div className="space-y-1.5 pt-1">
           <div className="flex items-center gap-1.5 mb-1">
-            <Flag size={13} className="text-gray-300 dark:text-slate-600" />
-            <span className="text-xs font-medium text-gray-400 dark:text-slate-500">
+            <span className="text-sm leading-none">
+              {getPriorityConfig(priority).emoji}
+            </span>
+            <span
+              className="text-xs font-medium"
+              style={{ color: "var(--text-tertiary)" }}
+            >
               Prioridad
             </span>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             {(
-              [
-                {
-                  value: "urgent",
-                  label: "Crítica",
-                  activeClass: "bg-red-500 text-white border-red-500",
-                  inactiveClass:
-                    "bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/50 hover:bg-red-100 dark:hover:bg-red-950/50",
-                },
-                {
-                  value: "high",
-                  label: "Alta",
-                  activeClass: "bg-orange-500 text-white border-orange-500",
-                  inactiveClass:
-                    "bg-orange-50 dark:bg-orange-950/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800/50 hover:bg-orange-100 dark:hover:bg-orange-950/50",
-                },
-                {
-                  value: "medium",
-                  label: "Media",
-                  activeClass: "bg-yellow-500 text-white border-yellow-500",
-                  inactiveClass:
-                    "bg-yellow-50 dark:bg-yellow-950/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800/50 hover:bg-yellow-100 dark:hover:bg-yellow-950/50",
-                },
-                {
-                  value: "low",
-                  label: "Baja",
-                  activeClass: "bg-green-500 text-white border-green-500",
-                  inactiveClass:
-                    "bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800/50 hover:bg-green-100 dark:hover:bg-green-950/50",
-                },
-              ] as const
-            ).map((p) => (
+              Object.entries(PRIORITY_CONFIG) as [
+                keyof typeof PRIORITY_CONFIG,
+                (typeof PRIORITY_CONFIG)[keyof typeof PRIORITY_CONFIG],
+              ][]
+            ).map(([value, cfg]) => (
               <button
-                key={p.value}
+                key={value}
                 type="button"
                 onClick={() =>
-                  setPriority(priority === p.value ? undefined : p.value)
+                  setPriority(priority === value ? undefined : value)
                 }
-                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${priority === p.value ? p.activeClass : p.inactiveClass}`}
+                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all flex items-center gap-1 ${
+                  priority === value
+                    ? `${cfg.dot.replace("bg-", "bg-").replace("500", "500")} text-white border-transparent`
+                    : `${cfg.bg} ${cfg.bgDark} ${cfg.text} ${cfg.textDark} ${cfg.border} ${cfg.borderDark}`
+                }`}
+                style={
+                  priority === value
+                    ? {
+                        backgroundColor: cfg.dot.includes("red")
+                          ? "#ef4444"
+                          : cfg.dot.includes("orange")
+                            ? "#f97316"
+                            : cfg.dot.includes("yellow")
+                              ? "#eab308"
+                              : "#22c55e",
+                        color: "white",
+                        borderColor: "transparent",
+                      }
+                    : {}
+                }
               >
-                {p.label}
+                <span className="text-[9px] leading-none">{cfg.emoji}</span>
+                {cfg.label}
               </button>
             ))}
             {priority && (

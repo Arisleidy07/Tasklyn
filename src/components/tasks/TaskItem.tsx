@@ -39,7 +39,6 @@ import {
   Bell,
   CalendarDays,
   Repeat,
-  Flag,
   Tag,
 } from "lucide-react";
 import {
@@ -50,6 +49,7 @@ import {
   linkifyLocation,
 } from "@/lib/utils";
 import { toISODate } from "@/lib/dateUtils";
+import { getPriorityConfig } from "@/lib/priority";
 
 interface TaskItemProps {
   task: Task;
@@ -246,30 +246,28 @@ export default function TaskItem({
                 />
 
                 {/* Priority badge */}
-                {task.priority && (
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1",
-                      task.priority === "urgent" &&
-                        "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400",
-                      task.priority === "high" &&
-                        "bg-orange-50 text-orange-600 dark:bg-orange-950/30 dark:text-orange-400",
-                      task.priority === "medium" &&
-                        "bg-yellow-50 text-yellow-600 dark:bg-yellow-950/30 dark:text-yellow-400",
-                      task.priority === "low" &&
-                        "bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400",
-                    )}
-                  >
-                    <Flag size={8} />
-                    {task.priority === "urgent"
-                      ? "Crítica"
-                      : task.priority === "high"
-                        ? "Alta"
-                        : task.priority === "medium"
-                          ? "Media"
-                          : "Baja"}
-                  </span>
-                )}
+                {task.priority &&
+                  (() => {
+                    const pc = getPriorityConfig(task.priority);
+                    return (
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1 border",
+                          pc.bg,
+                          pc.bgDark,
+                          pc.text,
+                          pc.textDark,
+                          pc.border,
+                          pc.borderDark,
+                        )}
+                      >
+                        <span className="text-[9px] leading-none">
+                          {pc.emoji}
+                        </span>
+                        {pc.label}
+                      </span>
+                    );
+                  })()}
 
                 {/* Tags */}
                 {task.tags && task.tags.length > 0 && (
@@ -589,7 +587,9 @@ export default function TaskItem({
 
           {/* Priority Selector */}
           <div className="flex items-center gap-2">
-            <Flag size={14} className="text-gray-300 flex-shrink-0" />
+            <span className="text-base leading-none flex-shrink-0">
+              {getPriorityConfig(editPriority).emoji}
+            </span>
             <select
               value={editPriority || ""}
               onChange={(e) =>
@@ -597,9 +597,14 @@ export default function TaskItem({
                   (e.target.value as Task["priority"]) || undefined,
                 )
               }
-              className="text-sm border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-400 flex-1"
+              className="text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 flex-1 outline-none"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
             >
-              <option value="">Sin prioridad</option>
+              <option value="">⚪ Sin prioridad</option>
               <option value="urgent">🔴 Crítica</option>
               <option value="high">🟠 Alta</option>
               <option value="medium">🟡 Media</option>
