@@ -243,12 +243,19 @@ export default function ProfilePage() {
   return (
     <>
       <ProfileHeader />
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+      <div
+        className="min-h-screen"
+        style={{ backgroundColor: "var(--bg-secondary)" }}
+      >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8 pt-4 sm:pt-6 md:pt-8 pb-6 md:pb-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm overflow-hidden mb-6"
+            className="rounded-2xl border shadow-sm overflow-hidden mb-6"
+            style={{
+              backgroundColor: "var(--bg-card)",
+              borderColor: "var(--border-color)",
+            }}
           >
             <div className="px-4 sm:px-6 md:px-8 pt-5 sm:pt-7 pb-4 sm:pb-6">
               <div className="flex items-start gap-4 sm:gap-5 mb-5 sm:mb-6">
@@ -262,12 +269,27 @@ export default function ProfilePage() {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100 tracking-tight truncate">
+                        <h1
+                          className="text-xl sm:text-2xl font-bold tracking-tight truncate"
+                          style={{ color: "var(--text-primary)" }}
+                        >
                           {user.name}
                         </h1>
                         <button
                           onClick={handleOpenEdit}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/20 transition-colors flex-shrink-0"
+                          className="p-1.5 rounded-lg transition-colors flex-shrink-0"
+                          style={{ color: "var(--text-secondary)" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#2563eb";
+                            e.currentTarget.style.backgroundColor =
+                              "var(--bg-info)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color =
+                              "var(--text-secondary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }}
                           title="Editar perfil"
                         >
                           <Edit2 size={14} />
@@ -286,11 +308,17 @@ export default function ProfilePage() {
                               : "Gratis"}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-1.5 text-sm text-gray-500 mt-1">
+                      <div
+                        className="flex items-center gap-1.5 text-sm mt-1"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
                         <Mail size={12} />
                         <span className="truncate">{user.email}</span>
                       </div>
-                      <p className="text-gray-400 dark:text-slate-500 flex items-center gap-1.5 text-xs mt-0.5">
+                      <p
+                        className="flex items-center gap-1.5 text-xs mt-0.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         <Calendar size={11} />
                         Miembro desde {joinDate}
                       </p>
@@ -346,17 +374,34 @@ export default function ProfilePage() {
                       y: -2,
                       boxShadow: "0 4px 16px -4px rgba(59,130,246,0.12)",
                     }}
-                    className="p-3 sm:p-4 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 transition-colors hover:border-blue-100 dark:hover:border-slate-600"
+                    className="p-3 sm:p-4 rounded-xl border transition-colors"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      borderColor: "var(--border-color)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor =
+                        "var(--border-secondary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "var(--border-color)";
+                    }}
                   >
                     <div
                       className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mb-2`}
                     >
                       <s.icon size={16} className={s.color} />
                     </div>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-slate-100">
+                    <p
+                      className="text-xl sm:text-2xl font-bold"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       {s.value}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 leading-tight">
+                    <p
+                      className="text-xs mt-0.5 leading-tight"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       {s.label}
                     </p>
                   </motion.div>
@@ -417,15 +462,30 @@ export default function ProfilePage() {
                     <Link
                       key={list.id}
                       href={`/lists/${list.id}`}
-                      className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors group"
+                      className="flex items-center gap-3 p-3 rounded-xl transition-colors group"
+                      style={{
+                        color: "var(--text-secondary)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor =
+                          "var(--bg-hover)";
+                        e.currentTarget.style.color = "var(--text-primary)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                        e.currentTarget.style.color = "var(--text-secondary)";
+                      }}
                     >
-                      <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center flex-shrink-0">
-                        <FolderOpen size={14} className="text-blue-600" />
+                      <div
+                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: "var(--bg-info)" }}
+                      >
+                        <FolderOpen size={14} style={{ color: "#2563eb" }} />
                       </div>
-                      <span className="text-sm text-gray-700 dark:text-slate-300 font-medium truncate flex-1 group-hover:text-gray-900 dark:group-hover:text-slate-100">
+                      <span className="text-sm font-medium truncate flex-1">
                         {list.name}
                       </span>
-                      <span className="text-xs text-gray-400 dark:text-slate-500">
+                      <span style={{ color: "var(--text-tertiary)" }}>
                         {list.members.length} miembro
                         {list.members.length !== 1 ? "s" : ""}
                       </span>
@@ -502,37 +562,66 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Toggle de tema rápido en el perfil */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-800">
+                <div
+                  className="flex items-center justify-between p-3 rounded-xl"
+                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                >
                   <div className="flex flex-col gap-0.5">
-                    <p className="text-xs font-medium text-gray-700 dark:text-slate-300">
+                    <p
+                      className="text-xs font-medium"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       Tema de Tasklyn
                     </p>
-                    <p className="text-[11px] text-gray-500 dark:text-slate-400">
+                    <p
+                      className="text-[11px]"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
                       Alterna entre modo claro y oscuro desde tu perfil.
                     </p>
                   </div>
                   {/* Linear-style Segment Control Theme Selector */}
-                  <div className="flex items-center p-1 rounded-lg bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700">
+                  <div
+                    className="flex items-center p-1 rounded-lg border"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      borderColor: "var(--border-color)",
+                    }}
+                  >
                     <button
                       onClick={() => theme === "dark" && toggleTheme()}
-                      className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300",
-                        theme === "light"
-                          ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm"
-                          : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200",
-                      )}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300"
+                      style={{
+                        backgroundColor:
+                          theme === "light" ? "var(--bg-card)" : "transparent",
+                        color:
+                          theme === "light"
+                            ? "#2563eb"
+                            : "var(--text-secondary)",
+                        boxShadow:
+                          theme === "light"
+                            ? "0 1px 3px rgba(0,0,0,0.1)"
+                            : "none",
+                      }}
                     >
                       <Sun size={14} />
                       Claro
                     </button>
                     <button
                       onClick={() => theme === "light" && toggleTheme()}
-                      className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300",
-                        theme === "dark"
-                          ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm"
-                          : "text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200",
-                      )}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-300"
+                      style={{
+                        backgroundColor:
+                          theme === "dark" ? "var(--bg-card)" : "transparent",
+                        color:
+                          theme === "dark"
+                            ? "#2563eb"
+                            : "var(--text-secondary)",
+                        boxShadow:
+                          theme === "dark"
+                            ? "0 1px 3px rgba(0,0,0,0.1)"
+                            : "none",
+                      }}
                     >
                       <Moon size={14} />
                       Oscuro
@@ -542,20 +631,37 @@ export default function ProfilePage() {
 
                 <Link
                   href="/settings"
-                  className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex items-center justify-between p-3 rounded-xl transition-colors"
+                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-secondary)";
+                  }}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: "var(--bg-tertiary)" }}
+                    >
                       <Settings
                         size={14}
-                        className="text-gray-500 dark:text-slate-400"
+                        style={{ color: "var(--text-secondary)" }}
                       />
                     </div>
-                    <p className="text-xs font-medium text-gray-700 dark:text-slate-300">
+                    <p
+                      className="text-xs font-medium"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       Configuración
                     </p>
                   </div>
-                  <ChevronRight size={14} className="text-gray-400" />
+                  <ChevronRight
+                    size={14}
+                    style={{ color: "var(--text-tertiary)" }}
+                  />
                 </Link>
               </div>
             </motion.div>
