@@ -13,6 +13,10 @@ import Avatar from "@/components/ui/Avatar";
 import Modal from "@/components/ui/Modal";
 import CreateListModal from "@/components/lists/CreateListModal";
 import {
+  SortableListContainer,
+  SortableListItem,
+} from "@/components/lists/SortableListContainer";
+import {
   Users,
   Crown,
   Shield,
@@ -184,7 +188,10 @@ export default function TeamDetailPage() {
   const userRole = (team.members.find((m) => m.userId === user.id)?.role ||
     "member") as "owner" | "admin" | "member";
   const isOwnerOrAdmin = userRole === "owner" || userRole === "admin";
-  const teamLists = lists.filter((l) => l.teamId === teamId);
+  const teamLists = [...lists.filter((l) => l.teamId === teamId)].sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0),
+  );
+  const { reorderLists } = useListStore();
   const teamTasks = tasks.filter((t) =>
     teamLists.some((l) => l.id === t.listId),
   );
@@ -665,62 +672,82 @@ export default function TeamDetailPage() {
                 )}
               </div>
             ) : (
-              teamLists.map((list, i) => {
-                const listTasks = tasks.filter((t) => t.listId === list.id);
-                const done = listTasks.filter(
-                  (t) => t.status === "completed",
-                ).length;
-                const progress =
-                  listTasks.length > 0
-                    ? Math.round((done / listTasks.length) * 100)
-                    : 0;
-                return (
-                  <motion.div
-                    key={list.id}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.04 }}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] group hover:border-blue-200 dark:hover:border-blue-500/30 transition-all"
-                  >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
-                      style={{
-                        backgroundColor: (list.color || "#6366f1") + "20",
-                      }}
+              <SortableListContainer
+                lists={teamLists}
+                onReorder={(newOrder) =>
+                  reorderLists(newOrder.map((l) => l.id))
+                }
+              >
+                {(list, index, total, moveUp, moveDown) => {
+                  const listTasks = tasks.filter((t) => t.listId === list.id);
+                  const done = listTasks.filter(
+                    (t) => t.status === "completed",
+                  ).length;
+                  const progress =
+                    listTasks.length > 0
+                      ? Math.round((done / listTasks.length) * 100)
+                      : 0;
+                  return (
+                    <SortableListItem
+                      key={list.id}
+                      list={list}
+                      index={index}
+                      total={total}
+                      onMoveUp={moveUp}
+                      onMoveDown={moveDown}
+                      showMoveButtons
                     >
-                      {list.icon || "📋"}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-[var(--text-primary)] truncate">
-                        {list.name}
-                      </p>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-[var(--text-tertiary)]">
-                          {listTasks.length} tareas · {done} completadas
-                        </span>
-                        <div className="flex-1 h-1 bg-[var(--bg-secondary)] rounded-full overflow-hidden max-w-[80px]">
-                          <div
-                            className="h-full bg-blue-500 rounded-full"
-                            style={{ width: `${progress}%` }}
-                          />
-                        </div>
-                        <span className="text-xs font-medium text-gray-600 dark:text-slate-400">
-                          {progress}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => router.push(`/lists/${list.id}`)}
-                        className="p-2 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors"
-                        title="Abrir lista"
+                      <motion.div
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.04 }}
+                        className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] group hover:border-blue-200 dark:hover:border-blue-500/30 transition-all"
                       >
-                        <ChevronRight size={16} />
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              })
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
+                          style={{
+                            backgroundColor: (list.color || "#6366f1") + "20",
+                          }}
+                        >
+                          {list.icon || "📋"}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[var(--text-primary)] truncate">
+                            {list.name}
+                          </p>
+                          <div className="flex items-center gap-3 mt-1">
+                            <span className="text-xs text-[var(--text-tertiary)]">
+                              {listTasks.length} tareas · {done} completadas
+                            </span>
+                            <div className="flex-1 h-1 bg-[var(--bg-secondary)] rounded-full overflow-hidden max-w-[80px]">
+                              <div
+                                className="h-full bg-blue-500 rounded-full"
+                                style={{ width: `${progress}%` }}
+                              />
+                            </div>
+                            <span
+                              className="text-xs font-medium"
+                              style={{ color: "var(--text-secondary)" }}
+                            >
+                              {progress}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => router.push(`/lists/${list.id}`)}
+                            className="p-2 rounded-lg transition-colors"
+                            style={{ color: "var(--text-tertiary)" }}
+                            title="Abrir lista"
+                          >
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
+                      </motion.div>
+                    </SortableListItem>
+                  );
+                }}
+              </SortableListContainer>
             )}
           </motion.div>
         )}

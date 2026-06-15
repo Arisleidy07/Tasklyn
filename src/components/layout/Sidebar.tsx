@@ -31,6 +31,10 @@ import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTeamStore } from "@/stores/teamStore";
 import CreateListModal from "@/components/lists/CreateListModal";
+import {
+  SortableListContainer,
+  SortableListItem,
+} from "@/components/lists/SortableListContainer";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -46,9 +50,14 @@ export default function Sidebar() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const { unreadCount } = useNotificationStore();
 
+  const { reorderLists } = useListStore();
+
   if (!user) return null;
 
   const allLists = getUserLists(user.id);
+  const sortedLists = [...allLists].sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0),
+  );
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {
@@ -413,8 +422,8 @@ export default function Sidebar() {
             </motion.button>
           </div>
 
-          {/* Recientes */}
-          {!collapsed && allLists.length > 0 && (
+          {/* Listas — sortable */}
+          {!collapsed && sortedLists.length > 0 && (
             <div className="space-y-1">
               <p
                 className={cn(
@@ -422,52 +431,71 @@ export default function Sidebar() {
                 )}
                 style={{ color: "var(--text-secondary)" }}
               >
-                Recientes
+                Listas
               </p>
-              {allLists.slice(0, 5).map((list) => {
-                const active = pathname === `/lists/${list.id}`;
-                return (
-                  <Link
-                    key={list.id}
-                    href={`/lists/${list.id}`}
-                    className={cn(
-                      "sidebar-item flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200",
-                      active && "shadow-sm",
-                    )}
-                    style={{
-                      backgroundColor: active
-                        ? "var(--bg-card)"
-                        : "transparent",
-                      color: active
-                        ? "var(--text-primary)"
-                        : "var(--text-secondary)",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!active) {
-                        e.currentTarget.style.backgroundColor =
-                          "var(--bg-sidebar-hover)";
-                        e.currentTarget.style.color = "var(--text-primary)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!active) {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                        e.currentTarget.style.color = "var(--text-secondary)";
-                      }
-                    }}
-                  >
-                    {active && <div className="sidebar-indicator" />}
-                    <div
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{
-                        backgroundColor:
-                          list.type === "shared" ? "#60a5fa" : "#9ca3af",
-                      }}
-                    />
-                    <span className="truncate flex-1">{list.name}</span>
-                  </Link>
-                );
-              })}
+              <SortableListContainer
+                lists={sortedLists.slice(0, 8)}
+                onReorder={(newOrder) =>
+                  reorderLists(newOrder.map((l) => l.id))
+                }
+              >
+                {(list, index, total, moveUp, moveDown) => {
+                  const active = pathname === `/lists/${list.id}`;
+                  return (
+                    <SortableListItem
+                      key={list.id}
+                      list={list}
+                      index={index}
+                      total={total}
+                      onMoveUp={moveUp}
+                      onMoveDown={moveDown}
+                      showMoveButtons
+                    >
+                      <Link
+                        href={`/lists/${list.id}`}
+                        className={cn(
+                          "sidebar-item flex items-center gap-2 px-2 py-2 rounded-xl text-[13px] transition-all duration-200 w-full",
+                          active && "shadow-sm",
+                        )}
+                        style={{
+                          backgroundColor: active
+                            ? "var(--bg-card)"
+                            : "transparent",
+                          color: active
+                            ? "var(--text-primary)"
+                            : "var(--text-secondary)",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!active) {
+                            e.currentTarget.style.backgroundColor =
+                              "var(--bg-sidebar-hover)";
+                            e.currentTarget.style.color = "var(--text-primary)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!active) {
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                            e.currentTarget.style.color =
+                              "var(--text-secondary)";
+                          }
+                        }}
+                      >
+                        {active && <div className="sidebar-indicator" />}
+                        <div
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{
+                            backgroundColor:
+                              list.color ||
+                              (list.type === "shared" ? "#60a5fa" : "#9ca3af"),
+                          }}
+                        />
+                        <span className="truncate flex-1">{list.name}</span>
+                      </Link>
+                    </SortableListItem>
+                  );
+                }}
+              </SortableListContainer>
             </div>
           )}
 

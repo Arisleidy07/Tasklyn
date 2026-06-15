@@ -11,6 +11,7 @@ import {
   removeListMember,
   updateMemberRole,
   setCustomName,
+  reorderLists as reorderListsInDb,
 } from "@/lib/firestore";
 import type { TaskList, ListMember, MemberRole, ListType } from "@/types";
 import { Unsubscribe } from "firebase/firestore";
@@ -60,6 +61,7 @@ interface ListState {
   subscribeToLists: (userId: string) => void;
   unsubscribeFromLists: () => void;
   refreshLists: (userId: string) => Promise<void>;
+  reorderLists: (orderedIds: string[]) => Promise<void>;
 }
 
 export const useListStore = create<ListState>((set, get) => ({
@@ -168,6 +170,26 @@ export const useListStore = create<ListState>((set, get) => ({
   unsubscribeFromLists: () => {
     get().unsubscribe?.();
     set({ unsubscribe: null, lists: [] });
+  },
+
+  reorderLists: async (orderedIds) => {
+    // Optimistic update: reorder local state immediately
+    set((state) => {
+      const listMap = new Map(state.lists.map((l) => [l.id, l]));
+      const reordered = orderedIds
+        .map((id, index) => {
+          const l = listMap.get(id);
+          return l ? { ...l, order: index * 1000 } : null;
+        })
+        .filter(Boolean) as typeof state.lists;
+      // Keep any lists not in orderedIds at the end
+      const rest = state.lists.filter((l) => !orderedIds.includes(l.id));
+      return { lists: [...reordered, ...rest] };
+    });
+    // Persist to Firestore
+    await reorderListsInDb(
+      orderedIds.map((id, index) => ({ id, order: index * 1000 })),
+    );
   },
 
   refreshLists: async (userId) => {

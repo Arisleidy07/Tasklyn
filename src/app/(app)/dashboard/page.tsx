@@ -12,6 +12,10 @@ import { useUIStore } from "@/stores/uiStore";
 import Header from "@/components/layout/Header";
 import ListCard from "@/components/lists/ListCard";
 import CreateListModal from "@/components/lists/CreateListModal";
+import {
+  SortableListContainer,
+  SortableListItem,
+} from "@/components/lists/SortableListContainer";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
 import {
@@ -729,8 +733,17 @@ export default function DashboardPage() {
   }, [actorIdsKey]);
 
   // All data calculations BEFORE any conditional returns
-  const personalLists = user ? getPersonalLists(user.id) : [];
-  const sharedLists = user ? getSharedLists(user.id) : [];
+  const { reorderLists } = useListStore();
+  const personalLists = user
+    ? [...getPersonalLists(user.id)].sort(
+        (a, b) => (a.order ?? 0) - (b.order ?? 0),
+      )
+    : [];
+  const sharedLists = user
+    ? [...getSharedLists(user.id)].sort(
+        (a, b) => (a.order ?? 0) - (b.order ?? 0),
+      )
+    : [];
   const allLists = user ? getUserLists(user.id) : [];
   const userPlan = (user?.plan || "free") as Plan;
   const limits = PLAN_FEATURES[userPlan] || PLAN_FEATURES["free"];
@@ -1295,18 +1308,33 @@ export default function DashboardPage() {
                     }
                   />
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                    {personalLists.map((list, i) => (
-                      <motion.div
+                  <SortableListContainer
+                    lists={personalLists}
+                    wrapperClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
+                    onReorder={(newOrder) =>
+                      reorderLists(newOrder.map((l) => l.id))
+                    }
+                  >
+                    {(list, index, total, moveUp, moveDown) => (
+                      <SortableListItem
                         key={list.id}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05, duration: 0.4 }}
+                        list={list}
+                        index={index}
+                        total={total}
+                        onMoveUp={moveUp}
+                        onMoveDown={moveDown}
+                        showMoveButtons
                       >
-                        <ListCard list={list} />
-                      </motion.div>
-                    ))}
-                  </div>
+                        <motion.div
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.04, duration: 0.35 }}
+                        >
+                          <ListCard list={list} />
+                        </motion.div>
+                      </SortableListItem>
+                    )}
+                  </SortableListContainer>
                 )}
               </>
             )}
@@ -1330,18 +1358,33 @@ export default function DashboardPage() {
                     }
                   />
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                    {sharedLists.map((list, i) => (
-                      <motion.div
+                  <SortableListContainer
+                    lists={sharedLists}
+                    wrapperClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
+                    onReorder={(newOrder) =>
+                      reorderLists(newOrder.map((l) => l.id))
+                    }
+                  >
+                    {(list, index, total, moveUp, moveDown) => (
+                      <SortableListItem
                         key={list.id}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05, duration: 0.4 }}
+                        list={list}
+                        index={index}
+                        total={total}
+                        onMoveUp={moveUp}
+                        onMoveDown={moveDown}
+                        showMoveButtons
                       >
-                        <ListCard list={list} />
-                      </motion.div>
-                    ))}
-                  </div>
+                        <motion.div
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.04, duration: 0.35 }}
+                        >
+                          <ListCard list={list} />
+                        </motion.div>
+                      </SortableListItem>
+                    )}
+                  </SortableListContainer>
                 )}
               </>
             )}

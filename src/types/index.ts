@@ -154,6 +154,7 @@ export interface TaskList {
   icon?: string;
   isArchived?: boolean;
   archivedAt?: string;
+  order?: number;
 }
 
 // ---- Recurrence ----

@@ -172,8 +172,11 @@ export const createList = async (
 ): Promise<string> => {
   const listRef = doc(listsCollection);
   const memberIds = list.members.map((m) => m.userId);
+  // Assign order = current timestamp millis so new lists go at the end
+  const order = list.order ?? Date.now();
   await setDoc(listRef, {
     ...list,
+    order,
     memberIds,
     createdAt: serverTimestamp(),
   });
@@ -313,6 +316,17 @@ export const setCustomName = async (
   }
 
   await updateDoc(listRef, withTimestamps({ customNames }));
+};
+
+// Batch-update order for multiple lists (reordering)
+export const reorderLists = async (
+  orderedIds: { id: string; order: number }[],
+): Promise<void> => {
+  const batch = writeBatch(db);
+  for (const { id, order } of orderedIds) {
+    batch.update(doc(db, "lists", id), { order });
+  }
+  await batch.commit();
 };
 
 // Fetch all lists for a user (one-time fetch from server, for manual refresh)
