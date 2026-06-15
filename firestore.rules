@@ -46,8 +46,13 @@ service cloud.firestore {
     }
 
     // Helper to check if user will be team owner after create
+    // Checks all possible owner fields for compatibility
     function willBeTeamOwner() {
-      return request.resource.data.owner == getAuthUid();
+      return (
+        (request.resource.data.owner != null && request.resource.data.owner == getAuthUid()) ||
+        (request.resource.data.ownerId != null && request.resource.data.ownerId == getAuthUid()) ||
+        (request.resource.data.createdBy != null && request.resource.data.createdBy == getAuthUid())
+      );
     }
 
     // Helper to check if a user is joining a team via invitation (adding themselves only)

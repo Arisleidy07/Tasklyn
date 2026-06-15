@@ -79,7 +79,17 @@ self.addEventListener("fetch", (event) => {
         return response;
       })
       .catch(() => {
-        return caches.match(event.request);
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          // Return a simple 404 response if nothing found in cache
+          return new Response("Not found in cache", {
+            status: 404,
+            statusText: "Not Found",
+            headers: { "Content-Type": "text/plain" },
+          });
+        });
       }),
   );
 });
