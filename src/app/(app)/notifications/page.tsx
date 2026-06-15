@@ -26,65 +26,65 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import type { NotificationType } from "@/types";
 
-// Static type config — uses Tailwind dark: classes, no runtime isDark needed
-const TYPE_CONFIG: Record<
+// Dynamic type config — uses CSS variables for theming
+const TYPE_STYLES: Record<
   NotificationType,
   {
     icon: React.ElementType;
-    iconClass: string;
-    bgClass: string;
-    borderClass: string;
+    iconColor: string;
+    bgColor: string;
+    borderColor: string;
   }
 > = {
   invitation: {
     icon: UserPlus,
-    iconClass: "text-blue-600 dark:text-blue-400",
-    bgClass: "bg-blue-50 dark:bg-blue-500/15",
-    borderClass: "border-blue-200 dark:border-blue-400/25",
+    iconColor: "#2563eb",
+    bgColor: "rgba(37,99,235,0.1)",
+    borderColor: "rgba(37,99,235,0.25)",
   },
   task_assigned: {
     icon: ListTodo,
-    iconClass: "text-blue-600 dark:text-blue-400",
-    bgClass: "bg-blue-50 dark:bg-blue-500/15",
-    borderClass: "border-blue-200 dark:border-blue-400/25",
+    iconColor: "#2563eb",
+    bgColor: "rgba(37,99,235,0.1)",
+    borderColor: "rgba(37,99,235,0.25)",
   },
   task_completed: {
     icon: CheckCircle2,
-    iconClass: "text-emerald-600 dark:text-emerald-400",
-    bgClass: "bg-emerald-50 dark:bg-emerald-500/15",
-    borderClass: "border-emerald-200 dark:border-emerald-400/25",
+    iconColor: "#10b981",
+    bgColor: "rgba(16,185,129,0.1)",
+    borderColor: "rgba(16,185,129,0.25)",
   },
   task_edited: {
     icon: Edit2,
-    iconClass: "text-amber-600 dark:text-amber-400",
-    bgClass: "bg-amber-50 dark:bg-amber-500/15",
-    borderClass: "border-amber-200 dark:border-amber-400/25",
+    iconColor: "#f59e0b",
+    bgColor: "rgba(245,158,11,0.1)",
+    borderColor: "rgba(245,158,11,0.25)",
   },
   member_joined: {
     icon: Users,
-    iconClass: "text-blue-600 dark:text-blue-400",
-    bgClass: "bg-blue-50 dark:bg-blue-500/15",
-    borderClass: "border-blue-200 dark:border-blue-400/25",
+    iconColor: "#2563eb",
+    bgColor: "rgba(37,99,235,0.1)",
+    borderColor: "rgba(37,99,235,0.25)",
   },
   list_shared: {
     icon: Share2,
-    iconClass: "text-amber-600 dark:text-amber-400",
-    bgClass: "bg-amber-50 dark:bg-amber-500/15",
-    borderClass: "border-amber-200 dark:border-amber-400/25",
+    iconColor: "#f59e0b",
+    bgColor: "rgba(245,158,11,0.1)",
+    borderColor: "rgba(245,158,11,0.25)",
   },
   reminder: {
     icon: Bell,
-    iconClass: "text-amber-600 dark:text-amber-400",
-    bgClass: "bg-amber-50 dark:bg-amber-500/15",
-    borderClass: "border-amber-200 dark:border-amber-400/25",
+    iconColor: "#f59e0b",
+    bgColor: "rgba(245,158,11,0.1)",
+    borderColor: "rgba(245,158,11,0.25)",
   },
   due_soon: {
     icon: Clock,
-    iconClass: "text-red-600 dark:text-red-400",
-    bgClass: "bg-red-50 dark:bg-red-500/15",
-    borderClass: "border-red-200 dark:border-red-400/25",
+    iconColor: "#ef4444",
+    bgColor: "rgba(239,68,68,0.1)",
+    borderColor: "rgba(239,68,68,0.25)",
   },
-} as const;
+};
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
@@ -239,7 +239,10 @@ export default function NotificationsPage() {
         }
       />
 
-      <div className="p-3 sm:p-4 md:p-8 max-w-3xl mx-auto space-y-6 sm:space-y-8">
+      <div
+        className="p-3 sm:p-4 md:p-8 max-w-3xl mx-auto space-y-6 sm:space-y-8"
+        style={{ backgroundColor: "var(--bg-primary)" }}
+      >
         {/* Filter Tabs */}
         <div className="flex items-center gap-2 flex-wrap">
           {[
@@ -294,7 +297,7 @@ export default function NotificationsPage() {
               variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
             >
               {pendingNotifications.map((notif) => {
-                const cfg = TYPE_CONFIG[notif.type];
+                const cfg = TYPE_STYLES[notif.type];
                 const Icon = cfg.icon;
                 return (
                   <motion.div
@@ -318,9 +321,13 @@ export default function NotificationsPage() {
                     onClick={() => !notif.read && markRead(notif.id)}
                   >
                     <div
-                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 border ${cfg.bgClass} ${cfg.borderClass}`}
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 border"
+                      style={{
+                        backgroundColor: cfg.bgColor,
+                        borderColor: cfg.borderColor,
+                      }}
                     >
-                      <Icon size={14} className={cfg.iconClass} />
+                      <Icon size={14} style={{ color: cfg.iconColor }} />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -419,7 +426,7 @@ export default function NotificationsPage() {
             >
               <AnimatePresence mode="popLayout">
                 {otherNotifications.map((notif) => {
-                  const cfg = TYPE_CONFIG[notif.type];
+                  const cfg = TYPE_STYLES[notif.type];
                   const Icon = cfg.icon;
                   return (
                     <motion.div
@@ -589,7 +596,7 @@ export default function NotificationsPage() {
               </div>
               <div className="space-y-2 pt-3">
                 {archivedNotifications.map((notif) => {
-                  const cfg = TYPE_CONFIG[notif.type];
+                  const cfg = TYPE_STYLES[notif.type];
                   const Icon = cfg.icon;
                   return (
                     <motion.div
@@ -602,15 +609,25 @@ export default function NotificationsPage() {
                       className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50"
                     >
                       <div
-                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 border ${cfg.bgClass} ${cfg.borderClass}`}
+                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 border"
+                        style={{
+                          backgroundColor: cfg.bgColor,
+                          borderColor: cfg.borderColor,
+                        }}
                       >
-                        <Icon size={14} className={cfg.iconClass} />
+                        <Icon size={14} style={{ color: cfg.iconColor }} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm leading-snug text-gray-600 dark:text-slate-300">
+                        <p
+                          className="text-sm leading-snug"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
                           {notif.title}
                         </p>
-                        <p className="text-xs mt-0.5 leading-snug text-gray-500 dark:text-slate-400">
+                        <p
+                          className="text-xs mt-0.5 leading-snug"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
                           {notif.body}
                         </p>
                         <p className="text-[11px] mt-1.5 text-gray-400 dark:text-slate-500">
