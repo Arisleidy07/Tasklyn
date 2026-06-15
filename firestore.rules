@@ -27,15 +27,22 @@ service cloud.firestore {
     }
 
     // Helper to check if user is team owner (uses get() for non-team rule contexts)
+    // Checks both 'owner' and 'ownerId' fields for compatibility
     function isTeamOwner(teamId) {
       let team = get(/databases/$(database)/documents/teams/$(teamId)).data;
-      return team != null && team.owner == getAuthUid();
+      return team != null && (
+        (team.owner != null && team.owner == getAuthUid()) ||
+        (team.ownerId != null && team.ownerId == getAuthUid()) ||
+        (team.createdBy != null && team.createdBy == getAuthUid())
+      );
     }
 
     // Helper to check if user is team admin/owner — uses resource.data (no get() call)
-    // members is stored as an array so we use the owner field directly
+    // Checks both 'owner' and 'ownerId' fields for compatibility
     function isTeamAdminDirect() {
-      return resource.data.owner == getAuthUid();
+      return (resource.data.owner != null && resource.data.owner == getAuthUid()) ||
+             (resource.data.ownerId != null && resource.data.ownerId == getAuthUid()) ||
+             (resource.data.createdBy != null && resource.data.createdBy == getAuthUid());
     }
 
     // Helper to check if user will be team owner after create
@@ -141,7 +148,11 @@ service cloud.firestore {
       allow update: if isAuth() && (isTeamAdminDirect() || isJoiningTeam());
 
       // Allow delete if user is team owner
-      allow delete: if isAuth() && resource.data.owner == getAuthUid();
+      allow delete: if isAuth() && (
+        (resource.data.owner != null && resource.data.owner == getAuthUid()) ||
+        (resource.data.ownerId != null && resource.data.ownerId == getAuthUid()) ||
+        (resource.data.createdBy != null && resource.data.createdBy == getAuthUid())
+      );
 
       // Team activity subcollection — team members can read all, write their own
       // Team owner can delete (for team deletion)

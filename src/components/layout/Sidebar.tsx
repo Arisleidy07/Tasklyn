@@ -84,17 +84,23 @@ export default function Sidebar() {
       <aside
         className={cn(
           "sidebar-bg fixed inset-y-0 left-0 z-30 flex flex-col transition-all duration-300 ease-in-out",
-          "bg-gray-50/80 border-r border-gray-200",
-          "dark:bg-slate-900/90 dark:border-slate-800",
+          "border-r",
           collapsed ? "w-[72px]" : "w-[264px]",
         )}
+        style={{
+          backgroundColor: "var(--bg-sidebar)",
+          borderColor: "var(--border-sidebar)",
+        }}
       >
         {/* Logo */}
         <div
           className={cn(
             "h-16 flex items-center justify-between px-4 border-b flex-shrink-0",
-            "border-gray-200 bg-white/90 dark:border-slate-800 dark:bg-slate-900/90",
           )}
+          style={{
+            backgroundColor: "var(--bg-sidebar)",
+            borderColor: "var(--border-sidebar)",
+          }}
         >
           <Link href="/dashboard" className="flex items-center">
             <Logo size="md" showText={!collapsed} />
@@ -104,9 +110,17 @@ export default function Sidebar() {
               onClick={toggleSidebar}
               className={cn(
                 "p-1.5 rounded-lg transition-colors cursor-pointer",
-                "text-gray-400 hover:text-gray-600 hover:bg-gray-100",
-                "dark:text-slate-400 dark:hover:text-slate-300 dark:hover:bg-slate-800",
               )}
+              style={{ color: "var(--text-secondary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor =
+                  "var(--bg-sidebar-hover)";
+                e.currentTarget.style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+                e.currentTarget.style.color = "var(--text-secondary)";
+              }}
             >
               <ChevronLeft size={16} />
             </button>
@@ -115,9 +129,19 @@ export default function Sidebar() {
             <button
               onClick={toggleSidebar}
               className={cn(
-                "absolute -right-3 top-5 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-colors z-40",
-                "bg-white border border-gray-200 text-gray-400 hover:text-gray-600 shadow-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:hover:text-slate-300",
+                "absolute -right-3 top-5 w-6 h-6 rounded-full flex items-center justify-center cursor-pointer transition-colors z-40 border shadow-sm",
               )}
+              style={{
+                backgroundColor: "var(--bg-card)",
+                borderColor: "var(--border-color)",
+                color: "var(--text-secondary)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-secondary)";
+              }}
             >
               <ChevronRight size={12} />
             </button>
@@ -132,9 +156,8 @@ export default function Sidebar() {
               <p
                 className={cn(
                   "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
-                  "text-gray-400",
-                  "dark:text-slate-500",
                 )}
+                style={{ color: "var(--text-secondary)" }}
               >
                 General
               </p>
@@ -155,9 +178,27 @@ export default function Sidebar() {
                       "sidebar-item relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200",
                       active
                         ? "sidebar-item-active bg-blue-600 text-white shadow-sm shadow-blue-600/25 dark:bg-blue-600/90 dark:shadow-blue-900/30"
-                        : "text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200",
+                        : "hover:shadow-sm",
                       collapsed && "justify-center px-0",
                     )}
+                    style={{
+                      color: active ? "#ffffff" : "var(--text-sidebar)",
+                      backgroundColor: active ? "#2563eb" : "transparent",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.backgroundColor =
+                          "var(--bg-sidebar-hover)";
+                        e.currentTarget.style.color =
+                          "var(--text-sidebar-active)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                        e.currentTarget.style.color = "var(--text-sidebar)";
+                      }
+                    }}
                   >
                     {active && <div className="sidebar-indicator" />}
                     <item.icon size={18} className="flex-shrink-0" />
@@ -167,7 +208,13 @@ export default function Sidebar() {
                         {"badge" in item &&
                           item.badge !== undefined &&
                           item.badge > 0 && (
-                            <span className="text-[11px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1 bg-red-500 text-white">
+                            <span
+                              className="text-[11px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1"
+                              style={{
+                                backgroundColor: "#ef4444",
+                                color: "#ffffff",
+                              }}
+                            >
                               {item.badge > 9 ? "9+" : item.badge}
                             </span>
                           )}
@@ -177,7 +224,10 @@ export default function Sidebar() {
                       "badge" in item &&
                       item.badge !== undefined &&
                       item.badge > 0 && (
-                        <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-500" />
+                        <span
+                          className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full"
+                          style={{ backgroundColor: "#ef4444" }}
+                        />
                       )}
                   </Link>
                 </motion.div>
@@ -191,9 +241,8 @@ export default function Sidebar() {
               <p
                 className={cn(
                   "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
-                  "text-gray-400",
-                  "dark:text-slate-500",
                 )}
+                style={{ color: "var(--text-secondary)" }}
               >
                 👥 Equipos
               </p>
@@ -205,23 +254,43 @@ export default function Sidebar() {
                   key={team.id}
                   href={`/teams/${team.id}`}
                   className={cn(
-                    "sidebar-item flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200",
-                    active
-                      ? "bg-white text-gray-900 font-medium shadow-sm dark:bg-slate-800 dark:text-slate-100"
-                      : "text-gray-500 hover:bg-white hover:text-gray-700 hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300",
+                    "sidebar-item flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-200",
+                    active && "shadow-sm",
                   )}
+                  style={{
+                    backgroundColor: active ? "var(--bg-card)" : "transparent",
+                    color: active
+                      ? "var(--text-primary)"
+                      : "var(--text-secondary)",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-sidebar-hover)";
+                      e.currentTarget.style.color = "var(--text-primary)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "var(--text-secondary)";
+                    }
+                  }}
                 >
                   {active && <div className="sidebar-indicator" />}
                   <div className="w-2 h-2 rounded-full flex-shrink-0 bg-gradient-to-br from-blue-400 to-indigo-600" />
                   <span className="truncate flex-1">{team.name}</span>
                   {!collapsed && (
                     <span
-                      className={cn(
-                        "text-[10px] font-medium min-w-[16px] h-4 flex items-center justify-center rounded px-1",
-                        active
-                          ? "bg-gray-200 text-gray-600 dark:bg-slate-700 dark:text-slate-300"
-                          : "bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-slate-400",
-                      )}
+                      className="text-[10px] font-medium min-w-[16px] h-4 flex items-center justify-center rounded px-1"
+                      style={{
+                        backgroundColor: active
+                          ? "var(--bg-tertiary)"
+                          : "var(--bg-secondary)",
+                        color: active
+                          ? "var(--text-secondary)"
+                          : "var(--text-tertiary)",
+                      }}
                     >
                       {team.members.length}
                     </span>
@@ -233,9 +302,18 @@ export default function Sidebar() {
               <Link
                 href="/teams"
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200",
-                  "text-gray-400 hover:bg-white hover:text-gray-600 hover:shadow-sm dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-400",
+                  "flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200 hover:shadow-sm",
                 )}
+                style={{ color: "var(--text-tertiary)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--bg-sidebar-hover)";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = "var(--text-tertiary)";
+                }}
               >
                 <span className="text-xs">+{teams.length - 3} más</span>
               </Link>
@@ -248,9 +326,8 @@ export default function Sidebar() {
               <p
                 className={cn(
                   "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
-                  "text-gray-400",
-                  "dark:text-slate-500",
                 )}
+                style={{ color: "var(--text-secondary)" }}
               >
                 Workspace
               </p>
@@ -268,11 +345,26 @@ export default function Sidebar() {
                     title={collapsed ? "Listas" : undefined}
                     className={cn(
                       "sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200",
-                      active
-                        ? "sidebar-item-active bg-blue-600 text-white shadow-sm shadow-blue-600/25 dark:bg-blue-600/90 dark:shadow-blue-900/30"
-                        : "text-gray-600 hover:bg-white hover:text-gray-900 hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200",
+                      active && "shadow-sm",
                       collapsed && "justify-center px-0",
                     )}
+                    style={{
+                      backgroundColor: active ? "#2563eb" : "transparent",
+                      color: active ? "#ffffff" : "var(--text-sidebar)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.backgroundColor =
+                          "var(--bg-sidebar-hover)";
+                        e.currentTarget.style.color = "var(--text-primary)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                        e.currentTarget.style.color = "var(--text-sidebar)";
+                      }
+                    }}
                   >
                     {active && <div className="sidebar-indicator" />}
                     <FolderOpen size={18} className="flex-shrink-0" />
@@ -280,12 +372,13 @@ export default function Sidebar() {
                       <>
                         <span className="flex-1">Listas</span>
                         <span
-                          className={cn(
-                            "text-[11px] font-semibold min-w-[20px] h-5 flex items-center justify-center rounded-md px-1.5",
-                            active
-                              ? "bg-white/20 text-white"
-                              : "bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-slate-400",
-                          )}
+                          className="text-[11px] font-semibold min-w-[20px] h-5 flex items-center justify-center rounded-md px-1.5"
+                          style={{
+                            backgroundColor: active
+                              ? "rgba(255,255,255,0.2)"
+                              : "var(--bg-secondary)",
+                            color: active ? "#ffffff" : "var(--text-secondary)",
+                          }}
                         >
                           {allLists.length}
                         </span>
@@ -305,9 +398,15 @@ export default function Sidebar() {
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 cursor-pointer",
-                "text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30",
                 collapsed && "justify-center px-0",
               )}
+              style={{ color: "#2563eb" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
               <Plus size={18} className="flex-shrink-0" />
               {!collapsed && "Nueva lista"}
@@ -320,9 +419,8 @@ export default function Sidebar() {
               <p
                 className={cn(
                   "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
-                  "text-gray-400",
-                  "dark:text-slate-500",
                 )}
+                style={{ color: "var(--text-secondary)" }}
               >
                 Recientes
               </p>
@@ -334,17 +432,37 @@ export default function Sidebar() {
                     href={`/lists/${list.id}`}
                     className={cn(
                       "sidebar-item flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200",
-                      active
-                        ? "bg-white text-gray-900 font-medium shadow-sm dark:bg-slate-800 dark:text-slate-100"
-                        : "text-gray-500 hover:bg-white hover:text-gray-700 hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300",
+                      active && "shadow-sm",
                     )}
+                    style={{
+                      backgroundColor: active
+                        ? "var(--bg-card)"
+                        : "transparent",
+                      color: active
+                        ? "var(--text-primary)"
+                        : "var(--text-secondary)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.backgroundColor =
+                          "var(--bg-sidebar-hover)";
+                        e.currentTarget.style.color = "var(--text-primary)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!active) {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                        e.currentTarget.style.color = "var(--text-secondary)";
+                      }
+                    }}
                   >
                     {active && <div className="sidebar-indicator" />}
                     <div
-                      className={cn(
-                        "w-2 h-2 rounded-full flex-shrink-0",
-                        list.type === "shared" ? "bg-blue-400" : "bg-gray-400",
-                      )}
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{
+                        backgroundColor:
+                          list.type === "shared" ? "#60a5fa" : "#9ca3af",
+                      }}
                     />
                     <span className="truncate flex-1">{list.name}</span>
                   </Link>
@@ -359,9 +477,8 @@ export default function Sidebar() {
               <p
                 className={cn(
                   "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
-                  "text-gray-400",
-                  "dark:text-slate-500",
                 )}
+                style={{ color: "var(--text-secondary)" }}
               >
                 Cuenta
               </p>
@@ -371,11 +488,30 @@ export default function Sidebar() {
               title={collapsed ? "Perfil" : undefined}
               className={cn(
                 "sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200",
-                isActive("/profile")
-                  ? "sidebar-item-active bg-white text-gray-900 shadow-sm dark:bg-slate-800 dark:text-slate-100"
-                  : "text-gray-500 hover:bg-white hover:text-gray-700 hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300",
+                isActive("/profile") && "shadow-sm",
                 collapsed && "justify-center px-0",
               )}
+              style={{
+                backgroundColor: isActive("/profile")
+                  ? "var(--bg-card)"
+                  : "transparent",
+                color: isActive("/profile")
+                  ? "var(--text-primary)"
+                  : "var(--text-secondary)",
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive("/profile")) {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--bg-sidebar-hover)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive("/profile")) {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                }
+              }}
             >
               {isActive("/profile") && <div className="sidebar-indicator" />}
               <User size={18} className="flex-shrink-0" />
@@ -386,11 +522,30 @@ export default function Sidebar() {
               title={collapsed ? "Configuración" : undefined}
               className={cn(
                 "sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200",
-                isActive("/settings")
-                  ? "sidebar-item-active bg-white text-gray-900 shadow-sm dark:bg-slate-800 dark:text-slate-100"
-                  : "text-gray-500 hover:bg-white hover:text-gray-700 hover:shadow-sm dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300",
+                isActive("/settings") && "shadow-sm",
                 collapsed && "justify-center px-0",
               )}
+              style={{
+                backgroundColor: isActive("/settings")
+                  ? "var(--bg-card)"
+                  : "transparent",
+                color: isActive("/settings")
+                  ? "var(--text-primary)"
+                  : "var(--text-secondary)",
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive("/settings")) {
+                  e.currentTarget.style.backgroundColor =
+                    "var(--bg-sidebar-hover)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive("/settings")) {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                }
+              }}
             >
               {isActive("/settings") && <div className="sidebar-indicator" />}
               <Settings size={18} className="flex-shrink-0" />
@@ -424,27 +579,39 @@ export default function Sidebar() {
 
         {/* User section */}
         <div
-          className={cn(
-            "px-3 py-3 border-t flex-shrink-0",
-            "border-gray-200 bg-white/90 dark:border-slate-800 dark:bg-slate-900/90",
-          )}
+          className={cn("px-3 py-3 border-t flex-shrink-0")}
+          style={{
+            backgroundColor: "var(--bg-sidebar)",
+            borderColor: "var(--border-sidebar)",
+          }}
         >
           <Link
             href="/profile"
             className={cn(
               "flex items-center gap-3 p-2 rounded-xl transition-colors",
-              "hover:bg-gray-50 dark:hover:bg-slate-800",
               collapsed ? "justify-center" : "",
             )}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-sidebar-hover)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
           >
             <Avatar name={user.name} photoURL={user.photoURL} size="md" />
             {!collapsed && (
               <>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 truncate dark:text-slate-200">
+                  <p
+                    className="text-sm font-semibold truncate"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     {user.name}
                   </p>
-                  <p className="text-[11px] text-gray-500 truncate dark:text-slate-400">
+                  <p
+                    className="text-[11px] truncate"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     {user.email}
                   </p>
                 </div>
@@ -453,11 +620,16 @@ export default function Sidebar() {
                     e.preventDefault();
                     logout();
                   }}
-                  className={cn(
-                    "p-1.5 rounded-lg transition-colors cursor-pointer",
-                    "text-gray-400 hover:text-red-500 hover:bg-red-50",
-                    "dark:text-slate-400 dark:hover:text-red-400 dark:hover:bg-red-950/30",
-                  )}
+                  className="p-1.5 rounded-lg transition-colors cursor-pointer"
+                  style={{ color: "var(--text-tertiary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "#ef4444";
+                    e.currentTarget.style.backgroundColor = "var(--bg-error)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--text-tertiary)";
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
                   title="Cerrar sesión"
                 >
                   <LogOut size={16} />

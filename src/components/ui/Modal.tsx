@@ -74,8 +74,9 @@ export default function Modal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[2147483647] flex flex-col bg-white dark:bg-slate-900"
+            className="fixed inset-0 z-[2147483647] flex flex-col"
             style={{
+              backgroundColor: "var(--bg-modal)",
               top: 0,
               left: 0,
               right: 0,
@@ -86,28 +87,52 @@ export default function Modal({
             }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex-shrink-0">
+            <div
+              className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
+              style={{
+                backgroundColor: "var(--bg-modal)",
+                borderColor: "var(--border-color)",
+              }}
+            >
               <div className="flex-1 min-w-0 pr-3">
                 {title && (
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">
+                  <h2
+                    className="text-lg font-semibold leading-tight"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     {title}
                   </h2>
                 )}
                 {description && (
-                  <p className="text-sm text-gray-500 dark:text-slate-400 truncate">
+                  <p
+                    className="text-sm truncate"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     {description}
                   </p>
                 )}
               </div>
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800 transition-colors"
+                className="p-2 rounded-lg transition-colors"
+                style={{ color: "var(--text-secondary)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--text-primary)";
+                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
               >
                 <X size={24} />
               </button>
             </div>
             {/* Content */}
-            <div className="flex-1 overflow-y-auto overscroll-contain bg-white dark:bg-slate-900">
+            <div
+              className="flex-1 overflow-y-auto overscroll-contain"
+              style={{ backgroundColor: "var(--bg-modal)" }}
+            >
               {children}
             </div>
           </motion.div>
@@ -138,33 +163,62 @@ export default function Modal({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              "relative w-full max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col",
-              "bg-white border border-gray-200",
-              "dark:bg-slate-900 dark:border-slate-700",
+              "relative w-full max-h-[90vh] rounded-2xl overflow-hidden flex flex-col",
               sizeMap[size],
             )}
+            style={{
+              backgroundColor: "var(--bg-modal)",
+              borderColor: "var(--border-color)",
+              borderWidth: "1px",
+              boxShadow: "var(--shadow-modal)",
+            }}
           >
             {title && (
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex-shrink-0">
+              <div
+                className="flex items-center justify-between px-6 py-4 border-b flex-shrink-0"
+                style={{
+                  backgroundColor: "var(--bg-modal)",
+                  borderColor: "var(--border-color)",
+                }}
+              >
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <h2
+                    className="text-lg font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     {title}
                   </h2>
                   {description && (
-                    <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
+                    <p
+                      className="text-sm mt-0.5"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       {description}
                     </p>
                   )}
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:text-slate-500 dark:hover:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ color: "var(--text-secondary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--text-primary)";
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-secondary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
                 >
                   <X size={20} />
                 </button>
               </div>
             )}
-            <div className="flex-1 overflow-y-auto bg-white dark:bg-slate-900">
+            <div
+              className="flex-1 overflow-y-auto"
+              style={{ backgroundColor: "var(--bg-modal)" }}
+            >
               {children}
             </div>
           </motion.div>
