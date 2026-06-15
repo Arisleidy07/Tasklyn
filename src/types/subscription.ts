@@ -17,9 +17,10 @@ export interface Subscription {
   userId: string;
   plan: PlanType;
   status: SubscriptionStatus;
-  // PayPal specific
-  paypalSubscriptionId?: string;
-  paypalPlanId?: string;
+  // Payment provider (generic — Stripe, PayPal, MercadoPago, etc.)
+  providerSubscriptionId?: string;
+  providerPlanId?: string;
+  provider?: "stripe" | "paypal" | "mercadopago" | "apple" | "google";
   // Billing
   currentPeriodStart: string;
   currentPeriodEnd: string;
@@ -42,7 +43,8 @@ export interface PaymentHistory {
   amount: number;
   currency: string;
   status: "completed" | "failed" | "refunded" | "pending";
-  paypalTransactionId?: string;
+  providerTransactionId?: string;
+  provider?: string;
   createdAt: string;
   description?: string;
 }
@@ -78,13 +80,13 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
   free: {
     maxLists: 3,
     maxTasksPerList: 50,
-    maxCollaborators: 2,
+    maxCollaborators: 5,
     canShare: true,
     canAssign: false,
     canSetReminders: true,
     canSetRecurrence: false,
     hasAdvancedCalendar: false,
-    hasDarkMode: false,
+    hasDarkMode: true,
     hasPersonalStats: false,
     hasRealtimeNotifications: true,
     hasTeamDashboard: false,
@@ -96,8 +98,8 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
     hasReports: false,
     hasUserProductivity: false,
     hasAdvancedManagement: false,
-    maxTeams: 0,
-    maxTeamMembers: 0,
+    maxTeams: 1,
+    maxTeamMembers: 5,
   },
   pro: {
     maxLists: Infinity,
@@ -111,17 +113,17 @@ export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
     hasDarkMode: true,
     hasPersonalStats: true,
     hasRealtimeNotifications: true,
-    hasTeamDashboard: false,
-    hasTeamRanking: false,
-    hasWeeklyStats: false,
-    hasMonthlyStats: false,
-    hasAdvancedHistory: false,
+    hasTeamDashboard: true,
+    hasTeamRanking: true,
+    hasWeeklyStats: true,
+    hasMonthlyStats: true,
+    hasAdvancedHistory: true,
     hasBusinessCalendar: false,
     hasReports: false,
     hasUserProductivity: false,
     hasAdvancedManagement: false,
-    maxTeams: 0,
-    maxTeamMembers: 0,
+    maxTeams: Infinity,
+    maxTeamMembers: Infinity,
   },
   business: {
     maxLists: Infinity,
@@ -158,7 +160,6 @@ export interface PlanInfo {
   description: string;
   features: string[];
   popular?: boolean;
-  paypalPlanId?: string;
 }
 
 export const AVAILABLE_PLANS: PlanInfo[] = [
@@ -169,34 +170,24 @@ export const AVAILABLE_PLANS: PlanInfo[] = [
     currency: "USD",
     period: "forever",
     description: "Perfecto para empezar",
-    features: [
-      "Hasta 3 listas",
-      "Hasta 50 tareas",
-      "Hasta 2 colaboradores",
-      "Recordatorios básicos",
-      "Calendario básico",
-    ],
+    features: ["3 listas", "100 tareas", "1 equipo"],
   },
   {
     id: "pro",
     name: "Pro",
-    price: 4.99,
+    price: 5.99,
     currency: "USD",
     period: "mes",
     description: "Para profesionales productivos",
     features: [
       "Listas ilimitadas",
-      "Tareas ilimitadas",
-      "Colaboradores ilimitados",
-      "Recordatorios avanzados",
-      "Repeticiones",
-      "Calendario completo",
-      "Modo oscuro",
-      "Estadísticas personales",
-      "Notificaciones en tiempo real",
+      "Equipos ilimitados",
+      "Ranking avanzado",
+      "Historial completo",
+      "Estadísticas avanzadas",
+      "Prioridades avanzadas",
     ],
     popular: true,
-    paypalPlanId: process.env.NEXT_PUBLIC_PAYPAL_PRO_PLAN_ID,
   },
   {
     id: "business",
@@ -206,18 +197,10 @@ export const AVAILABLE_PLANS: PlanInfo[] = [
     period: "mes",
     description: "Para equipos y empresas",
     features: [
-      "Todo lo de Pro",
-      "Equipos ilimitados",
-      "Panel de equipo",
-      "Ranking de empleados",
-      "Estadísticas semanales",
-      "Estadísticas mensuales",
-      "Historial avanzado",
-      "Calendario empresarial",
-      "Reportes",
-      "Productividad por usuario",
-      "Gestión avanzada",
+      "Todo lo Pro",
+      "Administración empresarial",
+      "Estadísticas premium",
+      "Funciones futuras",
     ],
-    paypalPlanId: process.env.NEXT_PUBLIC_PAYPAL_BUSINESS_PLAN_ID,
   },
 ];

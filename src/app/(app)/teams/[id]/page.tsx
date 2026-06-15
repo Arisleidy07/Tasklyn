@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
@@ -12,6 +11,7 @@ import Header from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
 import Modal from "@/components/ui/Modal";
+import CreateListModal from "@/components/lists/CreateListModal";
 import {
   Users,
   Crown,
@@ -46,6 +46,7 @@ import {
 import { cn } from "@/lib/utils";
 import {
   getUser,
+  getUserByEmail,
   subscribeToTeamActivity,
   type TeamActivityEntry,
 } from "@/lib/firestore";
@@ -92,8 +93,13 @@ export default function TeamDetailPage() {
   const router = useRouter();
   const teamId = params.id as string;
   const { user } = useAuthStore();
-  const { getTeamById, removeTeamMember, updateTeamMemberRole, updateTeam } =
-    useTeamStore();
+  const {
+    getTeamById,
+    removeTeamMember,
+    updateTeamMemberRole,
+    updateTeam,
+    addTeamMember,
+  } = useTeamStore();
   const { tasks } = useTaskStore();
   const { lists } = useListStore();
 
@@ -102,12 +108,19 @@ export default function TeamDetailPage() {
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [activityLog, setActivityLog] = useState<TeamActivityEntry[]>([]);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [inviteSuccess, setInviteSuccess] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showCreateListModal, setShowCreateListModal] = useState(false);
 
   const team = getTeamById(teamId);
 
@@ -263,18 +276,52 @@ export default function TeamDetailPage() {
     }
   };
 
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+    setInviteLoading(true);
+    setInviteError(null);
+    try {
+      const foundUser = await getUserByEmail(inviteEmail.trim().toLowerCase());
+      if (!foundUser) {
+        setInviteError("No encontramos ningún usuario con ese correo.");
+        return;
+      }
+      const alreadyMember = team.members.some((m) => m.userId === foundUser.id);
+      if (alreadyMember) {
+        setInviteError("Este usuario ya es miembro del equipo.");
+        return;
+      }
+      await addTeamMember(teamId, foundUser.id, inviteRole);
+      setInviteSuccess(true);
+      setInviteEmail("");
+      setTimeout(() => {
+        setInviteSuccess(false);
+        setShowInviteModal(false);
+      }, 1500);
+    } catch {
+      setInviteError(
+        "No se pudo enviar la invitación. Inténtalo nuevamente en unos segundos.",
+      );
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
   const handleDeleteTeam = async () => {
     if (!team || userRole !== "owner") return;
     setDeleteLoading(true);
+    setDeleteError(null);
     try {
       await useTeamStore.getState().deleteTeam(teamId);
       router.push("/teams");
     } catch (error) {
       console.error("Failed to delete team:", error);
-      alert("Error al eliminar el equipo. Intenta nuevamente.");
-    } finally {
+      setDeleteError(
+        (error as Error).message ||
+          "Error al eliminar el equipo. Intenta nuevamente.",
+      );
       setDeleteLoading(false);
-      setShowDeleteModal(false);
     }
   };
 
@@ -331,12 +378,17 @@ export default function TeamDetailPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex-shrink-0",
-                activeTab === tab.id
-                  ? "bg-white dark:bg-slate-700 text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:text-[var(--text-primary)]",
-              )}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex-shrink-0"
+              style={{
+                backgroundColor:
+                  activeTab === tab.id ? "var(--bg-card)" : "transparent",
+                color:
+                  activeTab === tab.id
+                    ? "var(--text-primary)"
+                    : "var(--text-secondary)",
+                boxShadow:
+                  activeTab === tab.id ? "0 1px 3px 0 rgba(0,0,0,0.1)" : "none",
+              }}
             >
               <tab.icon size={14} />
               {tab.label}
@@ -571,8 +623,27 @@ export default function TeamDetailPage() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-3"
           >
+            {/* Lists header */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-[var(--text-secondary)]">
+                {teamLists.length} lista{teamLists.length !== 1 ? "s" : ""}
+              </p>
+              {isOwnerOrAdmin && (
+                <Button
+                  size="sm"
+                  icon={<Plus size={14} />}
+                  onClick={() => setShowCreateListModal(true)}
+                >
+                  Nueva lista
+                </Button>
+              )}
+            </div>
+
             {teamLists.length === 0 ? (
-              <div className="text-center py-16 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-2xl">
+              <div
+                className="text-center py-16 border-2 border-dashed rounded-2xl"
+                style={{ borderColor: "var(--border-color)" }}
+              >
                 <FolderOpen
                   size={32}
                   className="text-[var(--text-tertiary)] mx-auto mb-3"
@@ -580,10 +651,18 @@ export default function TeamDetailPage() {
                 <p className="font-medium text-[var(--text-secondary)]">
                   Sin listas en este equipo
                 </p>
-                <p className="text-sm text-[var(--text-tertiary)] mt-1">
-                  Crea una lista y asígnala a este equipo para que aparezca
-                  aquí.
+                <p className="text-sm text-[var(--text-tertiary)] mt-1 mb-4">
+                  Crea una lista y asígnala a este equipo.
                 </p>
+                {isOwnerOrAdmin && (
+                  <Button
+                    size="sm"
+                    icon={<Plus size={14} />}
+                    onClick={() => setShowCreateListModal(true)}
+                  >
+                    Crear primera lista
+                  </Button>
+                )}
               </div>
             ) : (
               teamLists.map((list, i) => {
@@ -728,7 +807,12 @@ export default function TeamDetailPage() {
                               )
                             }
                             disabled={actionLoading === member.id}
-                            className="text-xs px-2 py-1 border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-[var(--text-secondary)] cursor-pointer"
+                            className="text-xs px-2 py-1 rounded-lg cursor-pointer outline-none"
+                            style={{
+                              border: "1px solid var(--border-input)",
+                              backgroundColor: "var(--bg-input)",
+                              color: "var(--text-secondary)",
+                            }}
                           >
                             <option value="admin">Admin</option>
                             <option value="member">Miembro</option>
@@ -755,7 +839,19 @@ export default function TeamDetailPage() {
             {isOwnerOrAdmin && !team.isPersonal && (
               <button
                 onClick={() => setShowInviteModal(true)}
-                className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed border-gray-200 dark:border-slate-700 text-[var(--text-secondary)] hover:border-blue-400 dark:hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
+                className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed transition-all"
+                style={{
+                  borderColor: "var(--border-color)",
+                  color: "var(--text-secondary)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "#3b82f6";
+                  e.currentTarget.style.color = "#3b82f6";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-color)";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                }}
               >
                 <Plus size={16} />
                 <span className="text-sm font-medium">
@@ -974,7 +1070,12 @@ export default function TeamDetailPage() {
                         type="text"
                         value={newTeamName}
                         onChange={(e) => setNewTeamName(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm dark:bg-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="flex-1 px-3 py-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{
+                          border: "1px solid var(--border-input)",
+                          backgroundColor: "var(--bg-input)",
+                          color: "var(--text-primary)",
+                        }}
                         autoFocus
                       />
                       <button
@@ -1159,174 +1260,217 @@ export default function TeamDetailPage() {
       </div>
 
       {/* ── Invite Modal ─────────────────────────────────────────────────────── */}
-      {showInviteModal &&
-        typeof document !== "undefined" &&
-        createPortal(
-          <>
-            <div
-              className="fixed inset-0 z-[99998] backdrop-blur-sm"
-              style={{ backgroundColor: "var(--bg-modal-overlay)" }}
-              onClick={() => setShowInviteModal(false)}
-            />
-            <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 8 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="rounded-2xl w-full max-w-md shadow-2xl border"
-                style={{
-                  backgroundColor: "var(--bg-modal)",
-                  borderColor: "var(--border-color)",
-                }}
-                onClick={(e) => e.stopPropagation()}
+      <Modal
+        isOpen={showInviteModal}
+        onClose={() => {
+          if (!inviteLoading) {
+            setShowInviteModal(false);
+            setInviteEmail("");
+            setInviteError(null);
+            setInviteSuccess(false);
+          }
+        }}
+        title="Agregar miembro"
+        description="El usuario debe tener una cuenta en Tasklyn"
+        size="sm"
+      >
+        <form onSubmit={handleInvite} className="p-6 space-y-4">
+          {inviteSuccess ? (
+            <div className="text-center py-6">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/15 flex items-center justify-center mx-auto mb-3">
+                <Check size={22} className="text-emerald-500" />
+              </div>
+              <p
+                className="font-semibold"
+                style={{ color: "var(--text-primary)" }}
               >
-                <div
-                  className="flex items-center justify-between px-6 pt-5 pb-4 border-b"
-                  style={{ borderColor: "var(--border-color)" }}
-                >
-                  <h3
-                    className="text-base font-semibold"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    Invitar al equipo
-                  </h3>
-                  <button
-                    onClick={() => setShowInviteModal(false)}
-                    className="p-2 rounded-lg transition-colors"
-                    style={{ color: "var(--text-secondary)" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = "var(--text-primary)";
-                      e.currentTarget.style.backgroundColor =
-                        "var(--bg-secondary)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = "var(--text-secondary)";
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-                <div className="p-6 space-y-4">
-                  <div>
-                    <label
-                      className="text-sm font-medium block mb-1.5"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      Correo electrónico
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="correo@empresa.com"
-                      className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none"
-                      style={{
-                        backgroundColor: "var(--bg-input)",
-                        borderColor: "var(--border-input)",
-                        color: "var(--text-primary)",
-                        borderWidth: "1px",
-                        borderStyle: "solid",
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label
-                      className="text-sm font-medium block mb-1.5"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      Rol
-                    </label>
-                    <select
-                      className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none"
-                      style={{
-                        backgroundColor: "var(--bg-input)",
-                        borderColor: "var(--border-input)",
-                        color: "var(--text-primary)",
-                        borderWidth: "1px",
-                        borderStyle: "solid",
-                      }}
-                    >
-                      <option value="member">Miembro</option>
-                      <option value="admin">Administrador</option>
-                    </select>
-                  </div>
-                  <p
-                    className="text-xs"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    O comparte el enlace de invitación desde la pestaña de
-                    Configuración.
-                  </p>
-                  <div className="flex gap-3 pt-1">
-                    <Button
-                      variant="ghost"
-                      onClick={() => setShowInviteModal(false)}
-                      className="flex-1"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button className="flex-1" icon={<Mail size={14} />}>
-                      Enviar invitación
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
+                ¡Miembro agregado!
+              </p>
+              <p
+                className="text-sm mt-1"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                El usuario ya puede acceder al equipo.
+              </p>
             </div>
-          </>,
-          document.body,
-        )}
+          ) : (
+            <>
+              <div className="space-y-1.5">
+                <label
+                  className="text-sm font-medium block"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Correo electrónico
+                </label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => {
+                    setInviteEmail(e.target.value);
+                    setInviteError(null);
+                  }}
+                  placeholder="correo@empresa.com"
+                  className="w-full px-4 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  style={{
+                    backgroundColor: "var(--bg-input)",
+                    border: "1px solid var(--border-input)",
+                    color: "var(--text-primary)",
+                  }}
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label
+                  className="text-sm font-medium block"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Rol
+                </label>
+                <select
+                  value={inviteRole}
+                  onChange={(e) =>
+                    setInviteRole(e.target.value as "admin" | "member")
+                  }
+                  className="w-full px-4 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                  style={{
+                    backgroundColor: "var(--bg-input)",
+                    border: "1px solid var(--border-input)",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <option value="member">Miembro</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </div>
+              {inviteError && (
+                <div
+                  className="flex items-start gap-2.5 p-3 rounded-xl text-sm"
+                  style={{
+                    backgroundColor: "var(--bg-error)",
+                    color: "var(--text-error)",
+                  }}
+                >
+                  <AlertTriangle size={15} className="mt-0.5 flex-shrink-0" />
+                  <span>{inviteError}</span>
+                </div>
+              )}
+              <div className="flex gap-3 pt-1">
+                <Button
+                  variant="ghost"
+                  type="button"
+                  onClick={() => {
+                    setShowInviteModal(false);
+                    setInviteEmail("");
+                    setInviteError(null);
+                  }}
+                  className="flex-1"
+                  disabled={inviteLoading}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1"
+                  icon={<Mail size={14} />}
+                  isLoading={inviteLoading}
+                  disabled={inviteLoading || !inviteEmail.trim()}
+                >
+                  Agregar
+                </Button>
+              </div>
+            </>
+          )}
+        </form>
+      </Modal>
+
+      {/* Create List Modal — pre-selects this team */}
+      <CreateListModal
+        isOpen={showCreateListModal}
+        onClose={() => setShowCreateListModal(false)}
+        defaultTeamId={teamId}
+      />
 
       {/* Delete Confirmation Modal */}
       <Modal
         isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        title="¿Eliminar equipo?"
+        onClose={() => {
+          if (!deleteLoading) {
+            setShowDeleteModal(false);
+            setDeleteError(null);
+          }
+        }}
+        title="Eliminar equipo"
         size="sm"
       >
-        <div className="space-y-4">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
-              <Trash2 className="w-5 h-5 text-red-600 dark:text-red-400" />
+        <div className="p-6 space-y-4">
+          {/* Warning icon + text */}
+          <div className="flex items-start gap-4">
+            <div className="w-11 h-11 rounded-2xl bg-red-100 dark:bg-red-500/15 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
             </div>
             <div>
-              <p className="text-sm text-[var(--text-secondary)]">
-                ¿Deseas eliminar el equipo{" "}
-                <strong className="text-gray-900 dark:text-white">
-                  "{team?.name}"
-                </strong>
-                ?
+              <p className="text-sm font-medium text-[var(--text-primary)] mb-1">
+                ¿Eliminar <span className="font-semibold">"{team?.name}"</span>?
               </p>
-              <p className="text-sm text-red-600 dark:text-red-400 mt-2">
-                Esta acción no se puede deshacer.
+              <p className="text-sm text-[var(--text-secondary)]">
+                Esta acción es permanente y no se puede deshacer.
               </p>
             </div>
           </div>
 
-          <ul className="text-sm text-[var(--text-secondary)] space-y-1 ml-4 list-disc">
-            <li>El equipo y todos sus miembros</li>
-            <li>Estadísticas y logros</li>
-            <li>Registro de actividad</li>
-            <li>Metas y objetivos</li>
-          </ul>
+          {/* What gets deleted */}
+          <div
+            className="rounded-xl p-4 space-y-2"
+            style={{ backgroundColor: "var(--bg-secondary)" }}
+          >
+            <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
+              Se eliminará permanentemente:
+            </p>
+            {[
+              "El equipo y todos sus miembros",
+              "Estadísticas y logros",
+              "Registro de actividad",
+              "Metas y objetivos",
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
+                <span className="text-sm text-[var(--text-secondary)]">
+                  {item}
+                </span>
+              </div>
+            ))}
+          </div>
 
-          <div className="flex gap-3 pt-4">
+          {/* Error message */}
+          {deleteError && (
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
+              <AlertTriangle
+                size={14}
+                className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+              />
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {deleteError}
+              </p>
+            </div>
+          )}
+
+          <div className="flex gap-3 pt-2">
             <Button
-              variant="ghost"
-              onClick={() => setShowDeleteModal(false)}
+              variant="outline"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setDeleteError(null);
+              }}
               disabled={deleteLoading}
               className="flex-1"
             >
               Cancelar
             </Button>
             <Button
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white border-0"
+              className="flex-1 bg-red-600 hover:bg-red-500 text-white shadow-sm shadow-red-500/20 border-0"
               onClick={handleDeleteTeam}
-              disabled={deleteLoading}
-              icon={
-                deleteLoading ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Trash2 size={14} />
-                )
-              }
+              isLoading={deleteLoading}
+              icon={!deleteLoading ? <Trash2 size={14} /> : undefined}
             >
               {deleteLoading ? "Eliminando..." : "Eliminar equipo"}
             </Button>

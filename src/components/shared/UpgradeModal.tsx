@@ -1,27 +1,27 @@
 "use client";
 
 import React from "react";
-import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { X, Crown, Sparkles, Check } from "lucide-react";
+import { Crown, Check, Zap, ArrowRight } from "lucide-react";
+import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
 
 interface UpgradeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  feature: string;
+  feature?: string;
   description?: string;
 }
 
 const PRO_FEATURES = [
+  "Equipos ilimitados",
   "Listas ilimitadas",
-  "Tareas ilimitadas",
-  "Colaboradores ilimitados",
-  "Modo oscuro",
-  "Estadísticas personales",
-  "Calendario avanzado",
+  "Miembros ilimitados",
+  "Historial avanzado",
+  "Dashboard premium",
+  "Estadísticas avanzadas",
+  "Ranking en tiempo real",
+  "Productividad del equipo",
 ];
 
 export function UpgradeModal({
@@ -37,110 +37,118 @@ export function UpgradeModal({
     router.push("/pricing");
   };
 
-  if (typeof document === "undefined") return null;
-  return createPortal(
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99998] flex items-center justify-center p-4"
-          onClick={onClose}
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden"
-          >
-            {/* Header with gradient */}
-            <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 p-6 text-white">
-              <button
-                onClick={onClose}
-                className="absolute top-4 right-4 text-white/70 hover:text-white"
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size="sm">
+      <div className="p-6 space-y-5">
+        {/* Header */}
+        <div className="flex items-start gap-4">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-blue-500/25">
+            <Crown size={20} className="text-white" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <h3
+                className="text-base font-semibold"
+                style={{ color: "var(--text-primary)" }}
               >
-                <X size={20} />
-              </button>
-
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Crown size={24} className="text-white" />
-                </div>
-                <div>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/20 text-xs font-medium">
-                    <Sparkles size={10} />
-                    PRO
-                  </span>
-                </div>
-              </div>
-
-              <h3 className="text-xl font-bold mb-1">Actualiza a Pro</h3>
-              <p className="text-blue-100 text-sm">
-                Desbloquea {feature} y más funciones premium
-              </p>
+                Límite alcanzado
+              </h3>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-gradient-to-r from-blue-500/15 to-indigo-500/15 border border-blue-500/20 text-blue-600 dark:text-blue-400">
+                <Zap size={9} />
+                Pro
+              </span>
             </div>
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+              {description ||
+                (feature
+                  ? `Tu plan actual ha alcanzado el límite para ${feature}.`
+                  : "Tu plan actual ha alcanzado el límite permitido.")}
+            </p>
+          </div>
+        </div>
 
-            {/* Body */}
-            <div className="p-6">
-              {description && (
-                <p className="text-gray-600 dark:text-slate-400 text-sm mb-4">
-                  {description}
-                </p>
-              )}
-
-              <p className="text-sm font-medium text-gray-900 dark:text-slate-100 mb-3">
-                Incluye:
-              </p>
-
-              <ul className="space-y-2 mb-6">
-                {PRO_FEATURES.map((item, i) => (
-                  <li
-                    key={i}
-                    className="flex items-center gap-3 text-sm text-gray-600 dark:text-slate-400"
-                  >
-                    <div className="w-5 h-5 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                      <Check size={12} className="text-green-600" />
-                    </div>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-
-              {/* Price */}
-              <div className="flex items-baseline gap-1 mb-6 p-4 rounded-xl bg-gray-50 dark:bg-slate-800">
-                <span className="text-3xl font-bold text-gray-900 dark:text-slate-100">
-                  $4.99
-                </span>
-                <span className="text-gray-500 dark:text-slate-400">/mes</span>
-                <span className="ml-auto text-xs text-gray-400">
-                  Cancela cuando quieras
-                </span>
+        {/* Features */}
+        <div
+          className="rounded-xl p-4 space-y-2.5"
+          style={{ backgroundColor: "var(--bg-secondary)" }}
+        >
+          <p
+            className="text-xs font-semibold uppercase tracking-wider mb-3"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            Actualiza a Tasklyn Pro para:
+          </p>
+          {PRO_FEATURES.map((item) => (
+            <div key={item} className="flex items-center gap-2.5">
+              <div className="w-4 h-4 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
+                <Check
+                  size={10}
+                  className="text-emerald-600 dark:text-emerald-400"
+                />
               </div>
-
-              {/* Actions */}
-              <div className="space-y-3">
-                <Button
-                  onClick={handleUpgrade}
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/25"
-                >
-                  Ver planes y precios
-                </Button>
-                <Button variant="outline" onClick={onClose} className="w-full">
-                  Ahora no
-                </Button>
-              </div>
+              <span
+                className="text-sm"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {item}
+              </span>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>,
-    document.body,
+          ))}
+        </div>
+
+        {/* Price hint */}
+        <div
+          className="flex items-center justify-between px-4 py-3 rounded-xl border"
+          style={{
+            borderColor: "var(--border-color)",
+            backgroundColor: "var(--bg-card)",
+          }}
+        >
+          <div>
+            <p
+              className="text-sm font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Tasklyn Pro
+            </p>
+            <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+              Cancela cuando quieras
+            </p>
+          </div>
+          <div className="text-right">
+            <span
+              className="text-xl font-bold"
+              style={{ color: "var(--text-primary)" }}
+            >
+              $4.99
+            </span>
+            <span
+              className="text-xs"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              /mes
+            </span>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <Button variant="ghost" onClick={onClose} className="flex-1">
+            Ahora no
+          </Button>
+          <Button
+            onClick={handleUpgrade}
+            icon={<ArrowRight size={15} />}
+            className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20 border-0"
+          >
+            Actualizar plan
+          </Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
-// Hook to use the upgrade modal
 export function useUpgradeModal() {
   const [isOpen, setIsOpen] = React.useState(false);
   const [feature, setFeature] = React.useState("");
@@ -152,9 +160,7 @@ export function useUpgradeModal() {
     setIsOpen(true);
   };
 
-  const closeUpgradeModal = () => {
-    setIsOpen(false);
-  };
+  const closeUpgradeModal = () => setIsOpen(false);
 
   const UpgradeModalComponent = () => (
     <UpgradeModal
@@ -165,10 +171,5 @@ export function useUpgradeModal() {
     />
   );
 
-  return {
-    openUpgradeModal,
-    closeUpgradeModal,
-    UpgradeModalComponent,
-    isOpen,
-  };
+  return { openUpgradeModal, closeUpgradeModal, UpgradeModalComponent, isOpen };
 }

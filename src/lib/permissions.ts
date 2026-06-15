@@ -98,3 +98,19 @@ export function canAssignTasks(plan: Plan | string | undefined): boolean {
   const features = getPlanFeatures(plan);
   return features.canAssign;
 }
+
+export function canCreateMoreTeams(
+  currentCount: number,
+  plan: Plan | string | undefined,
+): boolean {
+  const features = getPlanFeatures(plan);
+  return currentCount < features.maxTeams;
+}
+
+export function canAddMoreTeamMembers(
+  currentCount: number,
+  plan: Plan | string | undefined,
+): boolean {
+  const features = getPlanFeatures(plan);
+  return currentCount < features.maxTeamMembers;
+}

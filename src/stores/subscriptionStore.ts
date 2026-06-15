@@ -1,6 +1,6 @@
 // ============================================
 // TASKLYN — Subscription Store
-// Manage subscription state and PayPal integration
+// Manage subscription state and plan limits
 // ============================================
 
 import { create } from "zustand";
@@ -23,14 +23,19 @@ interface SubscriptionState {
   canCreateList: (currentListCount: number) => boolean;
   canCreateTask: (currentTaskCount: number) => boolean;
   canAddCollaborator: (currentMemberCount: number) => boolean;
-  canUseFeature: (feature: keyof typeof PLAN_FEATURES["free"]) => boolean;
-  getFeatureLimit: (feature: keyof typeof PLAN_FEATURES["free"]) => number | boolean;
+  canUseFeature: (feature: keyof (typeof PLAN_FEATURES)["free"]) => boolean;
+  getFeatureLimit: (
+    feature: keyof (typeof PLAN_FEATURES)["free"],
+  ) => number | boolean;
 
   // Actions
   setCurrentPlan: (plan: PlanType) => void;
   openUpgradeModal: (plan?: PlanType) => void;
   closeUpgradeModal: () => void;
-  upgradePlan: (plan: PlanType, paypalSubscriptionId?: string) => Promise<void>;
+  upgradePlan: (
+    plan: PlanType,
+    providerSubscriptionId?: string,
+  ) => Promise<void>;
   cancelSubscription: () => Promise<void>;
   clearError: () => void;
 }
@@ -64,12 +69,12 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         return currentMemberCount < maxCollaborators;
       },
 
-      canUseFeature: (feature: keyof typeof PLAN_FEATURES["free"]) => {
+      canUseFeature: (feature: keyof (typeof PLAN_FEATURES)["free"]) => {
         const { currentPlan } = get();
         return PLAN_FEATURES[currentPlan][feature] as boolean;
       },
 
-      getFeatureLimit: (feature: keyof typeof PLAN_FEATURES["free"]) => {
+      getFeatureLimit: (feature: keyof (typeof PLAN_FEATURES)["free"]) => {
         const { currentPlan } = get();
         return PLAN_FEATURES[currentPlan][feature];
       },
@@ -87,39 +92,17 @@ export const useSubscriptionStore = create<SubscriptionState>()(
         set({ showUpgradeModal: false, selectedPlan: null });
       },
 
-      upgradePlan: async (plan: PlanType, paypalSubscriptionId?: string) => {
+      upgradePlan: async (plan: PlanType, providerSubscriptionId?: string) => {
         set({ isLoading: true, error: null });
         try {
           const user = useAuthStore.getState().user;
           if (!user) throw new Error("No authenticated user");
 
-          // Call API to upgrade
-          const response = await fetch("/api/subscription/upgrade", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: user.id,
-              plan,
-              paypalSubscriptionId,
-            }),
-          });
-
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || "Failed to upgrade plan");
-          }
-
-          const data = await response.json();
-
-          // Update local state
           set({ currentPlan: plan, isLoading: false });
 
-          // Update user in auth store
           useAuthStore.getState().updateUser({
             plan,
-            subscriptionId: data.subscriptionId,
-            subscriptionStatus: data.status,
-            subscriptionCurrentPeriodEnd: data.currentPeriodEnd,
+            subscriptionId: providerSubscriptionId,
           });
         } catch (error) {
           console.error("Upgrade failed:", error);
@@ -134,30 +117,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       cancelSubscription: async () => {
         set({ isLoading: true, error: null });
         try {
-          const user = useAuthStore.getState().user;
-          if (!user?.subscriptionId) {
-            throw new Error("No active subscription");
-          }
-
-          const response = await fetch("/api/subscription/cancel", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: user.id,
-              subscriptionId: user.subscriptionId,
-            }),
-          });
-
-          if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || "Failed to cancel subscription");
-          }
-
-          // Update local state - plan stays active until period end
           useAuthStore.getState().updateUser({
             subscriptionCancelAtPeriodEnd: true,
           });
-
           set({ isLoading: false });
         } catch (error) {
           console.error("Cancel failed:", error);
@@ -171,8 +133,8 @@ export const useSubscriptionStore = create<SubscriptionState>()(
 
       clearError: () => set({ error: null }),
     }),
-    { name: "subscription-store" }
-  )
+    { name: "subscription-store" },
+  ),
 );
 
 // Sync with auth store

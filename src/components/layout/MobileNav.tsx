@@ -45,11 +45,12 @@ export default function MobileNav() {
 
   return (
     <nav
-      className={cn(
-        "nav-mobile fixed bottom-0 left-0 right-0 z-50 md:hidden mobile-nav-safe",
-        "bg-white/95 backdrop-blur-xl border-t border-gray-200/80 shadow-[0_-1px_0_0_rgba(0,0,0,0.06)]",
-        "dark:bg-slate-900/95 dark:border-slate-800/80",
-      )}
+      className="nav-mobile fixed bottom-0 left-0 right-0 z-50 md:hidden mobile-nav-safe border-t backdrop-blur-xl"
+      style={{
+        backgroundColor: "var(--bg-sidebar)",
+        borderColor: "var(--border-color)",
+        boxShadow: "0 -1px 0 0 var(--border-color)",
+      }}
     >
       <div className="flex items-center justify-around h-16">
         {items.map((item) => {
@@ -58,21 +59,22 @@ export default function MobileNav() {
             <Link
               key={item.name}
               href={item.href}
-              className={cn(
-                "flex flex-col items-center justify-center gap-1 flex-1 h-full relative transition-all duration-200 active:scale-90",
-                active
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-gray-400 dark:text-slate-500",
-              )}
+              className="flex flex-col items-center justify-center gap-1 flex-1 h-full relative transition-all duration-200 active:scale-90"
+              style={{ color: active ? "#2563eb" : "var(--text-tertiary)" }}
             >
               {active && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full bg-blue-600 dark:bg-blue-400" />
+                <span
+                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-full"
+                  style={{ backgroundColor: "#2563eb" }}
+                />
               )}
               <div
-                className={cn(
-                  "relative flex items-center justify-center w-10 h-8 rounded-xl transition-colors",
-                  active ? "bg-blue-50 dark:bg-blue-500/20" : "",
-                )}
+                className="relative flex items-center justify-center w-10 h-8 rounded-xl transition-colors"
+                style={{
+                  backgroundColor: active
+                    ? "rgba(37,99,235,0.1)"
+                    : "transparent",
+                }}
               >
                 <item.icon size={22} />
                 {item.badge !== undefined && item.badge > 0 && (
@@ -81,16 +83,7 @@ export default function MobileNav() {
                   </span>
                 )}
               </div>
-              <span
-                className={cn(
-                  "text-[10px] font-medium",
-                  active
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-400 dark:text-slate-500",
-                )}
-              >
-                {item.name}
-              </span>
+              <span className="text-[10px] font-medium">{item.name}</span>
             </Link>
           );
         })}

@@ -1,4 +1,4 @@
-const CACHE_NAME = "tasklyn-v2";
+const CACHE_NAME = "tasklyn-v3";
 const STATIC_ASSETS = [
   "/",
   "/dashboard",
@@ -12,7 +12,7 @@ const STATIC_ASSETS = [
   "/TA.PNG",
 ];
 
-// Force skip waiting on install
+// Force skip waiting on install — activate immediately
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -22,7 +22,7 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-// Clean up old caches and claim clients
+// Clean up ALL old caches and claim all clients
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -38,28 +38,11 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    }),
-  );
-  self.skipWaiting();
-});
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches
-      .keys()
-      .then((keys) =>
-        Promise.all(
-          keys
-            .filter((key) => key !== CACHE_NAME)
-            .map((key) => caches.delete(key)),
-        ),
-      ),
-  );
-  self.clients.claim();
+// Allow clients to force-activate a waiting service worker
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("fetch", (event) => {

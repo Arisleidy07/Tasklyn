@@ -21,65 +21,63 @@ const plans: PricingPlan[] = [
   {
     name: "Free",
     price: "$0",
-    period: "/mes",
-    description: "Ideal para uso personal o pequeños equipos que quieren probar Tasklyn sin fricción.",
+    period: "Forever",
+    description: "Perfecto para empezar sin fricciones.",
     badge: "Gratis",
     badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
-    features: [
-      "Hasta 5 listas activas",
-      "Hasta 20 tareas por lista",
-      "Hasta 3 miembros por lista",
-      "Notificaciones básicas",
-      "Calendario integrado",
-      "App móvil",
-    ],
+    features: ["3 listas", "100 tareas", "1 equipo"],
     cta: "Comenzar gratis",
     ctaVariant: "secondary",
   },
   {
-    name: "Pro",
-    price: "$12",
+    name: "Pro ⭐",
+    price: "$5.99",
     period: "/mes",
-    description: "Para equipos en crecimiento que necesitan más capacidad y funciones avanzadas.",
-    badge: "Popular",
+    description: "Para profesionales productivos.",
+    badge: "MOST POPULAR",
     badgeColor: "bg-blue-500/20 text-blue-400 border-blue-500/40",
     features: [
       "Listas ilimitadas",
-      "Tareas ilimitadas",
-      "Hasta 20 miembros por lista",
-      "Notificaciones avanzadas",
-      "Estadísticas y reportes",
-      "Prioridades de tareas",
-      "Soporte por email",
+      "Equipos ilimitados",
+      "Ranking avanzado",
+      "Historial completo",
+      "Estadísticas avanzadas",
+      "Prioridades avanzadas",
     ],
-    cta: "Elegir Pro",
+    cta: "✨ Suscribirse ahora",
     ctaVariant: "primary",
     popular: true,
   },
   {
-    name: "Business",
-    price: "$29",
+    name: "Business 🚀",
+    price: "$14.99",
     period: "/mes",
-    description: "Para empresas que necesitan máxima potencia, control y soporte dedicado.",
+    description: "Para equipos y empresas.",
     badge: "Empresas",
-    badgeColor: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+    badgeColor: "bg-violet-500/15 text-violet-400 border-violet-500/30",
     features: [
-      "Todo lo de Pro",
-      "Miembros ilimitados",
-      "Equipos y grupos",
-      "Permisos avanzados",
-      "API de integración",
-      "Soporte prioritario 24/7",
-      "Onboarding personalizado",
+      "Todo lo Pro",
+      "Administración empresarial",
+      "Estadísticas premium",
+      "Funciones futuras",
     ],
-    cta: "Contactar ventas",
+    cta: "🚀 Comenzar",
     ctaVariant: "secondary",
   },
 ];
 
-export default function PricingSection({ login, isLoading }: { login: () => void; isLoading: boolean }) {
+export default function PricingSection({
+  login,
+  isLoading,
+}: {
+  login: () => void;
+  isLoading: boolean;
+}) {
   return (
-    <section id="pricing" className="py-20 sm:py-24 bg-slate-950 border-t border-slate-800/70">
+    <section
+      id="pricing"
+      className="py-20 sm:py-24 bg-slate-950 border-t border-slate-800/70"
+    >
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Header */}
         <motion.div
@@ -91,13 +89,16 @@ export default function PricingSection({ login, isLoading }: { login: () => void
         >
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 mb-4">
             <Zap size={14} className="text-blue-400" />
-            <span className="text-xs font-medium text-blue-400">Planes flexibles</span>
+            <span className="text-xs font-medium text-blue-400">
+              Planes flexibles
+            </span>
           </div>
           <h2 className="text-2xl sm:text-4xl font-bold text-slate-50 mb-4 tracking-tight">
             Precios simples y transparentes
           </h2>
           <p className="text-sm sm:text-base text-slate-400 max-w-lg mx-auto">
-            Empieza gratis y escala cuando tu equipo lo necesite. Sin sorpresas, sin contratos a largo plazo.
+            Empieza gratis y escala cuando tu equipo lo necesite. Sin sorpresas,
+            sin contratos a largo plazo.
           </p>
         </motion.div>
 
@@ -126,7 +127,9 @@ export default function PricingSection({ login, isLoading }: { login: () => void
               )}
 
               {/* Plan Badge */}
-              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${plan.badgeColor} w-fit mb-4`}>
+              <div
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${plan.badgeColor} w-fit mb-4`}
+              >
                 {plan.name === "Free" && <User size={12} />}
                 {plan.name === "Pro" && <Zap size={12} />}
                 {plan.name === "Business" && <Building2 size={12} />}
@@ -134,17 +137,23 @@ export default function PricingSection({ login, isLoading }: { login: () => void
               </div>
 
               {/* Plan Name */}
-              <h3 className="text-xl font-semibold text-slate-100 mb-1">{plan.name}</h3>
+              <h3 className="text-xl font-semibold text-slate-100 mb-1">
+                {plan.name}
+              </h3>
               <p className="text-sm text-slate-400 mb-4">{plan.description}</p>
 
               {/* Price */}
               <div className="mb-6">
                 <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-slate-100">{plan.price}</span>
+                  <span className="text-4xl font-bold text-slate-100">
+                    {plan.price}
+                  </span>
                   <span className="text-sm text-slate-500">{plan.period}</span>
                 </div>
                 {plan.name !== "Free" && (
-                  <p className="text-[11px] text-slate-500 mt-1">Facturado mensualmente</p>
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    Facturado mensualmente
+                  </p>
                 )}
               </div>
 
@@ -152,10 +161,17 @@ export default function PricingSection({ login, isLoading }: { login: () => void
               <ul className="space-y-3 mb-6 flex-1">
                 {plan.features.map((feature, i) => (
                   <li key={i} className="flex items-start gap-3">
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                      plan.popular ? "bg-blue-500/20" : "bg-slate-800"
-                    }`}>
-                      <Check size={12} className={plan.popular ? "text-blue-400" : "text-slate-400"} />
+                    <div
+                      className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                        plan.popular ? "bg-blue-500/20" : "bg-slate-800"
+                      }`}
+                    >
+                      <Check
+                        size={12}
+                        className={
+                          plan.popular ? "text-blue-400" : "text-slate-400"
+                        }
+                      />
                     </div>
                     <span className="text-sm text-slate-300">{feature}</span>
                   </li>
@@ -164,22 +180,26 @@ export default function PricingSection({ login, isLoading }: { login: () => void
 
               {/* CTA Button */}
               {plan.ctaVariant === "primary" ? (
-                <Button
+                <button
                   onClick={login}
-                  isLoading={isLoading}
-                  className="w-full bg-blue-600 hover:bg-blue-500 text-white border-none shadow-[0_0_20px_rgba(37,99,235,0.3)]"
+                  disabled={isLoading}
+                  className="w-full h-10 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/25 hover:shadow-blue-500/35 transition-all duration-200 active:scale-[0.98]"
                 >
                   {plan.cta}
-                </Button>
+                </button>
+              ) : plan.name.startsWith("Business") ? (
+                <button
+                  onClick={login}
+                  disabled={isLoading}
+                  className="w-full h-10 rounded-xl text-sm font-semibold bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/30 transition-all duration-200 active:scale-[0.98]"
+                >
+                  {plan.cta}
+                </button>
               ) : (
                 <button
                   onClick={login}
                   disabled={isLoading}
-                  className={`w-full h-11 rounded-xl font-medium transition-colors ${
-                    plan.popular
-                      ? "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
-                      : "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700 hover:border-slate-600"
-                  }`}
+                  className="w-full h-10 rounded-xl text-sm font-medium border border-slate-700 text-slate-300 hover:bg-slate-800/60 hover:text-slate-100 transition-all duration-200"
                 >
                   {plan.cta}
                 </button>
@@ -198,7 +218,10 @@ export default function PricingSection({ login, isLoading }: { login: () => void
         >
           <p className="text-sm text-slate-500">
             ¿Necesitas algo más?{" "}
-            <a href="mailto:tasklyn.oficial@gmail.com" className="text-blue-400 hover:text-blue-300 underline">
+            <a
+              href="mailto:tasklyn.oficial@gmail.com"
+              className="text-blue-400 hover:text-blue-300 underline"
+            >
               Contáctanos para planes personalizados
             </a>
           </p>

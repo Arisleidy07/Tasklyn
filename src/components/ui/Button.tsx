@@ -17,22 +17,22 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const getVariantStyles = (variant: ButtonVariant) => {
   switch (variant) {
     case "primary":
-      return "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm";
+      return "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20 hover:shadow-blue-500/30";
     case "secondary":
       return "bg-[var(--bg-secondary)] text-[var(--text-primary)] hover:bg-[var(--bg-hover)] active:bg-[var(--bg-active)]";
     case "ghost":
       return "bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]";
     case "danger":
-      return "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm";
+      return "bg-red-600 text-white hover:bg-red-500 shadow-sm shadow-red-500/20";
     case "outline":
       return "border border-[var(--border-color)] bg-[var(--bg-card)] text-[var(--text-primary)] hover:border-[var(--border-secondary)] hover:bg-[var(--bg-hover)]";
   }
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: "h-9 sm:h-8 px-3 sm:px-3 text-xs gap-1.5 rounded-lg font-medium min-h-[36px] sm:min-h-[32px]",
-  md: "h-10 sm:h-9 px-4 text-sm gap-2 rounded-lg font-medium min-h-[40px] sm:min-h-[36px]",
-  lg: "h-12 sm:h-11 px-6 text-sm gap-2 rounded-xl font-semibold min-h-[48px] sm:min-h-[44px]",
+  sm: "h-8 px-3 text-xs gap-1.5 font-medium min-h-[32px]",
+  md: "h-9 px-4 text-sm gap-2 font-medium min-h-[36px]",
+  lg: "h-11 px-6 text-sm gap-2 font-semibold min-h-[44px]",
 };
 
 export default function Button({
@@ -47,11 +47,11 @@ export default function Button({
 }: ButtonProps) {
   return (
     <motion.button
-      whileHover={{ scale: disabled || isLoading ? 1 : 1.02 }}
-      whileTap={{ scale: disabled || isLoading ? 1 : 0.97 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+      whileHover={{ scale: disabled || isLoading ? 1 : 1.015 }}
+      whileTap={{ scale: disabled || isLoading ? 1 : 0.975 }}
+      transition={{ type: "spring", stiffness: 500, damping: 30 }}
       className={cn(
-        "inline-flex items-center justify-center transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer",
+        "inline-flex items-center justify-center transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer",
         getVariantStyles(variant),
         size === "lg" ? "rounded-xl" : "rounded-lg",
         sizeStyles[size],

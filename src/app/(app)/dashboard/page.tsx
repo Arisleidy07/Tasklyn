@@ -702,7 +702,7 @@ export default function DashboardPage() {
         return 0;
       }
     })
-    .slice(0, 6)
+    .slice(0, 4)
     .map(
       (t) => t.completedBy || t.assignedTo || t.createdBy || (user?.id ?? ""),
     )
@@ -802,7 +802,7 @@ export default function DashboardPage() {
         return 0;
       }
     })
-    .slice(0, 6)
+    .slice(0, 4)
     .map((t) => ({
       id: t.id,
       title: t.title,
@@ -1379,15 +1379,25 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="mt-8 p-8 rounded-xl border-2 border-dashed border-gray-200 dark:border-slate-700 text-center"
+            className="mt-8 p-8 rounded-xl border-2 border-dashed text-center"
+            style={{ borderColor: "var(--border-color)" }}
           >
-            <div className="w-14 h-14 rounded-xl bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center mx-auto mb-4">
-              <Plus size={24} className="text-blue-600 dark:text-blue-400" />
+            <div
+              className="w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4"
+              style={{ backgroundColor: "rgba(37,99,235,0.1)" }}
+            >
+              <Plus size={24} style={{ color: "var(--text-link)" }} />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+            <h3
+              className="text-lg font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
               Crea tu primera lista
             </h3>
-            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1.5 max-w-sm mx-auto">
+            <p
+              className="text-sm mt-1.5 max-w-sm mx-auto"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Empieza creando una lista personal o compartida para organizar tus
               tareas.
             </p>
@@ -1407,13 +1417,23 @@ export default function DashboardPage() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="mt-8 p-5 rounded-xl bg-gray-50 dark:bg-slate-800/50 border border-gray-200 dark:border-slate-700"
+            className="mt-8 p-5 rounded-xl border"
+            style={{
+              backgroundColor: "var(--bg-secondary)",
+              borderColor: "var(--border-color)",
+            }}
           >
-            <p className="text-sm text-gray-700 dark:text-slate-300 font-semibold">
+            <p
+              className="text-sm font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
               Has alcanzado el límite de {limits.maxLists} listas en el plan{" "}
               {userPlan}.
             </p>
-            <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+            <p
+              className="text-xs mt-1"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Actualiza a PRO para listas ilimitadas, tareas y miembros del
               equipo.
             </p>

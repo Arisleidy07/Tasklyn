@@ -88,19 +88,19 @@ export default function MobileSidebar() {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className={cn(
-                "fixed inset-y-0 left-0 z-[9999] w-[280px] max-w-[85vw] flex flex-col md:hidden",
-                "bg-white border-r border-gray-200",
-                "dark:bg-slate-900 dark:border-slate-800",
-              )}
+              className="fixed inset-y-0 left-0 z-[9999] w-[280px] max-w-[85vw] flex flex-col md:hidden border-r"
+              style={{
+                backgroundColor: "var(--bg-sidebar)",
+                borderColor: "var(--border-sidebar)",
+              }}
             >
               {/* Header */}
               <div
-                className={cn(
-                  "h-16 flex items-center justify-between px-4 border-b flex-shrink-0",
-                  "border-gray-200 bg-white",
-                  "dark:bg-slate-900 dark:border-slate-800",
-                )}
+                className="h-16 flex items-center justify-between px-4 border-b flex-shrink-0"
+                style={{
+                  backgroundColor: "var(--bg-sidebar)",
+                  borderColor: "var(--border-sidebar)",
+                }}
               >
                 <Link
                   href="/dashboard"
@@ -111,11 +111,17 @@ export default function MobileSidebar() {
                 </Link>
                 <button
                   onClick={closeSidebar}
-                  className={cn(
-                    "p-2 rounded-lg transition-colors cursor-pointer",
-                    "text-gray-400 hover:text-gray-600 hover:bg-gray-100",
-                    "dark:text-slate-400 dark:hover:text-slate-300 dark:hover:bg-slate-800",
-                  )}
+                  className="p-2 rounded-lg transition-colors cursor-pointer"
+                  style={{ color: "var(--text-secondary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--text-primary)";
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-sidebar-hover)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
                 >
                   <X size={20} />
                 </button>
@@ -126,11 +132,8 @@ export default function MobileSidebar() {
                 {/* Main */}
                 <div className="space-y-1">
                   <p
-                    className={cn(
-                      "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
-                      "text-gray-400",
-                      "dark:text-slate-500",
-                    )}
+                    className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest"
+                    style={{ color: "var(--text-tertiary)" }}
                   >
                     General
                   </p>
@@ -141,12 +144,26 @@ export default function MobileSidebar() {
                         key={item.name}
                         href={item.href}
                         onClick={closeSidebar}
-                        className={cn(
-                          "relative flex items-center gap-3 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200",
-                          active
-                            ? "bg-blue-600 text-white shadow-sm shadow-blue-600/25 dark:bg-blue-600/90 dark:shadow-blue-900/30"
-                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200",
-                        )}
+                        className="relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200"
+                        style={{
+                          backgroundColor: active ? "#2563eb" : "transparent",
+                          color: active ? "#ffffff" : "var(--text-sidebar)",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!active) {
+                            e.currentTarget.style.backgroundColor =
+                              "var(--bg-sidebar-hover)";
+                            e.currentTarget.style.color =
+                              "var(--text-sidebar-active)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!active) {
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                            e.currentTarget.style.color = "var(--text-sidebar)";
+                          }
+                        }}
                       >
                         {active && <div className="sidebar-indicator" />}
                         <item.icon size={18} className="flex-shrink-0" />
@@ -167,11 +184,8 @@ export default function MobileSidebar() {
                 <div className="space-y-1">
                   <div className="flex items-center justify-between px-3 mb-2">
                     <p
-                      className={cn(
-                        "text-[10px] font-semibold uppercase tracking-widest",
-                        "text-gray-400",
-                        "dark:text-slate-500",
-                      )}
+                      className="text-[10px] font-semibold uppercase tracking-widest"
+                      style={{ color: "var(--text-tertiary)" }}
                     >
                       {allLists.length > 0 ? "Recientes" : "Listas"}
                     </p>
@@ -180,11 +194,8 @@ export default function MobileSidebar() {
                         setShowCreateModal(true);
                         closeSidebar();
                       }}
-                      className={cn(
-                        "flex items-center gap-1 text-[11px] font-semibold transition-colors",
-                        "text-blue-600 hover:text-blue-700",
-                        "dark:text-blue-400 dark:hover:text-blue-300",
-                      )}
+                      className="flex items-center gap-1 text-[11px] font-semibold transition-colors text-blue-600"
+                      style={{ color: "var(--text-link)" }}
                     >
                       <Plus size={12} />
                       Nueva
@@ -197,28 +208,52 @@ export default function MobileSidebar() {
                         key={list.id}
                         href={`/lists/${list.id}`}
                         onClick={closeSidebar}
-                        className={cn(
-                          "sidebar-item flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200",
-                          active
-                            ? "bg-gray-100 text-gray-900 font-medium dark:bg-slate-800 dark:text-slate-100"
-                            : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300",
-                        )}
+                        className="sidebar-item flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] transition-all duration-200"
+                        style={{
+                          backgroundColor: active
+                            ? "var(--bg-sidebar-active)"
+                            : "transparent",
+                          color: active
+                            ? "var(--text-sidebar-active)"
+                            : "var(--text-secondary)",
+                          fontWeight: active ? "500" : "400",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!active) {
+                            e.currentTarget.style.backgroundColor =
+                              "var(--bg-sidebar-hover)";
+                            e.currentTarget.style.color =
+                              "var(--text-sidebar-active)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!active) {
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                            e.currentTarget.style.color =
+                              "var(--text-secondary)";
+                          }
+                        }}
                       >
                         {active && <div className="sidebar-indicator" />}
                         <div
-                          className={cn(
-                            "w-2 h-2 rounded-full flex-shrink-0",
-                            list.type === "shared"
-                              ? "bg-blue-400"
-                              : "bg-gray-400",
-                          )}
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{
+                            backgroundColor:
+                              list.type === "shared"
+                                ? "#60a5fa"
+                                : "var(--text-tertiary)",
+                          }}
                         />
                         <span className="truncate flex-1">{list.name}</span>
                       </Link>
                     );
                   })}
                   {allLists.length === 0 && (
-                    <p className="px-3 py-2 text-xs text-gray-400">
+                    <p
+                      className="px-3 py-2 text-xs"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
                       Aún no tienes listas
                     </p>
                   )}
@@ -227,53 +262,64 @@ export default function MobileSidebar() {
                 {/* Cuenta */}
                 <div className="space-y-1">
                   <p
-                    className={cn(
-                      "px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest",
-                      "text-gray-400",
-                      "dark:text-slate-500",
-                    )}
+                    className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest"
+                    style={{ color: "var(--text-tertiary)" }}
                   >
                     Cuenta
                   </p>
-                  <Link
-                    href="/profile"
-                    onClick={closeSidebar}
-                    className={cn(
-                      "sidebar-item flex items-center gap-3 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200",
-                      isActive("/profile")
-                        ? "bg-gray-100 text-gray-900 dark:bg-slate-800 dark:text-slate-100"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300",
-                    )}
-                  >
-                    {isActive("/profile") && (
-                      <div className="sidebar-indicator" />
-                    )}
-                    <User size={18} className="flex-shrink-0" />
-                    <span className="flex-1">Perfil</span>
-                  </Link>
-                  <Link
-                    href="/settings"
-                    onClick={closeSidebar}
-                    className={cn(
-                      "sidebar-item flex items-center gap-3 px-3 py-3 rounded-xl text-[13px] font-medium transition-all duration-200",
-                      isActive("/settings")
-                        ? "bg-gray-100 text-gray-900 dark:bg-slate-800 dark:text-slate-100"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-300",
-                    )}
-                  >
-                    {isActive("/settings") && (
-                      <div className="sidebar-indicator" />
-                    )}
-                    <Settings size={18} className="flex-shrink-0" />
-                    <span className="flex-1">Configuración</span>
-                  </Link>
+                  {[
+                    { href: "/profile", icon: User, label: "Perfil" },
+                    {
+                      href: "/settings",
+                      icon: Settings,
+                      label: "Configuración",
+                    },
+                  ].map(({ href, icon: Icon, label }) => {
+                    const active = isActive(href);
+                    return (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={closeSidebar}
+                        className="sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200"
+                        style={{
+                          backgroundColor: active
+                            ? "var(--bg-sidebar-active)"
+                            : "transparent",
+                          color: active
+                            ? "var(--text-sidebar-active)"
+                            : "var(--text-secondary)",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!active) {
+                            e.currentTarget.style.backgroundColor =
+                              "var(--bg-sidebar-hover)";
+                            e.currentTarget.style.color =
+                              "var(--text-sidebar-active)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!active) {
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                            e.currentTarget.style.color =
+                              "var(--text-secondary)";
+                          }
+                        }}
+                      >
+                        {active && <div className="sidebar-indicator" />}
+                        <Icon size={18} className="flex-shrink-0" />
+                        <span className="flex-1">{label}</span>
+                      </Link>
+                    );
+                  })}
                 </div>
               </nav>
 
               {/* Tarjeta de actualización */}
               {user.plan === "free" && (
                 <div className="px-3 pb-3 flex-shrink-0">
-                  <div className="p-4 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 relative overflow-hidden">
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
                     <div className="relative">
                       <div className="flex items-center gap-2 mb-2">
@@ -285,9 +331,13 @@ export default function MobileSidebar() {
                       <p className="text-[11px] text-blue-100 leading-relaxed">
                         Listas ilimitadas, tareas y miembros del equipo.
                       </p>
-                      <button className="mt-3 w-full h-8 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer border border-white/30">
-                        Más información
-                      </button>
+                      <Link
+                        href="/pricing"
+                        onClick={closeSidebar}
+                        className="mt-3 block text-center w-full py-1.5 bg-white/20 hover:bg-white/30 text-white text-xs font-semibold rounded-lg transition-colors border border-white/30"
+                      >
+                        Ver planes
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -295,19 +345,25 @@ export default function MobileSidebar() {
 
               {/* User section */}
               <div
-                className={cn(
-                  "px-3 py-3 border-t flex-shrink-0",
-                  "border-gray-200 bg-white",
-                  "dark:bg-slate-900 dark:border-slate-800",
-                )}
+                className="px-3 py-3 border-t flex-shrink-0"
+                style={{
+                  backgroundColor: "var(--bg-sidebar)",
+                  borderColor: "var(--border-sidebar)",
+                }}
               >
                 <div className="flex items-center gap-3 p-2 rounded-xl">
                   <Avatar name={user.name} photoURL={user.photoURL} size="md" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800 truncate dark:text-slate-200">
+                    <p
+                      className="text-sm font-semibold truncate"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       {user.name}
                     </p>
-                    <p className="text-[11px] text-gray-500 truncate dark:text-slate-400">
+                    <p
+                      className="text-[11px] truncate"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
                       {user.email}
                     </p>
                   </div>
@@ -316,11 +372,16 @@ export default function MobileSidebar() {
                       e.preventDefault();
                       logout();
                     }}
-                    className={cn(
-                      "p-2 rounded-lg transition-colors cursor-pointer",
-                      "text-gray-400 hover:text-red-500 hover:bg-red-50",
-                      "dark:text-slate-400 dark:hover:text-red-400 dark:hover:bg-red-950/30",
-                    )}
+                    className="p-2 rounded-lg transition-colors cursor-pointer"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#ef4444";
+                      e.currentTarget.style.backgroundColor = "var(--bg-error)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                     title="Cerrar sesión"
                   >
                     <LogOut size={16} />

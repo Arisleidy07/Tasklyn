@@ -9,7 +9,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@paypal/paypal-server-sdk": "^1.0.0",
     "apexcharts": "^5.15.0",
     "date-fns": "^4.1.0",
     "firebase": "^12.11.0",

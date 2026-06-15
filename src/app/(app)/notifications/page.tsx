@@ -450,9 +450,13 @@ export default function NotificationsPage() {
                       onClick={() => !notif.read && markRead(notif.id)}
                     >
                       <div
-                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 border ${cfg.bgClass} ${cfg.borderClass}`}
+                        className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 border"
+                        style={{
+                          backgroundColor: cfg.bgColor,
+                          borderColor: cfg.borderColor,
+                        }}
                       >
-                        <Icon size={14} className={cfg.iconClass} />
+                        <Icon size={14} style={{ color: cfg.iconColor }} />
                       </div>
 
                       <div className="flex-1 min-w-0">

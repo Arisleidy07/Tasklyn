@@ -28,21 +28,27 @@ export default function Header({
 
   return (
     <header
-      className={cn(
-        "border-b sticky top-0 z-20 safe-top backdrop-blur-xl",
-        "border-gray-200 bg-white/95 dark:border-slate-800 dark:bg-slate-900/95",
-      )}
+      className="border-b sticky top-0 z-20 safe-top backdrop-blur-xl"
+      style={{
+        backgroundColor: "var(--bg-card)",
+        borderColor: "var(--border-color)",
+      }}
     >
       <div className="flex items-center gap-2 px-3 md:px-8 py-3 md:py-5 max-w-full min-h-[60px] md:min-h-[72px]">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {showBackButton && (
             <button
               onClick={onBackClick}
-              className={cn(
-                "p-2 rounded-xl transition-colors cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center flex-shrink-0 active:scale-90",
-                "text-gray-500 hover:text-gray-700 hover:bg-gray-100",
-                "dark:text-slate-400 dark:hover:text-slate-300 dark:hover:bg-slate-800",
-              )}
+              className="p-2 rounded-xl transition-colors cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center flex-shrink-0 active:scale-90"
+              style={{ color: "var(--text-secondary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--text-primary)";
+                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-secondary)";
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
               title="Volver"
             >
               <ArrowLeft size={22} />
@@ -51,24 +57,35 @@ export default function Header({
           {showMenuButton && (
             <button
               onClick={openSidebar}
-              className={cn(
-                "p-2 rounded-xl transition-colors cursor-pointer md:hidden min-w-[40px] min-h-[40px] flex items-center justify-center flex-shrink-0 active:scale-90",
-                "text-gray-500 hover:text-gray-700 hover:bg-gray-100",
-                "dark:text-slate-400 dark:hover:text-slate-300 dark:hover:bg-slate-800",
-              )}
+              className="p-2 rounded-xl transition-colors cursor-pointer md:hidden min-w-[40px] min-h-[40px] flex items-center justify-center flex-shrink-0 active:scale-90"
+              style={{ color: "var(--text-secondary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--text-primary)";
+                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-secondary)";
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
               <Menu size={22} />
             </button>
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 min-w-0">
-              <h1 className="text-lg md:text-xl font-bold truncate tracking-tight text-gray-900 dark:text-slate-100">
+              <h1
+                className="text-lg md:text-xl font-bold truncate tracking-tight"
+                style={{ color: "var(--text-primary)" }}
+              >
                 {title}
               </h1>
               {badge}
             </div>
             {description && (
-              <p className="text-xs md:text-sm truncate mt-0.5 text-gray-500 dark:text-slate-400">
+              <p
+                className="text-xs md:text-sm truncate mt-0.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 {description}
               </p>
             )}
