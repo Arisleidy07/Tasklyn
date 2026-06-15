@@ -98,23 +98,18 @@ function RankingCard({
       className={cn(
         "relative p-4 rounded-xl border transition-all duration-300",
         getMedalBg(user.rank),
-        isCurrentUser &&
-          "ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900",
       )}
     >
-      {isCurrentUser && (
-        <div className="absolute -top-2 -right-2 px-2 py-1 bg-blue-500 text-white text-xs font-semibold rounded-full">
-          Tú
-        </div>
-      )}
-
       <div className="flex items-center gap-4">
         {/* Rank */}
         <div className="flex items-center justify-center w-12 h-12">
           {showMedal ? (
             getMedalIcon(user.rank)
           ) : (
-            <span className="text-lg font-bold text-gray-600 dark:text-slate-400">
+            <span
+              className="text-lg font-bold"
+              style={{ color: "var(--text-secondary)" }}
+            >
               #{user.rank}
             </span>
           )}
@@ -123,7 +118,10 @@ function RankingCard({
         {/* User Info */}
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-gray-900 dark:text-slate-100">
+            <h3
+              className="font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
               {user.name}
             </h3>
             {rankChange !== 0 && (
@@ -142,7 +140,7 @@ function RankingCard({
               </div>
             )}
           </div>
-          <p className="text-sm text-gray-500 dark:text-slate-400">
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
             {user.completedTasks} tareas completadas
           </p>
         </div>
@@ -150,7 +148,10 @@ function RankingCard({
         {/* Stats */}
         <div className="text-right">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+            <span
+              className="text-2xl font-bold"
+              style={{ color: "var(--text-primary)" }}
+            >
               {user.completionRate}%
             </span>
             {user.trend !== 0 && (
@@ -169,7 +170,7 @@ function RankingCard({
               </div>
             )}
           </div>
-          <p className="text-xs text-gray-500 dark:text-slate-400">
+          <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
             Tasa de cumplimiento
           </p>
         </div>
@@ -177,7 +178,10 @@ function RankingCard({
 
       {/* Progress Bar */}
       <div className="mt-3">
-        <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-1.5">
+        <div
+          className="w-full rounded-full h-1.5"
+          style={{ backgroundColor: "var(--bg-tertiary)" }}
+        >
           <div
             className={cn(
               "h-1.5 rounded-full transition-all duration-500",
@@ -349,7 +353,14 @@ export default function RankingPage() {
                   e.target.value as "today" | "week" | "month" | "year",
                 )
               }
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+              className="px-3 py-2 text-sm rounded-lg"
+              style={{
+                backgroundColor: "var(--bg-card)",
+                borderColor: "var(--border-color)",
+                color: "var(--text-primary)",
+                borderWidth: "1px",
+                borderStyle: "solid",
+              }}
             >
               <option value="today">Hoy</option>
               <option value="week">Semana</option>
@@ -413,18 +424,33 @@ export default function RankingPage() {
                       <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
                         {user.name.charAt(0)}
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-slate-100 mb-2">
+                      <h3
+                        className="text-xl font-bold mb-2"
+                        style={{ color: "var(--text-primary)" }}
+                      >
                         {user.name}
                       </h3>
-                      <p className="text-3xl font-bold text-gray-900 dark:text-slate-100 mb-1">
+                      <p
+                        className="text-3xl font-bold mb-1"
+                        style={{ color: "var(--text-primary)" }}
+                      >
                         {user.completedTasks}
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">
+                      <p
+                        className="text-sm mb-3"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
                         tareas completadas
                       </p>
                       <div className="flex items-center justify-center gap-2">
-                        <Target size={16} className="text-gray-400" />
-                        <span className="text-lg font-semibold text-gray-700 dark:text-slate-300">
+                        <Target
+                          size={16}
+                          style={{ color: "var(--text-tertiary)" }}
+                        />
+                        <span
+                          className="text-lg font-semibold"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
                           {user.completionRate}%
                         </span>
                       </div>
@@ -437,14 +463,17 @@ export default function RankingPage() {
             {/* Rest of Ranking */}
             {restOfRanking.length > 0 && (
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4">
+                <h3
+                  className="text-lg font-semibold mb-4"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   Resto del ranking
                 </h3>
-                {restOfRanking.map((user, index) => (
+                {restOfRanking.map((user) => (
                   <RankingCard
                     key={user.userId}
                     user={user}
-                    isCurrentUser={user.userId === currentUserRanking?.userId}
+                    isCurrentUser={false}
                     showMedal={false}
                   />
                 ))}
@@ -458,16 +487,22 @@ export default function RankingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-center py-16"
               >
-                <div className="w-20 h-20 rounded-2xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
-                  <Trophy
-                    size={32}
-                    className="text-gray-400 dark:text-slate-500"
-                  />
+                <div
+                  className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                >
+                  <Trophy size={32} style={{ color: "var(--text-muted)" }} />
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-slate-100 mb-2">
+                <h3
+                  className="text-xl font-semibold mb-2"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   Sin datos de ranking
                 </h3>
-                <p className="text-gray-500 dark:text-slate-400 max-w-sm mx-auto">
+                <p
+                  className="max-w-sm mx-auto"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   No hay suficiente actividad para mostrar el ranking en este
                   período.
                 </p>

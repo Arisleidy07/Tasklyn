@@ -223,12 +223,44 @@ export default function TeamDetailPage() {
     }
   };
 
-  const handleCopyInviteLink = () => {
+  const handleCopyInviteLink = async () => {
     const link = `${window.location.origin}/invite/${teamId}`;
-    navigator.clipboard.writeText(link).then(() => {
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
-    });
+
+    try {
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(link);
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+        return;
+      }
+
+      // Fallback: use execCommand for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = link;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textArea);
+
+      if (successful) {
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+      } else {
+        console.error("Copy failed");
+        alert(
+          "No se pudo copiar el enlace. Por favor cópialo manualmente: " + link,
+        );
+      }
+    } catch (err) {
+      console.error("Error copying to clipboard:", err);
+      // Show the link to user so they can copy it manually
+      alert("No se pudo copiar automáticamente. Enlace: " + link);
+    }
   };
 
   const handleDeleteTeam = async () => {
@@ -984,25 +1016,51 @@ export default function TeamDetailPage() {
 
             {/* Invite link */}
             {isOwnerOrAdmin && !team.isPersonal && (
-              <div className="p-5 rounded-2xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-                  <Mail size={15} className="text-gray-400" /> Invitar miembros
+              <div
+                className="p-5 rounded-2xl border"
+                style={{
+                  backgroundColor: "var(--bg-card)",
+                  borderColor: "var(--border-color)",
+                }}
+              >
+                <h3
+                  className="text-sm font-semibold mb-3 flex items-center gap-2"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  <Mail size={15} style={{ color: "var(--text-secondary)" }} />{" "}
+                  Invitar miembros
                 </h3>
                 <button
                   onClick={handleCopyInviteLink}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-sm text-gray-700 dark:text-slate-300 hover:border-blue-400 dark:hover:border-blue-600 transition-all w-full"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm w-full transition-all"
+                  style={{
+                    backgroundColor: copiedLink
+                      ? "var(--bg-success)"
+                      : "var(--bg-secondary)",
+                    borderColor: copiedLink
+                      ? "var(--text-success)"
+                      : "var(--border-color)",
+                    color: copiedLink
+                      ? "var(--text-success)"
+                      : "var(--text-primary)",
+                    borderWidth: "1px",
+                    borderStyle: "solid",
+                  }}
                 >
                   <Copy
                     size={14}
-                    className={
-                      copiedLink ? "text-emerald-500" : "text-gray-400"
-                    }
+                    style={{
+                      color: copiedLink ? "#10b981" : "var(--text-secondary)",
+                    }}
                   />
                   {copiedLink
                     ? "¡Enlace copiado!"
                     : "Copiar enlace de invitación"}
                 </button>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mt-2">
+                <p
+                  className="text-xs mt-2"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Comparte este enlace para que nuevos miembros puedan unirse al
                   equipo.
                 </p>
@@ -1010,19 +1068,38 @@ export default function TeamDetailPage() {
             )}
 
             {/* Settings */}
-            <div className="p-5 rounded-2xl border border-gray-200/80 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3 flex items-center gap-2">
-                <Settings size={15} className="text-gray-400" /> Configuración
+            <div
+              className="p-5 rounded-2xl border"
+              style={{
+                backgroundColor: "var(--bg-card)",
+                borderColor: "var(--border-color)",
+              }}
+            >
+              <h3
+                className="text-sm font-semibold mb-3 flex items-center gap-2"
+                style={{ color: "var(--text-primary)" }}
+              >
+                <Settings
+                  size={15}
+                  style={{ color: "var(--text-secondary)" }}
+                />{" "}
+                Configuración
               </h3>
-              <div className="space-y-3 text-sm text-gray-600 dark:text-slate-400">
-                <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-slate-800">
+              <div
+                className="space-y-3 text-sm"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <div
+                  className="flex items-center justify-between py-2"
+                  style={{ borderBottom: "1px solid var(--border-divider)" }}
+                >
                   <span>Invitaciones</span>
                   <span
-                    className={
-                      team.settings.allowInvites
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : "text-gray-400"
-                    }
+                    style={{
+                      color: team.settings.allowInvites
+                        ? "#10b981"
+                        : "var(--text-tertiary)",
+                    }}
                   >
                     {team.settings.allowInvites ? "Activas" : "Desactivadas"}
                   </span>
@@ -1036,18 +1113,41 @@ export default function TeamDetailPage() {
 
             {/* Danger zone */}
             {userRole === "owner" && !team.isPersonal && (
-              <div className="p-5 rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-950/10">
-                <h3 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-3 flex items-center gap-2">
+              <div
+                className="p-5 rounded-2xl border"
+                style={{
+                  backgroundColor: "var(--bg-error)",
+                  borderColor: "var(--text-error)",
+                  borderWidth: "1px",
+                }}
+              >
+                <h3
+                  className="text-sm font-semibold mb-3 flex items-center gap-2"
+                  style={{ color: "var(--text-error)" }}
+                >
                   <AlertTriangle size={15} /> Zona peligrosa
                 </h3>
-                <p className="text-xs text-red-600 dark:text-red-400 mb-3">
+                <p
+                  className="text-xs mb-3"
+                  style={{ color: "var(--text-error)" }}
+                >
                   Eliminar el equipo borrará todos sus datos permanentemente.
                   Esta acción no se puede deshacer.
                 </p>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-800"
+                  className="border"
+                  style={{
+                    color: "#dc2626",
+                    borderColor: "var(--text-error)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "var(--bg-error)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
                   onClick={() => setShowDeleteModal(true)}
                 >
                   <Trash2 size={14} className="mr-1.5" /> Eliminar equipo
@@ -1064,48 +1164,94 @@ export default function TeamDetailPage() {
         createPortal(
           <>
             <div
-              className="fixed inset-0 z-[99998] bg-black/60 backdrop-blur-sm"
+              className="fixed inset-0 z-[99998] backdrop-blur-sm"
+              style={{ backgroundColor: "var(--bg-modal-overlay)" }}
               onClick={() => setShowInviteModal(false)}
             />
             <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md shadow-2xl border border-gray-200/80 dark:border-slate-800"
+                className="rounded-2xl w-full max-w-md shadow-2xl border"
+                style={{
+                  backgroundColor: "var(--bg-modal)",
+                  borderColor: "var(--border-color)",
+                }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 dark:border-slate-800">
-                  <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100">
+                <div
+                  className="flex items-center justify-between px-6 pt-5 pb-4 border-b"
+                  style={{ borderColor: "var(--border-color)" }}
+                >
+                  <h3
+                    className="text-base font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     Invitar al equipo
                   </h3>
                   <button
                     onClick={() => setShowInviteModal(false)}
-                    className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                    className="p-2 rounded-lg transition-colors"
+                    style={{ color: "var(--text-secondary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "var(--text-primary)";
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-secondary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "var(--text-secondary)";
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                   >
                     <X size={16} />
                   </button>
                 </div>
                 <div className="p-6 space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block mb-1.5">
+                    <label
+                      className="text-sm font-medium block mb-1.5"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       Correo electrónico
                     </label>
                     <input
                       type="email"
                       placeholder="correo@empresa.com"
-                      className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none"
+                      style={{
+                        backgroundColor: "var(--bg-input)",
+                        borderColor: "var(--border-input)",
+                        color: "var(--text-primary)",
+                        borderWidth: "1px",
+                        borderStyle: "solid",
+                      }}
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-slate-300 block mb-1.5">
+                    <label
+                      className="text-sm font-medium block mb-1.5"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       Rol
                     </label>
-                    <select className="w-full px-4 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <select
+                      className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none"
+                      style={{
+                        backgroundColor: "var(--bg-input)",
+                        borderColor: "var(--border-input)",
+                        color: "var(--text-primary)",
+                        borderWidth: "1px",
+                        borderStyle: "solid",
+                      }}
+                    >
                       <option value="member">Miembro</option>
                       <option value="admin">Administrador</option>
                     </select>
                   </div>
-                  <p className="text-xs text-gray-400 dark:text-slate-500">
+                  <p
+                    className="text-xs"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
                     O comparte el enlace de invitación desde la pestaña de
                     Configuración.
                   </p>

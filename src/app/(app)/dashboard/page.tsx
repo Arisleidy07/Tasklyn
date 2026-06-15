@@ -937,7 +937,13 @@ export default function DashboardPage() {
       />
 
       {isListsSection && (
-        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border-b border-gray-200 dark:border-slate-800">
+        <div
+          className="backdrop-blur-sm border-b"
+          style={{
+            backgroundColor: "var(--bg-card)",
+            borderColor: "var(--border-color)",
+          }}
+        >
           <div className="flex max-w-[1400px] mx-auto px-3 sm:px-4 md:px-8">
             {(["personal", "shared"] as const).map((tab) => {
               const isTabActive = activeTab === tab;
@@ -945,11 +951,20 @@ export default function DashboardPage() {
                 <button
                   key={tab}
                   onClick={() => handleTabChange(tab)}
-                  className={`relative flex items-center gap-2 py-3.5 px-4 sm:px-5 text-sm font-medium transition-all duration-200 ${
-                    isTabActive
-                      ? "text-blue-600"
-                      : "text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200"
-                  }`}
+                  className="relative flex items-center gap-2 py-3.5 px-4 sm:px-5 text-sm font-medium transition-all duration-200"
+                  style={{
+                    color: isTabActive ? "#2563eb" : "var(--text-secondary)",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isTabActive) {
+                      e.currentTarget.style.color = "var(--text-primary)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isTabActive) {
+                      e.currentTarget.style.color = "var(--text-secondary)";
+                    }
+                  }}
                 >
                   {tab === "personal" ? (
                     <FolderOpen size={14} />
@@ -960,11 +975,15 @@ export default function DashboardPage() {
                     {tab === "personal" ? "Personales" : "Compartidas"}
                   </span>
                   <span
-                    className={`text-xs px-1.5 py-0.5 rounded-md font-semibold transition-colors ${
-                      isTabActive
-                        ? "bg-blue-100 text-blue-700"
-                        : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400"
-                    }`}
+                    className="text-xs px-1.5 py-0.5 rounded-md font-semibold transition-colors"
+                    style={{
+                      backgroundColor: isTabActive
+                        ? "var(--bg-info)"
+                        : "var(--bg-secondary)",
+                      color: isTabActive
+                        ? "var(--text-link)"
+                        : "var(--text-secondary)",
+                    }}
                   >
                     {tab === "personal"
                       ? personalLists.length
@@ -973,7 +992,8 @@ export default function DashboardPage() {
                   {isTabActive && (
                     <motion.span
                       layoutId="tab-indicator"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-blue-600"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full"
+                      style={{ backgroundColor: "#2563eb" }}
                       transition={{
                         type: "spring",
                         stiffness: 500,
