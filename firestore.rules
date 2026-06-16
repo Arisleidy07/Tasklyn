@@ -52,25 +52,16 @@ service cloud.firestore {
 
     // Helper to check if user is admin or owner in a team (for the team document itself)
     function isTeamAdminOrOwner() {
-      let team = resource.data;
-      if (team.owner != null && team.owner == getAuthUid()) return true;
-      if (team.ownerId != null && team.ownerId == getAuthUid()) return true;
-      if (team.createdBy != null && team.createdBy == getAuthUid()) return true;
-      // Also check if user has admin role in members array
-      let members = team.members;
-      if (members != null) {
-        return members.any(m => m.userId == getAuthUid() && (m.role == "owner" || m.role == "admin"));
-      }
-      return false;
+      return (resource.data.owner != null && resource.data.owner == getAuthUid()) ||
+             (resource.data.ownerId != null && resource.data.ownerId == getAuthUid()) ||
+             (resource.data.createdBy != null && resource.data.createdBy == getAuthUid());
     }
 
     // Helper to check if a user can delete a team (owner only)
     function canDeleteTeam() {
-      let team = resource.data;
-      if (team.owner != null && team.owner == getAuthUid()) return true;
-      if (team.ownerId != null && team.ownerId == getAuthUid()) return true;
-      if (team.createdBy != null && team.createdBy == getAuthUid()) return true;
-      return false;
+      return (resource.data.owner != null && resource.data.owner == getAuthUid()) ||
+             (resource.data.ownerId != null && resource.data.ownerId == getAuthUid()) ||
+             (resource.data.createdBy != null && resource.data.createdBy == getAuthUid());
     }
 
     // Helper to check if user will be team owner after create
