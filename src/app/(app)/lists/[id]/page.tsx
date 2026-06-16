@@ -253,7 +253,7 @@ export default function ListDetailPage() {
       <div
         className="min-h-screen w-full"
         style={{
-          backgroundColor: isDark ? "rgba(0, 0, 0, 0.4)" : "rgba(255, 255, 255, 0.15)",
+          backgroundColor: "rgba(0, 0, 0, 0.3)",
         }}
       >
         <ListHeader
@@ -276,252 +276,96 @@ export default function ListDetailPage() {
         />
 
         <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto pb-6">
-        {/* Filtros - Segmented Control (Pendientes, Completadas, Todas) */}
-        <div
-          className="flex rounded-2xl p-1.5 mb-6 gap-1 shadow-sm"
-          style={{
-            backgroundColor: "var(--bg-secondary)",
-            border: "1px solid var(--border-color)",
-          }}
-        >
-          {[
-            {
-              key: "pending" as const,
-              label: "Pendientes",
-              count: pendingCount,
-              Icon: Clock,
-            },
-            {
-              key: "completed" as const,
-              label: "Completadas",
-              count: completedCount,
-              Icon: CheckCircle2,
-            },
-            {
-              key: "all" as const,
-              label: "Todas",
-              count: activeTasks.length,
-              Icon: null,
-            },
-          ].map(({ key, label, count, Icon }) => (
-            <button
-              key={key}
-              onClick={() => setFilter(key)}
-              className={cn(
-                "relative flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight transition-all duration-200 min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1",
-                filter === key ? "shadow-sm" : "border border-transparent",
-              )}
-              style={
-                filter === key
-                  ? {
-                      backgroundColor: "var(--bg-card)",
-                      color: "var(--text-primary)",
-                      border: "1px solid var(--border-color)",
-                    }
-                  : { color: "var(--text-secondary)" }
-              }
-            >
-              {Icon && (
-                <Icon size={13} className="hidden sm:block flex-shrink-0" />
-              )}
-              <span>{label}</span>
-              <span
+          {/* Filtros - Segmented Control (Pendientes, Completadas, Todas) */}
+          <div
+            className="flex rounded-2xl p-1.5 mb-6 gap-1 shadow-sm"
+            style={{
+              backgroundColor: "var(--bg-secondary)",
+              border: "1px solid var(--border-color)",
+            }}
+          >
+            {[
+              {
+                key: "pending" as const,
+                label: "Pendientes",
+                count: pendingCount,
+                Icon: Clock,
+              },
+              {
+                key: "completed" as const,
+                label: "Completadas",
+                count: completedCount,
+                Icon: CheckCircle2,
+              },
+              {
+                key: "all" as const,
+                label: "Todas",
+                count: activeTasks.length,
+                Icon: null,
+              },
+            ].map(({ key, label, count, Icon }) => (
+              <button
+                key={key}
+                onClick={() => setFilter(key)}
                 className={cn(
-                  "text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none tracking-wide",
-                  filter === key ? "bg-blue-600 shadow-sm" : "",
+                  "relative flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight transition-all duration-200 min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1",
+                  filter === key ? "shadow-sm" : "border border-transparent",
                 )}
                 style={
-                  filter !== key
+                  filter === key
                     ? {
-                        backgroundColor: "var(--bg-tertiary)",
-                        color: "var(--text-tertiary)",
+                        backgroundColor: "var(--bg-card)",
+                        color: "var(--text-primary)",
+                        border: "1px solid var(--border-color)",
                       }
-                    : { color: "var(--text-on-accent)" }
+                    : { color: "var(--text-secondary)" }
                 }
               >
-                {count}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Botón añadir tarea */}
-        {canEdit && (
-          <div className="mb-6">
-            <Button
-              onClick={() => setShowAddTask(true)}
-              icon={<Plus size={16} />}
-              className="w-full sm:w-auto"
-            >
-              Añadir tarea
-            </Button>
-          </div>
-        )}
-
-        {/* Tareas */}
-        <div className="space-y-3">
-          {filter === "all" ? (
-            activeTasks.length === 0 ? (
-              <EmptyState
-                icon={<CheckCircle2 size={32} />}
-                title="Aún no hay tareas"
-                description="Crea tu primera tarea para empezar."
-                action={
-                  canEdit && (
-                    <Button
-                      size="sm"
-                      onClick={() => setShowAddTask(true)}
-                      icon={<Plus size={14} />}
-                    >
-                      Añadir tarea
-                    </Button>
-                  )
-                }
-              />
-            ) : (
-              <div className="space-y-4">
-                {/* Bloque de pendientes */}
-                <section>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-semibold">
-                        P
-                      </span>
-                      <span
-                        className="text-[11px] font-semibold uppercase tracking-wide"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        Pendientes
-                      </span>
-                    </div>
-                    <span
-                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
-                      style={{
-                        backgroundColor: "var(--bg-tertiary)",
-                        color: "var(--text-tertiary)",
-                      }}
-                    >
-                      {pendingTasks.length}
-                    </span>
-                  </div>
-                  {pendingTasks.length > 0 ? (
-                    <div className="space-y-1.5">
-                      <SortableTaskContainer
-                        tasks={pendingTasks}
-                        onReorder={(newOrder) =>
-                          reorderTasks(newOrder.map((t) => t.id))
-                        }
-                      >
-                        {(task) => (
-                          <SortableTaskItem key={task.id} task={task}>
-                            <TaskItem
-                              task={task}
-                              role={userMember?.role || null}
-                              memberNames={memberNames}
-                              listMembers={list?.members}
-                            />
-                          </SortableTaskItem>
-                        )}
-                      </SortableTaskContainer>
-                    </div>
-                  ) : (
-                    <p
-                      className="text-[11px] italic"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
-                      No hay tareas pendientes.
-                    </p>
-                  )}
-                </section>
-
-                {/* Bloque de completadas */}
-                <section>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-semibold">
-                        C
-                      </span>
-                      <span
-                        className="text-[11px] font-semibold uppercase tracking-wide"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        Completadas
-                      </span>
-                    </div>
-                    <span
-                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
-                      style={{
-                        backgroundColor: "var(--bg-tertiary)",
-                        color: "var(--text-tertiary)",
-                      }}
-                    >
-                      {completedTasks.length}
-                    </span>
-                  </div>
-                  {completedTasks.length > 0 ? (
-                    <div className="space-y-1.5">
-                      <SortableTaskContainer
-                        tasks={completedTasks}
-                        onReorder={(newOrder) =>
-                          reorderTasks(newOrder.map((t) => t.id))
-                        }
-                      >
-                        {(task) => (
-                          <SortableTaskItem key={task.id} task={task}>
-                            <TaskItem
-                              task={task}
-                              role={userMember?.role || null}
-                              memberNames={memberNames}
-                              listMembers={list?.members}
-                            />
-                          </SortableTaskItem>
-                        )}
-                      </SortableTaskContainer>
-                    </div>
-                  ) : (
-                    <p
-                      className="text-[11px] italic"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
-                      Aún no hay tareas completadas.
-                    </p>
-                  )}
-                </section>
-              </div>
-            )
-          ) : (
-            <>
-              <SortableTaskContainer
-                tasks={filteredTasks}
-                onReorder={(newOrder) =>
-                  reorderTasks(newOrder.map((t) => t.id))
-                }
-              >
-                {(task) => (
-                  <SortableTaskItem key={task.id} task={task}>
-                    <TaskItem
-                      task={task}
-                      role={userMember?.role || null}
-                      memberNames={memberNames}
-                      listMembers={list?.members}
-                    />
-                  </SortableTaskItem>
+                {Icon && (
+                  <Icon size={13} className="hidden sm:block flex-shrink-0" />
                 )}
-              </SortableTaskContainer>
+                <span>{label}</span>
+                <span
+                  className={cn(
+                    "text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none tracking-wide",
+                    filter === key ? "bg-blue-600 shadow-sm" : "",
+                  )}
+                  style={
+                    filter !== key
+                      ? {
+                          backgroundColor: "var(--bg-tertiary)",
+                          color: "var(--text-tertiary)",
+                        }
+                      : { color: "var(--text-on-accent)" }
+                  }
+                >
+                  {count}
+                </span>
+              </button>
+            ))}
+          </div>
 
-              {filteredTasks.length === 0 && (
+          {/* Botón añadir tarea */}
+          {canEdit && (
+            <div className="mb-6">
+              <Button
+                onClick={() => setShowAddTask(true)}
+                icon={<Plus size={16} />}
+                className="w-full sm:w-auto"
+              >
+                Añadir tarea
+              </Button>
+            </div>
+          )}
+
+          {/* Tareas */}
+          <div className="space-y-3">
+            {filter === "all" ? (
+              activeTasks.length === 0 ? (
                 <EmptyState
                   icon={<CheckCircle2 size={32} />}
-                  title={
-                    filter === "completed"
-                      ? "No hay tareas completadas"
-                      : "Aún no hay tareas"
-                  }
-                  description={
-                    filter === "completed"
-                      ? "Las tareas que completes aparecerán aquí."
-                      : "Crea tu primera tarea para empezar."
-                  }
+                  title="Aún no hay tareas"
+                  description="Crea tu primera tarea para empezar."
                   action={
                     canEdit && (
                       <Button
@@ -534,360 +378,515 @@ export default function ListDetailPage() {
                     )
                   }
                 />
-              )}
-            </>
+              ) : (
+                <div className="space-y-4">
+                  {/* Bloque de pendientes */}
+                  <section>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-semibold">
+                          P
+                        </span>
+                        <span
+                          className="text-[11px] font-semibold uppercase tracking-wide"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
+                          Pendientes
+                        </span>
+                      </div>
+                      <span
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                        style={{
+                          backgroundColor: "var(--bg-tertiary)",
+                          color: "var(--text-tertiary)",
+                        }}
+                      >
+                        {pendingTasks.length}
+                      </span>
+                    </div>
+                    {pendingTasks.length > 0 ? (
+                      <div className="space-y-1.5">
+                        <SortableTaskContainer
+                          tasks={pendingTasks}
+                          onReorder={(newOrder) =>
+                            reorderTasks(newOrder.map((t) => t.id))
+                          }
+                        >
+                          {(task) => (
+                            <SortableTaskItem key={task.id} task={task}>
+                              <TaskItem
+                                task={task}
+                                role={userMember?.role || null}
+                                memberNames={memberNames}
+                                listMembers={list?.members}
+                              />
+                            </SortableTaskItem>
+                          )}
+                        </SortableTaskContainer>
+                      </div>
+                    ) : (
+                      <p
+                        className="text-[11px] italic"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        No hay tareas pendientes.
+                      </p>
+                    )}
+                  </section>
+
+                  {/* Bloque de completadas */}
+                  <section>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-semibold">
+                          C
+                        </span>
+                        <span
+                          className="text-[11px] font-semibold uppercase tracking-wide"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
+                          Completadas
+                        </span>
+                      </div>
+                      <span
+                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                        style={{
+                          backgroundColor: "var(--bg-tertiary)",
+                          color: "var(--text-tertiary)",
+                        }}
+                      >
+                        {completedTasks.length}
+                      </span>
+                    </div>
+                    {completedTasks.length > 0 ? (
+                      <div className="space-y-1.5">
+                        <SortableTaskContainer
+                          tasks={completedTasks}
+                          onReorder={(newOrder) =>
+                            reorderTasks(newOrder.map((t) => t.id))
+                          }
+                        >
+                          {(task) => (
+                            <SortableTaskItem key={task.id} task={task}>
+                              <TaskItem
+                                task={task}
+                                role={userMember?.role || null}
+                                memberNames={memberNames}
+                                listMembers={list?.members}
+                              />
+                            </SortableTaskItem>
+                          )}
+                        </SortableTaskContainer>
+                      </div>
+                    ) : (
+                      <p
+                        className="text-[11px] italic"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        Aún no hay tareas completadas.
+                      </p>
+                    )}
+                  </section>
+                </div>
+              )
+            ) : (
+              <>
+                <SortableTaskContainer
+                  tasks={filteredTasks}
+                  onReorder={(newOrder) =>
+                    reorderTasks(newOrder.map((t) => t.id))
+                  }
+                >
+                  {(task) => (
+                    <SortableTaskItem key={task.id} task={task}>
+                      <TaskItem
+                        task={task}
+                        role={userMember?.role || null}
+                        memberNames={memberNames}
+                        listMembers={list?.members}
+                      />
+                    </SortableTaskItem>
+                  )}
+                </SortableTaskContainer>
+
+                {filteredTasks.length === 0 && (
+                  <EmptyState
+                    icon={<CheckCircle2 size={32} />}
+                    title={
+                      filter === "completed"
+                        ? "No hay tareas completadas"
+                        : "Aún no hay tareas"
+                    }
+                    description={
+                      filter === "completed"
+                        ? "Las tareas que completes aparecerán aquí."
+                        : "Crea tu primera tarea para empezar."
+                    }
+                    action={
+                      canEdit && (
+                        <Button
+                          size="sm"
+                          onClick={() => setShowAddTask(true)}
+                          icon={<Plus size={14} />}
+                        >
+                          Añadir tarea
+                        </Button>
+                      )
+                    }
+                  />
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Área de archivados dentro de la lista */}
+          {archivedCount > 0 && (
+            <div
+              className="mt-10 pt-6 border-t border-dashed"
+              style={{ borderColor: "var(--border-color)" }}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <span
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-semibold"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      color: "var(--text-tertiary)",
+                    }}
+                  >
+                    A
+                  </span>
+                  <div>
+                    <p
+                      className="text-xs font-semibold uppercase tracking-wide"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      Área de archivados
+                    </p>
+                    <p
+                      className="text-[11px]"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      Tareas guardadas para referencia. Puedes restaurar o
+                      eliminar.
+                    </p>
+                  </div>
+                </div>
+                {!showArchived && (
+                  <span
+                    className="text-[11px] hidden sm:inline-flex"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    {archivedCount} archivada{archivedCount !== 1 ? "s" : ""}{" "}
+                    ocultas
+                  </span>
+                )}
+              </div>
+
+              <button
+                onClick={() => setShowArchived(!showArchived)}
+                className="mt-3 flex items-center gap-2 w-full text-left group px-3 py-2 rounded-2xl transition-colors border border-transparent"
+                style={{ backgroundColor: "var(--bg-secondary)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
+                  e.currentTarget.style.borderColor = "var(--border-color)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+                  e.currentTarget.style.borderColor = "transparent";
+                }}
+              >
+                <div className="flex items-center gap-2 flex-1">
+                  <div
+                    className="w-7 h-7 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: "var(--text-primary)" }}
+                  >
+                    <Archive
+                      size={14}
+                      style={{ color: "var(--text-on-accent)" }}
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <span
+                      className="text-sm font-semibold flex items-center gap-1"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      Ver tareas archivadas
+                      <span
+                        className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
+                        style={{
+                          backgroundColor: "var(--text-primary)",
+                          color: "var(--text-on-accent)",
+                        }}
+                      >
+                        {archivedCount}
+                      </span>
+                    </span>
+                    <span
+                      className="text-[11px]"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Toca para desplegar todas las tareas archivadas de esta
+                      lista.
+                    </span>
+                  </div>
+                </div>
+                <ChevronDown
+                  size={14}
+                  className={cn(
+                    "transition-transform",
+                    showArchived && "rotate-180",
+                  )}
+                />
+              </button>
+
+              <AnimatePresence>
+                {showArchived && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden mt-3"
+                  >
+                    <div className="space-y-2 pt-1">
+                      <AnimatePresence mode="popLayout">
+                        {archivedTasks.map((task) => (
+                          <ArchivedTaskItem
+                            key={task.id}
+                            task={task}
+                            role={userMember?.role || null}
+                            memberNames={memberNames}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           )}
         </div>
 
-        {/* Área de archivados dentro de la lista */}
-        {archivedCount > 0 && (
-          <div
-            className="mt-10 pt-6 border-t border-dashed"
-            style={{ borderColor: "var(--border-color)" }}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
+        {/* Modal Añadir Tarea - PREMIUM */}
+        <Modal
+          isOpen={showAddTask}
+          onClose={() => {
+            setShowAddTask(false);
+            // Reset form on close
+            setNewTaskTitle("");
+            setNewTaskDescription("");
+            setNewTaskLocation("");
+            setNewTaskPhones([""]);
+          }}
+          title="Añadir nueva tarea"
+        >
+          <div className="space-y-5">
+            {/* Título de la tarea */}
+            <div className="space-y-1.5">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 <span
-                  className="inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-semibold"
-                  style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    color: "var(--text-tertiary)",
-                  }}
+                  className="w-4 h-4 rounded flex items-center justify-center text-[10px]"
+                  style={{ backgroundColor: "var(--bg-secondary)" }}
                 >
-                  A
+                  1
                 </span>
-                <div>
-                  <p
-                    className="text-xs font-semibold uppercase tracking-wide"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    Área de archivados
-                  </p>
-                  <p
-                    className="text-[11px]"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    Tareas guardadas para referencia. Puedes restaurar o
-                    eliminar.
-                  </p>
-                </div>
-              </div>
-              {!showArchived && (
-                <span
-                  className="text-[11px] hidden sm:inline-flex"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  {archivedCount} archivada{archivedCount !== 1 ? "s" : ""}{" "}
-                  ocultas
-                </span>
-              )}
+                Título de la tarea
+              </label>
+              <Input
+                placeholder="Ej: Instalar router principal"
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                autoFocus
+                className="h-11"
+              />
             </div>
 
-            <button
-              onClick={() => setShowArchived(!showArchived)}
-              className="mt-3 flex items-center gap-2 w-full text-left group px-3 py-2 rounded-2xl transition-colors border border-transparent"
-              style={{ backgroundColor: "var(--bg-secondary)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
-                e.currentTarget.style.borderColor = "var(--border-color)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-                e.currentTarget.style.borderColor = "transparent";
-              }}
-            >
-              <div className="flex items-center gap-2 flex-1">
-                <div
-                  className="w-7 h-7 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: "var(--text-primary)" }}
-                >
-                  <Archive
-                    size={14}
-                    style={{ color: "var(--text-on-accent)" }}
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <span
-                    className="text-sm font-semibold flex items-center gap-1"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    Ver tareas archivadas
-                    <span
-                      className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
-                      style={{
-                        backgroundColor: "var(--text-primary)",
-                        color: "var(--text-on-accent)",
-                      }}
-                    >
-                      {archivedCount}
-                    </span>
-                  </span>
-                  <span
-                    className="text-[11px]"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Toca para desplegar todas las tareas archivadas de esta
-                    lista.
-                  </span>
-                </div>
-              </div>
-              <ChevronDown
-                size={14}
-                className={cn(
-                  "transition-transform",
-                  showArchived && "rotate-180",
-                )}
-              />
-            </button>
-
-            <AnimatePresence>
-              {showArchived && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden mt-3"
-                >
-                  <div className="space-y-2 pt-1">
-                    <AnimatePresence mode="popLayout">
-                      {archivedTasks.map((task) => (
-                        <ArchivedTaskItem
-                          key={task.id}
-                          task={task}
-                          role={userMember?.role || null}
-                          memberNames={memberNames}
-                        />
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
-      </div>
-
-      {/* Modal Añadir Tarea - PREMIUM */}
-      <Modal
-        isOpen={showAddTask}
-        onClose={() => {
-          setShowAddTask(false);
-          // Reset form on close
-          setNewTaskTitle("");
-          setNewTaskDescription("");
-          setNewTaskLocation("");
-          setNewTaskPhones([""]);
-        }}
-        title="Añadir nueva tarea"
-      >
-        <div className="space-y-5">
-          {/* Título de la tarea */}
-          <div className="space-y-1.5">
-            <label
-              className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <span
-                className="w-4 h-4 rounded flex items-center justify-center text-[10px]"
-                style={{ backgroundColor: "var(--bg-secondary)" }}
+            {/* Teléfonos dinámicos */}
+            <div className="space-y-2">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
+                style={{ color: "var(--text-secondary)" }}
               >
-                1
-              </span>
-              Título de la tarea
-            </label>
-            <Input
-              placeholder="Ej: Instalar router principal"
-              value={newTaskTitle}
-              onChange={(e) => setNewTaskTitle(e.target.value)}
-              autoFocus
-              className="h-11"
-            />
-          </div>
+                <Phone size={12} style={{ color: "var(--text-tertiary)" }} />
+                Teléfonos de contacto
+              </label>
+              <AnimatePresence mode="popLayout">
+                {newTaskPhones.map((phone, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10, height: 0 }}
+                    className="flex items-center gap-2"
+                  >
+                    <Input
+                      type="tel"
+                      placeholder={`Teléfono ${index + 1}`}
+                      value={phone}
+                      onChange={(e) => handlePhoneChange(index, e.target.value)}
+                      className="text-sm flex-1"
+                    />
+                    {newTaskPhones.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhone(index)}
+                        className="p-2 rounded-lg transition-colors flex-shrink-0"
+                        style={{ color: "var(--text-tertiary)" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = "#ef4444";
+                          e.currentTarget.style.backgroundColor =
+                            "rgba(239,68,68,0.08)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = "var(--text-tertiary)";
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+              <button
+                type="button"
+                onClick={handleAddPhone}
+                className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors mt-1"
+              >
+                <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center">
+                  <Plus size={12} />
+                </div>
+                Agregar otro teléfono
+              </button>
+            </div>
 
-          {/* Teléfonos dinámicos */}
-          <div className="space-y-2">
-            <label
-              className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <Phone size={12} style={{ color: "var(--text-tertiary)" }} />
-              Teléfonos de contacto
-            </label>
-            <AnimatePresence mode="popLayout">
-              {newTaskPhones.map((phone, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 10, height: 0 }}
-                  className="flex items-center gap-2"
-                >
-                  <Input
-                    type="tel"
-                    placeholder={`Teléfono ${index + 1}`}
-                    value={phone}
-                    onChange={(e) => handlePhoneChange(index, e.target.value)}
-                    className="text-sm flex-1"
-                  />
-                  {newTaskPhones.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemovePhone(index)}
-                      className="p-2 rounded-lg transition-colors flex-shrink-0"
-                      style={{ color: "var(--text-tertiary)" }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = "#ef4444";
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(239,68,68,0.08)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = "var(--text-tertiary)";
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }}
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            <button
-              type="button"
-              onClick={handleAddPhone}
-              className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors mt-1"
-            >
-              <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center">
-                <Plus size={12} />
-              </div>
-              Agregar otro teléfono
-            </button>
-          </div>
+            {/* Ubicación */}
+            <div className="space-y-1.5">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <MapPin size={12} style={{ color: "var(--text-tertiary)" }} />
+                Ubicación / Dirección
+              </label>
+              <Input
+                placeholder="Dirección o enlace de Google Maps"
+                value={newTaskLocation}
+                onChange={(e) => setNewTaskLocation(e.target.value)}
+                className="text-sm"
+              />
+            </div>
 
-          {/* Ubicación */}
-          <div className="space-y-1.5">
-            <label
-              className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <MapPin size={12} style={{ color: "var(--text-tertiary)" }} />
-              Ubicación / Dirección
-            </label>
-            <Input
-              placeholder="Dirección o enlace de Google Maps"
-              value={newTaskLocation}
-              onChange={(e) => setNewTaskLocation(e.target.value)}
-              className="text-sm"
-            />
-          </div>
+            {/* Descripción */}
+            <div className="space-y-1.5">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <FileText size={12} style={{ color: "var(--text-tertiary)" }} />
+                Descripción
+              </label>
+              <textarea
+                placeholder="Detalles adicionales de la tarea..."
+                value={newTaskDescription}
+                onChange={(e) => {
+                  setNewTaskDescription(e.target.value);
+                  e.target.style.height = "auto";
+                  e.target.style.height = e.target.scrollHeight + "px";
+                }}
+                rows={2}
+                className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none overflow-hidden min-h-[44px]"
+                style={{
+                  border: "1px solid var(--border-input)",
+                  backgroundColor: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
+              />
+            </div>
 
-          {/* Descripción */}
-          <div className="space-y-1.5">
-            <label
-              className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-              style={{ color: "var(--text-secondary)" }}
+            {/* Actions */}
+            <div
+              className="flex gap-3 pt-2 border-t"
+              style={{ borderColor: "var(--border-color)" }}
             >
-              <FileText size={12} style={{ color: "var(--text-tertiary)" }} />
-              Descripción
-            </label>
-            <textarea
-              placeholder="Detalles adicionales de la tarea..."
-              value={newTaskDescription}
-              onChange={(e) => {
-                setNewTaskDescription(e.target.value);
-                e.target.style.height = "auto";
-                e.target.style.height = e.target.scrollHeight + "px";
-              }}
-              rows={2}
-              className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none overflow-hidden min-h-[44px]"
-              style={{
-                border: "1px solid var(--border-input)",
-                backgroundColor: "var(--bg-input)",
-                color: "var(--text-primary)",
-              }}
-            />
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowAddTask(false);
+                  setNewTaskTitle("");
+                  setNewTaskDescription("");
+                  setNewTaskLocation("");
+                  setNewTaskPhones([""]);
+                }}
+                className="flex-1 h-11"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleAddTask}
+                disabled={!newTaskTitle.trim()}
+                className="flex-1 h-11"
+                icon={<Plus size={16} />}
+              >
+                Crear tarea
+              </Button>
+            </div>
           </div>
+        </Modal>
 
-          {/* Actions */}
-          <div
-            className="flex gap-3 pt-2 border-t"
-            style={{ borderColor: "var(--border-color)" }}
-          >
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setShowAddTask(false);
-                setNewTaskTitle("");
-                setNewTaskDescription("");
-                setNewTaskLocation("");
-                setNewTaskPhones([""]);
-              }}
-              className="flex-1 h-11"
-            >
-              Cancelar
-            </Button>
-            <Button
-              onClick={handleAddTask}
-              disabled={!newTaskTitle.trim()}
-              className="flex-1 h-11"
-              icon={<Plus size={16} />}
-            >
-              Crear tarea
-            </Button>
+        {/* Share panel — invite only */}
+        <PremiumMembersPanel
+          list={list}
+          isOpen={showSharePanel}
+          onClose={() => setShowSharePanel(false)}
+        />
+
+        {/* Edit list + members management */}
+        <EditListModal
+          list={list}
+          memberProfiles={memberProfiles}
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          defaultTab={editModalTab}
+        />
+
+        {/* Confirmar Eliminación */}
+        <Modal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          title="¿Eliminar lista?"
+        >
+          <div className="space-y-4">
+            <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg text-red-700 text-sm">
+              <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+              <p>
+                Esto eliminará permanentemente &quot;{list.name}&quot; y todas
+                sus tareas. Esta acción no se puede deshacer.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleDeleteList}
+                className="flex-1"
+              >
+                Eliminar
+              </Button>
+            </div>
           </div>
-        </div>
-      </Modal>
-
-      {/* Share panel — invite only */}
-      <PremiumMembersPanel
-        list={list}
-        isOpen={showSharePanel}
-        onClose={() => setShowSharePanel(false)}
-      />
-
-      {/* Edit list + members management */}
-      <EditListModal
-        list={list}
-        memberProfiles={memberProfiles}
-        isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        defaultTab={editModalTab}
-      />
-
-      {/* Confirmar Eliminación */}
-      <Modal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        title="¿Eliminar lista?"
-      >
-        <div className="space-y-4">
-          <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg text-red-700 text-sm">
-            <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-            <p>
-              Esto eliminará permanentemente &quot;{list.name}&quot; y todas sus
-              tareas. Esta acción no se puede deshacer.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => setShowDeleteConfirm(false)}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="danger"
-              onClick={handleDeleteList}
-              className="flex-1"
-            >
-              Eliminar
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        </Modal>
       </div>
-      </div>
-    </>
+    </div>
   );
 }
