@@ -33,6 +33,7 @@ export function SortableTaskItem({ task, children }: SortableTaskItemProps) {
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -41,21 +42,35 @@ export function SortableTaskItem({ task, children }: SortableTaskItemProps) {
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition: transition ?? "transform 200ms ease",
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.4 : 1,
     zIndex: isDragging ? 50 : undefined,
     position: "relative",
   };
 
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} className="relative group/sortable">
+      {/* Grip handle - only this triggers drag, keeps scroll free */}
       <div
+        ref={setActivatorNodeRef}
         {...attributes}
         {...listeners}
-        className="cursor-grab active:cursor-grabbing touch-none"
+        className={[
+          "absolute left-0 top-0 bottom-0 w-7 z-10",
+          "flex items-center justify-center",
+          "opacity-0 group-hover/sortable:opacity-100",
+          "cursor-grab active:cursor-grabbing",
+          "touch-none select-none",
+          "transition-opacity duration-150",
+        ].join(" ")}
+        style={{ borderRadius: "20px 0 0 20px" }}
+        title="Mantén presionado para reorganizar"
       >
-        {/* Task content - entire card is draggable */}
-        {children}
+        <GripVertical
+          size={14}
+          style={{ color: "var(--text-tertiary)", pointerEvents: "none" }}
+        />
       </div>
+      {children}
     </div>
   );
 }
@@ -73,9 +88,11 @@ export function SortableTaskContainer({
   children,
 }: SortableTaskContainerProps) {
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    // Desktop: requires moving 8px before drag starts (prevents accidental drags on click)
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    // Mobile: requires holding 500ms + tolerates 10px of movement (allows scroll to work freely)
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 8 },
+      activationConstraint: { delay: 500, tolerance: 10 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
