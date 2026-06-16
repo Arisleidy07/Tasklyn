@@ -4,16 +4,11 @@ import React, { useState } from "react";
 import { Task, MemberRole } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
-import {
-  canCompleteTask,
-  canDeleteTask,
-  canEditTask,
-  canArchiveTask,
-  canManageTaskOptions,
-} from "@/lib/permissions";
+import { canCompleteTask, canManageTaskOptions } from "@/lib/permissions";
 import { motion } from "framer-motion";
 import TaskCompletionModal from "./TaskCompletionModal";
 import TaskDetailPanel from "./TaskDetailPanel";
+import TaskOptionsBar from "./TaskOptionsBar";
 import {
   CheckCircle2,
   Circle,
@@ -23,12 +18,12 @@ import {
   MapPin,
   Phone,
   FileText,
-  ChevronRight,
   User,
   Tag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getPriorityConfig } from "@/lib/priority";
+import { linkifyLocation, linkifyPhoneNumbers } from "@/lib/utils";
 
 interface TaskItemProps {
   task: Task;
@@ -47,16 +42,17 @@ export default function TaskItem({
   const [showCompletionModal, setShowCompletionModal] = useState(false);
 
   const { user } = useAuthStore();
-  const { uncompleteTask } = useTaskStore();
+  const { uncompleteTask, updateTask } = useTaskStore();
 
   const isCompleted = task.status === "completed";
   const canComplete = canCompleteTask(role);
-  const canEdit = canEditTask(role);
-  const canDelete = canDeleteTask(role);
-  const canArchive = canArchiveTask(role);
   const canManageOptions = canManageTaskOptions(role);
 
   const pc = task.priority ? getPriorityConfig(task.priority) : null;
+
+  const hasDescription = !!task.description?.trim();
+  const hasLocation = !!task.location?.trim();
+  const hasPhones = !!task.phoneNumbers?.filter((p) => p.trim()).length;
 
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -68,6 +64,11 @@ export default function TaskItem({
     }
   };
 
+  const saveField = async (updates: Partial<Task>) => {
+    if (!user) return;
+    await updateTask(task.id, updates, user.id, user.name);
+  };
+
   return (
     <>
       <motion.div
@@ -76,26 +77,28 @@ export default function TaskItem({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -6, scale: 0.98 }}
         transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-        onClick={() => setShowDetailPanel(true)}
-        className="group cursor-pointer select-none"
+        className="group select-none"
         style={{
           borderRadius: "14px",
-          backgroundColor: isCompleted ? "var(--bg-secondary)" : "var(--bg-card)",
-          boxShadow: isCompleted
-            ? "none"
-            : "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.04)",
+          backgroundColor: isCompleted
+            ? "var(--bg-secondary)"
+            : "var(--bg-card)",
+          boxShadow: isCompleted ? "none" : "0 1px 3px rgba(0,0,0,0.06)",
           marginBottom: "6px",
-          padding: "11px 14px",
           border: "1px solid var(--border-color)",
         }}
       >
-        <div className="flex items-center gap-3 min-h-[36px]">
+        {/* ── Main clickable row ── */}
+        <div
+          className="flex items-start gap-3 px-3 pt-3 pb-2 cursor-pointer"
+          onClick={() => setShowDetailPanel(true)}
+        >
           {/* Checkbox */}
           <button
             onClick={handleToggleComplete}
             disabled={!canComplete}
             className={cn(
-              "flex-shrink-0 transition-all",
+              "flex-shrink-0 mt-0.5 transition-all",
               canComplete
                 ? "cursor-pointer hover:scale-110 active:scale-95"
                 : "cursor-not-allowed opacity-40",
@@ -105,7 +108,7 @@ export default function TaskItem({
             {isCompleted ? <CheckCircle2 size={20} /> : <Circle size={20} />}
           </button>
 
-          {/* Title + indicators */}
+          {/* Title + meta */}
           <div className="flex-1 min-w-0">
             <p
               className={cn(
@@ -117,7 +120,8 @@ export default function TaskItem({
               {task.title}
             </p>
 
-            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+            {/* Badges */}
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
               {pc && (
                 <span
                   className={cn(
@@ -134,7 +138,6 @@ export default function TaskItem({
                   {pc.label}
                 </span>
               )}
-
               {task.dueDate && (
                 <span
                   className="inline-flex items-center gap-1 text-[10px] font-medium"
@@ -147,31 +150,27 @@ export default function TaskItem({
                   })}
                 </span>
               )}
-
               {task.reminders && task.reminders.length > 0 && (
                 <Bell size={10} style={{ color: "var(--text-tertiary)" }} />
               )}
-
               {task.recurrence && (
                 <Repeat size={10} style={{ color: "#059669" }} />
               )}
-
-              {task.description && (
-                <FileText size={10} style={{ color: "var(--text-tertiary)" }} />
-              )}
-
-              {task.location && (
-                <MapPin size={10} style={{ color: "var(--text-tertiary)" }} />
-              )}
-
-              {task.phoneNumbers &&
-                task.phoneNumbers.filter((p) => p.trim()).length > 0 && (
-                  <Phone
+              {/* Mobile-only: show icons for hidden content */}
+              <span className="sm:hidden inline-flex items-center gap-1.5">
+                {hasDescription && (
+                  <FileText
                     size={10}
                     style={{ color: "var(--text-tertiary)" }}
                   />
                 )}
-
+                {hasLocation && (
+                  <MapPin size={10} style={{ color: "var(--text-tertiary)" }} />
+                )}
+                {hasPhones && (
+                  <Phone size={10} style={{ color: "var(--text-tertiary)" }} />
+                )}
+              </span>
               {task.assignedTo && memberNames[task.assignedTo] && (
                 <span
                   className="inline-flex items-center gap-1 text-[10px]"
@@ -181,7 +180,6 @@ export default function TaskItem({
                   {memberNames[task.assignedTo]}
                 </span>
               )}
-
               {task.tags && task.tags.length > 0 && (
                 <span
                   className="inline-flex items-center gap-1 text-[10px]"
@@ -193,15 +191,67 @@ export default function TaskItem({
                 </span>
               )}
             </div>
-          </div>
 
-          {/* Chevron arrow */}
-          <ChevronRight
-            size={14}
-            className="flex-shrink-0 opacity-0 group-hover:opacity-40 transition-opacity duration-150"
-            style={{ color: "var(--text-tertiary)" }}
-          />
+            {/* Desktop-only: expanded description/location/phones */}
+            {!isCompleted && (hasDescription || hasLocation || hasPhones) && (
+              <div className="hidden sm:flex flex-col gap-1.5 mt-2 pr-2">
+                {hasDescription && (
+                  <p
+                    className="text-[12px] leading-relaxed line-clamp-2"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    {task.description}
+                  </p>
+                )}
+                {hasLocation && (
+                  <span
+                    className="text-[12px] flex items-center gap-1"
+                    style={{ color: "var(--text-tertiary)" }}
+                    dangerouslySetInnerHTML={{
+                      __html: `<span style="display:inline-flex;align-items:center;gap:4px;color:var(--text-tertiary)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>${linkifyLocation(task.location!)}</span>`,
+                    }}
+                  />
+                )}
+                {hasPhones &&
+                  task
+                    .phoneNumbers!.filter((p) => p.trim())
+                    .map((p, i) => (
+                      <span
+                        key={i}
+                        className="text-[12px]"
+                        style={{ color: "var(--text-tertiary)" }}
+                        dangerouslySetInnerHTML={{
+                          __html: `<span style="display:inline-flex;align-items:center;gap:4px;color:var(--text-tertiary)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.55a16 16 0 0 0 6.06 6.06l.98-.98a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>${linkifyPhoneNumbers(p)}</span>`,
+                        }}
+                      />
+                    ))}
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Desktop-only TaskOptionsBar — reminder/due/recurrence directly on card */}
+        {!isCompleted && canManageOptions && (
+          <div
+            className="hidden sm:block px-12 pb-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <TaskOptionsBar
+              dueDate={task.dueDate}
+              dueTime={task.dueTime}
+              reminders={task.reminders || []}
+              recurrence={task.recurrence}
+              onReminderChange={(r) => saveField({ reminders: r })}
+              onDueDateChange={(d) =>
+                saveField({
+                  dueDate: d,
+                  dueTime: d ? task.dueTime || null : null,
+                })
+              }
+              onRecurrenceChange={(r) => saveField({ recurrence: r })}
+            />
+          </div>
+        )}
       </motion.div>
 
       <TaskDetailPanel
