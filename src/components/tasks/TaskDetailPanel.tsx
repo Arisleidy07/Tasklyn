@@ -705,9 +705,182 @@ export default function TaskDetailPanel({
           </div>
         )}
 
-        {/* Meta */}
+        {/* Completion info block */}
+        {task.status === "completed" && task.completedAt && (
+          <div
+            className="rounded-xl p-3 space-y-2"
+            style={{
+              backgroundColor: "rgba(22,163,74,0.06)",
+              border: "1px solid rgba(22,163,74,0.2)",
+            }}
+          >
+            <p
+              className="text-[11px] font-semibold uppercase tracking-wide flex items-center gap-1.5"
+              style={{ color: "#16a34a" }}
+            >
+              <Check size={11} />
+              Información de completion
+            </p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-[11px] w-24 font-medium"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Completada por
+                </span>
+                <span
+                  className="text-[12px] font-semibold"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {memberNames[task.completedBy || ""] ||
+                    (() => {
+                      const entry = task.history.findLast?.(
+                        (h) => h.action === "completed",
+                      );
+                      return (
+                        entry?.completedByName ||
+                        entry?.performedByName ||
+                        task.completedBy ||
+                        "—"
+                      );
+                    })()}
+                </span>
+              </div>
+              {task.performedBy && task.performedBy !== task.completedBy && (
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[11px] w-24 font-medium"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    Realizada por
+                  </span>
+                  <span
+                    className="text-[12px] font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {memberNames[task.performedBy] ||
+                      (() => {
+                        const entry = task.history.findLast?.(
+                          (h) => h.action === "completed",
+                        );
+                        return (
+                          entry?.performedByTaskName || task.performedBy || "—"
+                        );
+                      })()}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-[11px] w-24 font-medium"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Fecha y hora
+                </span>
+                <span
+                  className="text-[12px]"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {new Date(task.completedAt).toLocaleDateString("es-ES", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}{" "}
+                  a las{" "}
+                  {new Date(task.completedAt).toLocaleTimeString("es-ES", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* History */}
+        {task.history && task.history.length > 0 && (
+          <div>
+            <p
+              className="text-[11px] font-semibold uppercase tracking-wide mb-2 flex items-center gap-1.5"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              <Clock size={11} />
+              Historial de actividad
+            </p>
+            <div className="space-y-0">
+              {[...task.history].reverse().map((entry, i) => {
+                const name =
+                  entry.performedByName ||
+                  memberNames[entry.performedBy] ||
+                  entry.performedBy;
+                const date = new Date(entry.performedAt);
+                const dateStr = date.toLocaleDateString("es-ES", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                });
+                const timeStr = date.toLocaleTimeString("es-ES", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+                const isCompletion = entry.action === "completed";
+                return (
+                  <div
+                    key={entry.id || i}
+                    className="flex gap-3 py-2 border-b last:border-0"
+                    style={{ borderColor: "var(--border-color)" }}
+                  >
+                    <div
+                      className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5"
+                      style={{
+                        backgroundColor: isCompletion
+                          ? "rgba(22,163,74,0.1)"
+                          : "var(--bg-secondary)",
+                      }}
+                    >
+                      {isCompletion ? (
+                        <Check size={10} style={{ color: "#16a34a" }} />
+                      ) : (
+                        <Clock
+                          size={9}
+                          style={{ color: "var(--text-tertiary)" }}
+                        />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-[12px] leading-snug"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        <span className="font-semibold">{name}</span>{" "}
+                        {entry.details ||
+                          (entry.action === "created"
+                            ? "creó la tarea"
+                            : entry.action === "reopened"
+                              ? "reabrió la tarea"
+                              : entry.action === "archived"
+                                ? "archivó la tarea"
+                                : entry.action)}
+                      </p>
+                      <p
+                        className="text-[10px] mt-0.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        {dateStr} · {timeStr}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Meta — creation info */}
         <div
-          className="flex items-center gap-4 pt-2 border-t"
+          className="flex items-center gap-4 pt-1 border-t"
           style={{ borderColor: "var(--border-color)" }}
         >
           <span
@@ -715,14 +888,12 @@ export default function TaskDetailPanel({
             style={{ color: "var(--text-tertiary)" }}
           >
             <Clock size={11} />
-            Creada {timeAgo(task.createdAt)}
+            Creada {timeAgo(task.createdAt)} por{" "}
+            {memberNames[task.createdBy] ||
+              task.history.find?.((h) => h.action === "created")
+                ?.performedByName ||
+              task.createdBy}
           </span>
-          {task.completedAt && (
-            <span className="text-[11px] flex items-center gap-1 text-green-600">
-              <Check size={11} />
-              Completada {timeAgo(task.completedAt)}
-            </span>
-          )}
         </div>
 
         {/* Comments */}

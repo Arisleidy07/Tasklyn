@@ -99,10 +99,13 @@ export interface TaskHistoryEntry {
     | "auto_created"
     | "reopened";
   performedBy: string; // userId
+  performedByName?: string; // nombre del usuario (para mostrar sin necesidad de resolver)
   performedAt: string;
   details?: string;
   // New fields for performer tracking
   completedBy?: string; // who actually did the work
+  completedByName?: string; // nombre de quien marcó como completada
+  performedByTaskName?: string; // nombre de quien realizó físicamente la tarea
   assignedTo?: string; // who was assigned
 }
 

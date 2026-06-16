@@ -198,13 +198,16 @@ function createHistoryEntry(
   action: TaskHistoryEntry["action"],
   performedBy: string,
   details?: string,
+  extraFields?: Partial<TaskHistoryEntry>,
 ): TaskHistoryEntry {
   return {
     id: Math.random().toString(36).slice(2),
     action,
     performedBy,
+    performedByName: useAuthStore.getState().user?.name,
     performedAt: new Date().toISOString(),
     details,
+    ...extraFields,
   };
 }
 
@@ -451,14 +454,31 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const completedAt = new Date().toISOString();
     const newCount = (task.completedCount || 0) + 1;
 
+    const resolvedCompleterName =
+      useAuthStore.getState().user?.name ||
+      completerName ||
+      "Usuario desconocido";
+    const resolvedPerformerName = performedByUser
+      ? performedByUser.name
+      : resolvedCompleterName;
+
+    const completionDetails =
+      performedByUser && performedByUser.id !== completedBy
+        ? `Marcada como completada por ${resolvedCompleterName} · Realizada por ${resolvedPerformerName}`
+        : `Completada por ${resolvedCompleterName}`;
+
     await updateTaskInDb(id, {
       status: "completed",
       completedBy,
       completedAt,
       completedCount: newCount,
+      performedBy: performedByUser?.id || null,
       history: [
         ...task.history,
-        createHistoryEntry("completed", completedBy, "Tarea completada"),
+        createHistoryEntry("completed", completedBy, completionDetails, {
+          completedByName: resolvedCompleterName,
+          performedByTaskName: resolvedPerformerName,
+        }),
       ],
     });
 
