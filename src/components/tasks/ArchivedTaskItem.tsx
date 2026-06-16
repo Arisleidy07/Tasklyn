@@ -37,7 +37,7 @@ export default function ArchivedTaskItem({
   const canEdit = canEditTask(role);
   const canDelete = canDeleteTask(role);
 
-  const getUserName = (userId: string) => memberNames[userId] || "...";
+  const getUserName = (userId: string) => memberNames[userId] || "Cargando...";
 
   const handleRestore = () => {
     if (!user) return;

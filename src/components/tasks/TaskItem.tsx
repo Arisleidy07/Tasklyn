@@ -96,7 +96,7 @@ export default function TaskItem({
   const canArchive = canArchiveTask(role);
   const canManageOptions = canManageTaskOptions(role);
 
-  const getUserName = (userId: string) => memberNames[userId] || "...";
+  const getUserName = (userId: string) => memberNames[userId] || "Cargando...";
 
   const handleToggleComplete = () => {
     if (!user || !canComplete) return;
@@ -195,31 +195,29 @@ export default function TaskItem({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8, scale: 0.97 }}
-        whileHover={{ y: -1, boxShadow: "0 4px 16px -4px rgba(0,0,0,0.07)" }}
-        transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+        whileHover={{ backgroundColor: "var(--bg-hover)" }}
+        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
         className={cn(
-          "group rounded-xl border transition-colors relative",
+          "group transition-colors relative",
           dropdownOpen && "z-20",
         )}
         style={
           isCompleted
             ? {
-                borderColor: "rgba(147,197,253,0.5)",
-                backgroundColor: "rgba(37,99,235,0.03)",
+                backgroundColor: "rgba(37,99,235,0.02)",
               }
             : {
-                borderColor: "var(--border-color)",
-                backgroundColor: "var(--bg-card)",
+                backgroundColor: "transparent",
               }
         }
       >
-        <div className="flex items-start gap-2 p-2">
+        <div className="flex items-center gap-3 py-2.5 px-2 sm:px-3 min-h-[55px] sm:min-h-[60px]">
           {/* Checkbox */}
           <button
             onClick={handleToggleComplete}
             disabled={!canComplete}
             className={cn(
-              "mt-0.5 flex-shrink-0 transition-colors cursor-pointer",
+              "flex-shrink-0 transition-colors cursor-pointer",
               canComplete
                 ? "hover:text-blue-600"
                 : "cursor-not-allowed opacity-50",
@@ -233,18 +231,18 @@ export default function TaskItem({
                 : "Sin permiso para completar tareas"
             }
           >
-            {isCompleted ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+            {isCompleted ? <CheckCircle2 size={18} /> : <Circle size={18} />}
           </button>
 
           {/* Content column */}
           <div className="flex-1 min-w-0">
             {/* ── Title row: content left, actions right ── */}
-            <div className="flex items-start gap-1">
+            <div className="flex items-center gap-2">
               {/* Left: title + badges */}
               <div className="flex-1 min-w-0">
                 <p
                   className={cn(
-                    "text-[13px] font-medium transition-colors leading-snug",
+                    "text-[14px] sm:text-[15px] font-medium transition-colors leading-tight",
                     isCompleted && "line-through",
                   )}
                   style={{
@@ -260,76 +258,85 @@ export default function TaskItem({
                   }}
                 />
 
-                {/* Priority badge */}
-                {task.priority &&
-                  (() => {
-                    const pc = getPriorityConfig(task.priority);
-                    return (
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1 border",
-                          pc.bg,
-                          pc.bgDark,
-                          pc.text,
-                          pc.textDark,
-                          pc.border,
-                          pc.borderDark,
-                        )}
-                      >
-                        <span className="text-[9px] leading-none">
-                          {pc.emoji}
+                {/* Secondary info row */}
+                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                  {/* Priority badge */}
+                  {task.priority &&
+                    (() => {
+                      const pc = getPriorityConfig(task.priority);
+                      return (
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border",
+                            pc.bg,
+                            pc.bgDark,
+                            pc.text,
+                            pc.textDark,
+                            pc.border,
+                            pc.borderDark,
+                          )}
+                        >
+                          <span className="text-[8px] leading-none">
+                            {pc.emoji}
+                          </span>
+                          {pc.label}
                         </span>
-                        {pc.label}
-                      </span>
-                    );
-                  })()}
+                      );
+                    })()}
 
-                {/* Tags */}
-                {task.tags && task.tags.length > 0 && (
-                  <div className="flex gap-1 flex-wrap mt-1">
-                    {task.tags.map((t) => (
-                      <span
-                        key={t}
-                        className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-                        style={{
-                          backgroundColor: "rgba(37,99,235,0.08)",
-                          color: "#2563eb",
-                        }}
-                      >
-                        <Tag size={7} />#{t}
-                      </span>
-                    ))}
-                  </div>
-                )}
+                  {/* Due date */}
+                  {task.dueDate && (
+                    <DueDateBadge
+                      dueDate={task.dueDate}
+                      dueTime={task.dueTime}
+                    />
+                  )}
 
-                {/* Option badges (always shown when set) */}
-                {(task.dueDate ||
-                  (task.reminders && task.reminders.length > 0) ||
-                  task.recurrence) && (
-                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                    {task.dueDate && (
-                      <DueDateBadge
-                        dueDate={task.dueDate}
-                        dueTime={task.dueTime}
-                      />
-                    )}
-                    {task.reminders && task.reminders.length > 0 && (
-                      <ReminderBadge reminder={task.reminders[0]} />
-                    )}
-                    {task.recurrence && (
-                      <span
-                        className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
-                        style={{
-                          backgroundColor: "rgba(16,185,129,0.08)",
-                          color: "#059669",
-                        }}
-                      >
-                        <Repeat size={8} />
-                        {getRecurrenceShortLabel(task.recurrence)}
-                      </span>
-                    )}
-                  </div>
-                )}
+                  {/* Reminder */}
+                  {task.reminders && task.reminders.length > 0 && (
+                    <ReminderBadge reminder={task.reminders[0]} />
+                  )}
+
+                  {/* Recurrence */}
+                  {task.recurrence && (
+                    <span
+                      className="flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: "rgba(16,185,129,0.08)",
+                        color: "#059669",
+                      }}
+                    >
+                      <Repeat size={8} />
+                      {getRecurrenceShortLabel(task.recurrence)}
+                    </span>
+                  )}
+
+                  {/* Tags */}
+                  {task.tags && task.tags.length > 0 && (
+                    <div className="flex gap-1">
+                      {task.tags.slice(0, 2).map((t) => (
+                        <span
+                          key={t}
+                          className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full font-medium"
+                          style={{
+                            backgroundColor: "rgba(37,99,235,0.08)",
+                            color: "#2563eb",
+                          }}
+                        >
+                          #{t}
+                        </span>
+                      ))}
+                      {task.tags.length > 2 && (
+                        <span
+                          className="text-[9px] font-medium"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
+                          +{task.tags.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Right: action buttons */}
@@ -414,163 +421,100 @@ export default function TaskItem({
                 )}
               </div>
             </div>
-
-            {/* ── Details: phones, location, description ── */}
-            {task.phoneNumbers && task.phoneNumbers.length > 0 && (
-              <div className="flex items-start gap-2 mt-2">
-                <span
-                  className="text-xs font-bold uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  <Phone size={10} className="text-blue-500" />
-                  Teléfonos
-                </span>
-                <span
-                  className="text-sm flex-1 leading-relaxed break-words whitespace-normal"
-                  dangerouslySetInnerHTML={{
-                    __html: task.phoneNumbers
-                      .map((phone) => linkifyPhoneNumbers(phone))
-                      .join(' <span class="text-gray-300 mx-1">•</span> '),
-                  }}
-                />
-              </div>
-            )}
-            {task.location && (
-              <div className="flex items-start gap-2 mt-2">
-                <span
-                  className="text-xs font-bold uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  <MapPin size={10} className="text-blue-500" />
-                  Ubicación
-                </span>
-                <span
-                  className="text-sm flex-1 leading-relaxed break-words whitespace-normal"
-                  dangerouslySetInnerHTML={{
-                    __html: linkifyLocation(task.location),
-                  }}
-                />
-              </div>
-            )}
-            {task.description && (
-              <div className="flex items-start gap-2 mt-2">
-                <span
-                  className="text-xs font-bold uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  <FileText
-                    size={10}
-                    style={{ color: "var(--text-tertiary)" }}
-                  />
-                  Descripción
-                </span>
-                <p
-                  className="text-sm flex-1 leading-relaxed break-words whitespace-normal"
-                  style={{ color: "var(--text-secondary)" }}
-                  dangerouslySetInnerHTML={{
-                    __html: linkifyPhoneNumbers(task.description),
-                  }}
-                />
-              </div>
-            )}
-
-            {/* ── Options bar (editors/owners on active tasks) ── */}
-            {canManageOptions && !isCompleted && (
-              <div className="mt-2">
-                <TaskOptionsBar
-                  dueDate={task.dueDate}
-                  dueTime={task.dueTime}
-                  reminders={task.reminders || []}
-                  recurrence={task.recurrence}
-                  onReminderChange={(r) =>
-                    user && updateTask(task.id, { reminders: r }, user.id)
-                  }
-                  onDueDateChange={(d) => {
-                    if (!user) return;
-                    updateTask(
-                      task.id,
-                      {
-                        dueDate: d,
-                        // Si se elimina la fecha, limpiamos también la hora
-                        dueTime: d ? task.dueTime || null : null,
-                      },
-                      user.id,
-                    );
-                  }}
-                  onRecurrenceChange={(r) => {
-                    if (!user) return;
-
-                    const updates: Partial<Task> = {
-                      recurrence: r,
-                    };
-
-                    // Si activas una repetición y no hay vencimiento, fija uno por defecto (hoy)
-                    if (r && !task.dueDate) {
-                      updates.dueDate = toISODate(new Date());
-                    }
-
-                    updateTask(task.id, updates, user.id, user.name);
-                  }}
-                  onDropdownOpenChange={setDropdownOpen}
-                />
-              </div>
-            )}
-
-            {/* ── Meta ── */}
-            <div className="flex items-center flex-wrap gap-2 mt-2">
-              <span
-                className="flex items-center gap-1 text-[11px]"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                <Clock size={10} />
-                {timeAgo(task.createdAt)}
-              </span>
-              {task.assignedTo && (
-                <span
-                  className="flex items-center gap-1 text-[11px]"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  <User size={10} />
-                  {getUserName(task.assignedTo)}
-                </span>
-              )}
-              {isCompleted && task.completedBy && (
-                <span
-                  className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
-                  style={{
-                    backgroundColor: "rgba(37,99,235,0.1)",
-                    color: "var(--text-link)",
-                  }}
-                >
-                  <CheckCircle2 size={8} />
-                  Completado por {getUserName(task.completedBy)} •{" "}
-                  {formatActivityDateTime(task.completedAt || task.createdAt)}
-                </span>
-              )}
-            </div>
           </div>
         </div>
 
-        {/* Expanded: History */}
-        <AnimatePresence initial={false}>
+        {/* ── Expanded details (activity & comments) ── */}
+        <AnimatePresence>
           {expanded && (
             <motion.div
-              key="history"
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
               className="border-t"
               style={{ borderColor: "var(--border-color)" }}
             >
-              <div className="p-4 pt-3">
+              <div className="p-3 sm:p-4">
+                {/* Options bar */}
+                {canManageOptions && !isCompleted && (
+                  <div className="mb-3">
+                    <TaskOptionsBar
+                      dueDate={task.dueDate}
+                      dueTime={task.dueTime}
+                      reminders={task.reminders || []}
+                      recurrence={task.recurrence}
+                      onReminderChange={(r) =>
+                        user && updateTask(task.id, { reminders: r }, user.id)
+                      }
+                      onDueDateChange={(d) => {
+                        if (!user) return;
+                        updateTask(
+                          task.id,
+                          {
+                            dueDate: d,
+                            dueTime: d ? task.dueTime || null : null,
+                          },
+                          user.id,
+                        );
+                      }}
+                      onRecurrenceChange={(r) => {
+                        if (!user) return;
+                        const updates: Partial<Task> = { recurrence: r };
+                        if (r && !task.dueDate) {
+                          updates.dueDate = toISODate(new Date());
+                        }
+                        updateTask(task.id, updates, user.id, user.name);
+                      }}
+                      onDropdownOpenChange={setDropdownOpen}
+                    />
+                  </div>
+                )}
+
+                {/* Meta */}
+                <div className="flex items-center flex-wrap gap-2 mb-3">
+                  <span
+                    className="flex items-center gap-1 text-[11px]"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    <Clock size={10} />
+                    {timeAgo(task.createdAt)}
+                  </span>
+                  {task.assignedTo && (
+                    <span
+                      className="flex items-center gap-1 text-[11px]"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      <User size={10} />
+                      {getUserName(task.assignedTo)}
+                    </span>
+                  )}
+                  {isCompleted && task.completedBy && (
+                    <span
+                      className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: "rgba(37,99,235,0.1)",
+                        color: "var(--text-link)",
+                      }}
+                    >
+                      <CheckCircle2 size={8} />
+                      Completado por {getUserName(task.completedBy)} •{" "}
+                      {formatActivityDateTime(
+                        task.completedAt || task.createdAt,
+                      )}
+                    </span>
+                  )}
+                </div>
+
+                {/* History */}
                 <p
-                  className="flex items-center gap-1.5 text-xs font-medium mb-3"
+                  className="flex items-center gap-1.5 text-xs font-medium mb-2"
                   style={{ color: "var(--text-secondary)" }}
                 >
                   <History size={12} />
                   Actividad
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-2 mb-4">
                   {task.history.slice(-8).map((entry) => (
                     <div
                       key={entry.id}
@@ -617,94 +561,130 @@ export default function TaskItem({
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         title="Editar tarea"
+        size="task"
       >
-        <div className="space-y-4">
-          {/* Título — auto-resize textarea */}
-          <AutoResizeTextarea
-            value={editTitle}
-            onChange={setEditTitle}
-            placeholder="Título de la tarea"
-            autoFocus
-            className="text-base font-semibold"
-            minRows={1}
-          />
-
-          {/* Descripción — auto-resize */}
-          <AutoResizeTextarea
-            value={editDescription}
-            onChange={setEditDescription}
-            placeholder="Añade una descripción..."
-            className="text-sm"
-            minRows={1}
-          />
-
-          {/* Ubicación */}
-          <div className="flex items-start gap-2">
-            <MapPin size={14} className="text-gray-300 flex-shrink-0 mt-0.5" />
+        <div className="space-y-6">
+          {/* Section: Título */}
+          <div className="space-y-2">
+            <label
+              className="text-xs font-semibold uppercase tracking-wide"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Título
+            </label>
             <AutoResizeTextarea
-              value={editLocation}
-              onChange={setEditLocation}
-              placeholder="Ubicación o dirección"
-              className="text-sm"
+              value={editTitle}
+              onChange={setEditTitle}
+              placeholder="Título de la tarea"
+              autoFocus
+              className="text-base sm:text-lg font-semibold"
               minRows={1}
             />
           </div>
 
-          {/* Teléfonos */}
-          <div className="space-y-1.5">
-            {editPhones.map((phone, index) => (
-              <div key={index} className="flex items-start gap-2">
-                <Phone
-                  size={14}
-                  className="text-gray-300 flex-shrink-0 mt-0.5"
-                />
-                <AutoResizeTextarea
-                  value={phone}
-                  onChange={(v) => handlePhoneChange(index, v)}
-                  placeholder={`Teléfono ${index + 1}`}
-                  className="flex-1 text-sm"
-                  minRows={1}
-                />
-                {editPhones.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemovePhone(index)}
-                    className="p-1 rounded-md transition-colors flex-shrink-0"
-                    style={{ color: "var(--text-tertiary)" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = "#ef4444";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = "var(--text-tertiary)";
-                    }}
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={handleAddPhone}
-              className="flex items-center gap-1.5 text-xs transition-colors ml-6"
-              style={{ color: "var(--text-tertiary)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--text-secondary)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--text-tertiary)";
-              }}
+          {/* Section: Descripción */}
+          <div className="space-y-2">
+            <label
+              className="text-xs font-semibold uppercase tracking-wide"
+              style={{ color: "var(--text-secondary)" }}
             >
-              <Plus size={12} />
-              Agregar teléfono
-            </button>
+              Descripción
+            </label>
+            <AutoResizeTextarea
+              value={editDescription}
+              onChange={setEditDescription}
+              placeholder="Añade una descripción..."
+              className="text-sm sm:text-base"
+              minRows={2}
+            />
           </div>
 
-          {/* Priority Selector */}
-          <div className="flex items-center gap-2">
-            <span className="text-base leading-none flex-shrink-0">
-              {getPriorityConfig(editPriority).emoji}
-            </span>
+          {/* Section: Ubicación */}
+          <div className="space-y-2">
+            <label
+              className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              <MapPin size={12} style={{ color: "var(--text-tertiary)" }} />
+              Ubicación
+            </label>
+            <AutoResizeTextarea
+              value={editLocation}
+              onChange={setEditLocation}
+              placeholder="Ubicación o dirección"
+              className="text-sm sm:text-base"
+              minRows={1}
+            />
+          </div>
+
+          {/* Section: Teléfonos */}
+          <div className="space-y-2">
+            <label
+              className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              <Phone size={12} style={{ color: "var(--text-tertiary)" }} />
+              Teléfonos
+            </label>
+            <div className="space-y-2">
+              {editPhones.map((phone, index) => (
+                <div key={index} className="flex items-start gap-2">
+                  <AutoResizeTextarea
+                    value={phone}
+                    onChange={(v) => handlePhoneChange(index, v)}
+                    placeholder={`Teléfono ${index + 1}`}
+                    className="flex-1 text-sm sm:text-base"
+                    minRows={1}
+                  />
+                  {editPhones.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhone(index)}
+                      className="p-1.5 rounded-lg transition-colors flex-shrink-0"
+                      style={{ color: "var(--text-tertiary)" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "#ef4444";
+                        e.currentTarget.style.backgroundColor =
+                          "rgba(239,68,68,0.08)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "var(--text-tertiary)";
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={handleAddPhone}
+                className="flex items-center gap-1.5 text-xs font-medium transition-colors px-3 py-2 rounded-lg"
+                style={{ color: "var(--text-tertiary)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--text-tertiary)";
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                <Plus size={12} />
+                Agregar teléfono
+              </button>
+            </div>
+          </div>
+
+          {/* Section: Prioridad */}
+          <div className="space-y-2">
+            <label
+              className="text-xs font-semibold uppercase tracking-wide"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Prioridad
+            </label>
             <select
               value={editPriority || ""}
               onChange={(e) =>
@@ -712,7 +692,7 @@ export default function TaskItem({
                   (e.target.value as Task["priority"]) || undefined,
                 )
               }
-              className="text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-400 flex-1 outline-none"
+              className="w-full text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 outline-none"
               style={{
                 border: "1px solid var(--border-input)",
                 backgroundColor: "var(--bg-input)",
@@ -727,11 +707,14 @@ export default function TaskItem({
             </select>
           </div>
 
-          {/* Options Bar */}
-          <div
-            className="flex items-center justify-between pt-2 border-t"
-            style={{ borderColor: "var(--border-color)" }}
-          >
+          {/* Section: Opciones de fecha/recurrencia */}
+          <div className="space-y-2">
+            <label
+              className="text-xs font-semibold uppercase tracking-wide"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Fecha y recordatorios
+            </label>
             <TaskOptionsBar
               dueDate={editDueDate}
               dueTime={editDueTime}
@@ -741,23 +724,23 @@ export default function TaskItem({
               onDueDateChange={(d) => setEditDueDate(d)}
               onRecurrenceChange={(r) => setEditRecurrence(r)}
             />
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowEditModal(false)}
-              >
-                Cancelar
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSaveEdit}
-                disabled={!editTitle.trim() || isSavingEdit}
-                isLoading={isSavingEdit}
-              >
-                Guardar
-              </Button>
-            </div>
+          </div>
+
+          {/* Actions */}
+          <div
+            className="flex items-center justify-end gap-3 pt-4 border-t"
+            style={{ borderColor: "var(--border-color)" }}
+          >
+            <Button variant="ghost" onClick={() => setShowEditModal(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={!editTitle.trim() || isSavingEdit}
+              isLoading={isSavingEdit}
+            >
+              Guardar cambios
+            </Button>
           </div>
         </div>
       </Modal>
@@ -826,6 +809,7 @@ export default function TaskItem({
         taskId={task.id}
         taskTitle={task.title}
         onConfirm={handleCompletionConfirm}
+        listMembers={listMembers}
       />
     </>
   );

@@ -112,7 +112,11 @@ export default function Sidebar() {
           }}
         >
           <Link href="/dashboard" className="flex items-center">
-            <Logo size="md" showText={!collapsed} />
+            <Logo
+              size="md"
+              showText={!collapsed}
+              textClassName="var(--text-sidebar)"
+            />
           </Link>
           {!collapsed && (
             <button

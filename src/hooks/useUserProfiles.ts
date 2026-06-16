@@ -60,9 +60,9 @@ export function useUserProfiles(uids: string[]) {
                   photoURL: u.photoURL || undefined,
                   email: u.email,
                 }
-              : { name: "Usuario desconocido" },
+              : { name: "Usuario" },
           }))
-          .catch(() => ({ uid, profile: { name: "Usuario desconocido" } })),
+          .catch(() => ({ uid, profile: { name: "Usuario" })),
       ),
     ).then((results) => {
       const updated = new Map<string, UserProfile>();
@@ -79,7 +79,7 @@ export function useUserProfiles(uids: string[]) {
   }, [uidKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getProfile = (uid: string): UserProfile =>
-    profiles.get(uid) ?? profileCache.get(uid) ?? { name: "..." };
+    profiles.get(uid) ?? profileCache.get(uid) ?? { name: "Cargando..." };
 
   return { profiles, getProfile };
 }

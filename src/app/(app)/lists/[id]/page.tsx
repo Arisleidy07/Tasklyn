@@ -140,20 +140,34 @@ export default function ListDetailPage() {
   }, [filteredTasks]);
 
   // Build memberNames using real Firestore profiles (with custom name fallback)
+  // Includes ALL profile IDs, not just current list members, to show names
+  // for users who completed tasks but were removed from the list
   const memberNames = useMemo(() => {
     if (!list) return {} as Record<string, string>;
-    return list.members.reduce(
-      (acc, m) => {
+    const names: Record<string, string> = {};
+
+    // Include all loaded profiles (from tasks history, completions, etc.)
+    Object.entries(memberProfiles).forEach(([userId, profile]) => {
+      const realName =
+        profile?.name ||
+        (userId === user?.id ? user?.name : undefined) ||
+        "...";
+      names[userId] = getDisplayName(listId, userId, realName);
+    });
+
+    // Ensure current list members are included (even if profiles still loading)
+    list.members.forEach((m) => {
+      if (!names[m.userId]) {
         const profile = memberProfiles[m.userId];
         const realName =
           profile?.name ||
           (m.userId === user?.id ? user?.name : undefined) ||
-          `...`;
-        acc[m.userId] = getDisplayName(listId, m.userId, realName);
-        return acc;
-      },
-      {} as Record<string, string>,
-    );
+          "...";
+        names[m.userId] = getDisplayName(listId, m.userId, realName);
+      }
+    });
+
+    return names;
   }, [list, memberProfiles, user, listId, getDisplayName]);
 
   if (!user || !list) {

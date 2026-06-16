@@ -151,10 +151,10 @@ export default function EditListModal({
       description={list.name}
       size="lg"
     >
-      <div className="p-4 sm:p-6 space-y-0 max-h-[60vh] overflow-y-auto">
+      <div className="space-y-6">
         {/* Tabs */}
         <div
-          className="flex rounded-xl p-1 mb-4 sm:mb-6 gap-1"
+          className="flex rounded-xl p-1 gap-1"
           style={{ backgroundColor: "var(--bg-secondary)" }}
         >
           {tabs.map((tab) => (
@@ -187,11 +187,12 @@ export default function EditListModal({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
               transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-5"
+              className="space-y-6"
             >
+              {/* Section: Nombre */}
               <div className="space-y-2">
                 <label
-                  className="text-sm font-medium block"
+                  className="text-xs font-semibold uppercase tracking-wide block"
                   style={{ color: "var(--text-secondary)" }}
                 >
                   Nombre de la lista
@@ -211,9 +212,10 @@ export default function EditListModal({
                 />
               </div>
 
+              {/* Section: Descripción */}
               <div className="space-y-2">
                 <label
-                  className="text-sm font-medium block"
+                  className="text-xs font-semibold uppercase tracking-wide block"
                   style={{ color: "var(--text-secondary)" }}
                 >
                   Descripción{" "}
@@ -239,11 +241,11 @@ export default function EditListModal({
                 />
               </div>
 
-              {/* Team assignment */}
+              {/* Section: Equipo */}
               {teams.length > 0 && (
                 <div className="space-y-2">
                   <label
-                    className="text-sm font-medium block"
+                    className="text-xs font-semibold uppercase tracking-wide block"
                     style={{ color: "var(--text-secondary)" }}
                   >
                     Equipo
@@ -269,37 +271,37 @@ export default function EditListModal({
                 </div>
               )}
 
-              {/* List meta */}
+              {/* Section: Información */}
               <div className="grid grid-cols-2 gap-3">
                 <div
-                  className="rounded-xl p-3.5 border"
+                  className="rounded-xl p-4 border"
                   style={{
                     backgroundColor: "var(--bg-secondary)",
                     borderColor: "var(--border-color)",
                   }}
                 >
                   <p
-                    className="text-xs mb-1"
+                    className="text-xs font-semibold uppercase tracking-wide mb-2"
                     style={{ color: "var(--text-secondary)" }}
                   >
                     Tipo
                   </p>
                   <p
-                    className="text-sm font-semibold capitalize"
+                    className="text-sm font-semibold"
                     style={{ color: "var(--text-primary)" }}
                   >
                     {list.type === "shared" ? "Compartida" : "Personal"}
                   </p>
                 </div>
                 <div
-                  className="rounded-xl p-3.5 border"
+                  className="rounded-xl p-4 border"
                   style={{
                     backgroundColor: "var(--bg-secondary)",
                     borderColor: "var(--border-color)",
                   }}
                 >
                   <p
-                    className="text-xs mb-1"
+                    className="text-xs font-semibold uppercase tracking-wide mb-2"
                     style={{ color: "var(--text-secondary)" }}
                   >
                     Tu rol
@@ -318,22 +320,30 @@ export default function EditListModal({
                 </div>
               </div>
 
+              {/* Actions */}
               {canEdit && (
-                <Button
-                  onClick={handleSaveDetails}
-                  isLoading={isSaving}
-                  disabled={!name.trim() || isSaving}
-                  className="w-full"
-                  icon={
-                    saved ? (
-                      <Check size={16} className="text-white" />
-                    ) : (
-                      <Save size={16} />
-                    )
-                  }
+                <div
+                  className="flex items-center justify-end gap-3 pt-4 border-t"
+                  style={{ borderColor: "var(--border-color)" }}
                 >
-                  {saved ? "¡Cambios guardados!" : "Guardar cambios"}
-                </Button>
+                  <Button variant="ghost" onClick={onClose}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleSaveDetails}
+                    isLoading={isSaving}
+                    disabled={!name.trim() || isSaving}
+                    icon={
+                      saved ? (
+                        <Check size={16} className="text-white" />
+                      ) : (
+                        <Save size={16} />
+                      )
+                    }
+                  >
+                    {saved ? "¡Guardado!" : "Guardar cambios"}
+                  </Button>
+                </div>
               )}
             </motion.div>
           )}
@@ -346,14 +356,14 @@ export default function EditListModal({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-2"
+              className="space-y-3"
             >
               {list.members.map((member, index) => {
                 const profile = memberProfiles[member.userId];
                 const isOwnerMember = member.role === "owner";
                 const isSelf = member.userId === user.id;
                 const displayName =
-                  profile?.name || (isSelf ? user.name : "...");
+                  profile?.name || (isSelf ? user.name : "Cargando...");
                 const displayEmail = profile?.email || "";
                 const photoURL = profile?.photoURL || "";
                 const isConfirmingRemove = confirmRemove === member.userId;
@@ -485,7 +495,7 @@ export default function EditListModal({
                           {canRemove && !isSelf && !isOwnerMember && (
                             <button
                               onClick={() => setConfirmRemove(member.userId)}
-                              className="p-2 rounded-lg transition-colors min-w-[36px] min-h-[36px] flex items-center justify-center"
+                              className="p-2 rounded-lg transition-colors flex items-center justify-center"
                               style={{ color: "var(--text-tertiary)" }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.color = "#ef4444";

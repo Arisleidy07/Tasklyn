@@ -54,10 +54,10 @@ export default function ListCard({ list }: ListCardProps) {
       className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 rounded-2xl"
     >
       <motion.div
-        whileHover={{ y: -4 }}
-        whileTap={{ scale: 0.985 }}
+        whileHover={{ y: -2 }}
+        whileTap={{ scale: 0.98 }}
         transition={{ type: "spring", stiffness: 420, damping: 28 }}
-        className="list-card-premium relative p-5 rounded-2xl transition-shadow duration-300"
+        className="list-card-premium relative p-3 rounded-xl transition-shadow duration-300"
         style={{
           backgroundColor: "var(--bg-card)",
           border: "1px solid var(--border-color)",
@@ -65,33 +65,33 @@ export default function ListCard({ list }: ListCardProps) {
         }}
       >
         {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1 min-w-0 pr-3">
-            <div className="flex items-center gap-1.5 mb-1">
+        <div className="flex items-start justify-between mb-2">
+          <div className="flex-1 min-w-0 pr-2">
+            <div className="flex items-center gap-1 mb-0.5">
               <h3
-                className="text-[15px] font-semibold truncate transition-colors leading-snug"
+                className="text-[13px] font-semibold truncate transition-colors leading-tight"
                 style={{ color: "var(--text-primary)" }}
               >
                 {list.name}
               </h3>
               <ArrowUpRight
-                size={13}
+                size={12}
                 className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all flex-shrink-0"
                 style={{ color: "var(--text-muted)" }}
               />
             </div>
             <p
-              className="text-[11px] flex items-center gap-1.5"
+              className="text-[10px] flex items-center gap-1"
               style={{ color: "var(--text-tertiary)" }}
             >
-              <Clock size={9} />
+              <Clock size={8} />
               <span>{formatDate(list.createdAt)}</span>
             </p>
           </div>
           {/* Type indicator with better icon */}
           <div
             className={cn(
-              "flex items-center justify-center w-9 h-9 rounded-xl flex-shrink-0",
+              "flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0",
               list.type === "shared"
                 ? "bg-gradient-to-br from-blue-500/10 to-indigo-500/10 text-blue-600"
                 : "",
@@ -114,11 +114,11 @@ export default function ListCard({ list }: ListCardProps) {
         </div>
 
         {/* Stats + progress */}
-        <div className="flex items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-2">
             {/* Pending badge */}
             <div
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
+              className="flex items-center gap-1 px-2 py-1 rounded-md"
               style={
                 urgentTasks > 0
                   ? {
@@ -132,39 +132,39 @@ export default function ListCard({ list }: ListCardProps) {
               }
             >
               {urgentTasks > 0 ? (
-                <AlertCircle size={12} />
+                <AlertCircle size={10} />
               ) : (
-                <Clock size={12} />
+                <Clock size={10} />
               )}
-              <span className="text-sm font-semibold leading-none tabular-nums">
+              <span className="text-xs font-semibold leading-none tabular-nums">
                 {pendingCount}
               </span>
             </div>
             {/* Completed badge */}
             <div
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
+              className="flex items-center gap-1 px-2 py-1 rounded-md"
               style={{
                 backgroundColor: "rgba(37,99,235,0.08)",
                 color: "#2563eb",
               }}
             >
-              <CheckCircle2 size={12} />
-              <span className="text-sm font-semibold leading-none tabular-nums">
+              <CheckCircle2 size={10} />
+              <span className="text-xs font-semibold leading-none tabular-nums">
                 {completedCount}
               </span>
             </div>
           </div>
 
           {/* Progress ring */}
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-col items-end gap-0.5">
             <span
-              className="text-[11px] font-bold tabular-nums"
+              className="text-[10px] font-bold tabular-nums"
               style={{ color: "var(--text-primary)" }}
             >
               {activeTasks.length > 0 ? Math.round(progress) : 0}%
             </span>
             <div
-              className="h-2 w-24 rounded-full overflow-hidden"
+              className="h-1.5 w-20 rounded-full overflow-hidden"
               style={{ backgroundColor: "var(--bg-tertiary)" }}
             >
               <motion.div
@@ -190,12 +190,12 @@ export default function ListCard({ list }: ListCardProps) {
 
         {/* Footer */}
         <div
-          className="flex items-center justify-between mt-4 pt-3.5 border-t"
+          className="flex items-center justify-between mt-2 pt-2 border-t"
           style={{ borderColor: "var(--border-color)" }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <div
-              className="flex items-center gap-1 text-[11px]"
+              className="flex items-center gap-1 text-[10px]"
               style={{ color: "var(--text-tertiary)" }}
             >
               <Users size={12} className="opacity-70" />

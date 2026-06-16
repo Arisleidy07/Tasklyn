@@ -53,15 +53,7 @@ const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 // ============================================
 // SPARKLINE CHART COMPONENT (MINI AREA)
 // ============================================
-function SparklineChart({
-  data,
-  color,
-  isDark,
-}: {
-  data: number[];
-  color: string;
-  isDark: boolean;
-}) {
+function SparklineChart({ data, color }: { data: number[]; color: string }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -93,7 +85,7 @@ function SparklineChart({
       type: "gradient",
       gradient: {
         shadeIntensity: 1,
-        opacityFrom: isDark ? 0.3 : 0.2,
+        opacityFrom: 0.2,
         opacityTo: 0,
         stops: [0, 100],
       },
@@ -183,8 +175,6 @@ function TradingAreaChart({
     [data],
   );
 
-  const isDark = theme === "dark";
-
   const options: ApexCharts.ApexOptions = {
     chart: {
       type: "area",
@@ -207,7 +197,7 @@ function TradingAreaChart({
         enabled: false,
       },
     },
-    colors: isDark ? ["#22d3ee", "#a855f7"] : ["#3b82f6", "#10b981"],
+    colors: ["#3b82f6", "#10b981"],
     stroke: {
       curve: "smooth",
       width: 3,
@@ -217,16 +207,14 @@ function TradingAreaChart({
       type: "gradient",
       gradient: {
         shadeIntensity: 1,
-        opacityFrom: isDark ? 0.4 : 0.3,
+        opacityFrom: 0.3,
         opacityTo: 0.05,
         stops: [0, 90, 100],
       },
     },
     dataLabels: { enabled: false },
     grid: {
-      borderColor: isDark
-        ? "rgba(148, 163, 184, 0.1)"
-        : "rgba(148, 163, 184, 0.2)",
+      borderColor: "rgba(148, 163, 184, 0.2)",
       strokeDashArray: 4,
       yaxis: { lines: { show: true } },
       xaxis: { lines: { show: false } },
@@ -237,7 +225,7 @@ function TradingAreaChart({
       axisTicks: { show: false },
       labels: {
         style: {
-          colors: isDark ? "#94a3b8" : "#64748b",
+          colors: "#64748b",
           fontSize: "11px",
           fontWeight: 500,
         },
@@ -247,13 +235,13 @@ function TradingAreaChart({
       show: true,
       labels: {
         style: {
-          colors: isDark ? "#94a3b8" : "#64748b",
+          colors: "#64748b",
           fontSize: "11px",
         },
       },
     },
     tooltip: {
-      theme: isDark ? "dark" : "light",
+      theme: "light",
       shared: true,
       intersect: false,
       y: {
@@ -270,7 +258,7 @@ function TradingAreaChart({
       fontSize: "11px",
       fontFamily: "Inter, sans-serif",
       labels: {
-        colors: isDark ? "#94a3b8" : "#64748b",
+        colors: "#64748b",
       },
       markers: {
         offsetX: -4,
@@ -291,11 +279,7 @@ function TradingAreaChart({
   if (!chartReady || data.length === 0) {
     return (
       <div className="w-full h-[320px] flex items-center justify-center">
-        <div
-          className={cn("text-sm", isDark ? "text-slate-500" : "text-gray-400")}
-        >
-          Cargando gráfico...
-        </div>
+        <div className="text-sm text-gray-400">Cargando gráfico...</div>
       </div>
     );
   }
@@ -352,11 +336,8 @@ function KPICard({ stat, index, isDark }: KPICardProps) {
     >
       <div className="flex items-center justify-between mb-2 relative z-10">
         <div
-          className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300",
-            stat.bg,
-            isDark && "shadow-lg",
-          )}
+          className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 shadow-lg"
+          style={{ backgroundColor: stat.bg }}
         >
           <stat.icon size={18} style={{ color: "var(--text-on-accent)" }} />
         </div>
@@ -385,11 +366,7 @@ function KPICard({ stat, index, isDark }: KPICardProps) {
 
       {/* Sparkline Chart */}
       <div className="mt-3 relative z-10">
-        <SparklineChart
-          data={stat.sparklineData}
-          color={stat.sparklineColor}
-          isDark={isDark}
-        />
+        <SparklineChart data={stat.sparklineData} color={stat.sparklineColor} />
       </div>
     </motion.div>
   );
@@ -470,50 +447,16 @@ function ActivityTimeline({
                 }}
               />
 
-              <div
-                className={cn(
-                  "relative flex-shrink-0",
-                  item.isCompleted
-                    ? isDark
-                      ? "shadow-[0_0_12px_rgba(52,211,153,0.3)]"
-                      : ""
-                    : isDark
-                      ? "shadow-[0_0_12px_rgba(34,211,238,0.3)]"
-                      : "",
-                )}
-              >
+              <div className="relative flex-shrink-0">
                 {actor.photoURL ? (
                   <img
                     src={actor.photoURL}
                     alt={actor.name}
-                    className={cn(
-                      "w-8 h-8 rounded-full object-cover",
-                      "ring-2",
-                      item.isCompleted
-                        ? isDark
-                          ? "ring-emerald-500/50"
-                          : "ring-emerald-500"
-                        : isDark
-                          ? "ring-cyan-500/50"
-                          : "ring-blue-500",
-                    )}
+                    className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500"
                   />
                 ) : (
                   <div
-                    className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold",
-                      "bg-gradient-to-br",
-                      item.isCompleted
-                        ? "from-emerald-500 to-teal-600"
-                        : "from-cyan-500 to-blue-600",
-                      item.isCompleted
-                        ? isDark
-                          ? "shadow-[0_0_12px_rgba(16,185,129,0.4)]"
-                          : ""
-                        : isDark
-                          ? "shadow-[0_0_12px_rgba(6,182,212,0.4)]"
-                          : "",
-                    )}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-gradient-to-br from-emerald-500 to-teal-600"
                     style={{ color: "var(--text-on-accent)" }}
                   >
                     {actor.name.charAt(0).toUpperCase()}
@@ -605,28 +548,14 @@ function SharedListRow({
         className={cn(
           "group flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer",
           "border transition-all duration-300",
-          isDark
-            ? "bg-slate-900/30 border-slate-800/50 hover:bg-slate-800/50"
-            : "bg-white border-gray-200/60 hover:bg-gray-50",
-          isDark ? color.border : "hover:border-blue-300",
-          isDark && `hover:shadow-lg ${color.glow}`,
+          "bg-white border-gray-200/60 hover:bg-gray-50",
+          "hover:border-blue-300",
         )}
       >
-        <div
-          className={cn(
-            "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors",
-            isDark
-              ? "bg-slate-800 group-hover:bg-slate-700"
-              : "bg-gray-100 group-hover:bg-gray-200",
-          )}
-        >
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors bg-gray-100 group-hover:bg-gray-200">
           <Layout
             size={16}
-            className={cn(
-              isDark
-                ? "text-slate-400 group-hover:text-slate-300"
-                : "text-gray-500 group-hover:text-gray-700",
-            )}
+            className="text-gray-500 group-hover:text-gray-700"
           />
         </div>
 
@@ -837,14 +766,10 @@ export default function DashboardPage() {
       numericValue: allLists.length,
       suffix: "",
       icon: FolderOpen,
-      bg: isDark
-        ? "bg-gradient-to-br from-blue-600 to-indigo-600"
-        : "bg-gradient-to-br from-blue-500 to-indigo-600",
-      sparklineColor: "#6366f1", // Indigo
+      bg: "bg-gradient-to-br from-blue-500 to-indigo-600",
+      sparklineColor: "#6366f1",
       badge: `${allLists.length} total`,
-      badgeColor: isDark
-        ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-        : "bg-blue-50 text-blue-600",
+      badgeColor: "bg-blue-50 text-blue-600",
       sparklineData: generateSparklineData(allLists.length, 2),
     },
     {
@@ -852,14 +777,10 @@ export default function DashboardPage() {
       numericValue: userTasks.length,
       suffix: "",
       icon: TrendingUp,
-      bg: isDark
-        ? "bg-gradient-to-br from-purple-600 to-pink-600"
-        : "bg-gradient-to-br from-purple-500 to-pink-600",
-      sparklineColor: "#a855f7", // Purple
+      bg: "bg-gradient-to-br from-purple-500 to-pink-600",
+      sparklineColor: "#a855f7",
       badge: `${completedTasks.length} completadas`,
-      badgeColor: isDark
-        ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
-        : "bg-purple-50 text-purple-600",
+      badgeColor: "bg-purple-50 text-purple-600",
       sparklineData: generateSparklineData(userTasks.length / 5, 3),
     },
     {
@@ -867,14 +788,10 @@ export default function DashboardPage() {
       numericValue: completionRate,
       suffix: "%",
       icon: CheckCircle2,
-      bg: isDark
-        ? "bg-gradient-to-br from-emerald-600 to-teal-600"
-        : "bg-gradient-to-br from-green-500 to-emerald-600",
-      sparklineColor: "#10b981", // Emerald
+      bg: "bg-gradient-to-br from-green-500 to-emerald-600",
+      sparklineColor: "#10b981",
       badge: `${completedTasks.length} completadas`,
-      badgeColor: isDark
-        ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-        : "bg-green-50 text-green-600",
+      badgeColor: "bg-green-50 text-green-600",
       sparklineData: generateSparklineData(completionRate / 10, 1),
     },
     {
@@ -882,14 +799,10 @@ export default function DashboardPage() {
       numericValue: pendingTasks.length,
       suffix: "",
       icon: Clock,
-      bg: isDark
-        ? "bg-gradient-to-br from-amber-600 to-orange-600"
-        : "bg-gradient-to-br from-yellow-500 to-orange-600",
-      sparklineColor: "#ef4444", // Red
+      bg: "bg-gradient-to-br from-yellow-500 to-orange-600",
+      sparklineColor: "#ef4444",
       badge: "por completar",
-      badgeColor: isDark
-        ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-        : "bg-amber-50 text-amber-600",
+      badgeColor: "bg-amber-50 text-amber-600",
       sparklineData: generateSparklineData(pendingTasks.length / 3, 2),
     },
   ];
@@ -1018,51 +931,25 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
-                  className={cn(
-                    "p-5 rounded-2xl border backdrop-blur-md",
-                    isDark
-                      ? "bg-slate-900/40 border-slate-700/50"
-                      : "bg-white border-gray-200/80 shadow-sm",
-                  )}
+                  className="p-5 rounded-2xl border backdrop-blur-md bg-white border-gray-200/80 shadow-sm"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          "w-10 h-10 rounded-xl flex items-center justify-center",
-                          isDark ? "bg-cyan-500/20" : "bg-blue-50",
-                        )}
-                      >
-                        <TrendingUp
-                          size={18}
-                          className={isDark ? "text-cyan-400" : "text-blue-600"}
-                        />
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50">
+                        <TrendingUp size={18} className="text-blue-600" />
                       </div>
                       <div>
-                        <h3
-                          className={cn(
-                            "text-sm font-semibold",
-                            isDark ? "text-slate-100" : "text-gray-900",
-                          )}
-                        >
+                        <h3 className="text-sm font-semibold text-gray-900">
                           Rendimiento semanal
                         </h3>
-                        <p
-                          className={cn(
-                            "text-xs",
-                            isDark ? "text-slate-400" : "text-gray-500",
-                          )}
-                        >
+                        <p className="text-xs text-gray-500">
                           Tareas completadas vs creadas
                         </p>
                       </div>
                     </div>
                   </div>
                   {mounted && (
-                    <TradingAreaChart
-                      data={weekData}
-                      theme={isDark ? "dark" : "light"}
-                    />
+                    <TradingAreaChart data={weekData} theme="light" />
                   )}
                 </motion.div>
 
@@ -1072,43 +959,18 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, duration: 0.5 }}
-                    className={cn(
-                      "p-5 rounded-2xl border backdrop-blur-md",
-                      isDark
-                        ? "bg-slate-900/40 border-slate-700/50"
-                        : "bg-white border-gray-200/80 shadow-sm",
-                    )}
+                    className="p-5 rounded-2xl border backdrop-blur-md bg-white border-gray-200/80 shadow-sm"
                   >
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center",
-                            isDark ? "bg-purple-500/20" : "bg-purple-50",
-                          )}
-                        >
-                          <Users
-                            size={18}
-                            className={
-                              isDark ? "text-purple-400" : "text-purple-600"
-                            }
-                          />
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-50">
+                          <Users size={18} className="text-purple-600" />
                         </div>
                         <div>
-                          <h3
-                            className={cn(
-                              "text-sm font-semibold",
-                              isDark ? "text-slate-100" : "text-gray-900",
-                            )}
-                          >
+                          <h3 className="text-sm font-semibold text-gray-900">
                             Listas compartidas
                           </h3>
-                          <p
-                            className={cn(
-                              "text-xs",
-                              isDark ? "text-slate-400" : "text-gray-500",
-                            )}
-                          >
+                          <p className="text-xs text-gray-500">
                             {sharedLists.length} lista
                             {sharedLists.length !== 1 ? "s" : ""} compartida
                             {sharedLists.length !== 1 ? "s" : ""}
@@ -1128,7 +990,7 @@ export default function DashboardPage() {
                           key={list.id}
                           list={list}
                           index={i}
-                          isDark={isDark}
+                          isDark={false}
                         />
                       ))}
                     </div>
@@ -1143,28 +1005,13 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.5 }}
-                  className={cn(
-                    "p-5 rounded-2xl border backdrop-blur-md",
-                    isDark
-                      ? "bg-slate-900/40 border-slate-700/50"
-                      : "bg-white border-gray-200/80 shadow-sm",
-                  )}
+                  className="p-5 rounded-2xl border backdrop-blur-md bg-white border-gray-200/80 shadow-sm"
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div
-                      className={cn(
-                        "w-10 h-10 rounded-xl flex items-center justify-center text-lg",
-                        isDark ? "bg-amber-500/20" : "bg-amber-50",
-                      )}
-                    >
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-amber-50">
                       🎯
                     </div>
-                    <h3
-                      className={cn(
-                        "text-sm font-semibold",
-                        isDark ? "text-slate-100" : "text-gray-900",
-                      )}
-                    >
+                    <h3 className="text-sm font-semibold text-gray-900">
                       Prioridades
                     </h3>
                   </div>
@@ -1190,12 +1037,7 @@ export default function DashboardPage() {
                             <span className="text-sm leading-none">
                               {cfg.emoji}
                             </span>
-                            <span
-                              className={cn(
-                                "text-xs font-medium",
-                                isDark ? "text-slate-300" : "text-gray-700",
-                              )}
-                            >
+                            <span className="text-xs font-medium text-gray-700">
                               {cfg.label}
                             </span>
                           </div>
@@ -1220,43 +1062,18 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4, duration: 0.5 }}
-                    className={cn(
-                      "p-5 rounded-2xl border backdrop-blur-md",
-                      isDark
-                        ? "bg-slate-900/40 border-slate-700/50"
-                        : "bg-white border-gray-200/80 shadow-sm",
-                    )}
+                    className="p-5 rounded-2xl border backdrop-blur-md bg-white border-gray-200/80 shadow-sm"
                   >
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <div
-                          className={cn(
-                            "w-10 h-10 rounded-xl flex items-center justify-center",
-                            isDark ? "bg-violet-500/20" : "bg-violet-50",
-                          )}
-                        >
-                          <Activity
-                            size={18}
-                            className={
-                              isDark ? "text-violet-400" : "text-violet-600"
-                            }
-                          />
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-violet-50">
+                          <Activity size={18} className="text-violet-600" />
                         </div>
                         <div>
-                          <h3
-                            className={cn(
-                              "text-sm font-semibold",
-                              isDark ? "text-slate-100" : "text-gray-900",
-                            )}
-                          >
+                          <h3 className="text-sm font-semibold text-gray-900">
                             Actividad reciente
                           </h3>
-                          <p
-                            className={cn(
-                              "text-xs",
-                              isDark ? "text-slate-400" : "text-gray-500",
-                            )}
-                          >
+                          <p className="text-xs text-gray-500">
                             Últimas acciones
                           </p>
                         </div>
@@ -1271,7 +1088,7 @@ export default function DashboardPage() {
                     <ActivityTimeline
                       activities={recentActivityRaw}
                       profiles={activityProfiles}
-                      isDark={isDark}
+                      isDark={false}
                     />
                   </motion.div>
                 )}

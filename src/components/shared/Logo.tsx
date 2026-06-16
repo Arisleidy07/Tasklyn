@@ -38,12 +38,8 @@ export default function Logo({
       />
       {showText && (
         <span
-          className={cn(
-            s.text,
-            "font-bold tracking-tight",
-            textClassName || "text-[var(--text-primary)]",
-          )}
-          style={{ color: textClassName ? undefined : "var(--text-primary)" }}
+          className={cn(s.text, "font-bold tracking-tight", textClassName)}
+          style={{ color: textClassName || "var(--text-primary)" }}
         >
           TASKLYN
         </span>

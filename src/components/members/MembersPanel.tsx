@@ -295,7 +295,7 @@ export default function MembersPanel({
             {list.members.map((member) => {
               const isOwnerMember = member.role === "owner";
               const isSelf = member.userId === user.id;
-              const displayName = memberNames[member.userId] || "Unknown";
+              const displayName = memberNames[member.userId] || "Cargando...";
               const hasCustomName = !!list.customNames[member.userId];
               const isEditing = editingUserId === member.userId;
 
@@ -333,7 +333,7 @@ export default function MembersPanel({
                         {hasCustomName && (
                           <p className="text-[11px] text-gray-400 truncate">
                             Original:{" "}
-                            {originalNames[member.userId] || "Unknown"}
+                            {originalNames[member.userId] || "Usuario"}
                           </p>
                         )}
                       </div>

@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { useAuthStore } from "@/stores/authStore";
-import { useTeamStore } from "@/stores/teamStore";
 import { updateTask } from "@/lib/firestore";
 import Button from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
@@ -26,6 +25,7 @@ interface TaskCompletionModalProps {
   taskId: string;
   taskTitle: string;
   onConfirm: (performedBy: string | null) => void;
+  listMembers?: Array<{ userId: string; role: string }>;
 }
 
 interface TeamMemberOption {
@@ -42,9 +42,9 @@ export default function TaskCompletionModal({
   taskId,
   taskTitle,
   onConfirm,
+  listMembers,
 }: TaskCompletionModalProps) {
   const { user } = useAuthStore();
-  const { currentTeam } = useTeamStore();
   const [selectedPerformer, setSelectedPerformer] = useState<string | null>(
     null,
   );
@@ -52,19 +52,17 @@ export default function TaskCompletionModal({
   const [notes, setNotes] = useState("");
 
   const memberUids = useMemo(() => {
-    if (!currentTeam || !user) return [];
-    return currentTeam.members
-      .map((m) => m.userId)
-      .filter((uid) => uid !== user.id);
-  }, [currentTeam, user]);
+    if (!listMembers || !user) return [];
+    return listMembers.map((m) => m.userId).filter((uid) => uid !== user.id);
+  }, [listMembers, user]);
 
   const { getProfile } = useUserProfiles(memberUids);
 
   if (!isOpen || !user) return null;
 
-  // Get team members for performer selection
-  const teamMembers: TeamMemberOption[] = currentTeam
-    ? currentTeam.members.map((member) => ({
+  // Get list members for performer selection (not team members)
+  const teamMembers: TeamMemberOption[] = listMembers
+    ? listMembers.map((member) => ({
         userId: member.userId,
         name:
           member.userId === user.id

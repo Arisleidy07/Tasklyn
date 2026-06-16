@@ -143,7 +143,7 @@ export default function ActivityPage() {
       uid === user.id
         ? { name: user.name, photoURL: user.photoURL }
         : {
-            name: profiles.get(uid)?.name ?? "...",
+            name: profiles.get(uid)?.name ?? "Cargando...",
             photoURL: profiles.get(uid)?.photoURL,
           };
 

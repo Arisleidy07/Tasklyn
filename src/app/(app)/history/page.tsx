@@ -346,7 +346,7 @@ export default function HistoryPage() {
     const resolveName = (uid: string | undefined) => {
       if (!uid) return undefined;
       if (uid === user.id) return user.name;
-      return profiles.get(uid)?.name ?? "...";
+      return profiles.get(uid)?.name ?? "Cargando...";
     };
     const resolvePhoto = (uid: string | undefined) => {
       if (!uid) return undefined;
@@ -361,7 +361,7 @@ export default function HistoryPage() {
         id: `${task.id}-created`,
         action: "created",
         performedBy: task.createdBy,
-        performedByName: resolveName(task.createdBy) ?? "...",
+        performedByName: resolveName(task.createdBy) ?? "Cargando...",
         performedByPhoto: resolvePhoto(task.createdBy),
         performedAt: task.createdAt,
         taskTitle: task.title,
@@ -376,7 +376,7 @@ export default function HistoryPage() {
           id: `${task.id}-completed`,
           action: "completed",
           performedBy: task.completedBy,
-          performedByName: resolveName(task.completedBy) ?? "...",
+          performedByName: resolveName(task.completedBy) ?? "Cargando...",
           performedByPhoto: resolvePhoto(task.completedBy),
           performedAt: task.completedAt,
           taskTitle: task.title,
@@ -394,7 +394,7 @@ export default function HistoryPage() {
           id: `${task.id}-assigned`,
           action: "assigned",
           performedBy: task.createdBy,
-          performedByName: resolveName(task.createdBy) ?? "...",
+          performedByName: resolveName(task.createdBy) ?? "Cargando...",
           performedByPhoto: resolvePhoto(task.createdBy),
           performedAt: task.createdAt,
           taskTitle: task.title,
@@ -412,7 +412,8 @@ export default function HistoryPage() {
           id: `${task.id}-history-${historyEntry.id}`,
           action: historyEntry.action,
           performedBy: historyEntry.performedBy,
-          performedByName: resolveName(historyEntry.performedBy) ?? "...",
+          performedByName:
+            resolveName(historyEntry.performedBy) ?? "Cargando...",
           performedByPhoto: resolvePhoto(historyEntry.performedBy),
           performedAt: historyEntry.performedAt,
           taskTitle: task.title,

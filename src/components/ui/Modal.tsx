@@ -12,7 +12,7 @@ interface ModalProps {
   title?: string;
   description?: string;
   children: React.ReactNode;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "task";
 }
 
 const sizeMap = {
@@ -20,6 +20,7 @@ const sizeMap = {
   md: "max-w-md",
   lg: "max-w-xl",
   xl: "max-w-4xl lg:max-w-5xl",
+  task: "max-w-[700px]",
 };
 
 export default function Modal({
@@ -64,7 +65,7 @@ export default function Modal({
 
   if (!mounted) return null;
 
-  // Mobile: Full screen modal
+  // Mobile: 95% width modal
   if (isMobile) {
     return createPortal(
       <AnimatePresence>
@@ -74,67 +75,82 @@ export default function Modal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-[2147483647] flex flex-col"
-            style={{
-              backgroundColor: "var(--bg-modal)",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: "100vh",
-              width: "100vw",
-              maxHeight: "-webkit-fill-available",
-            }}
+            className="fixed inset-0 z-[2147483647] flex items-center justify-center p-4"
           >
-            {/* Header */}
-            <div
-              className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={onClose}
+            />
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              className="relative w-[95%] max-h-[90vh] rounded-2xl overflow-hidden flex flex-col"
               style={{
                 backgroundColor: "var(--bg-modal)",
                 borderColor: "var(--border-color)",
+                borderWidth: "1px",
+                boxShadow: "var(--shadow-modal)",
               }}
             >
-              <div className="flex-1 min-w-0 pr-3">
-                {title && (
-                  <h2
-                    className="text-lg font-semibold leading-tight"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    {title}
-                  </h2>
-                )}
-                {description && (
-                  <p
-                    className="text-sm truncate"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    {description}
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-lg transition-colors"
-                style={{ color: "var(--text-secondary)" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "var(--text-primary)";
-                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "var(--text-secondary)";
-                  e.currentTarget.style.backgroundColor = "transparent";
+              {/* Header */}
+              <div
+                className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0"
+                style={{
+                  backgroundColor: "var(--bg-modal)",
+                  borderColor: "var(--border-color)",
                 }}
               >
-                <X size={24} />
-              </button>
-            </div>
-            {/* Content */}
-            <div
-              className="flex-1 overflow-y-auto overscroll-contain"
-              style={{ backgroundColor: "var(--bg-modal)" }}
-            >
-              {children}
-            </div>
+                <div className="flex-1 min-w-0 pr-3">
+                  {title && (
+                    <h2
+                      className="text-base font-semibold leading-tight"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      {title}
+                    </h2>
+                  )}
+                  {description && (
+                    <p
+                      className="text-sm truncate"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      {description}
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={onClose}
+                  className="p-2 rounded-lg transition-colors"
+                  style={{ color: "var(--text-secondary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--text-primary)";
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-secondary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              {/* Content */}
+              <div
+                className="flex-1 overflow-y-auto"
+                style={{ backgroundColor: "var(--bg-modal)" }}
+              >
+                {children}
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>,
