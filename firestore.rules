@@ -93,13 +93,9 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      // Allow reading public profile fields (name, photoURL) for any authenticated user
-      // This is needed for displaying names in activity feed, ranking, etc.
-      allow read: if isAuth() && (
-        getAuthUid() == userId ||
-        // Allow reading only public fields for other users
-        (request.resource.data == null && resource.data != null)
-      );
+      // Allow any authenticated user to read user profiles
+      // This is needed for displaying names, photos in lists, activity feed, ranking, etc.
+      allow read: if isAuth();
       allow create, update: if isAuth() && getAuthUid() == userId;
       allow delete: if false;
     }

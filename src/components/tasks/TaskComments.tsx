@@ -119,10 +119,16 @@ export default function TaskComments({
     );
 
   return (
-    <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800">
+    <div
+      className="mt-3 pt-3 border-t"
+      style={{ borderColor: "var(--border-color)" }}
+    >
       <div className="flex items-center gap-2 mb-3">
         <MessageCircle size={13} className="text-gray-400" />
-        <span className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+        <span
+          className="text-xs font-semibold uppercase tracking-wide"
+          style={{ color: "var(--text-tertiary)" }}
+        >
           Comentarios {comments.length > 0 && `(${comments.length})`}
         </span>
       </div>
@@ -131,7 +137,10 @@ export default function TaskComments({
       <div className="space-y-2.5 mb-3 max-h-48 overflow-y-auto">
         <AnimatePresence initial={false}>
           {comments.length === 0 ? (
-            <p className="text-xs text-gray-400 dark:text-slate-500 italic">
+            <p
+              className="text-xs italic"
+              style={{ color: "var(--text-tertiary)" }}
+            >
               Sin comentarios aún. ¡Sé el primero!
             </p>
           ) : (
@@ -150,23 +159,33 @@ export default function TaskComments({
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-[11px] font-semibold text-gray-800 dark:text-slate-200">
+                    <span
+                      className="text-[11px] font-semibold"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       {c.authorName}
                     </span>
-                    <span className="text-[10px] text-gray-400 dark:text-slate-500">
+                    <span
+                      className="text-[10px]"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
                       {formatDistanceToNow(parseISO(c.createdAt), {
                         addSuffix: true,
                         locale: es,
                       })}
                     </span>
                     {c.editedAt && (
-                      <span className="text-[10px] text-gray-400 dark:text-slate-500 italic">
+                      <span
+                        className="text-[10px] italic"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         (editado)
                       </span>
                     )}
                   </div>
                   <p
-                    className="text-xs text-gray-700 dark:text-slate-300 mt-0.5 break-words"
+                    className="text-xs mt-0.5 break-words"
+                    style={{ color: "var(--text-secondary)" }}
                     dangerouslySetInnerHTML={{
                       __html: renderContent(c.content),
                     }}
@@ -175,7 +194,14 @@ export default function TaskComments({
                 {c.authorId === user.id && (
                   <button
                     onClick={() => deleteComment(c.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-gray-300 dark:text-slate-600 hover:text-red-400 transition-all flex-shrink-0"
+                    className="opacity-0 group-hover:opacity-100 p-1 transition-all flex-shrink-0"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#ef4444";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                    }}
                   >
                     <Trash2 size={11} />
                   </button>
@@ -189,15 +215,30 @@ export default function TaskComments({
       {/* Input */}
       <div className="relative">
         {showMentions && mentionSuggestions.length > 0 && (
-          <div className="absolute bottom-full mb-1 left-0 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg overflow-hidden z-20 min-w-[160px]">
+          <div
+            className="absolute bottom-full mb-1 left-0 rounded-xl shadow-lg overflow-hidden z-20 min-w-[160px] max-w-[calc(100vw-32px)]"
+            style={{
+              backgroundColor: "var(--bg-card)",
+              border: "1px solid var(--border-color)",
+            }}
+          >
             {mentionSuggestions.map(([id, name]) => (
               <button
                 key={id}
                 onMouseDown={() => insertMention(name)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-left"
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors text-left"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
               >
                 <AtSign size={10} className="text-blue-500" />
-                <span className="font-medium text-gray-800 dark:text-slate-200">
+                <span
+                  className="font-medium"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   {name}
                 </span>
               </button>
@@ -219,17 +260,21 @@ export default function TaskComments({
               }}
               placeholder="Escribe un comentario... usa @nombre para mencionar"
               rows={1}
-              className="w-full text-xs px-3 py-2 border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none pr-10"
-              style={{ minHeight: "34px", maxHeight: "80px" }}
+              className="w-full text-xs px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none pr-10"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+                minHeight: "34px",
+                maxHeight: "80px",
+              }}
             />
             <button
               onClick={handleSend}
               disabled={!text.trim() || sending}
               className={cn(
                 "absolute right-2 bottom-1.5 p-1 rounded-lg transition-colors",
-                text.trim()
-                  ? "text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/20"
-                  : "text-gray-300 dark:text-slate-600 cursor-not-allowed",
+                text.trim() ? "text-blue-600" : "cursor-not-allowed",
               )}
             >
               <Send size={13} />

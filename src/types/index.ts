@@ -179,6 +179,8 @@ export interface TaskReminder {
   id: string;
   at: string; // ISO datetime
   sent: boolean;
+  recipientType?: "me" | "team" | "members";
+  recipientIds?: string[];
 }
 
 // ---- Due Date Status ----

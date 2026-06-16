@@ -47,43 +47,48 @@ interface ActivityEntry {
 
 const ACTION_META: Record<
   string,
-  { label: string; icon: React.ElementType; color: string; bg: string }
+  {
+    label: string;
+    icon: React.ElementType;
+    color: string;
+    bgStyle: React.CSSProperties;
+  }
 > = {
   created: {
     label: "creó",
     icon: Plus,
     color: "text-blue-600",
-    bg: "bg-blue-50 dark:bg-blue-950/30",
+    bgStyle: { backgroundColor: "rgba(37,99,235,0.07)" },
   },
   completed: {
     label: "completó",
     icon: CheckCircle2,
     color: "text-green-600",
-    bg: "bg-green-50 dark:bg-green-950/30",
+    bgStyle: { backgroundColor: "rgba(22,163,74,0.07)" },
   },
   updated: {
     label: "editó",
     icon: Edit3,
     color: "text-yellow-600",
-    bg: "bg-yellow-50 dark:bg-yellow-950/30",
+    bgStyle: { backgroundColor: "rgba(202,138,4,0.07)" },
   },
   assigned: {
     label: "asignó",
     icon: UserPlus,
     color: "text-purple-600",
-    bg: "bg-purple-50 dark:bg-purple-950/30",
+    bgStyle: { backgroundColor: "rgba(147,51,234,0.07)" },
   },
   archived: {
     label: "archivó",
     icon: Archive,
     color: "text-orange-600",
-    bg: "bg-orange-50 dark:bg-orange-950/30",
+    bgStyle: { backgroundColor: "rgba(234,88,12,0.07)" },
   },
   deleted: {
     label: "eliminó",
     icon: Trash2,
     color: "text-red-600",
-    bg: "bg-red-50 dark:bg-red-950/30",
+    bgStyle: { backgroundColor: "rgba(239,68,68,0.07)" },
   },
 };
 
@@ -278,12 +283,19 @@ export default function ActivityPage() {
           ].map((s) => (
             <div
               key={s.label}
-              className="p-4 rounded-2xl border border-gray-200/80 bg-white dark:bg-slate-900 dark:border-slate-800"
+              className="p-4 rounded-2xl border"
+              style={{
+                backgroundColor: "var(--bg-card)",
+                borderColor: "var(--border-color)",
+              }}
             >
               <p className={cn("text-2xl font-bold tabular-nums", s.color)}>
                 {s.value}
               </p>
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+              <p
+                className="text-xs mt-0.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 {s.label}
               </p>
             </div>
@@ -301,7 +313,12 @@ export default function ActivityPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por tarea o usuario..."
-              className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
             />
           </div>
           <div className="flex gap-2 flex-wrap">
@@ -320,10 +337,17 @@ export default function ActivityPage() {
                 onClick={() => setFilter(f)}
                 className={cn(
                   "px-3 py-2 rounded-xl text-xs font-medium transition-colors border",
-                  filter === f
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-600 border-gray-200 hover:border-blue-300 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
+                  filter === f ? "bg-blue-600 text-white border-blue-600" : "",
                 )}
+                style={
+                  filter !== f
+                    ? {
+                        backgroundColor: "var(--bg-card)",
+                        color: "var(--text-secondary)",
+                        borderColor: "var(--border-color)",
+                      }
+                    : {}
+                }
               >
                 {f === "all"
                   ? "Todos"
@@ -344,10 +368,13 @@ export default function ActivityPage() {
         {/* Activity Feed */}
         {filtered.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
-              <Activity size={28} className="text-gray-400" />
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ backgroundColor: "var(--bg-secondary)" }}
+            >
+              <Activity size={28} style={{ color: "var(--text-tertiary)" }} />
             </div>
-            <p className="text-gray-500 dark:text-slate-400">
+            <p style={{ color: "var(--text-secondary)" }}>
               Sin actividad registrada
             </p>
           </div>
@@ -355,11 +382,20 @@ export default function ActivityPage() {
           Object.entries(groups).map(([date, items]) => (
             <div key={date}>
               <div className="flex items-center gap-3 mb-3">
-                <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-widest">
+                <p
+                  className="text-xs font-semibold uppercase tracking-widest"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
                   {date}
                 </p>
-                <div className="flex-1 h-px bg-gray-200 dark:bg-slate-700" />
-                <span className="text-xs text-gray-400 dark:text-slate-500">
+                <div
+                  className="flex-1 h-px"
+                  style={{ backgroundColor: "var(--border-color)" }}
+                />
+                <span
+                  className="text-xs"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
                   {items.length} eventos
                 </span>
               </div>
@@ -373,7 +409,19 @@ export default function ActivityPage() {
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.02 }}
-                      className="flex items-start gap-3 p-4 rounded-2xl border border-gray-200/80 bg-white dark:bg-slate-900 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-800/40 transition-colors group"
+                      className="flex items-start gap-3 p-4 rounded-2xl border transition-colors group"
+                      style={{
+                        backgroundColor: "var(--bg-card)",
+                        borderColor: "var(--border-color)",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor =
+                          "rgba(37,99,235,0.3)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor =
+                          "var(--border-color)";
+                      }}
                     >
                       <Avatar
                         name={entry.performedByName}
@@ -381,7 +429,10 @@ export default function ActivityPage() {
                         size="sm"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-800 dark:text-slate-200">
+                        <p
+                          className="text-sm"
+                          style={{ color: "var(--text-primary)" }}
+                        >
                           <span className="font-semibold">
                             {entry.performedByName}
                           </span>{" "}
@@ -389,11 +440,14 @@ export default function ActivityPage() {
                             {meta.label}
                           </span>
                           {" la tarea "}
-                          <span className="font-medium text-gray-900 dark:text-slate-100">
+                          <span
+                            className="font-medium"
+                            style={{ color: "var(--text-primary)" }}
+                          >
                             "{entry.taskTitle}"
                           </span>
                           {entry.details && (
-                            <span className="text-gray-500 dark:text-slate-400">
+                            <span style={{ color: "var(--text-tertiary)" }}>
                               {" "}
                               {entry.details}
                             </span>
@@ -403,21 +457,30 @@ export default function ActivityPage() {
                           <span
                             className={cn(
                               "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full",
-                              meta.bg,
                               meta.color,
                             )}
+                            style={meta.bgStyle}
                           >
                             <Icon size={10} />
                             {meta.label.charAt(0).toUpperCase() +
                               meta.label.slice(1)}
                           </span>
-                          <span className="text-xs text-gray-400 dark:text-slate-500">
+                          <span
+                            className="text-xs"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
                             {entry.listName}
                           </span>
-                          <span className="text-xs text-gray-300 dark:text-slate-600">
+                          <span
+                            className="text-xs"
+                            style={{ color: "var(--border-color)" }}
+                          >
                             ·
                           </span>
-                          <span className="text-xs text-gray-400 dark:text-slate-500">
+                          <span
+                            className="text-xs"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
                             {format(parseISO(entry.performedAt), "HH:mm", {
                               locale: es,
                             })}
@@ -425,10 +488,8 @@ export default function ActivityPage() {
                         </div>
                       </div>
                       <div
-                        className={cn(
-                          "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0",
-                          meta.bg,
-                        )}
+                        className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={meta.bgStyle}
                       >
                         <Icon size={14} className={meta.color} />
                       </div>

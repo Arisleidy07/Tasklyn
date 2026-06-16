@@ -4,8 +4,9 @@ import React from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
-import { useUIStore, type AppTheme } from "@/stores/uiStore";
+import { useUIStore } from "@/stores/uiStore";
 import Header from "@/components/layout/Header";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import {
   Settings,
   CheckCircle2,
@@ -13,16 +14,9 @@ import {
   FolderOpen,
   Users,
   ClipboardList,
-  Sun,
-  Moon,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-
-const themes: { id: AppTheme; label: string; icon: React.ReactNode }[] = [
-  { id: "light", label: "Claro", icon: <Sun size={18} /> },
-  { id: "dark", label: "Oscuro", icon: <Moon size={18} /> },
-];
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
@@ -54,33 +48,36 @@ export default function SettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={cn(
-            "rounded-xl border shadow-sm p-6 mb-6",
-            "bg-white border-gray-200",
-            "dark:bg-slate-900 dark:border-slate-800",
-          )}
+          className="rounded-xl border shadow-sm p-6 mb-6"
+          style={{
+            backgroundColor: "var(--bg-card)",
+            borderColor: "var(--border-color)",
+          }}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div
-                className={cn(
-                  "w-12 h-12 rounded-xl flex items-center justify-center",
+                className="w-12 h-12 rounded-xl flex items-center justify-center"
+                style={
                   user.plan === "pro" || user.plan === "business"
-                    ? "bg-blue-100 dark:bg-blue-500/20"
-                    : "bg-gray-100 dark:bg-slate-800",
-                )}
+                    ? { backgroundColor: "rgba(37,99,235,0.1)" }
+                    : { backgroundColor: "var(--bg-secondary)" }
+                }
               >
                 <Crown
                   size={24}
-                  className={
+                  style={
                     user.plan === "pro" || user.plan === "business"
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-gray-500 dark:text-slate-500"
+                      ? { color: "#2563eb" }
+                      : { color: "var(--text-tertiary)" }
                   }
                 />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                <h2
+                  className="text-lg font-semibold"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   Plan{" "}
                   {user.plan === "business"
                     ? "BUSINESS"
@@ -88,7 +85,10 @@ export default function SettingsPage() {
                       ? "PRO"
                       : "Gratis"}
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-slate-400">
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   {user.plan === "business"
                     ? "Plan empresarial con todas las funciones"
                     : user.plan === "pro"
@@ -105,64 +105,29 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className={cn(
-            "rounded-xl border shadow-sm p-6 mb-6",
-            "bg-white border-gray-200",
-            "dark:bg-slate-900 dark:border-slate-800",
-          )}
+          className="rounded-xl border shadow-sm p-6 mb-6"
+          style={{
+            backgroundColor: "var(--bg-card)",
+            borderColor: "var(--border-color)",
+          }}
         >
           <div className="flex items-center gap-2 mb-2">
-            <Settings size={20} className="text-gray-400 dark:text-slate-500" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+            <Settings size={20} style={{ color: "var(--text-tertiary)" }} />
+            <h2
+              className="text-lg font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
               Tema de la aplicación
             </h2>
           </div>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">
+          <p
+            className="text-sm mb-6"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Elige el estilo visual que prefieras para Tasklyn.
           </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {themes.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTheme(t.id)}
-                className={cn(
-                  "theme-option relative flex flex-col items-center gap-3 p-4 rounded-2xl border-2 transition-all duration-200",
-                  theme === t.id
-                    ? "border-blue-500 shadow-lg shadow-blue-500/20"
-                    : "border-transparent hover:scale-[1.02]",
-                  t.id === "light" && "theme-preview-light",
-                  t.id === "dark" && "theme-preview-dark",
-                )}
-              >
-                <div
-                  className={cn(
-                    "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
-                    theme === t.id
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200/80 text-gray-600 dark:bg-slate-700 dark:text-slate-400",
-                  )}
-                >
-                  {t.icon}
-                </div>
-                <span
-                  className={cn(
-                    "text-sm font-medium",
-                    theme === t.id
-                      ? "text-gray-900 dark:text-slate-100"
-                      : "text-gray-600 dark:text-slate-400",
-                  )}
-                >
-                  {t.label}
-                </span>
-                {theme === t.id && (
-                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
-                    <CheckCircle2 size={12} className="text-white" />
-                  </div>
-                )}
-              </button>
-            ))}
-          </div>
+          <ThemeToggle size="lg" variant="segment" />
         </motion.div>
 
         {/* Estadísticas */}
@@ -170,17 +135,17 @@ export default function SettingsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className={cn(
-            "rounded-xl border shadow-sm p-6",
-            "bg-white border-gray-200",
-            "dark:bg-slate-900 dark:border-slate-800",
-          )}
+          className="rounded-xl border shadow-sm p-6"
+          style={{
+            backgroundColor: "var(--bg-card)",
+            borderColor: "var(--border-color)",
+          }}
         >
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-4 flex items-center gap-2">
-            <CheckCircle2
-              size={20}
-              className="text-gray-400 dark:text-slate-500"
-            />
+          <h2
+            className="text-lg font-semibold mb-4 flex items-center gap-2"
+            style={{ color: "var(--text-primary)" }}
+          >
+            <CheckCircle2 size={20} style={{ color: "var(--text-tertiary)" }} />
             Tus estadísticas
           </h2>
           <div className="grid grid-cols-3 gap-3">
@@ -203,19 +168,25 @@ export default function SettingsPage() {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className={cn(
-                  "flex flex-col items-center gap-2 p-4 rounded-xl border",
-                  "bg-gray-50 border-gray-100",
-                  "dark:bg-slate-800 dark:border-slate-700",
-                )}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl border"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  borderColor: "var(--border-color)",
+                }}
               >
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm shadow-blue-500/25">
                   <stat.icon size={14} className="text-white" />
                 </div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-slate-100 tabular-nums">
+                <p
+                  className="text-2xl font-bold tabular-nums"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   {stat.value}
                 </p>
-                <p className="text-[10px] text-gray-500 dark:text-slate-400 text-center leading-tight">
+                <p
+                  className="text-[10px] text-center leading-tight"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   {stat.label}
                 </p>
               </div>

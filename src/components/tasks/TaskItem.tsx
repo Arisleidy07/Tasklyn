@@ -103,8 +103,14 @@ export default function TaskItem({
     if (isCompleted) {
       uncompleteTask(task.id, user.id);
     } else {
-      completeTask(task.id, user.id, user.name, listMembers);
+      setShowCompletionModal(true);
     }
+  };
+
+  const handleCompletionConfirm = async (performedBy: string | null) => {
+    if (!user) return;
+    completeTask(task.id, user.id, user.name, listMembers);
+    // The TaskCompletionModal already handles updating the task with completedBy/performedBy
   };
 
   const handleOpenEdit = () => {
@@ -193,13 +199,21 @@ export default function TaskItem({
         transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
         className={cn(
           "group rounded-xl border transition-colors relative",
-          isCompleted
-            ? "border-blue-200 dark:border-blue-500/30 bg-blue-50/30 dark:bg-blue-500/5"
-            : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800/60 hover:border-blue-200 dark:hover:border-blue-500/40",
           dropdownOpen && "z-20",
         )}
+        style={
+          isCompleted
+            ? {
+                borderColor: "rgba(147,197,253,0.5)",
+                backgroundColor: "rgba(37,99,235,0.03)",
+              }
+            : {
+                borderColor: "var(--border-color)",
+                backgroundColor: "var(--bg-card)",
+              }
+        }
       >
-        <div className="flex items-start gap-3 p-4">
+        <div className="flex items-start gap-2.5 p-3">
           {/* Checkbox */}
           <button
             onClick={handleToggleComplete}
@@ -219,23 +233,24 @@ export default function TaskItem({
                 : "Sin permiso para completar tareas"
             }
           >
-            {isCompleted ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+            {isCompleted ? <CheckCircle2 size={18} /> : <Circle size={18} />}
           </button>
 
           {/* Content column */}
           <div className="flex-1 min-w-0">
             {/* ── Title row: content left, actions right ── */}
-            <div className="flex items-start gap-2">
+            <div className="flex items-start gap-1.5">
               {/* Left: title + badges */}
               <div className="flex-1 min-w-0">
                 <p
                   className={cn(
-                    "text-[15px] font-medium transition-colors leading-snug",
-                    isCompleted
-                      ? "text-gray-400 dark:text-slate-500 line-through"
-                      : "text-gray-900 dark:text-slate-100",
+                    "text-[14px] font-medium transition-colors leading-snug",
+                    isCompleted && "line-through",
                   )}
                   style={{
+                    color: isCompleted
+                      ? "var(--text-tertiary)"
+                      : "var(--text-primary)",
                     overflowWrap: "anywhere",
                     wordBreak: "break-word",
                     whiteSpace: "normal",
@@ -275,7 +290,11 @@ export default function TaskItem({
                     {task.tags.map((t) => (
                       <span
                         key={t}
-                        className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400 font-medium"
+                        className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                        style={{
+                          backgroundColor: "rgba(37,99,235,0.08)",
+                          color: "#2563eb",
+                        }}
                       >
                         <Tag size={7} />#{t}
                       </span>
@@ -298,7 +317,13 @@ export default function TaskItem({
                       <ReminderBadge reminder={task.reminders[0]} />
                     )}
                     {task.recurrence && (
-                      <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                      <span
+                        className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
+                        style={{
+                          backgroundColor: "rgba(16,185,129,0.08)",
+                          color: "#059669",
+                        }}
+                      >
                         <Repeat size={8} />
                         {getRecurrenceShortLabel(task.recurrence)}
                       </span>
@@ -312,7 +337,17 @@ export default function TaskItem({
                 {canEdit && (
                   <button
                     onClick={handleOpenEdit}
-                    className="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/20 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                    className="p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#2563eb";
+                      e.currentTarget.style.backgroundColor =
+                        "rgba(37,99,235,0.08)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                     title="Editar"
                   >
                     <Edit2 size={14} />
@@ -321,7 +356,17 @@ export default function TaskItem({
                 {canArchive && (
                   <button
                     onClick={handleArchive}
-                    className="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-500/20 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                    className="p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#d97706";
+                      e.currentTarget.style.backgroundColor =
+                        "rgba(245,158,11,0.08)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                     title="Archivar"
                   >
                     <Archive size={14} />
@@ -329,7 +374,17 @@ export default function TaskItem({
                 )}
                 <button
                   onClick={() => setExpanded(!expanded)}
-                  className="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                  className="p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                  style={{ color: "var(--text-tertiary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--text-primary)";
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-secondary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--text-tertiary)";
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
                   title="Historial"
                 >
                   {expanded ? (
@@ -341,7 +396,17 @@ export default function TaskItem({
                 {canDelete && (
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                    className="p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#ef4444";
+                      e.currentTarget.style.backgroundColor =
+                        "rgba(239,68,68,0.08)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                     title="Eliminar"
                   >
                     <Trash2 size={14} />
@@ -353,7 +418,10 @@ export default function TaskItem({
             {/* ── Details: phones, location, description ── */}
             {task.phoneNumbers && task.phoneNumbers.length > 0 && (
               <div className="flex items-start gap-2 mt-2">
-                <span className="text-xs font-bold text-gray-700 dark:text-slate-400 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                <span
+                  className="text-xs font-bold uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   <Phone size={10} className="text-blue-500" />
                   Teléfonos
                 </span>
@@ -369,7 +437,10 @@ export default function TaskItem({
             )}
             {task.location && (
               <div className="flex items-start gap-2 mt-2">
-                <span className="text-xs font-bold text-gray-700 dark:text-slate-400 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                <span
+                  className="text-xs font-bold uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   <MapPin size={10} className="text-blue-500" />
                   Ubicación
                 </span>
@@ -383,15 +454,19 @@ export default function TaskItem({
             )}
             {task.description && (
               <div className="flex items-start gap-2 mt-2">
-                <span className="text-xs font-bold text-gray-700 dark:text-slate-400 uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1">
+                <span
+                  className="text-xs font-bold uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   <FileText
                     size={10}
-                    className="text-gray-400 dark:text-slate-500"
+                    style={{ color: "var(--text-tertiary)" }}
                   />
                   Descripción
                 </span>
                 <p
-                  className="text-sm text-gray-700 dark:text-slate-300 flex-1 leading-relaxed break-words whitespace-normal"
+                  className="text-sm flex-1 leading-relaxed break-words whitespace-normal"
+                  style={{ color: "var(--text-secondary)" }}
                   dangerouslySetInnerHTML={{
                     __html: linkifyPhoneNumbers(task.description),
                   }}
@@ -443,18 +518,30 @@ export default function TaskItem({
 
             {/* ── Meta ── */}
             <div className="flex items-center flex-wrap gap-2 mt-2">
-              <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-slate-500">
+              <span
+                className="flex items-center gap-1 text-[11px]"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 <Clock size={10} />
                 {timeAgo(task.createdAt)}
               </span>
               {task.assignedTo && (
-                <span className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-slate-500">
+                <span
+                  className="flex items-center gap-1 text-[11px]"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
                   <User size={10} />
                   {getUserName(task.assignedTo)}
                 </span>
               )}
               {isCompleted && task.completedBy && (
-                <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400">
+                <span
+                  className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
+                  style={{
+                    backgroundColor: "rgba(37,99,235,0.1)",
+                    color: "var(--text-link)",
+                  }}
+                >
                   <CheckCircle2 size={8} />
                   Completado por {getUserName(task.completedBy)} •{" "}
                   {formatActivityDateTime(task.completedAt || task.createdAt)}
@@ -472,10 +559,14 @@ export default function TaskItem({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="border-t border-gray-100 dark:border-slate-700"
+              className="border-t"
+              style={{ borderColor: "var(--border-color)" }}
             >
               <div className="p-4 pt-3">
-                <p className="flex items-center gap-1.5 text-xs font-medium text-gray-500 dark:text-slate-400 mb-3">
+                <p
+                  className="flex items-center gap-1.5 text-xs font-medium mb-3"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   <History size={12} />
                   Actividad
                 </p>
@@ -483,15 +574,25 @@ export default function TaskItem({
                   {task.history.slice(-8).map((entry) => (
                     <div
                       key={entry.id}
-                      className="flex items-start gap-2 text-[11px] text-gray-500 dark:text-slate-400"
+                      className="flex items-start gap-2 text-[11px]"
+                      style={{ color: "var(--text-tertiary)" }}
                     >
-                      <div className="w-1.5 h-1.5 rounded-full bg-gray-300 dark:bg-slate-600 mt-1.5 flex-shrink-0" />
+                      <div
+                        className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0"
+                        style={{ backgroundColor: "var(--bg-tertiary)" }}
+                      />
                       <span className="leading-relaxed">
-                        <span className="font-semibold text-gray-700 dark:text-slate-300">
+                        <span
+                          className="font-semibold"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
                           {getUserName(entry.performedBy)}
                         </span>{" "}
                         {entry.details || entry.action}
-                        <span className="text-gray-400 dark:text-slate-500 ml-1">
+                        <span
+                          className="ml-1"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
                           · {formatActivityDateTime(entry.performedAt)}
                         </span>
                       </span>
@@ -524,7 +625,7 @@ export default function TaskItem({
             onChange={setEditTitle}
             placeholder="Título de la tarea"
             autoFocus
-            className="text-base font-semibold text-gray-900 dark:text-slate-100 placeholder:text-gray-300 dark:placeholder:text-slate-600"
+            className="text-base font-semibold"
             minRows={1}
           />
 
@@ -533,7 +634,7 @@ export default function TaskItem({
             value={editDescription}
             onChange={setEditDescription}
             placeholder="Añade una descripción..."
-            className="text-sm text-gray-600 dark:text-slate-300 placeholder:text-gray-300 dark:placeholder:text-slate-600"
+            className="text-sm"
             minRows={1}
           />
 
@@ -544,7 +645,7 @@ export default function TaskItem({
               value={editLocation}
               onChange={setEditLocation}
               placeholder="Ubicación o dirección"
-              className="text-sm text-gray-700 dark:text-slate-300 placeholder:text-gray-300 dark:placeholder:text-slate-600"
+              className="text-sm"
               minRows={1}
             />
           </div>
@@ -561,14 +662,21 @@ export default function TaskItem({
                   value={phone}
                   onChange={(v) => handlePhoneChange(index, v)}
                   placeholder={`Teléfono ${index + 1}`}
-                  className="flex-1 text-sm text-gray-700 dark:text-slate-300 placeholder:text-gray-300 dark:placeholder:text-slate-600"
+                  className="flex-1 text-sm"
                   minRows={1}
                 />
                 {editPhones.length > 1 && (
                   <button
                     type="button"
                     onClick={() => handleRemovePhone(index)}
-                    className="p-1 rounded-md text-gray-300 dark:text-slate-600 hover:text-red-400 transition-colors flex-shrink-0"
+                    className="p-1 rounded-md transition-colors flex-shrink-0"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#ef4444";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                    }}
                   >
                     <X size={14} />
                   </button>
@@ -578,7 +686,14 @@ export default function TaskItem({
             <button
               type="button"
               onClick={handleAddPhone}
-              className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors ml-6"
+              className="flex items-center gap-1.5 text-xs transition-colors ml-6"
+              style={{ color: "var(--text-tertiary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--text-secondary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-tertiary)";
+              }}
             >
               <Plus size={12} />
               Agregar teléfono
@@ -613,7 +728,10 @@ export default function TaskItem({
           </div>
 
           {/* Options Bar */}
-          <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-slate-800">
+          <div
+            className="flex items-center justify-between pt-2 border-t"
+            style={{ borderColor: "var(--border-color)" }}
+          >
             <TaskOptionsBar
               dueDate={editDueDate}
               dueTime={editDueTime}
@@ -651,22 +769,35 @@ export default function TaskItem({
         title="Eliminar tarea"
       >
         <div className="space-y-4">
-          <div className="flex items-start gap-3 p-4 bg-red-50 dark:bg-red-950/20 rounded-xl border border-red-100 dark:border-red-900/40">
+          <div
+            className="flex items-start gap-3 p-4 rounded-xl border"
+            style={{
+              backgroundColor: "rgba(239,68,68,0.06)",
+              borderColor: "rgba(239,68,68,0.2)",
+            }}
+          >
             <AlertTriangle
               size={18}
-              className="text-red-500 flex-shrink-0 mt-0.5"
+              className="flex-shrink-0 mt-0.5"
+              style={{ color: "#ef4444" }}
             />
             <div>
-              <p className="text-sm font-semibold text-red-800 dark:text-red-400">
+              <p className="text-sm font-semibold" style={{ color: "#dc2626" }}>
                 Esta acción es permanente
               </p>
-              <p className="text-sm text-red-600 dark:text-red-400/80 mt-0.5 leading-relaxed">
+              <p
+                className="text-sm mt-0.5 leading-relaxed"
+                style={{ color: "#ef4444" }}
+              >
                 ¿Estás seguro de que deseas eliminar esta tarea? No podrás
                 recuperarla.
               </p>
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-slate-300 font-medium line-clamp-2 px-1">
+          <p
+            className="text-sm font-medium line-clamp-2 px-1"
+            style={{ color: "var(--text-secondary)" }}
+          >
             &quot;{task.title}&quot;
           </p>
           <div className="flex gap-3 pt-1">
@@ -687,6 +818,15 @@ export default function TaskItem({
           </div>
         </div>
       </Modal>
+
+      {/* ── Task Completion Modal ── */}
+      <TaskCompletionModal
+        isOpen={showCompletionModal}
+        onClose={() => setShowCompletionModal(false)}
+        taskId={task.id}
+        taskTitle={task.title}
+        onConfirm={handleCompletionConfirm}
+      />
     </>
   );
 }
@@ -705,15 +845,17 @@ function DueDateBadge({
   const diffMs = due.getTime() - now.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  let bgClass =
-    "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400";
+  let badgeStyle: React.CSSProperties = {
+    backgroundColor: "rgba(37,99,235,0.08)",
+    color: "#2563eb",
+  };
   let label = dueTime ? `${dueDate} · ${dueTime}` : dueDate;
 
   if (diffMs < 0) {
-    bgClass = "bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400";
+    badgeStyle = { backgroundColor: "rgba(239,68,68,0.08)", color: "#dc2626" };
     label = "Vencida";
   } else if (diffDays === 0) {
-    bgClass = "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-400";
+    badgeStyle = { backgroundColor: "rgba(37,99,235,0.08)", color: "#2563eb" };
     label = dueTime ? `Hoy · ${dueTime}` : "Vence hoy";
   } else if (diffDays === 1) {
     label = "Mañana";
@@ -733,7 +875,8 @@ function DueDateBadge({
 
   return (
     <span
-      className={`flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${bgClass}`}
+      className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
+      style={badgeStyle}
     >
       <CalendarDays size={8} />
       {label}
@@ -792,7 +935,10 @@ function ReminderBadge({
   }
 
   return (
-    <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400">
+    <span
+      className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
+      style={{ backgroundColor: "rgba(245,158,11,0.08)", color: "#d97706" }}
+    >
       <Bell size={8} />
       {label}
     </span>

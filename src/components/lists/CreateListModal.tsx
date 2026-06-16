@@ -121,13 +121,23 @@ export default function CreateListModal({
               <button
                 type="button"
                 onClick={() => setShowIconPicker(!showIconPicker)}
-                className="w-12 h-12 rounded-xl flex items-center justify-center text-xl border-2 border-dashed border-gray-200 dark:border-slate-700 hover:border-blue-400 dark:hover:border-blue-500 transition-colors"
-                style={{ backgroundColor: color + "20" }}
+                className="w-12 h-12 rounded-xl flex items-center justify-center text-xl border-2 border-dashed hover:border-blue-400 transition-colors"
+                style={{
+                  borderColor: "var(--border-color)",
+                  backgroundColor: color + "20",
+                }}
               >
                 {icon}
               </button>
               {showIconPicker && (
-                <div className="absolute top-full left-0 mt-2 z-50 p-2 grid grid-cols-5 gap-1.5 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-700 w-[160px]">
+                <div
+                  className="absolute top-full left-0 mt-2 z-50 p-2 grid grid-cols-5 gap-1.5 rounded-2xl shadow-xl w-[160px]"
+                  style={{
+                    backgroundColor: "var(--bg-card)",
+                    border: "1px solid var(--border-color)",
+                    boxShadow: "var(--shadow-modal)",
+                  }}
+                >
                   {LIST_ICONS.map((em) => (
                     <button
                       key={em}
@@ -138,10 +148,22 @@ export default function CreateListModal({
                       }}
                       className={cn(
                         "w-8 h-8 flex items-center justify-center rounded-lg text-base transition-all",
-                        icon === em
-                          ? "bg-blue-100 dark:bg-blue-500/20 ring-2 ring-blue-500"
-                          : "hover:bg-gray-100 dark:hover:bg-slate-700",
+                        icon === em ? "ring-2 ring-blue-500" : "",
                       )}
+                      style={
+                        icon === em
+                          ? { backgroundColor: "rgba(37,99,235,0.1)" }
+                          : {}
+                      }
+                      onMouseEnter={(e) => {
+                        if (icon !== em)
+                          e.currentTarget.style.backgroundColor =
+                            "var(--bg-secondary)";
+                      }}
+                      onMouseLeave={(e) => {
+                        if (icon !== em)
+                          e.currentTarget.style.backgroundColor = "transparent";
+                      }}
                     >
                       {em}
                     </button>
@@ -156,7 +178,12 @@ export default function CreateListModal({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoFocus
-                className="w-full h-12 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                className="w-full h-12 px-3 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                style={{
+                  border: "1px solid var(--border-input)",
+                  backgroundColor: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
               />
             </div>
           </div>
@@ -168,21 +195,34 @@ export default function CreateListModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="w-full px-3 py-2.5 rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
             />
           </div>
 
           {/* Team selector */}
           {user && (
             <div>
-              <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
+              <p
+                className="text-xs font-semibold uppercase tracking-wider mb-2.5"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 Equipo
               </p>
               <div className="relative">
                 <select
                   value={selectedTeamId}
                   onChange={(e) => setSelectedTeamId(e.target.value)}
-                  className="w-full px-3 py-2.5 pr-8 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                  className="w-full px-3 py-2.5 pr-8 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                  style={{
+                    border: "1px solid var(--border-input)",
+                    backgroundColor: "var(--bg-input)",
+                    color: "var(--text-primary)",
+                  }}
                 >
                   <option value="personal">👤 Personal (privada)</option>
                   {teams
@@ -203,7 +243,10 @@ export default function CreateListModal({
 
           {/* Color picker */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
+            <p
+              className="text-xs font-semibold uppercase tracking-wider mb-2.5"
+              style={{ color: "var(--text-tertiary)" }}
+            >
               Color
             </p>
             <div className="flex items-center gap-2 flex-wrap">
@@ -216,7 +259,7 @@ export default function CreateListModal({
                   className={cn(
                     "w-7 h-7 rounded-full transition-all duration-150",
                     color === c.value
-                      ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-slate-900 scale-110"
+                      ? "ring-2 ring-offset-2 ring-blue-500 scale-110"
                       : "hover:scale-105",
                   )}
                   style={{ backgroundColor: c.value }}
@@ -227,49 +270,62 @@ export default function CreateListModal({
 
           {/* Type selector */}
           <div>
-            <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-2.5">
+            <p
+              className="text-xs font-semibold uppercase tracking-wider mb-2.5"
+              style={{ color: "var(--text-tertiary)" }}
+            >
               Visibilidad
             </p>
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
                 onClick={() => setType("personal")}
-                className={cn(
-                  "flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all duration-200 text-left",
+                className="flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all duration-200 text-left"
+                style={
                   type === "personal"
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10"
-                    : "border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800",
-                )}
+                    ? {
+                        borderColor: "#3b82f6",
+                        backgroundColor: "rgba(37,99,235,0.06)",
+                      }
+                    : {
+                        borderColor: "var(--border-color)",
+                        backgroundColor: "var(--bg-card)",
+                      }
+                }
               >
                 <div
-                  className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-                    type === "personal"
-                      ? "bg-blue-100 dark:bg-blue-500/20"
-                      : "bg-gray-100 dark:bg-slate-700",
-                  )}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{
+                    backgroundColor:
+                      type === "personal"
+                        ? "rgba(37,99,235,0.1)"
+                        : "var(--bg-secondary)",
+                  }}
                 >
                   <Lock
                     size={15}
-                    className={
-                      type === "personal"
-                        ? "text-blue-600"
-                        : "text-gray-400 dark:text-slate-500"
-                    }
+                    style={{
+                      color:
+                        type === "personal"
+                          ? "#2563eb"
+                          : "var(--text-tertiary)",
+                    }}
                   />
                 </div>
                 <div>
                   <p
-                    className={cn(
-                      "text-sm font-semibold",
-                      type === "personal"
-                        ? "text-blue-700 dark:text-blue-400"
-                        : "text-gray-700 dark:text-slate-300",
-                    )}
+                    className="text-sm font-semibold"
+                    style={{
+                      color:
+                        type === "personal" ? "#1d4ed8" : "var(--text-primary)",
+                    }}
                   >
                     Personal
                   </p>
-                  <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
+                  <p
+                    className="text-[11px] mt-0.5"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
                     Solo tú
                   </p>
                 </div>
@@ -278,42 +334,50 @@ export default function CreateListModal({
               <button
                 type="button"
                 onClick={() => setType("shared")}
-                className={cn(
-                  "flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all duration-200 text-left",
+                className="flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all duration-200 text-left"
+                style={
                   type === "shared"
-                    ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10"
-                    : "border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-800",
-                )}
+                    ? {
+                        borderColor: "#3b82f6",
+                        backgroundColor: "rgba(37,99,235,0.06)",
+                      }
+                    : {
+                        borderColor: "var(--border-color)",
+                        backgroundColor: "var(--bg-card)",
+                      }
+                }
               >
                 <div
-                  className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0",
-                    type === "shared"
-                      ? "bg-blue-100 dark:bg-blue-500/20"
-                      : "bg-gray-100 dark:bg-slate-700",
-                  )}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                  style={{
+                    backgroundColor:
+                      type === "shared"
+                        ? "rgba(37,99,235,0.1)"
+                        : "var(--bg-secondary)",
+                  }}
                 >
                   <Users
                     size={15}
-                    className={
-                      type === "shared"
-                        ? "text-blue-600"
-                        : "text-gray-400 dark:text-slate-500"
-                    }
+                    style={{
+                      color:
+                        type === "shared" ? "#2563eb" : "var(--text-tertiary)",
+                    }}
                   />
                 </div>
                 <div>
                   <p
-                    className={cn(
-                      "text-sm font-semibold",
-                      type === "shared"
-                        ? "text-blue-700 dark:text-blue-400"
-                        : "text-gray-700 dark:text-slate-300",
-                    )}
+                    className="text-sm font-semibold"
+                    style={{
+                      color:
+                        type === "shared" ? "#1d4ed8" : "var(--text-primary)",
+                    }}
                   >
                     Compartida
                   </p>
-                  <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
+                  <p
+                    className="text-[11px] mt-0.5"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
                     Colaborar
                   </p>
                 </div>
@@ -322,7 +386,13 @@ export default function CreateListModal({
           </div>
 
           {/* Preview strip */}
-          <div className="flex items-center gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
+          <div
+            className="flex items-center gap-3 p-3.5 rounded-xl border"
+            style={{
+              backgroundColor: "var(--bg-secondary)",
+              borderColor: "var(--border-color)",
+            }}
+          >
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
               style={{ backgroundColor: color + "20" }}
@@ -330,10 +400,16 @@ export default function CreateListModal({
               {icon}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900 dark:text-slate-100 truncate">
+              <p
+                className="text-sm font-semibold truncate"
+                style={{ color: "var(--text-primary)" }}
+              >
                 {name || "Nombre de la lista"}
               </p>
-              <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
+              <p
+                className="text-[11px] mt-0.5"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 {type === "personal" ? "Lista personal" : "Lista compartida"}
                 {description
                   ? ` · ${description.slice(0, 30)}${description.length > 30 ? "…" : ""}`

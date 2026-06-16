@@ -80,7 +80,21 @@ export default function CreateTaskForm({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-500 hover:border-blue-300 dark:hover:border-blue-600 hover:text-blue-500 hover:bg-blue-50/30 dark:hover:bg-blue-900/20 transition-all duration-200 cursor-pointer group"
+        className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed transition-all duration-200 cursor-pointer group"
+        style={{
+          borderColor: "var(--border-color)",
+          color: "var(--text-tertiary)",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.borderColor = "#93c5fd";
+          e.currentTarget.style.color = "#3b82f6";
+          e.currentTarget.style.backgroundColor = "rgba(37,99,235,0.03)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = "var(--border-color)";
+          e.currentTarget.style.color = "var(--text-tertiary)";
+          e.currentTarget.style.backgroundColor = "transparent";
+        }}
       >
         <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
           <Plus size={14} className="text-blue-600" />
@@ -95,7 +109,12 @@ export default function CreateTaskForm({
       initial={{ opacity: 0, y: -8, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="rounded-2xl border border-blue-200 dark:border-blue-800 bg-white dark:bg-slate-900 p-5 shadow-xl shadow-gray-200/50 dark:shadow-black/30"
+      className="rounded-2xl p-5 shadow-xl"
+      style={{
+        border: "1px solid rgba(37,99,235,0.25)",
+        backgroundColor: "var(--bg-card)",
+        boxShadow: "var(--shadow-card)",
+      }}
     >
       <form onSubmit={handleSubmit} className="space-y-3">
         {/* Título */}
@@ -104,7 +123,7 @@ export default function CreateTaskForm({
           onChange={setTitle}
           placeholder="¿Qué necesitas hacer?"
           autoFocus
-          className="text-base font-semibold text-gray-900 dark:text-slate-100 placeholder:text-gray-300 dark:placeholder:text-slate-600"
+          className="text-base font-semibold"
           minRows={1}
         />
 
@@ -113,7 +132,7 @@ export default function CreateTaskForm({
           value={description}
           onChange={setDescription}
           placeholder="Añade una descripción..."
-          className="text-sm text-gray-600 dark:text-slate-300 placeholder:text-gray-300 dark:placeholder:text-slate-600"
+          className="text-sm"
           minRows={1}
         />
 
@@ -124,7 +143,7 @@ export default function CreateTaskForm({
             value={location}
             onChange={setLocation}
             placeholder="Ubicación o dirección"
-            className="text-sm text-gray-700 dark:text-slate-300 placeholder:text-gray-300 dark:placeholder:text-slate-600"
+            className="text-sm"
             minRows={1}
           />
         </div>
@@ -138,14 +157,21 @@ export default function CreateTaskForm({
                 value={phone}
                 onChange={(v) => handlePhoneChange(index, v)}
                 placeholder={`Teléfono ${index + 1}`}
-                className="flex-1 text-sm text-gray-700 dark:text-slate-300 placeholder:text-gray-300 dark:placeholder:text-slate-600"
+                className="flex-1 text-sm"
                 minRows={1}
               />
               {phoneNumbers.length > 1 && (
                 <button
                   type="button"
                   onClick={() => handleRemovePhone(index)}
-                  className="p-1 rounded-md text-gray-300 dark:text-slate-600 hover:text-red-400 transition-colors flex-shrink-0"
+                  className="p-1 rounded-md transition-colors flex-shrink-0"
+                  style={{ color: "var(--text-tertiary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "#ef4444";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--text-tertiary)";
+                  }}
                 >
                   <X size={14} />
                 </button>
@@ -155,7 +181,14 @@ export default function CreateTaskForm({
           <button
             type="button"
             onClick={handleAddPhone}
-            className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 transition-colors ml-6"
+            className="flex items-center gap-1.5 text-xs transition-colors ml-6"
+            style={{ color: "var(--text-tertiary)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--text-tertiary)";
+            }}
           >
             <Plus size={12} />
             Agregar teléfono
@@ -217,7 +250,22 @@ export default function CreateTaskForm({
               <button
                 type="button"
                 onClick={() => setPriority(undefined)}
-                className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-gray-200 dark:border-slate-700 text-gray-400 dark:text-slate-500 hover:text-red-500 hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all flex items-center gap-1"
+                className="px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all flex items-center gap-1"
+                style={{
+                  borderColor: "var(--border-color)",
+                  color: "var(--text-tertiary)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#ef4444";
+                  e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)";
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(239,68,68,0.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--text-tertiary)";
+                  e.currentTarget.style.borderColor = "var(--border-color)";
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
               >
                 <X size={9} />
                 Quitar
@@ -230,7 +278,7 @@ export default function CreateTaskForm({
         <div className="flex items-center gap-1.5">
           <Tag
             size={13}
-            className="text-gray-300 dark:text-slate-600 flex-shrink-0"
+            style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
           />
           <input
             value={tagInput}
@@ -244,7 +292,12 @@ export default function CreateTaskForm({
               }
             }}
             placeholder="#etiqueta + Enter"
-            className="flex-1 text-xs border border-gray-200 dark:border-slate-700 rounded-lg px-2 py-1 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            className="flex-1 text-xs rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            style={{
+              border: "1px solid var(--border-input)",
+              backgroundColor: "var(--bg-input)",
+              color: "var(--text-primary)",
+            }}
           />
         </div>
         {tags.length > 0 && (
@@ -252,7 +305,11 @@ export default function CreateTaskForm({
             {tags.map((t) => (
               <span
                 key={t}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 text-[10px] font-medium"
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+                style={{
+                  backgroundColor: "rgba(37,99,235,0.08)",
+                  color: "#2563eb",
+                }}
               >
                 #{t}
                 <button
@@ -268,7 +325,10 @@ export default function CreateTaskForm({
         )}
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-slate-800">
+        <div
+          className="flex items-center justify-end gap-2 pt-3 border-t"
+          style={{ borderColor: "var(--border-color)" }}
+        >
           <Button
             type="button"
             variant="ghost"

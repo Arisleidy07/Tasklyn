@@ -238,7 +238,11 @@ function CreateGoalModal({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-gray-200/80 dark:border-slate-800 shadow-2xl"
+          className="rounded-2xl p-6 max-w-md w-full border shadow-2xl"
+          style={{
+            backgroundColor: "var(--bg-card)",
+            borderColor: "var(--border-color)",
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between mb-5">
@@ -247,24 +251,40 @@ function CreateGoalModal({
                 <Target size={18} className="text-white" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+                <h3
+                  className="text-lg font-semibold"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   Nueva Meta
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-slate-400">
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Define un objetivo para el equipo
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="transition-colors"
+              style={{ color: "var(--text-tertiary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-tertiary)";
+              }}
             >
               <X size={16} />
             </button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 Título *
               </label>
               <input
@@ -274,18 +294,31 @@ function CreateGoalModal({
                 placeholder="Ej: 200 tareas este mes"
                 autoFocus
                 maxLength={80}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{
+                  backgroundColor: "var(--bg-input)",
+                  borderColor: "var(--border-input)",
+                  color: "var(--text-primary)",
+                }}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                <label
+                  className="block text-sm font-medium mb-1.5"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Tipo
                 </label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as any)}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    backgroundColor: "var(--bg-input)",
+                    borderColor: "var(--border-input)",
+                    color: "var(--text-primary)",
+                  }}
                 >
                   <option value="tasks">Tareas</option>
                   <option value="completion">% Cumplimiento</option>
@@ -293,13 +326,21 @@ function CreateGoalModal({
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                <label
+                  className="block text-sm font-medium mb-1.5"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Período
                 </label>
                 <select
                   value={period}
                   onChange={(e) => setPeriod(e.target.value as any)}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    backgroundColor: "var(--bg-input)",
+                    borderColor: "var(--border-input)",
+                    color: "var(--text-primary)",
+                  }}
                 >
                   <option value="weekly">Semanal</option>
                   <option value="monthly">Mensual</option>
@@ -308,7 +349,10 @@ function CreateGoalModal({
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 Meta ({type === "completion" ? "% objetivo" : "cantidad"})
               </label>
               <input
@@ -317,14 +361,31 @@ function CreateGoalModal({
                 onChange={(e) => setTargetValue(e.target.value)}
                 min={1}
                 max={type === "completion" ? 100 : 99999}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{
+                  backgroundColor: "var(--bg-input)",
+                  borderColor: "var(--border-input)",
+                  color: "var(--text-primary)",
+                }}
               />
             </div>
             <div className="flex gap-3 pt-1">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+                className="flex-1 px-4 py-2.5 border rounded-xl text-sm font-medium transition-colors"
+                style={{
+                  borderColor: "var(--border-color)",
+                  color: "var(--text-secondary)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                }}
               >
                 Cancelar
               </button>
@@ -373,7 +434,17 @@ function KPICard({
         boxShadow: "0 20px 40px -12px rgba(59,130,246,0.2)",
       }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="group relative p-5 rounded-2xl border border-gray-200/80 bg-white hover:border-blue-200 transition-all duration-300 overflow-hidden dark:bg-slate-900 dark:border-slate-800 dark:hover:border-blue-500/30"
+      className="group relative p-5 rounded-2xl border hover:border-blue-200 transition-all duration-300 overflow-hidden"
+      style={{
+        backgroundColor: "var(--bg-card)",
+        borderColor: "var(--border-color)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = "#93c5fd";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--border-color)";
+      }}
     >
       <div className="flex items-center justify-between mb-3">
         <div
@@ -388,10 +459,12 @@ function KPICard({
           <div
             className={cn(
               "flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-full",
-              changeType === "increase"
-                ? "bg-green-50 text-green-600 dark:bg-green-950/30 dark:text-green-400"
-                : "bg-red-50 text-red-600 dark:bg-red-950/30 dark:text-red-400",
             )}
+            style={
+              changeType === "increase"
+                ? { backgroundColor: "rgba(34,197,94,0.1)", color: "#16a34a" }
+                : { backgroundColor: "rgba(239,68,68,0.1)", color: "#dc2626" }
+            }
           >
             {changeType === "increase" ? (
               <ArrowUp size={10} />
@@ -402,14 +475,20 @@ function KPICard({
           </div>
         )}
       </div>
-      <p className="text-3xl font-bold text-gray-900 dark:text-slate-100 tracking-tight tabular-nums">
+      <p
+        className="text-3xl font-bold tracking-tight tabular-nums"
+        style={{ color: "var(--text-primary)" }}
+      >
         {value}
       </p>
-      <p className="text-sm text-gray-500 dark:text-slate-400 font-medium mt-0.5">
+      <p
+        className="text-sm font-medium mt-0.5"
+        style={{ color: "var(--text-secondary)" }}
+      >
         {title}
       </p>
       {description && (
-        <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+        <p className="text-xs mt-1" style={{ color: "var(--text-tertiary)" }}>
           {description}
         </p>
       )}
@@ -466,13 +545,19 @@ export default function TeamDashboardPage() {
           showMenuButton={true}
         />
         <div className="p-8 text-center">
-          <div className="w-20 h-20 rounded-2xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
-            <BarChart3 size={32} className="text-gray-400" />
+          <div
+            className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            style={{ backgroundColor: "var(--bg-secondary)" }}
+          >
+            <BarChart3 size={32} style={{ color: "var(--text-tertiary)" }} />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-slate-100 mb-2">
+          <h3
+            className="text-xl font-semibold mb-2"
+            style={{ color: "var(--text-primary)" }}
+          >
             Sin equipos aún
           </h3>
-          <p className="text-gray-500 dark:text-slate-400 mb-4">
+          <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
             Ve a Equipos para crear tu primer equipo.
           </p>
           <button
@@ -610,7 +695,12 @@ export default function TeamDashboardPage() {
                   const t = teams.find((t) => t.id === e.target.value);
                   if (t) setCurrentTeam(t);
                 }}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+                className="px-3 py-2 text-sm border rounded-lg"
+                style={{
+                  backgroundColor: "var(--bg-input)",
+                  borderColor: "var(--border-input)",
+                  color: "var(--text-primary)",
+                }}
               >
                 {teams.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -622,7 +712,12 @@ export default function TeamDashboardPage() {
             <select
               value={selectedPeriod}
               onChange={(e) => setSelectedPeriod(e.target.value as any)}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+              className="px-3 py-2 text-sm border rounded-lg"
+              style={{
+                backgroundColor: "var(--bg-input)",
+                borderColor: "var(--border-input)",
+                color: "var(--text-primary)",
+              }}
             >
               <option value="today">Hoy</option>
               <option value="week">Semana</option>
@@ -655,26 +750,39 @@ export default function TeamDashboardPage() {
             initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
-            className="lg:col-span-2 p-6 rounded-2xl border border-gray-200/80 bg-white dark:bg-slate-900 dark:border-slate-800"
+            className="lg:col-span-2 p-6 rounded-2xl border"
+            style={{
+              backgroundColor: "var(--bg-card)",
+              borderColor: "var(--border-color)",
+            }}
           >
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center">
-                  <Activity
-                    size={18}
-                    className="text-blue-600 dark:text-blue-400"
-                  />
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(59,130,246,0.1)" }}
+                >
+                  <Activity size={18} style={{ color: "#2563eb" }} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-slate-100">
+                  <h3
+                    className="font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     Actividad — Últimos 7 días
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     Completadas vs pendientes por día
                   </p>
                 </div>
               </div>
-              <div className="hidden sm:flex items-center gap-3 text-xs text-gray-500 dark:text-slate-400">
+              <div
+                className="hidden sm:flex items-center gap-3 text-xs"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 <span className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-sm bg-indigo-500" />
                   Completadas
@@ -695,11 +803,18 @@ export default function TeamDashboardPage() {
             initial={{ opacity: 0, x: 12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
-            className="p-6 rounded-2xl border border-gray-200/80 bg-white dark:bg-slate-900 dark:border-slate-800 flex flex-col items-center justify-center"
+            className="p-6 rounded-2xl border flex flex-col items-center justify-center"
+            style={{
+              backgroundColor: "var(--bg-card)",
+              borderColor: "var(--border-color)",
+            }}
           >
             <div className="flex items-center gap-2 mb-4 self-start">
               <TrendingUp size={18} className="text-indigo-600" />
-              <h3 className="font-semibold text-gray-900 dark:text-slate-100">
+              <h3
+                className="font-semibold"
+                style={{ color: "var(--text-primary)" }}
+              >
                 Productividad
               </h3>
             </div>
@@ -709,19 +824,25 @@ export default function TeamDashboardPage() {
               size={140}
             />
             <div className="grid grid-cols-2 gap-3 mt-4 w-full text-center">
-              <div className="p-3 rounded-xl bg-green-50 dark:bg-green-950/20">
-                <p className="text-xl font-bold text-green-700 dark:text-green-400">
+              <div
+                className="p-3 rounded-xl"
+                style={{ backgroundColor: "rgba(34,197,94,0.1)" }}
+              >
+                <p className="text-xl font-bold" style={{ color: "#16a34a" }}>
                   {completedTasks.length}
                 </p>
-                <p className="text-xs text-green-600 dark:text-green-500 mt-0.5">
+                <p className="text-xs mt-0.5" style={{ color: "#15803d" }}>
                   Completadas
                 </p>
               </div>
-              <div className="p-3 rounded-xl bg-yellow-50 dark:bg-yellow-950/20">
-                <p className="text-xl font-bold text-yellow-700 dark:text-yellow-400">
+              <div
+                className="p-3 rounded-xl"
+                style={{ backgroundColor: "rgba(234,179,8,0.1)" }}
+              >
+                <p className="text-xl font-bold" style={{ color: "#ca8a04" }}>
                   {pendingTasks.length}
                 </p>
-                <p className="text-xs text-yellow-600 dark:text-yellow-500 mt-0.5">
+                <p className="text-xs mt-0.5" style={{ color: "#a16207" }}>
                   Pendientes
                 </p>
               </div>
@@ -736,21 +857,31 @@ export default function TeamDashboardPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.55 }}
-            className="p-6 rounded-2xl border border-gray-200/80 bg-white dark:bg-slate-900 dark:border-slate-800"
+            className="p-6 rounded-2xl border"
+            style={{
+              backgroundColor: "var(--bg-card)",
+              borderColor: "var(--border-color)",
+            }}
           >
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-green-50 dark:bg-green-500/20 flex items-center justify-center">
-                  <Target
-                    size={18}
-                    className="text-green-600 dark:text-green-400"
-                  />
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(34,197,94,0.1)" }}
+                >
+                  <Target size={18} style={{ color: "#16a34a" }} />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-slate-100">
+                  <h3
+                    className="font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     Objetivos del Equipo
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     {goals.length} meta{goals.length !== 1 ? "s" : ""} activa
                     {goals.length !== 1 ? "s" : ""}
                   </p>
@@ -758,24 +889,36 @@ export default function TeamDashboardPage() {
               </div>
               <button
                 onClick={() => setShowGoalModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
+                style={{ color: "#2563eb" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(37,99,235,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
               >
                 <Plus size={14} /> Nueva meta
               </button>
             </div>
             <div className="space-y-4">
               {goals.length === 0 ? (
-                <div className="text-center py-8 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-xl">
-                  <Target
-                    size={24}
-                    className="text-gray-300 dark:text-slate-600 mx-auto mb-2"
-                  />
-                  <p className="text-sm text-gray-500 dark:text-slate-400">
+                <div
+                  className="text-center py-8 border-2 border-dashed rounded-xl"
+                  style={{ borderColor: "var(--border-color)" }}
+                >
+                  <Target size={24} style={{ color: "var(--text-tertiary)" }} />
+                  <p
+                    className="text-sm"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     Sin metas definidas
                   </p>
                   <button
                     onClick={() => setShowGoalModal(true)}
-                    className="mt-2 text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    className="mt-2 text-sm hover:underline"
+                    style={{ color: "#2563eb" }}
                   >
                     Crear primera meta
                   </button>
@@ -799,15 +942,24 @@ export default function TeamDashboardPage() {
                   return (
                     <div key={goal.id} className="space-y-1.5">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium text-gray-700 dark:text-slate-300 truncate flex-1 mr-2">
+                        <span
+                          className="font-medium truncate flex-1 mr-2"
+                          style={{ color: "var(--text-primary)" }}
+                        >
                           {goal.title}
                         </span>
-                        <span className="text-gray-500 dark:text-slate-400 flex-shrink-0 tabular-nums">
+                        <span
+                          className="flex-shrink-0 tabular-nums"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
                           {goal.currentValue}/{goal.targetValue}
                           {goal.type === "completion" ? "%" : ""}
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+                      <div
+                        className="w-full rounded-full h-2"
+                        style={{ backgroundColor: "var(--bg-tertiary)" }}
+                      >
                         <motion.div
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
@@ -822,16 +974,35 @@ export default function TeamDashboardPage() {
                           )}
                         />
                       </div>
-                      <div className="flex items-center justify-between text-xs text-gray-400 dark:text-slate-500">
+                      <div
+                        className="flex items-center justify-between text-xs"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         <span
                           className={cn(
                             "px-1.5 py-0.5 rounded-full text-[10px] font-medium",
                             goal.period === "weekly"
-                              ? "bg-blue-50 text-blue-600 dark:bg-blue-950/30 dark:text-blue-400"
+                              ? ""
                               : goal.period === "monthly"
-                                ? "bg-purple-50 text-purple-600 dark:bg-purple-950/30 dark:text-purple-400"
-                                : "bg-orange-50 text-orange-600 dark:bg-orange-950/30 dark:text-orange-400",
+                                ? ""
+                                : "",
                           )}
+                          style={
+                            goal.period === "weekly"
+                              ? {
+                                  backgroundColor: "rgba(59,130,246,0.1)",
+                                  color: "#2563eb",
+                                }
+                              : goal.period === "monthly"
+                                ? {
+                                    backgroundColor: "rgba(168,85,247,0.1)",
+                                    color: "#9333ea",
+                                  }
+                                : {
+                                    backgroundColor: "rgba(249,115,22,0.1)",
+                                    color: "#ea580c",
+                                  }
+                          }
                         >
                           {goal.period === "weekly"
                             ? "Semanal"
@@ -855,27 +1026,40 @@ export default function TeamDashboardPage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="p-6 rounded-2xl border border-gray-200/80 bg-white dark:bg-slate-900 dark:border-slate-800"
+            className="p-6 rounded-2xl border"
+            style={{
+              backgroundColor: "var(--bg-card)",
+              borderColor: "var(--border-color)",
+            }}
           >
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl bg-yellow-50 dark:bg-yellow-500/20 flex items-center justify-center">
-                <Award
-                  size={18}
-                  className="text-yellow-600 dark:text-yellow-400"
-                />
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: "rgba(234,179,8,0.1)" }}
+              >
+                <Award size={18} style={{ color: "#ca8a04" }} />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-slate-100">
+                <h3
+                  className="font-semibold"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   Productividad por Miembro
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-slate-400">
+                <p
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Tareas completadas
                 </p>
               </div>
             </div>
             <div className="space-y-3">
               {memberStats.length === 0 ? (
-                <p className="text-sm text-gray-400 dark:text-slate-500 text-center py-6">
+                <p
+                  className="text-sm text-center py-6"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
                   Sin actividad registrada
                 </p>
               ) : (
@@ -890,14 +1074,29 @@ export default function TeamDashboardPage() {
                       <span
                         className={cn(
                           "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0",
-                          idx === 0
-                            ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-400"
-                            : idx === 1
-                              ? "bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-400"
-                              : idx === 2
-                                ? "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400"
-                                : "bg-gray-50 text-gray-500 dark:bg-slate-800/50 dark:text-slate-500",
+                          idx === 0 ? "" : idx === 1 ? "" : idx === 2 ? "" : "",
                         )}
+                        style={
+                          idx === 0
+                            ? {
+                                backgroundColor: "rgba(234,179,8,0.25)",
+                                color: "#ca8a04",
+                              }
+                            : idx === 1
+                              ? {
+                                  backgroundColor: "var(--bg-secondary)",
+                                  color: "var(--text-secondary)",
+                                }
+                              : idx === 2
+                                ? {
+                                    backgroundColor: "rgba(249,115,22,0.25)",
+                                    color: "#ea580c",
+                                  }
+                                : {
+                                    backgroundColor: "var(--bg-tertiary)",
+                                    color: "var(--text-tertiary)",
+                                  }
+                        }
                       >
                         {idx === 0
                           ? "🥇"
@@ -909,16 +1108,25 @@ export default function TeamDashboardPage() {
                       </span>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <p className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate">
+                          <p
+                            className="text-sm font-medium truncate"
+                            style={{ color: "var(--text-primary)" }}
+                          >
                             {m.userId === user.id
                               ? `${user.name} (Tú)`
                               : getMemberProfile(m.userId).name}
                           </p>
-                          <span className="text-sm font-bold text-gray-900 dark:text-slate-100 tabular-nums ml-2">
+                          <span
+                            className="text-sm font-bold tabular-nums ml-2"
+                            style={{ color: "var(--text-primary)" }}
+                          >
                             {m.completed}
                           </span>
                         </div>
-                        <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-1.5">
+                        <div
+                          className="w-full rounded-full h-1.5"
+                          style={{ backgroundColor: "var(--bg-tertiary)" }}
+                        >
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${pct}%` }}

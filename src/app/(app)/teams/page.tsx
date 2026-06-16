@@ -63,7 +63,6 @@ function TeamCard({
 }: TeamCardProps) {
   const progress =
     taskCount > 0 ? Math.round((completedCount / taskCount) * 100) : 0;
-  const gradient = getTeamGradient(team.id);
 
   const roleLabel =
     userRole === "owner"
@@ -83,131 +82,174 @@ function TeamCard({
         duration: 0.4,
         ease: [0.16, 1, 0.3, 1],
       }}
-      whileHover={{ y: -4, boxShadow: "0 24px 48px -12px rgba(0,0,0,0.15)" }}
-      className="group relative bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-slate-800 rounded-2xl overflow-hidden hover:border-blue-200/80 dark:hover:border-blue-500/30 transition-all duration-300"
+      whileHover={{ y: -2 }}
+      className="group relative rounded-2xl p-5 transition-all duration-300"
+      style={{
+        backgroundColor: "var(--bg-card)",
+        border: "1px solid var(--border-color)",
+        boxShadow: "var(--shadow-card)",
+      }}
     >
-      {/* Top accent bar */}
-      <div className={`h-1 w-full bg-gradient-to-r ${gradient}`} />
-
-      <div className="p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                "w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-lg text-white text-lg font-bold flex-shrink-0",
-                gradient,
-              )}
-            >
-              {team.icon || team.name.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-slate-100 leading-tight">
-                  {team.name}
-                </h3>
-                {team.isPersonal && (
-                  <Lock
-                    size={12}
-                    className="text-gray-400 dark:text-slate-500 flex-shrink-0"
-                  />
-                )}
-              </div>
-              {team.description && (
-                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 line-clamp-1">
-                  {team.description}
-                </p>
-              )}
-            </div>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0"
+            style={{
+              backgroundColor: "var(--text-primary)",
+              opacity: 0.9,
+            }}
+          >
+            {team.icon || team.name.charAt(0).toUpperCase()}
           </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3
+                className="text-sm font-semibold leading-tight"
+                style={{ color: "var(--text-primary)" }}
+              >
+                {team.name}
+              </h3>
+              {team.isPersonal && (
+                <Lock
+                  size={11}
+                  className="flex-shrink-0"
+                  style={{ color: "var(--text-tertiary)" }}
+                />
+              )}
+            </div>
+            {team.description && (
+              <p
+                className="text-[11px] mt-0.5 line-clamp-1"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {team.description}
+              </p>
+            )}
+          </div>
+        </div>
 
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 flex-shrink-0">
-            <RoleIcon size={10} />
-            {roleLabel}
+        <span
+          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium flex-shrink-0"
+          style={{
+            backgroundColor: "var(--bg-secondary)",
+            color: "var(--text-secondary)",
+          }}
+        >
+          <RoleIcon size={9} />
+          {roleLabel}
+        </span>
+      </div>
+
+      {/* Stats row */}
+      <div className="flex items-center gap-4 mb-4">
+        {[
+          { icon: Users, label: "Miembros", value: team.members.length },
+          { icon: FolderOpen, label: "Listas", value: listCount },
+          { icon: ClipboardList, label: "Tareas", value: taskCount },
+        ].map((s) => (
+          <div key={s.label} className="flex items-center gap-1.5">
+            <s.icon size={13} style={{ color: "var(--text-tertiary)" }} />
+            <span
+              className="text-sm font-semibold tabular-nums leading-none"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {s.value}
+            </span>
+            <span
+              className="text-[10px]"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              {s.label}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Progress */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between text-[11px] mb-1">
+          <span
+            className="flex items-center gap-1"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <CheckCircle2 size={10} />
+            Progreso
+          </span>
+          <span
+            className="font-medium"
+            style={{ color: "var(--text-primary)" }}
+          >
+            {progress}%
           </span>
         </div>
+        <div
+          className="h-1 w-full rounded-full overflow-hidden"
+          style={{ backgroundColor: "var(--bg-tertiary)" }}
+        >
+          <div
+            className="h-full rounded-full transition-all duration-700"
+            style={{
+              width: `${progress}%`,
+              backgroundColor: "var(--text-primary)",
+              opacity: 0.8,
+            }}
+          />
+        </div>
+      </div>
 
-        {/* Stats row */}
-        <div className="grid grid-cols-3 gap-3 mb-5">
-          {[
-            { icon: Users, label: "Miembros", value: team.members.length },
-            { icon: FolderOpen, label: "Listas", value: listCount },
-            { icon: ClipboardList, label: "Tareas", value: taskCount },
-          ].map((s) => (
+      {/* Members avatars + CTA */}
+      <div
+        className="flex items-center justify-between pt-3 border-t"
+        style={{ borderColor: "var(--border-color)" }}
+      >
+        <div className="flex -space-x-1.5">
+          {team.members.slice(0, 4).map((m, i) => (
             <div
-              key={s.label}
-              className="flex flex-col items-center gap-1 p-2.5 rounded-xl bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-700/50"
+              key={m.userId}
+              className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-white text-[9px] font-bold shadow-sm flex-shrink-0"
+              style={{
+                zIndex: 10 - i,
+                borderColor: "var(--bg-card)",
+                backgroundColor: "var(--text-primary)",
+                opacity: 0.8,
+              }}
             >
-              <s.icon size={14} className="text-gray-400 dark:text-slate-500" />
-              <span className="text-lg font-bold text-gray-900 dark:text-slate-100 tabular-nums leading-none">
-                {s.value}
-              </span>
-              <span className="text-[10px] text-gray-400 dark:text-slate-500">
-                {s.label}
-              </span>
+              {m.userId.charAt(0).toUpperCase()}
             </div>
           ))}
-        </div>
-
-        {/* Progress */}
-        <div className="mb-5">
-          <div className="flex items-center justify-between text-xs mb-1.5">
-            <span className="text-gray-500 dark:text-slate-400 flex items-center gap-1">
-              <CheckCircle2 size={11} />
-              Progreso
-            </span>
-            <span className="font-semibold text-gray-700 dark:text-slate-300">
-              {progress}%
-            </span>
-          </div>
-          <div className="h-1.5 w-full bg-gray-100 dark:bg-slate-800 rounded-full overflow-hidden">
+          {team.members.length > 4 && (
             <div
-              className={cn(
-                "h-full rounded-full bg-gradient-to-r transition-all duration-700",
-                gradient,
-              )}
-              style={{ width: `${progress}%` }}
-            />
-          </div>
+              className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-[9px] font-medium flex-shrink-0"
+              style={{
+                borderColor: "var(--bg-card)",
+                backgroundColor: "var(--bg-secondary)",
+                color: "var(--text-secondary)",
+                zIndex: 0,
+              }}
+            >
+              +{team.members.length - 4}
+            </div>
+          )}
         </div>
 
-        {/* Members avatars + CTA */}
-        <div className="flex items-center justify-between">
-          <div className="flex -space-x-2">
-            {team.members.slice(0, 5).map((m, i) => (
-              <div
-                key={m.userId}
-                className={cn(
-                  "w-7 h-7 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-white text-[10px] font-bold shadow-sm bg-gradient-to-br",
-                  gradient,
-                )}
-                style={{ zIndex: 10 - i }}
-              >
-                {m.userId.charAt(0).toUpperCase()}
-              </div>
-            ))}
-            {team.members.length > 5 && (
-              <div
-                className="w-7 h-7 rounded-full border-2 border-white dark:border-slate-900 bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-500 dark:text-slate-400 text-[10px] font-medium"
-                style={{ zIndex: 0 }}
-              >
-                +{team.members.length - 5}
-              </div>
-            )}
-          </div>
-
-          <Link
-            href={`/teams/${team.id}`}
-            className={cn(
-              "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200",
-              "bg-gray-900 dark:bg-slate-100 text-white dark:text-slate-900",
-              "hover:opacity-90 active:scale-95 shadow-sm",
-            )}
-          >
-            Ver equipo
-            <ChevronRight size={13} />
-          </Link>
-        </div>
+        <Link
+          href={`/teams/${team.id}`}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200"
+          style={{
+            backgroundColor: "var(--bg-secondary)",
+            color: "var(--text-primary)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+          }}
+        >
+          Ver
+          <ChevronRight size={11} />
+        </Link>
       </div>
     </motion.div>
   );
@@ -302,7 +344,10 @@ function CreateTeamModal({
         </div>
 
         {error && (
-          <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1.5">
+          <p
+            className="text-sm flex items-center gap-1.5"
+            style={{ color: "#dc2626" }}
+          >
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
             {error}
           </p>
@@ -407,15 +452,22 @@ export default function TeamsPage() {
         {/* Personal workspace card */}
         {personalTeam && (
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-slate-500 mb-3">
+            <p
+              className="text-[11px] font-semibold uppercase tracking-widest mb-3"
+              style={{ color: "var(--text-tertiary)" }}
+            >
               Espacio personal
             </p>
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className="group relative bg-white dark:bg-slate-900 border border-gray-200/80 dark:border-slate-800 rounded-2xl overflow-hidden hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all duration-300"
+              className="group relative rounded-2xl overflow-hidden transition-all duration-300"
+              style={{
+                backgroundColor: "var(--bg-card)",
+                border: "1px solid var(--border-color)",
+                boxShadow: "var(--shadow-card)",
+              }}
             >
-              <div className="h-1 w-full bg-gradient-to-r from-indigo-500 to-purple-600" />
               <div className="p-5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-base shadow-lg">
@@ -423,15 +475,21 @@ export default function TeamsPage() {
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                      <h3
+                        className="text-sm font-semibold"
+                        style={{ color: "var(--text-primary)" }}
+                      >
                         Personal
                       </h3>
                       <Lock
                         size={11}
-                        className="text-gray-400 dark:text-slate-500"
+                        style={{ color: "var(--text-tertiary)" }}
                       />
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                    <p
+                      className="text-xs mt-0.5"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       Tu espacio privado ·{" "}
                       {getTeamStats(personalTeam.id).listCount} listas ·{" "}
                       {getTeamStats(personalTeam.id).taskCount} tareas
@@ -440,7 +498,16 @@ export default function TeamsPage() {
                 </div>
                 <Link
                   href={`/teams/${personalTeam.id}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors flex-shrink-0"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors flex-shrink-0"
+                  style={{ color: "var(--text-link)" }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.backgroundColor =
+                      "rgba(37,99,235,0.08)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.backgroundColor =
+                      "transparent";
+                  }}
                 >
                   Ver <ChevronRight size={13} />
                 </Link>
@@ -453,7 +520,10 @@ export default function TeamsPage() {
         <div>
           {workTeams.length > 0 && (
             <div className="flex items-center justify-between mb-4">
-              <p className="text-[11px] font-semibold uppercase tracking-widest text-gray-400 dark:text-slate-500">
+              <p
+                className="text-[11px] font-semibold uppercase tracking-widest"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 Equipos de trabajo
               </p>
               {workTeams.length > 3 && (
@@ -467,7 +537,12 @@ export default function TeamsPage() {
                     placeholder="Buscar equipos..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8 pr-3 py-1.5 text-xs border border-gray-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 w-48"
+                    className="pl-8 pr-3 py-1.5 text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 w-48"
+                    style={{
+                      border: "1px solid var(--border-input)",
+                      backgroundColor: "var(--bg-input)",
+                      color: "var(--text-primary)",
+                    }}
                   />
                 </div>
               )}
@@ -480,16 +555,22 @@ export default function TeamsPage() {
               animate={{ opacity: 1, y: 0 }}
               className="text-center py-20"
             >
-              <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
-                <Users
-                  size={28}
-                  className="text-gray-400 dark:text-slate-500"
-                />
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
+                style={{ backgroundColor: "var(--bg-secondary)" }}
+              >
+                <Users size={28} style={{ color: "var(--text-tertiary)" }} />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100 mb-2">
+              <h3
+                className="text-lg font-semibold mb-2"
+                style={{ color: "var(--text-primary)" }}
+              >
                 Sin equipos de trabajo
               </h3>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mb-6 max-w-xs mx-auto">
+              <p
+                className="text-sm mb-6 max-w-xs mx-auto"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 Crea un equipo para colaborar con otros miembros en tareas y
                 proyectos.
               </p>
@@ -502,7 +583,7 @@ export default function TeamsPage() {
             </motion.div>
           ) : filtered.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-sm text-gray-500 dark:text-slate-400">
+              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
                 No se encontraron equipos para "{searchQuery}"
               </p>
             </div>

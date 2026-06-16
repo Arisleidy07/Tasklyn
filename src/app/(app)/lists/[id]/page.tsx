@@ -223,7 +223,14 @@ export default function ListDetailPage() {
         }
         badge={
           archivedCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700 text-[10px] font-medium text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-slate-600">
+            <span
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
+              style={{
+                backgroundColor: "var(--bg-secondary)",
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-color)",
+              }}
+            >
               <Archive size={10} className="text-gray-500" />
               {archivedCount} archivada
               {archivedCount !== 1 ? "s" : ""}
@@ -289,7 +296,13 @@ export default function ListDetailPage() {
 
       <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto pb-6">
         {/* Filtros - Segmented Control (Pendientes, Completadas, Todas) */}
-        <div className="flex bg-gray-50 dark:bg-slate-800 border border-gray-200/80 dark:border-slate-700 rounded-2xl p-1.5 mb-6 gap-1 shadow-sm">
+        <div
+          className="flex rounded-2xl p-1.5 mb-6 gap-1 shadow-sm"
+          style={{
+            backgroundColor: "var(--bg-secondary)",
+            border: "1px solid var(--border-color)",
+          }}
+        >
           {[
             {
               key: "pending" as const,
@@ -315,10 +328,17 @@ export default function ListDetailPage() {
               onClick={() => setFilter(key)}
               className={cn(
                 "relative flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight transition-all duration-200 min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1",
-                filter === key
-                  ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm border border-gray-200 dark:border-slate-600"
-                  : "text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-slate-700/40 border border-transparent",
+                filter === key ? "shadow-sm" : "border border-transparent",
               )}
+              style={
+                filter === key
+                  ? {
+                      backgroundColor: "var(--bg-card)",
+                      color: "var(--text-primary)",
+                      border: "1px solid var(--border-color)",
+                    }
+                  : { color: "var(--text-secondary)" }
+              }
             >
               {Icon && (
                 <Icon size={13} className="hidden sm:block flex-shrink-0" />
@@ -327,10 +347,16 @@ export default function ListDetailPage() {
               <span
                 className={cn(
                   "text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none tracking-wide",
-                  filter === key
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400",
+                  filter === key ? "bg-blue-600 text-white shadow-sm" : "",
                 )}
+                style={
+                  filter !== key
+                    ? {
+                        backgroundColor: "var(--bg-tertiary)",
+                        color: "var(--text-tertiary)",
+                      }
+                    : {}
+                }
               >
                 {count}
               </span>
@@ -372,24 +398,30 @@ export default function ListDetailPage() {
                 }
               />
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* Bloque de pendientes */}
                 <section>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-50 text-blue-600 text-[11px] font-semibold">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-semibold">
                         P
                       </span>
-                      <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">
                         Pendientes
                       </span>
                     </div>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400">
+                    <span
+                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                      style={{
+                        backgroundColor: "var(--bg-tertiary)",
+                        color: "var(--text-tertiary)",
+                      }}
+                    >
                       {pendingTasks.length}
                     </span>
                   </div>
                   {pendingTasks.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <AnimatePresence mode="popLayout">
                         {pendingTasks.map((task) => (
                           <TaskItem
@@ -411,21 +443,27 @@ export default function ListDetailPage() {
 
                 {/* Bloque de completadas */}
                 <section>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-50 text-emerald-600 text-[11px] font-semibold">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-semibold">
                         C
                       </span>
-                      <span className="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">
                         Completadas
                       </span>
                     </div>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400">
+                    <span
+                      className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                      style={{
+                        backgroundColor: "var(--bg-tertiary)",
+                        color: "var(--text-tertiary)",
+                      }}
+                    >
                       {completedTasks.length}
                     </span>
                   </div>
                   {completedTasks.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       <AnimatePresence mode="popLayout">
                         {completedTasks.map((task) => (
                           <TaskItem
@@ -492,24 +530,42 @@ export default function ListDetailPage() {
 
         {/* Área de archivados dentro de la lista */}
         {archivedCount > 0 && (
-          <div className="mt-10 pt-6 border-t border-dashed border-gray-200 dark:border-slate-700">
+          <div
+            className="mt-10 pt-6 border-t border-dashed"
+            style={{ borderColor: "var(--border-color)" }}
+          >
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 text-[11px] font-semibold">
+                <span
+                  className="inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-semibold"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    color: "var(--text-tertiary)",
+                  }}
+                >
                   A
                 </span>
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+                  <p
+                    className="text-xs font-semibold uppercase tracking-wide"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
                     Área de archivados
                   </p>
-                  <p className="text-[11px] text-gray-400 dark:text-slate-500">
+                  <p
+                    className="text-[11px]"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
                     Tareas guardadas para referencia. Puedes restaurar o
                     eliminar.
                   </p>
                 </div>
               </div>
               {!showArchived && (
-                <span className="text-[11px] text-gray-400 dark:text-slate-500 hidden sm:inline-flex">
+                <span
+                  className="text-[11px] hidden sm:inline-flex"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
                   {archivedCount} archivada{archivedCount !== 1 ? "s" : ""}{" "}
                   ocultas
                 </span>
@@ -518,20 +574,41 @@ export default function ListDetailPage() {
 
             <button
               onClick={() => setShowArchived(!showArchived)}
-              className="mt-3 flex items-center gap-2 w-full text-left group px-3 py-2 rounded-2xl bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors border border-transparent hover:border-gray-200 dark:hover:border-slate-600"
+              className="mt-3 flex items-center gap-2 w-full text-left group px-3 py-2 rounded-2xl transition-colors border border-transparent"
+              style={{ backgroundColor: "var(--bg-secondary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
+                e.currentTarget.style.borderColor = "var(--border-color)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+                e.currentTarget.style.borderColor = "transparent";
+              }}
             >
               <div className="flex items-center gap-2 flex-1">
-                <div className="w-7 h-7 rounded-xl bg-gray-900 dark:bg-slate-600 flex items-center justify-center">
+                <div
+                  className="w-7 h-7 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: "var(--text-primary)" }}
+                >
                   <Archive size={14} className="text-white" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-semibold text-gray-800 dark:text-slate-200 flex items-center gap-1">
+                  <span
+                    className="text-sm font-semibold flex items-center gap-1"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     Ver tareas archivadas
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-gray-900 dark:bg-slate-500 text-white">
+                    <span
+                      className="text-[10px] font-medium px-1.5 py-0.5 rounded-md text-white"
+                      style={{ backgroundColor: "var(--text-primary)" }}
+                    >
                       {archivedCount}
                     </span>
                   </span>
-                  <span className="text-[11px] text-gray-500 dark:text-slate-400">
+                  <span
+                    className="text-[11px]"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     Toca para desplegar todas las tareas archivadas de esta
                     lista.
                   </span>
@@ -540,7 +617,7 @@ export default function ListDetailPage() {
               <ChevronDown
                 size={14}
                 className={cn(
-                  "text-gray-400 dark:text-slate-500 transition-transform group-hover:text-gray-600 dark:group-hover:text-slate-300",
+                  "transition-transform",
                   showArchived && "rotate-180",
                 )}
               />
@@ -590,8 +667,14 @@ export default function ListDetailPage() {
         <div className="space-y-5">
           {/* Título de la tarea */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
-              <span className="w-4 h-4 rounded bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-[10px]">
+            <label
+              className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              <span
+                className="w-4 h-4 rounded flex items-center justify-center text-[10px]"
+                style={{ backgroundColor: "var(--bg-secondary)" }}
+              >
                 1
               </span>
               Título de la tarea
@@ -607,8 +690,11 @@ export default function ListDetailPage() {
 
           {/* Teléfonos dinámicos */}
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
-              <Phone size={12} className="text-gray-400 dark:text-slate-500" />
+            <label
+              className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              <Phone size={12} style={{ color: "var(--text-tertiary)" }} />
               Teléfonos de contacto
             </label>
             <AnimatePresence mode="popLayout">
@@ -631,7 +717,17 @@ export default function ListDetailPage() {
                     <button
                       type="button"
                       onClick={() => handleRemovePhone(index)}
-                      className="p-2 rounded-lg text-gray-400 dark:text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20 transition-colors flex-shrink-0"
+                      className="p-2 rounded-lg transition-colors flex-shrink-0"
+                      style={{ color: "var(--text-tertiary)" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "#ef4444";
+                        e.currentTarget.style.backgroundColor =
+                          "rgba(239,68,68,0.08)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "var(--text-tertiary)";
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }}
                     >
                       <X size={16} />
                     </button>
@@ -653,8 +749,11 @@ export default function ListDetailPage() {
 
           {/* Ubicación */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
-              <MapPin size={12} className="text-gray-400 dark:text-slate-500" />
+            <label
+              className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              <MapPin size={12} style={{ color: "var(--text-tertiary)" }} />
               Ubicación / Dirección
             </label>
             <Input
@@ -667,11 +766,11 @@ export default function ListDetailPage() {
 
           {/* Descripción */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-gray-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
-              <FileText
-                size={12}
-                className="text-gray-400 dark:text-slate-500"
-              />
+            <label
+              className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              <FileText size={12} style={{ color: "var(--text-tertiary)" }} />
               Descripción
             </label>
             <textarea
@@ -683,12 +782,20 @@ export default function ListDetailPage() {
                 e.target.style.height = e.target.scrollHeight + "px";
               }}
               rows={2}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none overflow-hidden min-h-[44px]"
+              className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none overflow-hidden min-h-[44px]"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
             />
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 pt-2 border-t border-gray-100 dark:border-slate-800">
+          <div
+            className="flex gap-3 pt-2 border-t"
+            style={{ borderColor: "var(--border-color)" }}
+          >
             <Button
               variant="ghost"
               onClick={() => {

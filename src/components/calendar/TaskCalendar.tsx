@@ -50,10 +50,7 @@ export function TaskCalendar({
   const [view, setView] = useState<CalendarView>("month");
 
   // Get tasks with due dates
-  const tasksWithDates = useMemo(
-    () => tasks.filter((t) => t.dueDate),
-    [tasks]
-  );
+  const tasksWithDates = useMemo(() => tasks.filter((t) => t.dueDate), [tasks]);
 
   // Navigation functions
   const goToPrevious = () => {
@@ -106,7 +103,7 @@ export function TaskCalendar({
       return `${format(weekStart, "d MMM", { locale: es })} - ${format(
         weekEnd,
         "d MMM yyyy",
-        { locale: es }
+        { locale: es },
       )}`;
     } else {
       return format(currentDate, "EEEE, d MMMM yyyy", { locale: es });
@@ -114,47 +111,94 @@ export function TaskCalendar({
   };
 
   return (
-    <div className={cn("bg-white dark:bg-slate-900 rounded-2xl shadow-sm", className)}>
+    <div
+      className={cn("rounded-2xl shadow-sm", className)}
+      style={{ backgroundColor: "var(--bg-card)" }}
+    >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b border-gray-100 dark:border-slate-800 gap-3">
+      <div
+        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border-b gap-3"
+        style={{ borderColor: "var(--border-color)" }}
+      >
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
             <button
               onClick={goToPrevious}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="p-2 rounded-lg transition-colors"
+              style={{ color: "var(--text-secondary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
               <ChevronLeft size={20} />
             </button>
             <button
               onClick={goToNext}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="p-2 rounded-lg transition-colors"
+              style={{ color: "var(--text-secondary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
               <ChevronRight size={20} />
             </button>
           </div>
-          <h2 className="text-lg font-semibold capitalize text-gray-900 dark:text-slate-100">
+          <h2
+            className="text-lg font-semibold capitalize"
+            style={{ color: "var(--text-primary)" }}
+          >
             {getHeaderDate()}
           </h2>
           <button
             onClick={goToToday}
-            className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+            className="px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
+            style={{ color: "#2563eb" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(37,99,235,0.08)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
           >
             Hoy
           </button>
         </div>
 
         {/* View selector */}
-        <div className="flex items-center gap-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-lg">
+        <div
+          className="flex items-center gap-1 p-1 rounded-lg"
+          style={{ backgroundColor: "var(--bg-secondary)" }}
+        >
           {(["month", "week", "day"] as CalendarView[]).map((v) => (
             <button
               key={v}
               onClick={() => setView(v)}
               className={cn(
                 "px-3 py-1.5 text-sm font-medium rounded-md transition-all",
-                view === v
-                  ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm"
-                  : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300"
+                view === v ? "shadow-sm" : "",
               )}
+              style={
+                view === v
+                  ? {
+                      backgroundColor: "var(--bg-card)",
+                      color: "var(--text-primary)",
+                    }
+                  : { color: "var(--text-secondary)" }
+              }
+              onMouseEnter={(e) => {
+                if (view !== v)
+                  e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
+              }}
+              onMouseLeave={(e) => {
+                if (view !== v)
+                  e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
               {v === "month" ? "Mes" : v === "week" ? "Semana" : "Día"}
             </button>
@@ -214,7 +258,8 @@ function MonthView({
         {weekDays.map((day) => (
           <div
             key={day}
-            className="text-center text-xs font-medium text-gray-500 dark:text-slate-400 py-2"
+            className="text-center text-xs font-medium py-2"
+            style={{ color: "var(--text-secondary)" }}
           >
             {day}
           </div>
@@ -236,13 +281,25 @@ function MonthView({
               transition={{ delay: index * 0.005 }}
               className={cn(
                 "min-h-[100px] p-2 rounded-lg border transition-all cursor-pointer",
-                isCurrentMonth
-                  ? "bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800"
-                  : "bg-gray-50 dark:bg-slate-950/50 border-transparent",
-                isTodayDate &&
-                  "ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-slate-900",
-                "hover:border-blue-300 dark:hover:border-blue-500/30"
+                isCurrentMonth ? "" : "",
+                isTodayDate && "ring-2 ring-blue-500 ring-offset-1",
               )}
+              style={
+                isCurrentMonth
+                  ? {
+                      backgroundColor: "var(--bg-card)",
+                      borderColor: "var(--border-color)",
+                    }
+                  : { backgroundColor: "var(--bg-secondary)" }
+              }
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "#93c5fd";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = isCurrentMonth
+                  ? "var(--border-color)"
+                  : "transparent";
+              }}
             >
               <div className="flex items-center justify-between mb-1">
                 <span
@@ -250,15 +307,25 @@ function MonthView({
                     "text-sm font-medium",
                     isTodayDate
                       ? "w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center"
-                      : isCurrentMonth
-                        ? "text-gray-700 dark:text-slate-300"
-                        : "text-gray-400 dark:text-slate-600"
+                      : "",
                   )}
+                  style={
+                    isTodayDate
+                      ? {}
+                      : {
+                          color: isCurrentMonth
+                            ? "var(--text-primary)"
+                            : "var(--text-tertiary)",
+                        }
+                  }
                 >
                   {format(day, "d")}
                 </span>
                 {dayTasks.length > 0 && (
-                  <span className="text-xs text-gray-400">
+                  <span
+                    className="text-xs"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
                     {dayTasks.length}
                   </span>
                 )}
@@ -274,20 +341,38 @@ function MonthView({
                     }}
                     className={cn(
                       "text-xs px-2 py-1 rounded truncate cursor-pointer transition-colors",
-                      task.status === "completed"
-                        ? "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400 line-through"
-                        : task.priority === "urgent"
-                          ? "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400"
-                          : task.priority === "high"
-                            ? "bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400"
-                            : "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400"
+                      task.status === "completed" ? "line-through" : "",
                     )}
+                    style={
+                      task.status === "completed"
+                        ? {
+                            backgroundColor: "rgba(34,197,94,0.1)",
+                            color: "#16a34a",
+                          }
+                        : task.priority === "urgent"
+                          ? {
+                              backgroundColor: "rgba(239,68,68,0.1)",
+                              color: "#dc2626",
+                            }
+                          : task.priority === "high"
+                            ? {
+                                backgroundColor: "rgba(249,115,22,0.1)",
+                                color: "#ea580c",
+                              }
+                            : {
+                                backgroundColor: "rgba(59,130,246,0.1)",
+                                color: "#2563eb",
+                              }
+                    }
                   >
                     {task.title}
                   </div>
                 ))}
                 {dayTasks.length > 3 && (
-                  <div className="text-xs text-gray-400 text-center">
+                  <div
+                    className="text-xs text-center"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
                     +{dayTasks.length - 3} más
                   </div>
                 )}
@@ -317,24 +402,36 @@ function WeekView({ days, getTasksForDay, onTaskClick }: WeekViewProps) {
         return (
           <div
             key={day.toISOString()}
-            className={cn(
-              "min-h-[300px] rounded-xl border p-3",
+            className={cn("min-h-[300px] rounded-xl border p-3")}
+            style={
               isTodayDate
-                ? "bg-blue-50/50 dark:bg-blue-500/5 border-blue-200 dark:border-blue-500/30"
-                : "bg-white dark:bg-slate-900 border-gray-100 dark:border-slate-800"
-            )}
+                ? {
+                    backgroundColor: "rgba(59,130,246,0.05)",
+                    borderColor: "rgba(59,130,246,0.3)",
+                  }
+                : {
+                    backgroundColor: "var(--bg-card)",
+                    borderColor: "var(--border-color)",
+                  }
+            }
           >
-            <div className="text-center mb-3 pb-2 border-b border-gray-100 dark:border-slate-800">
-              <p className="text-xs text-gray-500 dark:text-slate-400 uppercase">
+            <div
+              className="text-center mb-3 pb-2 border-b"
+              style={{ borderColor: "var(--border-color)" }}
+            >
+              <p
+                className="text-xs uppercase"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 {format(day, "EEE", { locale: es })}
               </p>
               <p
-                className={cn(
-                  "text-lg font-semibold",
+                className={cn("text-lg font-semibold")}
+                style={
                   isTodayDate
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-gray-900 dark:text-slate-100"
-                )}
+                    ? { color: "#2563eb" }
+                    : { color: "var(--text-primary)" }
+                }
               >
                 {format(day, "d")}
               </p>
@@ -347,34 +444,61 @@ function WeekView({ days, getTasksForDay, onTaskClick }: WeekViewProps) {
                   onClick={() => onTaskClick?.(task)}
                   className={cn(
                     "p-2 rounded-lg cursor-pointer transition-all hover:shadow-sm",
-                    task.status === "completed"
-                      ? "bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20"
-                      : task.priority === "urgent"
-                        ? "bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20"
-                        : task.priority === "high"
-                          ? "bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20"
-                          : "bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20"
                   )}
+                  style={
+                    task.status === "completed"
+                      ? {
+                          backgroundColor: "rgba(34,197,94,0.1)",
+                          borderColor: "rgba(34,197,94,0.2)",
+                        }
+                      : task.priority === "urgent"
+                        ? {
+                            backgroundColor: "rgba(239,68,68,0.1)",
+                            borderColor: "rgba(239,68,68,0.2)",
+                          }
+                        : task.priority === "high"
+                          ? {
+                              backgroundColor: "rgba(249,115,22,0.1)",
+                              borderColor: "rgba(249,115,22,0.2)",
+                            }
+                          : {
+                              backgroundColor: "rgba(59,130,246,0.1)",
+                              borderColor: "rgba(59,130,246,0.2)",
+                            }
+                  }
                 >
                   <div className="flex items-start gap-2">
                     {task.status === "completed" ? (
-                      <CheckCircle2 size={14} className="text-green-500 mt-0.5" />
+                      <CheckCircle2
+                        size={14}
+                        className="text-green-500 mt-0.5"
+                      />
                     ) : (
-                      <Circle size={14} className="text-gray-400 mt-0.5" />
+                      <Circle
+                        size={14}
+                        className="mt-0.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      />
                     )}
                     <p
                       className={cn(
                         "text-sm font-medium",
-                        task.status === "completed"
-                          ? "text-green-700 dark:text-green-400 line-through"
-                          : "text-gray-900 dark:text-slate-200"
+                        task.status === "completed" ? "line-through" : "",
                       )}
+                      style={
+                        task.status === "completed"
+                          ? { color: "#16a34a" }
+                          : { color: "var(--text-primary)" }
+                      }
                     >
                       {task.title}
                     </p>
                   </div>
                   {task.dueTime && (
-                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 ml-5">
+                    <p
+                      className="text-xs mt-1 ml-5"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       <Clock size={10} className="inline mr-1" />
                       {task.dueTime}
                     </p>
@@ -382,7 +506,10 @@ function WeekView({ days, getTasksForDay, onTaskClick }: WeekViewProps) {
                 </div>
               ))}
               {dayTasks.length === 0 && (
-                <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-4">
+                <p
+                  className="text-xs text-center py-4"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
                   Sin tareas
                 </p>
               )}
@@ -433,7 +560,10 @@ function DayView({ day, tasks, onTaskClick }: DayViewProps) {
     sectionTasks: Task[];
   }) => (
     <div className="mb-6">
-      <h4 className="text-sm font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+      <h4
+        className="text-sm font-medium uppercase tracking-wider mb-3 flex items-center gap-2"
+        style={{ color: "var(--text-secondary)" }}
+      >
         <Icon size={14} />
         {title}
       </h4>
@@ -445,23 +575,40 @@ function DayView({ day, tasks, onTaskClick }: DayViewProps) {
               onClick={() => onTaskClick?.(task)}
               className={cn(
                 "p-4 rounded-xl border cursor-pointer transition-all hover:shadow-md",
-                task.status === "completed"
-                  ? "bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/20"
-                  : task.priority === "urgent"
-                    ? "bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/20"
-                    : task.priority === "high"
-                      ? "bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/20"
-                      : "bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700"
               )}
+              style={
+                task.status === "completed"
+                  ? {
+                      backgroundColor: "rgba(34,197,94,0.1)",
+                      borderColor: "rgba(34,197,94,0.2)",
+                    }
+                  : task.priority === "urgent"
+                    ? {
+                        backgroundColor: "rgba(239,68,68,0.1)",
+                        borderColor: "rgba(239,68,68,0.2)",
+                      }
+                    : task.priority === "high"
+                      ? {
+                          backgroundColor: "rgba(249,115,22,0.1)",
+                          borderColor: "rgba(249,115,22,0.2)",
+                        }
+                      : {
+                          backgroundColor: "var(--bg-card)",
+                          borderColor: "var(--border-color)",
+                        }
+              }
             >
               <div className="flex items-start gap-3">
                 <div
                   className={cn(
                     "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0",
-                    task.status === "completed"
-                      ? "bg-green-500"
-                      : "border-2 border-gray-300 dark:border-slate-600"
+                    task.status === "completed" ? "bg-green-500" : "border-2",
                   )}
+                  style={
+                    task.status !== "completed"
+                      ? { borderColor: "var(--border-color)" }
+                      : {}
+                  }
                 >
                   {task.status === "completed" && (
                     <CheckCircle2 size={14} className="text-white" />
@@ -471,27 +618,42 @@ function DayView({ day, tasks, onTaskClick }: DayViewProps) {
                   <h5
                     className={cn(
                       "font-medium",
-                      task.status === "completed"
-                        ? "text-green-700 dark:text-green-400 line-through"
-                        : "text-gray-900 dark:text-slate-100"
+                      task.status === "completed" ? "line-through" : "",
                     )}
+                    style={
+                      task.status === "completed"
+                        ? { color: "#16a34a" }
+                        : { color: "var(--text-primary)" }
+                    }
                   >
                     {task.title}
                   </h5>
                   {task.description && (
-                    <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                    <p
+                      className="text-sm mt-1"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       {task.description}
                     </p>
                   )}
                   <div className="flex items-center gap-3 mt-2">
                     {task.dueTime && (
-                      <span className="text-xs text-gray-400 dark:text-slate-500 flex items-center gap-1">
+                      <span
+                        className="text-xs flex items-center gap-1"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         <Clock size={12} />
                         {task.dueTime}
                       </span>
                     )}
                     {task.listId && (
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400">
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full"
+                        style={{
+                          backgroundColor: "var(--bg-secondary)",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
                         Lista
                       </span>
                     )}
@@ -502,7 +664,7 @@ function DayView({ day, tasks, onTaskClick }: DayViewProps) {
           ))}
         </div>
       ) : (
-        <p className="text-sm text-gray-400 dark:text-slate-500 italic">
+        <p className="text-sm italic" style={{ color: "var(--text-tertiary)" }}>
           No hay tareas para esta hora
         </p>
       )}
@@ -511,13 +673,31 @@ function DayView({ day, tasks, onTaskClick }: DayViewProps) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <TimeSection title="Mañana" icon={CalendarIcon} sectionTasks={morningTasks} />
-      <TimeSection title="Tarde" icon={CalendarIcon} sectionTasks={afternoonTasks} />
-      <TimeSection title="Noche" icon={CalendarIcon} sectionTasks={eveningTasks} />
+      <TimeSection
+        title="Mañana"
+        icon={CalendarIcon}
+        sectionTasks={morningTasks}
+      />
+      <TimeSection
+        title="Tarde"
+        icon={CalendarIcon}
+        sectionTasks={afternoonTasks}
+      />
+      <TimeSection
+        title="Noche"
+        icon={CalendarIcon}
+        sectionTasks={eveningTasks}
+      />
 
       {noTimeTasks.length > 0 && (
-        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
-          <h4 className="text-sm font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
+        <div
+          className="mt-6 pt-6 border-t"
+          style={{ borderColor: "var(--border-color)" }}
+        >
+          <h4
+            className="text-sm font-medium uppercase tracking-wider mb-3"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Sin hora específica
           </h4>
           <div className="space-y-2">
@@ -525,9 +705,16 @@ function DayView({ day, tasks, onTaskClick }: DayViewProps) {
               <div
                 key={task.id}
                 onClick={() => onTaskClick?.(task)}
-                className="p-3 rounded-lg bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 cursor-pointer"
+                className="p-3 rounded-lg border cursor-pointer"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  borderColor: "var(--border-color)",
+                }}
               >
-                <p className="font-medium text-gray-900 dark:text-slate-100">
+                <p
+                  className="font-medium"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   {task.title}
                 </p>
               </div>

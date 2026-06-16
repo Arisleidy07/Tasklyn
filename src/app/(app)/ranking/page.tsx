@@ -64,7 +64,10 @@ function RankingCard({
         return <Award size={20} className="text-amber-600" />;
       default:
         return (
-          <span className="text-lg font-bold text-gray-400 dark:text-slate-500">
+          <span
+            className="text-lg font-bold"
+            style={{ color: "var(--text-tertiary)" }}
+          >
             #{rank}
           </span>
         );
@@ -74,13 +77,13 @@ function RankingCard({
   const getMedalBg = (rank: number) => {
     switch (rank) {
       case 1:
-        return "bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 dark:from-yellow-950/20 dark:to-orange-950/20 dark:border-yellow-800";
+        return "";
       case 2:
-        return "bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200 dark:from-gray-950/20 dark:to-slate-950/20 dark:border-gray-800";
+        return "";
       case 3:
-        return "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200 dark:from-amber-950/20 dark:to-yellow-950/20 dark:border-amber-800";
+        return "";
       default:
-        return "bg-white border-gray-200 dark:bg-slate-900 dark:border-slate-800";
+        return "";
     }
   };
 
@@ -95,10 +98,28 @@ function RankingCard({
         boxShadow: "0 10px 30px -10px rgba(59,130,246,0.2)",
       }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className={cn(
-        "relative p-4 rounded-xl border transition-all duration-300",
-        getMedalBg(user.rank),
-      )}
+      className="relative p-4 rounded-xl border transition-all duration-300"
+      style={
+        user.rank === 1
+          ? {
+              backgroundColor: "rgba(253,224,71,0.1)",
+              borderColor: "rgba(234,179,8,0.3)",
+            }
+          : user.rank === 2
+            ? {
+                backgroundColor: "rgba(156,163,175,0.08)",
+                borderColor: "rgba(156,163,175,0.3)",
+              }
+            : user.rank === 3
+              ? {
+                  backgroundColor: "rgba(251,191,36,0.08)",
+                  borderColor: "rgba(217,119,6,0.3)",
+                }
+              : {
+                  backgroundColor: "var(--bg-card)",
+                  borderColor: "var(--border-color)",
+                }
+      }
     >
       <div className="flex items-center gap-4">
         {/* Rank */}
@@ -336,7 +357,12 @@ export default function RankingPage() {
               <select
                 value={selectedTeam}
                 onChange={(e) => setSelectedTeam(e.target.value)}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 max-w-[140px] sm:max-w-none"
+                className="px-3 py-2 text-sm rounded-lg max-w-[140px] sm:max-w-none"
+                style={{
+                  border: "1px solid var(--border-input)",
+                  backgroundColor: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
               >
                 <option value="all">Todos los equipos</option>
                 {teams.map((team) => (
@@ -391,15 +417,23 @@ export default function RankingPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1, duration: 0.5 }}
-                    className={cn(
-                      "relative p-6 rounded-2xl border text-center",
-                      index === 0 &&
-                        "bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-200 dark:from-yellow-950/20 dark:to-orange-950/20 dark:border-yellow-800",
-                      index === 1 &&
-                        "bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200 dark:from-gray-950/20 dark:to-slate-950/20 dark:border-gray-800",
-                      index === 2 &&
-                        "bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200 dark:from-amber-950/20 dark:to-yellow-950/20 dark:border-amber-800",
-                    )}
+                    className="relative p-6 rounded-2xl border text-center"
+                    style={
+                      index === 0
+                        ? {
+                            backgroundColor: "rgba(253,224,71,0.12)",
+                            borderColor: "rgba(234,179,8,0.35)",
+                          }
+                        : index === 1
+                          ? {
+                              backgroundColor: "rgba(156,163,175,0.1)",
+                              borderColor: "rgba(156,163,175,0.35)",
+                            }
+                          : {
+                              backgroundColor: "rgba(251,191,36,0.1)",
+                              borderColor: "rgba(217,119,6,0.35)",
+                            }
+                    }
                   >
                     {/* Medal Icon */}
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">

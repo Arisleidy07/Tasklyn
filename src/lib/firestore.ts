@@ -731,6 +731,24 @@ export const updateTeam = async (
 export const deleteTeam = async (teamId: string): Promise<void> => {
   const batch = writeBatch(db);
 
+  // Delete all lists for this team
+  const listsQuery = query(listsCollection, where("teamId", "==", teamId));
+  const listsSnap = await getDocs(listsQuery);
+
+  // Delete all tasks for each list
+  for (const listDoc of listsSnap.docs) {
+    const tasksQuery = query(
+      tasksCollection,
+      where("listId", "==", listDoc.id),
+    );
+    const tasksSnap = await getDocs(tasksQuery);
+    tasksSnap.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+    // Delete the list
+    batch.delete(listDoc.ref);
+  }
+
   // Delete team document
   const teamRef = doc(db, "teams", teamId);
   batch.delete(teamRef);
@@ -749,9 +767,10 @@ export const deleteTeam = async (teamId: string): Promise<void> => {
     batch.delete(doc.ref);
   });
 
-  // Delete all achievements for this team
+  // Delete all achievements for this team (stored in root /achievements collection)
   const achievementsQuery = query(
-    collection(db, "teams", teamId, "achievements"),
+    achievementsCollection,
+    where("teamId", "==", teamId),
   );
   const achievementsSnap = await getDocs(achievementsQuery);
   achievementsSnap.docs.forEach((doc) => {

@@ -88,29 +88,53 @@ export default function DueDatePicker({
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative z-10 w-full max-w-[340px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
+              className="relative z-10 w-full max-w-[340px] max-w-[calc(100vw-32px)] rounded-2xl overflow-hidden"
+              style={{
+                backgroundColor: "var(--bg-modal)",
+                boxShadow: "var(--shadow-modal)",
+                border: "1px solid var(--border-color)",
+              }}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
+              <div
+                className="flex items-center justify-between px-5 py-4 border-b"
+                style={{ borderColor: "var(--border-color)" }}
+              >
                 <div className="flex items-center gap-2">
                   <Calendar
                     size={18}
-                    className="text-gray-500 dark:text-slate-400"
+                    style={{ color: "var(--text-secondary)" }}
                   />
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                  <h3
+                    className="text-sm font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     Vencimiento
                   </h3>
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                  className="p-1.5 rounded-lg transition-colors"
+                  style={{ color: "var(--text-tertiary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-secondary)";
+                    e.currentTarget.style.color = "var(--text-primary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                    e.currentTarget.style.color = "var(--text-tertiary)";
+                  }}
                 >
                   <X size={18} />
                 </button>
               </div>
 
               {/* Quick options */}
-              <div className="px-5 py-3 border-b border-gray-100 dark:border-slate-800 space-y-1">
+              <div
+                className="px-5 py-3 border-b space-y-1"
+                style={{ borderColor: "var(--border-color)" }}
+              >
                 {quickOptions.map((opt) => (
                   <button
                     key={opt.label}
@@ -118,12 +142,21 @@ export default function DueDatePicker({
                       onSelect(opt.getDate());
                       onClose();
                     }}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors dark:text-slate-300 dark:hover:bg-slate-800"
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors"
+                    style={{ color: "var(--text-primary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-secondary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                   >
-                    <span className="font-medium dark:text-slate-200">
-                      {opt.label}
-                    </span>
-                    <span className="text-gray-400 text-xs dark:text-slate-500">
+                    <span className="font-medium">{opt.label}</span>
+                    <span
+                      className="text-xs"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
                       {formatDate(opt.getDate(), { short: true })}
                     </span>
                   </button>
@@ -133,7 +166,15 @@ export default function DueDatePicker({
                     onSelect(null);
                     onClose();
                   }}
-                  className="w-full px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium dark:hover:bg-red-950/30"
+                  className="w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                  style={{ color: "#ef4444" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "rgba(239,68,68,0.08)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
                 >
                   Sin fecha
                 </button>
@@ -144,23 +185,40 @@ export default function DueDatePicker({
                 <div className="flex items-center justify-between mb-4">
                   <button
                     onClick={handlePrevMonth}
-                    className="p-1 rounded-lg hover:bg-gray-100 transition-colors dark:hover:bg-slate-800"
+                    className="p-1 rounded-lg transition-colors"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-secondary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                   >
                     <ChevronLeft
                       size={18}
-                      className="text-gray-500 dark:text-slate-400"
+                      style={{ color: "var(--text-secondary)" }}
                     />
                   </button>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                  <span
+                    className="text-sm font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     {MONTHS[month]} {year}
                   </span>
                   <button
                     onClick={handleNextMonth}
-                    className="p-1 rounded-lg hover:bg-gray-100 transition-colors dark:hover:bg-slate-800"
+                    className="p-1 rounded-lg transition-colors"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-secondary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                   >
                     <ChevronRight
                       size={18}
-                      className="text-gray-500 dark:text-slate-400"
+                      style={{ color: "var(--text-secondary)" }}
                     />
                   </button>
                 </div>
@@ -170,7 +228,8 @@ export default function DueDatePicker({
                   {["D", "L", "M", "M", "J", "V", "S"].map((d) => (
                     <div
                       key={d}
-                      className="text-center text-[10px] font-medium text-gray-400 uppercase tracking-wider py-1 dark:text-slate-500"
+                      className="text-center text-[10px] font-medium uppercase tracking-wider py-1"
+                      style={{ color: "var(--text-tertiary)" }}
                     >
                       {d}
                     </div>
@@ -190,12 +249,23 @@ export default function DueDatePicker({
                           onClose();
                         }}
                         disabled={!day.currentMonth}
-                        className={`
-                        aspect-square flex items-center justify-center rounded-full text-sm font-medium transition-all
-                        ${!day.currentMonth ? "text-gray-200 dark:text-slate-700 cursor-default" : "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer"}
-                        ${isSelected ? "bg-gray-900 text-white hover:bg-gray-800 dark:bg-slate-700 dark:hover:bg-slate-600" : "text-gray-700 dark:text-slate-300"}
-                        ${isToday && !isSelected ? "ring-2 ring-gray-900 ring-offset-1 dark:ring-slate-500 dark:ring-offset-slate-900" : ""}
-                      `}
+                        className="aspect-square flex items-center justify-center rounded-full text-sm font-medium transition-all"
+                        style={{
+                          color: !day.currentMonth
+                            ? "var(--text-muted)"
+                            : isSelected
+                              ? "#fff"
+                              : "var(--text-primary)",
+                          backgroundColor: isSelected
+                            ? "var(--text-primary)"
+                            : "transparent",
+                          cursor: !day.currentMonth ? "default" : "pointer",
+                          outline:
+                            isToday && !isSelected
+                              ? "2px solid var(--text-primary)"
+                              : "none",
+                          outlineOffset: "2px",
+                        }}
                       >
                         {day.date}
                       </button>

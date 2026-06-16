@@ -34,11 +34,18 @@ function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
         "relative rounded-2xl p-6 sm:p-8 flex flex-col h-full",
         "border transition-all duration-300",
         isPopular
-          ? "border-blue-500/60 bg-gradient-to-b from-blue-600/10 via-indigo-500/5 to-transparent shadow-[0_8px_40px_-8px_rgba(99,102,241,0.35)] dark:shadow-[0_8px_40px_-8px_rgba(99,102,241,0.25)]"
-          : "border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 hover:border-gray-300 dark:hover:border-slate-700",
-        isCurrentPlan &&
-          "ring-2 ring-blue-500/60 ring-offset-2 ring-offset-white dark:ring-offset-slate-950",
+          ? "border-blue-500/60 bg-gradient-to-b from-blue-600/10 via-indigo-500/5 to-transparent shadow-[0_8px_40px_-8px_rgba(99,102,241,0.3)]"
+          : "",
+        isCurrentPlan && "ring-2 ring-blue-500/60 ring-offset-2",
       )}
+      style={
+        !isPopular
+          ? {
+              backgroundColor: "var(--bg-card)",
+              borderColor: "var(--border-color)",
+            }
+          : {}
+      }
     >
       {isPopular && (
         <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
@@ -51,7 +58,14 @@ function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
 
       {isCurrentPlan && (
         <div className="absolute top-4 right-4">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 text-[11px] font-medium border border-emerald-200 dark:border-emerald-500/20">
+          <span
+            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium"
+            style={{
+              backgroundColor: "rgba(16,185,129,0.1)",
+              color: "#059669",
+              border: "1px solid rgba(16,185,129,0.2)",
+            }}
+          >
             <Check size={11} />
             Actual
           </span>
@@ -62,14 +76,14 @@ function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
         className={cn(
           "w-12 h-12 rounded-xl flex items-center justify-center mb-5",
           isFree
-            ? "bg-gray-100 dark:bg-slate-800"
+            ? ""
             : isPopular
               ? "bg-gradient-to-br from-blue-500 to-indigo-600"
               : "bg-gradient-to-br from-violet-500 to-purple-600",
         )}
       >
         {isFree ? (
-          <Zap size={20} className="text-gray-500 dark:text-gray-400" />
+          <Zap size={20} style={{ color: "var(--text-tertiary)" }} />
         ) : plan.id === "business" ? (
           <Building2 size={20} className="text-white" />
         ) : (
@@ -78,32 +92,47 @@ function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
       </div>
 
       <div className="flex items-center gap-2 mb-1">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-slate-100">
+        <h3
+          className="text-lg font-bold"
+          style={{ color: "var(--text-primary)" }}
+        >
           {plan.name}
         </h3>
         {plan.id === "pro" && <span className="text-base">⭐</span>}
         {plan.id === "business" && <span className="text-base">🚀</span>}
       </div>
-      <p className="text-sm text-gray-500 dark:text-slate-400 mb-5">
+      <p className="text-sm mb-5" style={{ color: "var(--text-secondary)" }}>
         {plan.description}
       </p>
 
       <div className="mb-6">
         {plan.price === 0 ? (
           <div>
-            <span className="text-4xl font-bold text-gray-900 dark:text-slate-100">
+            <span
+              className="text-4xl font-bold"
+              style={{ color: "var(--text-primary)" }}
+            >
               $0
             </span>
-            <span className="ml-2 text-sm text-gray-500 dark:text-slate-400">
+            <span
+              className="ml-2 text-sm"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Forever
             </span>
           </div>
         ) : (
           <div className="flex items-baseline gap-1">
-            <span className="text-4xl font-bold text-gray-900 dark:text-slate-100">
+            <span
+              className="text-4xl font-bold"
+              style={{ color: "var(--text-primary)" }}
+            >
               ${plan.price}
             </span>
-            <span className="text-sm text-gray-500 dark:text-slate-400">
+            <span
+              className="text-sm"
+              style={{ color: "var(--text-secondary)" }}
+            >
               / mes
             </span>
           </div>
@@ -115,12 +144,29 @@ function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
         {isCurrentPlan ? (
           <button
             disabled
-            className="w-full h-10 rounded-xl text-sm font-medium bg-gray-100 dark:bg-slate-800 text-gray-400 dark:text-slate-500 cursor-default border border-gray-200 dark:border-slate-700"
+            className="w-full h-10 rounded-xl text-sm font-medium cursor-default"
+            style={{
+              backgroundColor: "var(--bg-secondary)",
+              color: "var(--text-tertiary)",
+              border: "1px solid var(--border-color)",
+            }}
           >
             Plan actual
           </button>
         ) : isFree ? (
-          <button className="w-full h-10 rounded-xl text-sm font-medium border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800/60 transition-all duration-200">
+          <button
+            className="w-full h-10 rounded-xl text-sm font-medium transition-all duration-200"
+            style={{
+              border: "1px solid var(--border-color)",
+              color: "var(--text-secondary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
+          >
             Comenzar gratis
           </button>
         ) : isPopular ? (
@@ -135,7 +181,10 @@ function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
       </div>
 
       <div className="flex-1">
-        <p className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-widest mb-3">
+        <p
+          className="text-[11px] font-semibold uppercase tracking-widest mb-3"
+          style={{ color: "var(--text-tertiary)" }}
+        >
           Incluye:
         </p>
         <ul className="space-y-2.5">
@@ -144,21 +193,20 @@ function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
               <div
                 className={cn(
                   "w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0",
-                  isPopular
-                    ? "bg-blue-100 dark:bg-blue-500/20"
-                    : "bg-gray-100 dark:bg-slate-800",
+                  isPopular ? "" : "",
                 )}
               >
                 <Check
                   size={10}
-                  className={
-                    isPopular
-                      ? "text-blue-600 dark:text-blue-400"
-                      : "text-gray-500 dark:text-slate-400"
-                  }
+                  style={{
+                    color: isPopular ? "#2563eb" : "var(--text-tertiary)",
+                  }}
                 />
               </div>
-              <span className="text-sm text-gray-600 dark:text-slate-300">
+              <span
+                className="text-sm"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 {feature}
               </span>
             </li>
@@ -185,7 +233,12 @@ export default function PricingPage() {
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-medium mb-4"
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium mb-4"
+            style={{
+              backgroundColor: "rgba(37,99,235,0.07)",
+              border: "1px solid rgba(37,99,235,0.2)",
+              color: "#2563eb",
+            }}
           >
             <Sparkles size={12} />
             Planes flexibles
@@ -194,7 +247,8 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-slate-100 mb-3 tracking-tight"
+            className="text-3xl md:text-4xl font-bold mb-3 tracking-tight"
+            style={{ color: "var(--text-primary)" }}
           >
             Planes simples y transparentes
           </motion.h1>
@@ -202,7 +256,8 @@ export default function PricingPage() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-base text-gray-500 dark:text-slate-400 max-w-xl mx-auto"
+            className="text-base max-w-xl mx-auto"
+            style={{ color: "var(--text-secondary)" }}
           >
             Comienza gratis y escala cuando lo necesites. Sin contratos, cancela
             cuando quieras.
@@ -232,15 +287,22 @@ export default function PricingPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="rounded-2xl border border-dashed border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/40 p-6 text-center"
+          className="rounded-2xl border border-dashed p-6 text-center"
+          style={{
+            borderColor: "var(--border-color)",
+            backgroundColor: "var(--bg-secondary)",
+          }}
         >
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Clock size={16} className="text-gray-400 dark:text-slate-500" />
-            <span className="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+            <Clock size={16} style={{ color: "var(--text-tertiary)" }} />
+            <span
+              className="text-sm font-semibold uppercase tracking-wider"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Métodos de pago — Próximamente
             </span>
           </div>
-          <p className="text-sm text-gray-400 dark:text-slate-500 mb-4">
+          <p className="text-sm mb-4" style={{ color: "var(--text-tertiary)" }}>
             Los pagos serán habilitados pronto. Podrás suscribirte con:
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -248,7 +310,12 @@ export default function PricingPage() {
               (p) => (
                 <span
                   key={p}
-                  className="inline-flex items-center px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-xs font-medium text-gray-500 dark:text-slate-400"
+                  className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium"
+                  style={{
+                    backgroundColor: "var(--bg-card)",
+                    border: "1px solid var(--border-color)",
+                    color: "var(--text-secondary)",
+                  }}
                 >
                   {p}
                 </span>
@@ -270,7 +337,10 @@ export default function PricingPage() {
           ].map((item, i) => (
             <div key={i} className="flex items-center justify-center gap-2">
               <item.icon size={16} className="text-blue-500" />
-              <span className="text-sm text-gray-500 dark:text-slate-400">
+              <span
+                className="text-sm"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 {item.text}
               </span>
             </div>

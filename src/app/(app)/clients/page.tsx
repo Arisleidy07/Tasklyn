@@ -94,14 +94,21 @@ function ClientForm({ initial, onClose, onSave, title }: ClientFormProps) {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-lg w-full border border-gray-200/80 dark:border-slate-800 shadow-2xl max-h-[90vh] overflow-y-auto"
+          className="rounded-2xl p-6 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto"
+          style={{
+            backgroundColor: "var(--bg-card)",
+            border: "1px solid var(--border-color)",
+          }}
         >
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
                 <Users size={18} className="text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-slate-100">
+              <h3
+                className="text-lg font-semibold"
+                style={{ color: "var(--text-primary)" }}
+              >
                 {title}
               </h3>
             </div>
@@ -115,7 +122,10 @@ function ClientForm({ initial, onClose, onSave, title }: ClientFormProps) {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 Nombre *
               </label>
               <input
@@ -125,12 +135,20 @@ function ClientForm({ initial, onClose, onSave, title }: ClientFormProps) {
                 placeholder="Nombre del cliente"
                 required
                 autoFocus
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{
+                  border: "1px solid var(--border-input)",
+                  backgroundColor: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                <label
+                  className="block text-sm font-medium mb-1.5"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Correo
                 </label>
                 <input
@@ -138,11 +156,19 @@ function ClientForm({ initial, onClose, onSave, title }: ClientFormProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="correo@ejemplo.com"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    border: "1px solid var(--border-input)",
+                    backgroundColor: "var(--bg-input)",
+                    color: "var(--text-primary)",
+                  }}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+                <label
+                  className="block text-sm font-medium mb-1.5"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Teléfono
                 </label>
                 <input
@@ -150,12 +176,20 @@ function ClientForm({ initial, onClose, onSave, title }: ClientFormProps) {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="+1 000 000 0000"
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    border: "1px solid var(--border-input)",
+                    backgroundColor: "var(--bg-input)",
+                    color: "var(--text-primary)",
+                  }}
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 Dirección
               </label>
               <input
@@ -163,11 +197,19 @@ function ClientForm({ initial, onClose, onSave, title }: ClientFormProps) {
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
                 placeholder="Dirección o ciudad"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                style={{
+                  border: "1px solid var(--border-input)",
+                  backgroundColor: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 Notas
               </label>
               <textarea
@@ -175,18 +217,30 @@ function ClientForm({ initial, onClose, onSave, title }: ClientFormProps) {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Notas internas..."
                 rows={3}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none"
+                className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                style={{
+                  border: "1px solid var(--border-input)",
+                  backgroundColor: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1.5">
+              <label
+                className="block text-sm font-medium mb-1.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 Etiquetas
               </label>
               <div className="flex gap-2 mb-2 flex-wrap">
                 {tags.map((t) => (
                   <span
                     key={t}
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 text-xs font-medium"
+                    className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                    style={{
+                      backgroundColor: "rgba(37,99,235,0.08)",
+                      color: "#2563eb",
+                    }}
                   >
                     #{t}
                     <button
@@ -207,12 +261,29 @@ function ClientForm({ initial, onClose, onSave, title }: ClientFormProps) {
                     e.key === "Enter" && (e.preventDefault(), addTag())
                   }
                   placeholder="#Ventas #Urgente..."
-                  className="flex-1 px-4 py-2 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="flex-1 px-4 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  style={{
+                    border: "1px solid var(--border-input)",
+                    backgroundColor: "var(--bg-input)",
+                    color: "var(--text-primary)",
+                  }}
                 />
                 <button
                   type="button"
                   onClick={addTag}
-                  className="px-3 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl text-sm font-medium transition-colors"
+                  className="px-3 py-2 rounded-xl text-sm font-medium transition-colors"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    color: "var(--text-primary)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-tertiary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-secondary)";
+                  }}
                 >
                   Añadir
                 </button>
@@ -222,7 +293,17 @@ function ClientForm({ initial, onClose, onSave, title }: ClientFormProps) {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors"
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                style={{
+                  border: "1px solid var(--border-color)",
+                  color: "var(--text-secondary)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
               >
                 Cancelar
               </button>
@@ -317,7 +398,12 @@ export default function ClientsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por nombre, correo, teléfono o etiqueta..."
-            className="w-full pl-9 pr-4 py-3 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-9 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{
+              border: "1px solid var(--border-input)",
+              backgroundColor: "var(--bg-input)",
+              color: "var(--text-primary)",
+            }}
           />
         </div>
 
@@ -332,13 +418,19 @@ export default function ClientsPage() {
             animate={{ opacity: 1 }}
             className="text-center py-16"
           >
-            <div className="w-20 h-20 rounded-2xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
-              <Users size={32} className="text-gray-400" />
+            <div
+              className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ backgroundColor: "var(--bg-secondary)" }}
+            >
+              <Users size={32} style={{ color: "var(--text-tertiary)" }} />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-slate-100 mb-2">
+            <h3
+              className="text-xl font-semibold mb-2"
+              style={{ color: "var(--text-primary)" }}
+            >
               {search ? "Sin resultados" : "Sin clientes aún"}
             </h3>
-            <p className="text-gray-500 dark:text-slate-400 mb-4">
+            <p className="mb-4" style={{ color: "var(--text-secondary)" }}>
               {search
                 ? "Intenta con otro término de búsqueda."
                 : "Agrega tu primer cliente para comenzar."}
@@ -360,20 +452,28 @@ export default function ClientsPage() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
-                className="rounded-2xl border border-gray-200/80 bg-white dark:bg-slate-900 dark:border-slate-800 overflow-hidden"
+                className="rounded-2xl overflow-hidden"
+                style={{
+                  border: "1px solid var(--border-color)",
+                  backgroundColor: "var(--bg-card)",
+                }}
               >
                 {/* Header row */}
                 <div className="flex items-center gap-4 p-4">
                   <Avatar name={client.name} size="md" />
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 dark:text-slate-100 truncate">
+                    <h3
+                      className="font-semibold truncate"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       {client.name}
                     </h3>
                     <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                       {client.email && (
                         <a
                           href={`mailto:${client.email}`}
-                          className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400 hover:text-blue-600 transition-colors"
+                          className="flex items-center gap-1 text-xs hover:text-blue-600 transition-colors"
+                          style={{ color: "var(--text-tertiary)" }}
                         >
                           <Mail size={11} />
                           {client.email}
@@ -382,14 +482,18 @@ export default function ClientsPage() {
                       {client.phone && (
                         <a
                           href={`tel:${client.phone}`}
-                          className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400 hover:text-green-600 transition-colors"
+                          className="flex items-center gap-1 text-xs hover:text-green-600 transition-colors"
+                          style={{ color: "var(--text-tertiary)" }}
                         >
                           <Phone size={11} />
                           {client.phone}
                         </a>
                       )}
                       {client.address && (
-                        <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-slate-400">
+                        <span
+                          className="flex items-center gap-1 text-xs"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
                           <MapPin size={11} />
                           {client.address}
                         </span>
@@ -400,7 +504,11 @@ export default function ClientsPage() {
                         {client.tags.map((t) => (
                           <span
                             key={t}
-                            className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400 text-[10px] font-medium"
+                            className="px-2 py-0.5 rounded-full text-[10px] font-medium"
+                            style={{
+                              backgroundColor: "rgba(37,99,235,0.08)",
+                              color: "#2563eb",
+                            }}
                           >
                             #{t}
                           </span>
@@ -413,7 +521,14 @@ export default function ClientsPage() {
                       onClick={() =>
                         setExpanded(expanded === client.id ? null : client.id)
                       }
-                      className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
+                      className="p-2 transition-colors"
+                      style={{ color: "var(--text-tertiary)" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "var(--text-primary)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "var(--text-tertiary)";
+                      }}
                     >
                       <ChevronDown
                         size={16}
@@ -444,18 +559,25 @@ export default function ClientsPage() {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="border-t border-gray-100 dark:border-slate-800 px-4 py-3"
+                      className="px-4 py-3"
+                      style={{ borderTop: "1px solid var(--border-color)" }}
                     >
                       <div className="flex items-start gap-2">
                         <FileText
                           size={14}
                           className="text-gray-400 mt-0.5 flex-shrink-0"
                         />
-                        <p className="text-sm text-gray-600 dark:text-slate-400 whitespace-pre-wrap">
+                        <p
+                          className="text-sm whitespace-pre-wrap"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
                           {client.notes}
                         </p>
                       </div>
-                      <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-2">
+                      <p
+                        className="text-[10px] mt-2"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         Creado{" "}
                         {format(parseISO(client.createdAt), "d MMM yyyy", {
                           locale: es,

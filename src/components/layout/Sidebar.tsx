@@ -186,7 +186,7 @@ export default function Sidebar() {
                     className={cn(
                       "sidebar-item relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200",
                       active
-                        ? "sidebar-item-active bg-blue-600 text-white shadow-sm shadow-blue-600/25 dark:bg-blue-600/90 dark:shadow-blue-900/30"
+                        ? "sidebar-item-active bg-blue-600 text-white shadow-sm shadow-blue-600/25"
                         : "hover:shadow-sm",
                       collapsed && "justify-center px-0",
                     )}

@@ -102,22 +102,42 @@ export default function RecurrencePicker({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="relative z-10 w-full max-w-[340px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
+                className="relative z-10 w-full max-w-[340px] max-w-[calc(100vw-32px)] rounded-2xl shadow-2xl overflow-hidden"
+                style={{
+                  backgroundColor: "var(--bg-card)",
+                  boxShadow: "var(--shadow-modal)",
+                }}
               >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
+                <div
+                  className="flex items-center justify-between px-5 py-4 border-b"
+                  style={{ borderColor: "var(--border-color)" }}
+                >
                   <div className="flex items-center gap-2">
                     <Repeat
                       size={18}
-                      className="text-gray-500 dark:text-slate-400"
+                      style={{ color: "var(--text-secondary)" }}
                     />
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                    <h3
+                      className="text-sm font-semibold"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       Repetir
                     </h3>
                   </div>
                   <button
                     onClick={onClose}
-                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                    className="p-1.5 rounded-lg transition-colors"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-secondary)";
+                      e.currentTarget.style.color = "var(--text-primary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                    }}
                   >
                     <X size={18} />
                   </button>
@@ -169,15 +189,35 @@ export default function RecurrencePicker({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="relative z-10 w-full max-w-[360px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
+                className="relative z-10 w-full max-w-[360px] rounded-2xl shadow-2xl overflow-hidden"
+                style={{
+                  backgroundColor: "var(--bg-card)",
+                  boxShadow: "var(--shadow-modal)",
+                }}
               >
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                <div
+                  className="flex items-center justify-between px-5 py-4 border-b"
+                  style={{ borderColor: "var(--border-color)" }}
+                >
+                  <h3
+                    className="text-sm font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     Personalizar repetición
                   </h3>
                   <button
                     onClick={() => setShowCustom(false)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                    className="p-1.5 rounded-lg transition-colors"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-secondary)";
+                      e.currentTarget.style.color = "var(--text-primary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                    }}
                   >
                     <X size={18} />
                   </button>
@@ -186,10 +226,16 @@ export default function RecurrencePicker({
                 <div className="p-5 space-y-5">
                   {/* Frequency type */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                    <label
+                      className="text-xs font-medium uppercase tracking-wide"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
                       Frecuencia
                     </label>
-                    <div className="flex bg-gray-100 dark:bg-slate-800 rounded-xl p-1">
+                    <div
+                      className="flex rounded-xl p-1"
+                      style={{ backgroundColor: "var(--bg-secondary)" }}
+                    >
                       {(
                         [
                           { key: "days", label: "Días" },
@@ -200,12 +246,16 @@ export default function RecurrencePicker({
                         <button
                           key={f.key}
                           onClick={() => setCustomType(f.key)}
-                          className={cn(
-                            "flex-1 py-2 rounded-lg text-sm font-medium transition-all",
+                          className="flex-1 py-2 rounded-lg text-sm font-medium transition-all"
+                          style={
                             customType === f.key
-                              ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm"
-                              : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200",
-                          )}
+                              ? {
+                                  backgroundColor: "var(--bg-card)",
+                                  color: "var(--text-primary)",
+                                  boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                                }
+                              : { color: "var(--text-tertiary)" }
+                          }
                         >
                           {f.label}
                         </button>
@@ -215,7 +265,10 @@ export default function RecurrencePicker({
 
                   {/* Interval */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                    <label
+                      className="text-xs font-medium uppercase tracking-wide"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
                       Cada{" "}
                       {customType === "days"
                         ? "cuántos días"
@@ -226,16 +279,43 @@ export default function RecurrencePicker({
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => setInterval(Math.max(1, interval - 1))}
-                        className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                        className="w-10 h-10 rounded-xl font-semibold transition-colors"
+                        style={{
+                          backgroundColor: "var(--bg-secondary)",
+                          color: "var(--text-secondary)",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "var(--bg-tertiary)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "var(--bg-secondary)";
+                        }}
                       >
                         −
                       </button>
-                      <span className="flex-1 text-center text-lg font-semibold text-gray-900 dark:text-slate-100">
+                      <span
+                        className="flex-1 text-center text-lg font-semibold"
+                        style={{ color: "var(--text-primary)" }}
+                      >
                         {interval}
                       </span>
                       <button
                         onClick={() => setInterval(interval + 1)}
-                        className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                        className="w-10 h-10 rounded-xl font-semibold transition-colors"
+                        style={{
+                          backgroundColor: "var(--bg-secondary)",
+                          color: "var(--text-secondary)",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "var(--bg-tertiary)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "var(--bg-secondary)";
+                        }}
                       >
                         +
                       </button>
@@ -245,7 +325,10 @@ export default function RecurrencePicker({
                   {/* Days of week (only for weeks) */}
                   {customType === "weeks" && (
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                      <label
+                        className="text-xs font-medium uppercase tracking-wide"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         Días de la semana
                       </label>
                       <div className="flex gap-1.5">
@@ -255,12 +338,28 @@ export default function RecurrencePicker({
                             <button
                               key={d.value}
                               onClick={() => toggleDay(d.value)}
-                              className={cn(
-                                "flex-1 aspect-square rounded-xl text-sm font-semibold transition-all",
+                              className="flex-1 aspect-square rounded-xl text-sm font-semibold transition-all"
+                              style={
                                 active
-                                  ? "bg-gray-900 dark:bg-blue-600 text-white"
-                                  : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600",
-                              )}
+                                  ? {
+                                      backgroundColor: "#2563eb",
+                                      color: "white",
+                                    }
+                                  : {
+                                      backgroundColor: "var(--bg-secondary)",
+                                      color: "var(--text-tertiary)",
+                                    }
+                              }
+                              onMouseEnter={(e) => {
+                                if (!active)
+                                  e.currentTarget.style.backgroundColor =
+                                    "var(--bg-tertiary)";
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!active)
+                                  e.currentTarget.style.backgroundColor =
+                                    "var(--bg-secondary)";
+                              }}
                             >
                               {d.label}
                             </button>
@@ -272,7 +371,14 @@ export default function RecurrencePicker({
 
                   <button
                     onClick={handleCustomSave}
-                    className="w-full h-11 bg-gray-900 dark:bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-gray-800 dark:hover:bg-blue-700 transition-colors"
+                    className="w-full h-11 text-white rounded-xl text-sm font-medium transition-colors"
+                    style={{ backgroundColor: "#2563eb" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#1d4ed8";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#2563eb";
+                    }}
                   >
                     Guardar repetición
                   </button>

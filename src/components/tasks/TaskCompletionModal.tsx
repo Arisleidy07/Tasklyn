@@ -144,30 +144,50 @@ export default function TaskCompletionModal({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden"
+          className="rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-hidden"
+          style={{
+            backgroundColor: "var(--bg-modal)",
+            boxShadow: "var(--shadow-modal)",
+          }}
         >
           {/* Header */}
-          <div className="p-6 border-b border-gray-200 dark:border-slate-800">
+          <div
+            className="p-6 border-b"
+            style={{ borderColor: "var(--border-color)" }}
+          >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-green-50 dark:bg-green-500/20 flex items-center justify-center">
-                  <CheckCircle2
-                    size={24}
-                    className="text-green-600 dark:text-green-400"
-                  />
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(22,163,74,0.08)" }}
+                >
+                  <CheckCircle2 size={24} style={{ color: "#16a34a" }} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100">
+                  <h2
+                    className="text-xl font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     ¿Quién realizó esta tarea?
                   </h2>
-                  <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                  <p
+                    className="text-sm mt-1"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     "{taskTitle}"
                   </p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
+                className="p-2 transition-colors"
+                style={{ color: "var(--text-tertiary)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--text-primary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--text-tertiary)";
+                }}
               >
                 <X size={18} />
               </button>
@@ -177,16 +197,26 @@ export default function TaskCompletionModal({
           {/* Content */}
           <div className="p-6 space-y-6">
             {/* Info Message */}
-            <div className="flex gap-3 p-4 bg-blue-50 dark:bg-blue-950/30 rounded-xl border border-blue-200 dark:border-blue-800">
+            <div
+              className="flex gap-3 p-4 rounded-xl border"
+              style={{
+                backgroundColor: "rgba(37,99,235,0.05)",
+                borderColor: "rgba(37,99,235,0.2)",
+              }}
+            >
               <AlertCircle
                 size={18}
-                className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
+                className="flex-shrink-0 mt-0.5"
+                style={{ color: "#2563eb" }}
               />
               <div className="text-sm">
-                <p className="text-blue-900 dark:text-blue-100 font-medium">
+                <p
+                  className="font-medium"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   Información de completion
                 </p>
-                <p className="text-blue-700 dark:text-blue-300 mt-1">
+                <p className="mt-1" style={{ color: "var(--text-secondary)" }}>
                   Estás marcando esta tarea como completada. Si la realizó otra
                   persona, por favor selecciónala a continuación.
                 </p>
@@ -195,7 +225,10 @@ export default function TaskCompletionModal({
 
             {/* Performer Selection */}
             <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700 dark:text-slate-300 flex items-center gap-2">
+              <label
+                className="text-sm font-medium flex items-center gap-2"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 <Users size={16} />
                 ¿Quién realmente realizó la tarea?
               </label>
@@ -204,12 +237,18 @@ export default function TaskCompletionModal({
                 {/* Option: The person completing it */}
                 <button
                   onClick={() => setSelectedPerformer(null)}
-                  className={cn(
-                    "w-full p-3 rounded-xl border text-left transition-all duration-200",
+                  className="w-full p-3 rounded-xl border text-left transition-all duration-200"
+                  style={
                     selectedPerformer === null
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-400"
-                      : "border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600",
-                  )}
+                      ? {
+                          borderColor: "#3b82f6",
+                          backgroundColor: "rgba(37,99,235,0.06)",
+                        }
+                      : {
+                          borderColor: "var(--border-color)",
+                          backgroundColor: "var(--bg-card)",
+                        }
+                  }
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative">
@@ -218,15 +257,24 @@ export default function TaskCompletionModal({
                         photoURL={user.photoURL}
                         size="sm"
                       />
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center">
+                      <div
+                        className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 flex items-center justify-center"
+                        style={{ borderColor: "var(--bg-modal)" }}
+                      >
                         <CheckCircle2 size={8} className="text-white" />
                       </div>
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900 dark:text-slate-100">
+                      <p
+                        className="font-medium"
+                        style={{ color: "var(--text-primary)" }}
+                      >
                         {user.name} (Yo)
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-slate-400">
+                      <p
+                        className="text-sm"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
                         La completé y la realicé yo mismo
                       </p>
                     </div>
@@ -245,12 +293,18 @@ export default function TaskCompletionModal({
                     <button
                       key={member.userId}
                       onClick={() => setSelectedPerformer(member.userId)}
-                      className={cn(
-                        "w-full p-3 rounded-xl border text-left transition-all duration-200",
+                      className="w-full p-3 rounded-xl border text-left transition-all duration-200"
+                      style={
                         selectedPerformer === member.userId
-                          ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-400"
-                          : "border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600",
-                      )}
+                          ? {
+                              borderColor: "#3b82f6",
+                              backgroundColor: "rgba(37,99,235,0.06)",
+                            }
+                          : {
+                              borderColor: "var(--border-color)",
+                              backgroundColor: "var(--bg-card)",
+                            }
+                      }
                     >
                       <div className="flex items-center gap-3">
                         <Avatar
@@ -259,10 +313,16 @@ export default function TaskCompletionModal({
                           size="sm"
                         />
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900 dark:text-slate-100">
+                          <p
+                            className="font-medium"
+                            style={{ color: "var(--text-primary)" }}
+                          >
                             {member.name}
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-slate-400">
+                          <p
+                            className="text-sm"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
                             {member.email}
                           </p>
                         </div>
@@ -278,25 +338,40 @@ export default function TaskCompletionModal({
                 {/* Option: Other person not in team */}
                 <button
                   onClick={() => setSelectedPerformer("other")}
-                  className={cn(
-                    "w-full p-3 rounded-xl border text-left transition-all duration-200",
+                  className="w-full p-3 rounded-xl border text-left transition-all duration-200"
+                  style={
                     selectedPerformer === "other"
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-400"
-                      : "border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600",
-                  )}
+                      ? {
+                          borderColor: "#3b82f6",
+                          backgroundColor: "rgba(37,99,235,0.06)",
+                        }
+                      : {
+                          borderColor: "var(--border-color)",
+                          backgroundColor: "var(--bg-card)",
+                        }
+                  }
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: "var(--bg-secondary)" }}
+                    >
                       <User
                         size={16}
-                        className="text-gray-500 dark:text-slate-400"
+                        style={{ color: "var(--text-secondary)" }}
                       />
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900 dark:text-slate-100">
+                      <p
+                        className="font-medium"
+                        style={{ color: "var(--text-primary)" }}
+                      >
                         Otra persona
                       </p>
-                      <p className="text-sm text-gray-500 dark:text-slate-400">
+                      <p
+                        className="text-sm"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
                         Alguien fuera del equipo
                       </p>
                     </div>
@@ -312,7 +387,10 @@ export default function TaskCompletionModal({
 
             {/* Notes */}
             <div className="space-y-3">
-              <label className="text-sm font-medium text-gray-700 dark:text-slate-300 flex items-center gap-2">
+              <label
+                className="text-sm font-medium flex items-center gap-2"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 <Clock size={16} />
                 Notas (opcional)
               </label>
@@ -321,23 +399,46 @@ export default function TaskCompletionModal({
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Añade alguna nota sobre la completion de esta tarea..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full px-3 py-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                style={{
+                  border: "1px solid var(--border-input)",
+                  backgroundColor: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
               />
             </div>
           </div>
 
           {/* Footer */}
-          <div className="p-6 border-t border-gray-200 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50">
+          <div
+            className="p-6 border-t"
+            style={{
+              borderColor: "var(--border-color)",
+              backgroundColor: "var(--bg-secondary)",
+            }}
+          >
             <div className="flex items-center justify-between mb-4">
-              <div className="text-sm text-gray-500 dark:text-slate-400">
+              <div
+                className="text-sm"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 Completada por:{" "}
-                <span className="font-medium text-gray-700 dark:text-slate-300">
+                <span
+                  className="font-medium"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   {user.name}
                 </span>
               </div>
-              <div className="text-sm text-gray-500 dark:text-slate-400">
+              <div
+                className="text-sm"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 Realizada por:{" "}
-                <span className="font-medium text-gray-700 dark:text-slate-300">
+                <span
+                  className="font-medium"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   {selectedPerformer === null
                     ? user.name
                     : selectedPerformer === "other"

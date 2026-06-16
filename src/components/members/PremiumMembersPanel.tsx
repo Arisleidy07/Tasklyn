@@ -113,16 +113,29 @@ export default function PremiumMembersPanel({
     >
       <div className="space-y-6">
         {/* Role guide */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-2xl p-5 border border-blue-100/80 dark:border-blue-900/40">
+        <div
+          className="rounded-2xl p-5"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(37,99,235,0.06), rgba(99,102,241,0.06))",
+            border: "1px solid rgba(37,99,235,0.15)",
+          }}
+        >
           <div className="flex items-center gap-3 mb-4">
             <div className="w-9 h-9 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
               <Share2 size={18} className="text-white" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 text-sm dark:text-slate-100">
+              <h3
+                className="font-semibold text-sm"
+                style={{ color: "var(--text-primary)" }}
+              >
                 Colaboración en tiempo real
               </h3>
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+              <p
+                className="text-xs mt-0.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 {list.members.length}{" "}
                 {list.members.length === 1
                   ? "miembro activo"
@@ -148,13 +161,13 @@ export default function PremiumMembersPanel({
                 icon: <Eye size={13} />,
                 role: "Viewer",
                 desc: "Solo ver",
-                color:
-                  "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300",
+                color: "",
               },
             ].map((item) => (
               <div
                 key={item.role}
-                className="bg-white/70 rounded-xl p-2.5 text-center dark:bg-slate-800/70"
+                className="rounded-xl p-2.5 text-center"
+                style={{ backgroundColor: "var(--bg-card)" }}
               >
                 <span
                   className={cn(
@@ -164,7 +177,10 @@ export default function PremiumMembersPanel({
                 >
                   {item.icon} {item.role}
                 </span>
-                <p className="text-[10px] text-gray-500 dark:text-slate-400 leading-tight">
+                <p
+                  className="text-[10px] leading-tight"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   {item.desc}
                 </p>
               </div>
@@ -176,10 +192,16 @@ export default function PremiumMembersPanel({
         {canInvite && (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-blue-100 dark:bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: "rgba(37,99,235,0.1)" }}
+              >
                 <UserPlus size={15} className="text-blue-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 text-sm dark:text-slate-100">
+              <h3
+                className="font-semibold text-sm"
+                style={{ color: "var(--text-primary)" }}
+              >
                 Invitar por correo
               </h3>
             </div>
@@ -199,7 +221,12 @@ export default function PremiumMembersPanel({
                 }}
                 onKeyDown={(e) => e.key === "Enter" && handleSendInvitation()}
                 placeholder="correo@ejemplo.com"
-                className="w-full h-11 pl-10 pr-4 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500"
+                className="w-full h-11 pl-10 pr-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                style={{
+                  border: "1px solid var(--border-input)",
+                  backgroundColor: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
               />
             </div>
 
@@ -226,7 +253,12 @@ export default function PremiumMembersPanel({
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/40 rounded-xl px-4 py-3"
+                  className="text-sm rounded-xl px-4 py-3"
+                  style={{
+                    color: "#dc2626",
+                    backgroundColor: "rgba(239,68,68,0.06)",
+                    border: "1px solid rgba(239,68,68,0.2)",
+                  }}
                 >
                   {inviteError}
                 </motion.p>
@@ -236,17 +268,24 @@ export default function PremiumMembersPanel({
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="flex items-start gap-3 p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-100 dark:border-green-900/40"
+                  className="flex items-start gap-3 p-4 rounded-xl"
+                  style={{
+                    backgroundColor: "rgba(22,163,74,0.06)",
+                    border: "1px solid rgba(22,163,74,0.2)",
+                  }}
                 >
                   <CheckCircle2
                     size={18}
                     className="text-green-600 flex-shrink-0 mt-0.5"
                   />
                   <div>
-                    <p className="text-sm font-medium text-green-800 dark:text-green-400">
+                    <p
+                      className="text-sm font-medium"
+                      style={{ color: "#15803d" }}
+                    >
                       Invitación enviada
                     </p>
-                    <p className="text-xs text-green-600 dark:text-green-500 mt-0.5">
+                    <p className="text-xs mt-0.5" style={{ color: "#16a34a" }}>
                       {inviteSent.notified
                         ? `Notificado a ${inviteSent.email} dentro de Tasklyn.`
                         : `Correo enviado a ${inviteSent.email}.`}
@@ -259,7 +298,10 @@ export default function PremiumMembersPanel({
         )}
 
         {/* Copy invite link */}
-        <div className="pt-2 border-t border-gray-100 dark:border-slate-700">
+        <div
+          className="pt-2 border-t"
+          style={{ borderColor: "var(--border-color)" }}
+        >
           <motion.button
             onClick={handleCopyLink}
             disabled={isCopyingLink}
@@ -267,13 +309,17 @@ export default function PremiumMembersPanel({
             whileTap={{ scale: 0.98 }}
             className={cn(
               "w-full flex items-center justify-center gap-2 h-11 rounded-xl border text-sm font-medium transition-all duration-200",
-              linkCopied
-                ? "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400"
-                : "border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 hover:border-gray-300 dark:hover:border-slate-600",
+              linkCopied ? "border-green-300 text-green-700" : "",
             )}
           >
             {isCopyingLink ? (
-              <div className="w-4 h-4 border-2 border-gray-400 dark:border-slate-500 border-t-transparent rounded-full animate-spin" />
+              <div
+                className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
+                style={{
+                  borderColor: "var(--text-tertiary)",
+                  borderTopColor: "transparent",
+                }}
+              />
             ) : linkCopied ? (
               <Check size={15} className="text-green-600" />
             ) : (
@@ -287,11 +333,14 @@ export default function PremiumMembersPanel({
             {!linkCopied && !isCopyingLink && (
               <Copy
                 size={12}
-                className="text-gray-400 dark:text-slate-500 ml-0.5"
+                style={{ color: "var(--text-tertiary)", marginLeft: "2px" }}
               />
             )}
           </motion.button>
-          <p className="text-[11px] text-gray-400 dark:text-slate-500 text-center mt-2">
+          <p
+            className="text-[11px] text-center mt-2"
+            style={{ color: "var(--text-tertiary)" }}
+          >
             Expira en 7 días · Se une como Viewer
           </p>
         </div>

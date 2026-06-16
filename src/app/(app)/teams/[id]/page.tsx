@@ -85,11 +85,9 @@ function getRoleLabel(role: string) {
   return "Miembro";
 }
 function getRoleBadge(role: string) {
-  if (role === "owner")
-    return "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800";
-  if (role === "admin")
-    return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800";
-  return "bg-gray-50 text-gray-600 border-gray-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700";
+  if (role === "owner") return "bg-yellow-50 text-yellow-700 border-yellow-200";
+  if (role === "admin") return "bg-blue-50 text-blue-700 border-blue-200";
+  return "border";
 }
 
 export default function TeamDetailPage() {
@@ -418,28 +416,28 @@ export default function TeamDetailPage() {
                   value: teamTasks.length,
                   Icon: BarChart3,
                   color: "text-blue-600",
-                  bg: "bg-blue-50 dark:bg-blue-500/10",
+                  bg: "bg-blue-50",
                 },
                 {
                   label: "Completadas",
                   value: completedCount,
                   Icon: CheckCircle2,
                   color: "text-emerald-600",
-                  bg: "bg-emerald-50 dark:bg-emerald-500/10",
+                  bg: "bg-emerald-50",
                 },
                 {
                   label: "Pendientes",
                   value: pendingCount,
                   Icon: Clock,
                   color: "text-amber-600",
-                  bg: "bg-amber-50 dark:bg-amber-500/10",
+                  bg: "bg-amber-50",
                 },
                 {
                   label: "Vencidas",
                   value: overdueCount,
                   Icon: AlertTriangle,
                   color: "text-red-600",
-                  bg: "bg-red-50 dark:bg-red-500/10",
+                  bg: "bg-red-50",
                 },
               ].map((s, i) => (
                 <motion.div
@@ -519,7 +517,8 @@ export default function TeamDetailPage() {
                   </div>
                   <button
                     onClick={() => setActiveTab("ranking")}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-xs hover:underline"
+                    style={{ color: "var(--text-link)" }}
                   >
                     Ver ranking →
                   </button>
@@ -572,7 +571,8 @@ export default function TeamDetailPage() {
                   </div>
                   <button
                     onClick={() => setActiveTab("activity")}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-xs hover:underline"
+                    style={{ color: "var(--text-link)" }}
                   >
                     Ver todo →
                   </button>
@@ -701,7 +701,7 @@ export default function TeamDetailPage() {
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.04 }}
-                        className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] group hover:border-blue-200 dark:hover:border-blue-500/30 transition-all"
+                        className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] transition-all"
                       >
                         <div
                           className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
@@ -774,7 +774,7 @@ export default function TeamDetailPage() {
                   key={member.id}
                   initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] group hover:border-gray-300 dark:hover:border-slate-700 transition-all"
+                  className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] transition-all"
                 >
                   <Avatar
                     name={member.name}
@@ -782,16 +782,9 @@ export default function TeamDetailPage() {
                     size="md"
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <p className="font-semibold text-[var(--text-primary)] truncate">
-                        {member.name}
-                      </p>
-                      {member.id === user.id && (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 rounded-full border border-blue-200 dark:border-blue-800">
-                          Tú
-                        </span>
-                      )}
-                    </div>
+                    <p className="font-semibold text-[var(--text-primary)] truncate">
+                      {member.name}
+                    </p>
                     <p className="text-sm text-[var(--text-secondary)] truncate">
                       {member.email}
                     </p>
@@ -848,7 +841,19 @@ export default function TeamDetailPage() {
                         <button
                           onClick={() => handleRemoveMember(member.id)}
                           disabled={actionLoading === member.id}
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"
+                          className="p-1.5 rounded-lg transition-colors"
+                          style={{ color: "var(--text-tertiary)" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#ef4444";
+                            e.currentTarget.style.backgroundColor =
+                              "rgba(239,68,68,0.08)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color =
+                              "var(--text-tertiary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }}
                         >
                           {actionLoading === member.id ? (
                             <span className="w-4 h-4 border border-gray-300 border-t-transparent rounded-full animate-spin block" />
@@ -913,15 +918,27 @@ export default function TeamDetailPage() {
               <div className="relative">
                 <div className="absolute left-5 top-0 bottom-0 w-px bg-[var(--bg-secondary)]" />
                 <div className="space-y-0">
-                  {activityLog.map((entry, i) => (
+                  {activityLog.slice(0, 4).map((entry, i) => (
                     <motion.div
                       key={entry.id}
                       initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.03 }}
-                      className="flex items-start gap-4 pl-11 pr-4 py-3.5 relative hover:bg-[var(--bg-hover)] dark:hover:bg-[var(--bg-hover)] rounded-xl transition-colors"
+                      className="flex items-start gap-4 pl-11 pr-4 py-3.5 relative rounded-xl transition-colors"
+                      style={{ cursor: "default" }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLElement).style.backgroundColor =
+                          "var(--bg-hover)";
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLElement).style.backgroundColor =
+                          "transparent";
+                      }}
                     >
-                      <div className="absolute left-3.5 top-4 w-3 h-3 rounded-full border-2 border-[var(--bg-card)] dark:border-[var(--bg-card)] bg-blue-400 flex-shrink-0" />
+                      <div
+                        className="absolute left-3.5 top-4 w-3 h-3 rounded-full border-2 bg-blue-400 flex-shrink-0"
+                        style={{ borderColor: "var(--bg-card)" }}
+                      />
                       {entry.userPhoto ? (
                         <img
                           src={entry.userPhoto}
@@ -953,6 +970,24 @@ export default function TeamDetailPage() {
                     </motion.div>
                   ))}
                 </div>
+                {activityLog.length > 4 && (
+                  <button
+                    className="w-full mt-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      color: "var(--text-primary)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-secondary)";
+                    }}
+                  >
+                    Ver todas las actividades ({activityLog.length})
+                  </button>
+                )}
               </div>
             )}
           </motion.div>
@@ -1005,7 +1040,7 @@ export default function TeamDetailPage() {
                     className={cn(
                       "flex items-center gap-4 p-4 rounded-xl border transition-all",
                       idx === 0
-                        ? "border-yellow-200 dark:border-yellow-800/50 bg-yellow-50/50 dark:bg-yellow-950/10"
+                        ? "border-yellow-200 bg-yellow-50/50"
                         : "border-[var(--border-color)] bg-[var(--bg-card)]",
                     )}
                   >
@@ -1024,16 +1059,9 @@ export default function TeamDetailPage() {
                       size="md"
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="font-semibold text-[var(--text-primary)] truncate">
-                          {member.name}
-                        </p>
-                        {member.id === user.id && (
-                          <span className="text-[10px] px-1.5 py-0.5 bg-blue-100 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 rounded-full border border-blue-200 dark:border-blue-800">
-                            Tú
-                          </span>
-                        )}
-                      </div>
+                      <p className="font-semibold text-[var(--text-primary)] truncate">
+                        {member.name}
+                      </p>
                       <div className="h-1.5 w-full bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
@@ -1107,7 +1135,15 @@ export default function TeamDetailPage() {
                       />
                       <button
                         onClick={handleSaveTeamName}
-                        className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg transition-colors"
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ color: "#059669" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "rgba(16,185,129,0.08)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
                       >
                         <Check size={15} />
                       </button>
@@ -1116,7 +1152,15 @@ export default function TeamDetailPage() {
                           setEditingName(false);
                           setNewTeamName(team.name);
                         }}
-                        className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ color: "var(--text-tertiary)" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "var(--bg-secondary)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
                       >
                         <X size={15} />
                       </button>
@@ -1128,7 +1172,17 @@ export default function TeamDetailPage() {
                       </p>
                       <button
                         onClick={() => setEditingName(true)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors"
+                        className="p-2 rounded-lg transition-colors"
+                        style={{ color: "var(--text-tertiary)" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = "var(--text-link)";
+                          e.currentTarget.style.backgroundColor =
+                            "rgba(37,99,235,0.08)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = "var(--text-tertiary)";
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
                       >
                         <Edit3 size={15} />
                       </button>
@@ -1432,8 +1486,11 @@ export default function TeamDetailPage() {
         <div className="p-6 space-y-4">
           {/* Warning icon + text */}
           <div className="flex items-start gap-4">
-            <div className="w-11 h-11 rounded-2xl bg-red-100 dark:bg-red-500/15 flex items-center justify-center flex-shrink-0">
-              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
+            <div
+              className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: "rgba(239,68,68,0.1)" }}
+            >
+              <AlertTriangle className="w-5 h-5" style={{ color: "#dc2626" }} />
             </div>
             <div>
               <p className="text-sm font-medium text-[var(--text-primary)] mb-1">
@@ -1470,12 +1527,19 @@ export default function TeamDetailPage() {
 
           {/* Error message */}
           {deleteError && (
-            <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
+            <div
+              className="flex items-start gap-2 p-3 rounded-xl border"
+              style={{
+                backgroundColor: "rgba(239,68,68,0.06)",
+                borderColor: "rgba(239,68,68,0.25)",
+              }}
+            >
               <AlertTriangle
                 size={14}
-                className="text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5"
+                className="flex-shrink-0 mt-0.5"
+                style={{ color: "#dc2626" }}
               />
-              <p className="text-sm text-red-600 dark:text-red-400">
+              <p className="text-sm" style={{ color: "#dc2626" }}>
                 {deleteError}
               </p>
             </div>

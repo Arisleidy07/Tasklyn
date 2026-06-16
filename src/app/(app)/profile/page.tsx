@@ -214,29 +214,37 @@ export default function ProfilePage() {
       label: "Listas creadas",
       value: createdLists.length,
       icon: FolderOpen,
-      color: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-50 dark:bg-blue-500/20",
+      color: "text-blue-600",
+      bgStyle: {
+        backgroundColor: "rgba(37,99,235,0.08)",
+      } as React.CSSProperties,
     },
     {
       label: "Listas compartidas",
       value: sharedLists.length,
       icon: Users,
-      color: "text-gray-600 dark:text-slate-400",
-      bg: "bg-gray-100 dark:bg-slate-700",
+      color: "",
+      bgStyle: {
+        backgroundColor: "var(--bg-secondary)",
+      } as React.CSSProperties,
     },
     {
       label: "Tareas completadas",
       value: completedTasks.length,
       icon: CheckCircle2,
-      color: "text-blue-600 dark:text-blue-400",
-      bg: "bg-blue-50 dark:bg-blue-500/20",
+      color: "text-blue-600",
+      bgStyle: {
+        backgroundColor: "rgba(37,99,235,0.08)",
+      } as React.CSSProperties,
     },
     {
       label: "Tareas pendientes",
       value: pendingTasks.length,
       icon: Clock,
-      color: "text-gray-600 dark:text-slate-400",
-      bg: "bg-gray-100 dark:bg-slate-700",
+      color: "",
+      bgStyle: {
+        backgroundColor: "var(--bg-secondary)",
+      } as React.CSSProperties,
     },
   ];
 
@@ -388,7 +396,8 @@ export default function ProfilePage() {
                     }}
                   >
                     <div
-                      className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center mb-2`}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center mb-2"
+                      style={s.bgStyle}
                     >
                       <s.icon size={16} className={s.color} />
                     </div>
@@ -411,7 +420,13 @@ export default function ProfilePage() {
 
             {/* Barra de progreso de tareas */}
             {userTasks.length > 0 && (
-              <div className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50">
+              <div
+                className="px-4 sm:px-6 md:px-8 py-3 sm:py-4 border-t"
+                style={{
+                  borderColor: "var(--border-color)",
+                  backgroundColor: "var(--bg-secondary)",
+                }}
+              >
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-medium text-gray-500 flex items-center gap-1">
                     <TrendingUp size={12} />
@@ -421,7 +436,10 @@ export default function ProfilePage() {
                     {completionRate}%
                   </span>
                 </div>
-                <div className="h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className="h-1.5 rounded-full overflow-hidden"
+                  style={{ backgroundColor: "var(--border-color)" }}
+                >
                   <div
                     className="h-full bg-blue-600 rounded-full transition-all duration-700"
                     style={{ width: `${completionRate}%` }}
@@ -438,10 +456,17 @@ export default function ProfilePage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm p-4 sm:p-6"
+              className="rounded-2xl border shadow-sm p-4 sm:p-6"
+              style={{
+                backgroundColor: "var(--bg-card)",
+                borderColor: "var(--border-color)",
+              }}
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2">
+                <h2
+                  className="text-sm font-semibold flex items-center gap-2"
+                  style={{ color: "var(--text-primary)" }}
+                >
                   <FolderOpen size={16} className="text-blue-600" />
                   Mis listas recientes
                 </h2>
@@ -500,23 +525,42 @@ export default function ProfilePage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-800 shadow-sm p-4 sm:p-6"
+              className="rounded-2xl border shadow-sm p-4 sm:p-6"
+              style={{
+                backgroundColor: "var(--bg-card)",
+                borderColor: "var(--border-color)",
+              }}
             >
-              <h2 className="text-sm font-semibold text-gray-900 dark:text-slate-100 flex items-center gap-2 mb-4">
+              <h2
+                className="text-sm font-semibold flex items-center gap-2 mb-4"
+                style={{ color: "var(--text-primary)" }}
+              >
                 <Shield size={16} className="text-blue-600" />
                 Cuenta
               </h2>
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-800">
+                <div
+                  className="flex items-center justify-between p-3 rounded-xl"
+                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: "rgba(37,99,235,0.08)" }}
+                    >
                       <Mail size={14} className="text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-700 dark:text-slate-300">
+                      <p
+                        className="text-xs font-medium"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
                         Correo electrónico
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-slate-400 truncate max-w-[160px]">
+                      <p
+                        className="text-xs truncate max-w-[160px]"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         {user.email}
                       </p>
                     </div>
@@ -527,16 +571,28 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-slate-800">
+                <div
+                  className="flex items-center justify-between p-3 rounded-xl"
+                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                >
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/20 flex items-center justify-center">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center"
+                      style={{ backgroundColor: "rgba(37,99,235,0.08)" }}
+                    >
                       <Crown size={14} className="text-blue-600" />
                     </div>
                     <div>
-                      <p className="text-xs font-medium text-gray-700 dark:text-slate-300">
+                      <p
+                        className="text-xs font-medium"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
                         Plan actual
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-slate-400">
+                      <p
+                        className="text-xs"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         {user.plan === "business"
                           ? "Plan empresarial completo"
                           : user.plan === "pro"
@@ -706,21 +762,36 @@ export default function ProfilePage() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 8 }}
                   transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                  className={cn(
-                    "relative z-10 w-full max-w-[400px]",
-                    "bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden",
-                    "border border-gray-100 dark:border-slate-800",
-                    "flex flex-col max-h-[90vh]",
-                  )}
+                  className="relative z-10 w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                  style={{
+                    backgroundColor: "var(--bg-card)",
+                    border: "1px solid var(--border-color)",
+                  }}
                 >
                   {/* Header minimalista */}
-                  <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-slate-800">
-                    <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 tracking-tight">
+                  <div
+                    className="flex items-center justify-between px-6 py-5 border-b"
+                    style={{ borderColor: "var(--border-color)" }}
+                  >
+                    <h2
+                      className="text-base font-semibold tracking-tight"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       Editar perfil
                     </h2>
                     <button
                       onClick={() => setShowEditProfile(false)}
-                      className="p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                      className="p-2 rounded-lg transition-colors"
+                      style={{ color: "var(--text-tertiary)" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor =
+                          "var(--bg-secondary)";
+                        e.currentTarget.style.color = "var(--text-primary)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                        e.currentTarget.style.color = "var(--text-tertiary)";
+                      }}
                     >
                       <X size={18} />
                     </button>
@@ -731,7 +802,10 @@ export default function ProfilePage() {
                     {/* Photo Section - elegante */}
                     <div className="flex flex-col items-center">
                       <div className="relative group">
-                        <div className="w-24 h-24 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden ring-4 ring-gray-50 dark:ring-slate-900 group-hover:ring-gray-100 dark:group-hover:ring-slate-800 transition-all">
+                        <div
+                          className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden ring-4 transition-all"
+                          style={{ backgroundColor: "var(--bg-secondary)" }}
+                        >
                           {editPhotoURL ? (
                             <img
                               src={editPhotoURL}
@@ -741,13 +815,20 @@ export default function ProfilePage() {
                           ) : (
                             <User
                               size={36}
-                              className="text-gray-300 dark:text-slate-600"
+                              style={{ color: "var(--border-color)" }}
                             />
                           )}
                         </div>
                         <button
                           onClick={() => fileInputRef.current?.click()}
-                          className="absolute -bottom-1 -right-1 w-8 h-8 bg-gray-900 dark:bg-blue-600 hover:bg-gray-800 dark:hover:bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+                          className="absolute -bottom-1 -right-1 w-8 h-8 text-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+                          style={{ backgroundColor: "#2563eb" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = "#1d4ed8";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = "#2563eb";
+                          }}
                         >
                           <Camera size={14} />
                         </button>
@@ -760,7 +841,10 @@ export default function ProfilePage() {
                         onChange={handleFileSelect}
                         className="hidden"
                       />
-                      <p className="text-xs text-gray-500 dark:text-slate-400 mt-3 font-medium">
+                      <p
+                        className="text-xs mt-3 font-medium"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
                         {editPhotoURL
                           ? "Cambiar foto de perfil"
                           : "Agregar foto de perfil"}
@@ -779,11 +863,17 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Divider */}
-                    <div className="h-px bg-gray-100 dark:bg-slate-800" />
+                    <div
+                      className="h-px"
+                      style={{ backgroundColor: "var(--border-color)" }}
+                    />
 
                     {/* Name Input - limpio */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                      <label
+                        className="text-sm font-medium"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
                         Nombre completo
                       </label>
                       <Input
@@ -794,30 +884,62 @@ export default function ProfilePage() {
                           e.key === "Enter" && handleSaveProfile()
                         }
                         autoFocus
-                        className="h-11 bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-800 transition-colors"
+                        className="h-11 transition-colors"
+                        style={{
+                          backgroundColor: "var(--bg-input)",
+                          borderColor: "var(--border-input)",
+                        }}
                       />
                     </div>
 
                     {/* Email (read only) - sutil */}
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-500 dark:text-slate-500">
+                      <label
+                        className="text-sm font-medium"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         Correo electrónico
                       </label>
-                      <div className="h-11 px-3 flex items-center bg-gray-100 dark:bg-slate-800 rounded-lg text-sm text-gray-500 dark:text-slate-400 border border-transparent">
+                      <div
+                        className="h-11 px-3 flex items-center rounded-lg text-sm border border-transparent"
+                        style={{
+                          backgroundColor: "var(--bg-secondary)",
+                          color: "var(--text-tertiary)",
+                        }}
+                      >
                         {user.email}
                       </div>
-                      <p className="text-[11px] text-gray-400 dark:text-slate-500">
+                      <p
+                        className="text-[11px]"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         El correo no se puede cambiar
                       </p>
                     </div>
                   </div>
 
                   {/* Actions - modernas */}
-                  <div className="p-6 pt-4 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50">
+                  <div
+                    className="p-6 pt-4 border-t"
+                    style={{
+                      borderColor: "var(--border-color)",
+                      backgroundColor: "var(--bg-secondary)",
+                    }}
+                  >
                     <div className="flex gap-3">
                       <button
                         onClick={() => setShowEditProfile(false)}
-                        className="flex-1 h-11 px-4 rounded-xl text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+                        className="flex-1 h-11 px-4 rounded-xl text-sm font-medium transition-colors"
+                        style={{ color: "var(--text-secondary)" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor =
+                            "var(--bg-tertiary)";
+                          e.currentTarget.style.color = "var(--text-primary)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                          e.currentTarget.style.color = "var(--text-secondary)";
+                        }}
                       >
                         Cancelar
                       </button>
@@ -827,9 +949,17 @@ export default function ProfilePage() {
                         className={cn(
                           "flex-1 h-11 px-4 rounded-xl text-sm font-medium text-white transition-all",
                           !editName.trim() || isSavingProfile
-                            ? "bg-gray-300 dark:bg-slate-700 cursor-not-allowed"
+                            ? "cursor-not-allowed"
                             : "bg-blue-600 hover:bg-blue-500 hover:shadow-lg active:scale-[0.98]",
                         )}
+                        style={
+                          !editName.trim() || isSavingProfile
+                            ? {
+                                backgroundColor: "var(--bg-tertiary)",
+                                color: "var(--text-tertiary)",
+                              }
+                            : {}
+                        }
                       >
                         {isSavingProfile ? (
                           <span className="flex items-center justify-center gap-2">

@@ -1,0 +1,152 @@
+{"timestamp":"00:00:01.189","source":"Server","level":"LOG","message":""}
+{"timestamp":"00:00:47.141","source":"Browser","level":"LOG","message":"👂 Setting up subscription for user lists: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:00:47.141","source":"Browser","level":"LOG","message":"👥 Subscribing to teams for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:00:47.141","source":"Browser","level":"LOG","message":"👥 Setting up teams subscription for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:00:47.141","source":"Browser","level":"LOG","message":"🔔 Setting up notifications subscription for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:00:47.141","source":"Browser","level":"LOG","message":"👂 Setting up subscription for user lists: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:00:47.141","source":"Browser","level":"LOG","message":"👥 Subscribing to teams for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:00:47.141","source":"Browser","level":"LOG","message":"👥 Setting up teams subscription for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:00:47.141","source":"Browser","level":"LOG","message":"🔔 Setting up notifications subscription for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:00:47.520","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:00:47.520","source":"Browser","level":"WARN","message":"Detected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior=\"smooth\"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior"}
+{"timestamp":"00:00:47.520","source":"Browser","level":"LOG","message":"🔔 Setting up notifications subscription for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:00:47.520","source":"Browser","level":"LOG","message":"🔔 Setting up notifications subscription for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:00:47.520","source":"Browser","level":"LOG","message":"🔔 Setting up notifications subscription for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:00:47.603","source":"Server","level":"WARN","message":"[browser] \"\\u001b[33mDetected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior=\\\"smooth\\\"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior\\u001b[39m\""}
+{"timestamp":"00:00:47.604","source":"Browser","level":"WARN","message":"\u001b[33mDetected `scroll-behavior: smooth` on the `<html>` element. To disable smooth scrolling during route transitions, add `data-scroll-behavior=\"smooth\"` to your <html> element. Learn more: https://nextjs.org/docs/messages/missing-data-scroll-behavior\u001b[39m"}
+{"timestamp":"00:00:47.727","source":"Browser","level":"LOG","message":"📦 User lists snapshot received: {\"docCount\":3,\"fromCache\":true,\"hasPendingWrites\":false,\"metadata\":{\"fromCache\":true,\"hasPendingWrites\":false},\"userId\":\"gxFPgA3gUzPJQRGiAk74TEQhc5j2\"}"}
+{"timestamp":"00:00:47.727","source":"Browser","level":"LOG","message":"📋 List in subscription: {\"id\":\"0B4EHr5InQIZf9iaGmri\",\"isUserMember\":true,\"memberCount\":7,\"memberIds\":[\"6BBoXhC883N1nBsYnXiGPLTy5WG2\",\"eIw3QzS5TyN6i1BCbie4gW1uLr23\",\"147yMh67AfggOBYycvvW5PKu7my2\",\"gxFPgA3gUzPJQRGiAk74TEQhc5j2\",\"LPJMuKpGXmRGJGce3P4kqbBiPT53\",\"6FUH8sV6AANaFGS8Q6wwkFB6HaC3\",\"O7IYtwHd8ofCikmK6J6I30L5uuq2\"],\"name\":\"AVERIA E INSTALACIÓN\",\"type\":\"shared\",\"userInMembers\":true}"}
+{"timestamp":"00:00:47.727","source":"Browser","level":"LOG","message":"📋 List in subscription: {\"id\":\"B25nbZORiSvnO9WKCyuh\",\"isUserMember\":true,\"memberCount\":5,\"memberIds\":[\"6BBoXhC883N1nBsYnXiGPLTy5WG2\",\"147yMh67AfggOBYycvvW5PKu7my2\",\"eIw3QzS5TyN6i1BCbie4gW1uLr23\",\"gxFPgA3gUzPJQRGiAk74TEQhc5j2\",\"6FUH8sV6AANaFGS8Q6wwkFB6HaC3\"],\"name\":\"BERMUDEZ AVERIA E INSTALACIÓN\",\"type\":\"shared\",\"userInMembers\":true}"}
+{"timestamp":"00:00:47.727","source":"Browser","level":"LOG","message":"📋 List in subscription: {\"id\":\"LGQIirspTjgdBXbg0HQn\",\"isUserMember\":true,\"memberCount\":3,\"memberIds\":[\"gxFPgA3gUzPJQRGiAk74TEQhc5j2\",\"eIw3QzS5TyN6i1BCbie4gW1uLr23\",\"6BBoXhC883N1nBsYnXiGPLTy5WG2\"],\"name\":\"prueba\",\"type\":\"shared\",\"userInMembers\":true}"}
+{"timestamp":"00:00:47.727","source":"Browser","level":"LOG","message":"🤝 Shared lists for this user: [{\"id\":\"0B4EHr5InQIZf9iaGmri\",\"name\":\"AVERIA E INSTALACIÓN\"},{\"id\":\"B25nbZORiSvnO9WKCyuh\",\"name\":\"BERMUDEZ AVERIA E INSTALACIÓN\"},{\"id\":\"LGQIirspTjgdBXbg0HQn\",\"name\":\"prueba\"}]"}
+{"timestamp":"00:00:47.727","source":"Browser","level":"LOG","message":"🚀 Calling callback with lists: [{\"id\":\"0B4EHr5InQIZf9iaGmri\",\"name\":\"AVERIA E INSTALACIÓN\",\"type\":\"shared\"},{\"id\":\"B25nbZORiSvnO9WKCyuh\",\"name\":\"BERMUDEZ AVERIA E INSTALACIÓN\",\"type\":\"shared\"},{\"id\":\"LGQIirspTjgdBXbg0HQn\",\"name\":\"prueba\",\"type\":\"shared\"}]"}
+{"timestamp":"00:00:47.727","source":"Browser","level":"LOG","message":"📦 Teams snapshot received: 0"}
+{"timestamp":"00:00:47.727","source":"Browser","level":"LOG","message":"📦 Teams received: 0"}
+{"timestamp":"00:00:47.832","source":"Browser","level":"ERROR","message":"Failed to ensure personal team: {\"code\":\"permission-denied\",\"name\":\"FirebaseError\"}"}
+{"timestamp":"00:00:47.832","source":"Browser","level":"ERROR","message":"Failed to ensure personal team: {\"code\":\"permission-denied\",\"name\":\"FirebaseError\"}"}
+{"timestamp":"00:00:47.832","source":"Browser","level":"LOG","message":"📦 Notifications snapshot received: 6"}
+{"timestamp":"00:00:47.873","source":"Browser","level":"ERROR","message":"uncaughtError: TypeError: Cannot read properties of null (reading 'node')"}
+{"timestamp":"00:00:47.873","source":"Browser","level":"ERROR","message":"uncaughtError: TypeError: Cannot read properties of null (reading 'node')"}
+{"timestamp":"00:00:47.881","source":"Server","level":"ERROR","message":"[browser] \"Failed to ensure personal team:\" \"\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\\n\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\" \"\\u001b[2m(src/stores/teamStore.ts:322:19)\\u001b[22m\""}
+{"timestamp":"00:00:47.881","source":"Browser","level":"ERROR","message":"Failed to ensure personal team: \"\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\\n\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\" \"\\u001b[2m(src/stores/teamStore.ts:322:19)\\u001b[22m\""}
+{"timestamp":"00:00:47.882","source":"Server","level":"ERROR","message":"[browser] \"Failed to ensure personal team:\" \"\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\\n\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\" \"\\u001b[2m(src/stores/teamStore.ts:322:19)\\u001b[22m\""}
+{"timestamp":"00:00:47.882","source":"Browser","level":"ERROR","message":"Failed to ensure personal team: \"\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\\n\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\" \"\\u001b[2m(src/stores/teamStore.ts:322:19)\\u001b[22m\""}
+{"timestamp":"00:00:47.945","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\\u001b[39m\""}
+{"timestamp":"00:00:47.946","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\u001b[39m"}
+{"timestamp":"00:00:47.946","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\\u001b[39m\""}
+{"timestamp":"00:00:47.946","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\u001b[39m"}
+{"timestamp":"00:01:24.938","source":"Browser","level":"ERROR","message":"❌ Error in user subscription: {\"code\":\"permission-denied\",\"name\":\"FirebaseError\"}"}
+{"timestamp":"00:01:24.976","source":"Server","level":"ERROR","message":"[browser] \"❌ Error in user subscription:\" \"\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\\n\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\" \"\\u001b[2m(src/lib/firestore.ts:158:15)\\u001b[22m\""}
+{"timestamp":"00:01:24.976","source":"Browser","level":"ERROR","message":"❌ Error in user subscription: \"\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\\n\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\" \"\\u001b[2m(src/lib/firestore.ts:158:15)\\u001b[22m\""}
+{"timestamp":"00:01:45.040","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"🔔 Setting up notifications subscription for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"👂 Setting up subscription for user lists: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"👥 Subscribing to teams for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"👥 Setting up teams subscription for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"🔔 Setting up notifications subscription for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"🔔 Setting up notifications subscription for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"👂 Setting up subscription for user lists: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"👥 Subscribing to teams for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"👥 Setting up teams subscription for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"🔔 Setting up notifications subscription for user: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"ERROR","message":"uncaughtError: TypeError: Cannot read properties of null (reading 'node')"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"ERROR","message":"uncaughtError: TypeError: Cannot read properties of null (reading 'node')"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"📦 User lists snapshot received: {\"docCount\":3,\"fromCache\":true,\"hasPendingWrites\":false,\"metadata\":{\"fromCache\":true,\"hasPendingWrites\":false},\"userId\":\"gxFPgA3gUzPJQRGiAk74TEQhc5j2\"}"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"📋 List in subscription: {\"id\":\"0B4EHr5InQIZf9iaGmri\",\"isUserMember\":true,\"memberCount\":7,\"memberIds\":[\"6BBoXhC883N1nBsYnXiGPLTy5WG2\",\"eIw3QzS5TyN6i1BCbie4gW1uLr23\",\"147yMh67AfggOBYycvvW5PKu7my2\",\"gxFPgA3gUzPJQRGiAk74TEQhc5j2\",\"LPJMuKpGXmRGJGce3P4kqbBiPT53\",\"6FUH8sV6AANaFGS8Q6wwkFB6HaC3\",\"O7IYtwHd8ofCikmK6J6I30L5uuq2\"],\"name\":\"AVERIA E INSTALACIÓN\",\"type\":\"shared\",\"userInMembers\":true}"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"📋 List in subscription: {\"id\":\"B25nbZORiSvnO9WKCyuh\",\"isUserMember\":true,\"memberCount\":5,\"memberIds\":[\"6BBoXhC883N1nBsYnXiGPLTy5WG2\",\"147yMh67AfggOBYycvvW5PKu7my2\",\"eIw3QzS5TyN6i1BCbie4gW1uLr23\",\"gxFPgA3gUzPJQRGiAk74TEQhc5j2\",\"6FUH8sV6AANaFGS8Q6wwkFB6HaC3\"],\"name\":\"BERMUDEZ AVERIA E INSTALACIÓN\",\"type\":\"shared\",\"userInMembers\":true}"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"📋 List in subscription: {\"id\":\"LGQIirspTjgdBXbg0HQn\",\"isUserMember\":true,\"memberCount\":3,\"memberIds\":[\"gxFPgA3gUzPJQRGiAk74TEQhc5j2\",\"eIw3QzS5TyN6i1BCbie4gW1uLr23\",\"6BBoXhC883N1nBsYnXiGPLTy5WG2\"],\"name\":\"prueba\",\"type\":\"shared\",\"userInMembers\":true}"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"🤝 Shared lists for this user: [{\"id\":\"0B4EHr5InQIZf9iaGmri\",\"name\":\"AVERIA E INSTALACIÓN\"},{\"id\":\"B25nbZORiSvnO9WKCyuh\",\"name\":\"BERMUDEZ AVERIA E INSTALACIÓN\"},{\"id\":\"LGQIirspTjgdBXbg0HQn\",\"name\":\"prueba\"}]"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"🚀 Calling callback with lists: [{\"id\":\"0B4EHr5InQIZf9iaGmri\",\"name\":\"AVERIA E INSTALACIÓN\",\"type\":\"shared\"},{\"id\":\"B25nbZORiSvnO9WKCyuh\",\"name\":\"BERMUDEZ AVERIA E INSTALACIÓN\",\"type\":\"shared\"},{\"id\":\"LGQIirspTjgdBXbg0HQn\",\"name\":\"prueba\",\"type\":\"shared\"}]"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"📦 Teams snapshot received: 0"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"📦 Teams received: 0"}
+{"timestamp":"00:01:45.242","source":"Browser","level":"LOG","message":"📦 Notifications snapshot received: 6"}
+{"timestamp":"00:01:45.243","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\\u001b[39m\""}
+{"timestamp":"00:01:45.243","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\u001b[39m"}
+{"timestamp":"00:01:45.243","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\\u001b[39m\""}
+{"timestamp":"00:01:45.243","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\u001b[39m"}
+{"timestamp":"00:01:45.386","source":"Server","level":"ERROR","message":"[browser] \"Failed to ensure personal team:\" \"\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\\n\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\" \"\\u001b[2m(src/stores/teamStore.ts:322:19)\\u001b[22m\""}
+{"timestamp":"00:01:45.386","source":"Browser","level":"ERROR","message":"Failed to ensure personal team: \"\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\\n\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\" \"\\u001b[2m(src/stores/teamStore.ts:322:19)\\u001b[22m\""}
+{"timestamp":"00:01:45.386","source":"Server","level":"ERROR","message":"[browser] \"Failed to ensure personal team:\" \"\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\\n\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\" \"\\u001b[2m(src/stores/teamStore.ts:322:19)\\u001b[22m\""}
+{"timestamp":"00:01:45.386","source":"Browser","level":"ERROR","message":"Failed to ensure personal team: \"\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\\n\\u001b[31mFirebaseError: Missing or insufficient permissions.\\u001b[39m\" \"\\u001b[2m(src/stores/teamStore.ts:322:19)\\u001b[22m\""}
+{"timestamp":"00:01:45.386","source":"Browser","level":"ERROR","message":"Failed to ensure personal team: {\"code\":\"permission-denied\",\"name\":\"FirebaseError\"}"}
+{"timestamp":"00:01:45.386","source":"Browser","level":"ERROR","message":"Failed to ensure personal team: {\"code\":\"permission-denied\",\"name\":\"FirebaseError\"}"}
+{"timestamp":"00:02:15.022","source":"Browser","level":"LOG","message":"📋 Setting up tasks subscription for list: B25nbZORiSvnO9WKCyuh"}
+{"timestamp":"00:02:15.022","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6BBoXhC883N1nBsYnXiGPLTy5WG2"}
+{"timestamp":"00:02:15.022","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 147yMh67AfggOBYycvvW5PKu7my2"}
+{"timestamp":"00:02:15.022","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: eIw3QzS5TyN6i1BCbie4gW1uLr23"}
+{"timestamp":"00:02:15.022","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:02:15.022","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6FUH8sV6AANaFGS8Q6wwkFB6HaC3"}
+{"timestamp":"00:02:15.022","source":"Browser","level":"LOG","message":"📋 Setting up tasks subscription for list: B25nbZORiSvnO9WKCyuh"}
+{"timestamp":"00:02:15.022","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6BBoXhC883N1nBsYnXiGPLTy5WG2"}
+{"timestamp":"00:02:15.022","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 147yMh67AfggOBYycvvW5PKu7my2"}
+{"timestamp":"00:02:15.022","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: eIw3QzS5TyN6i1BCbie4gW1uLr23"}
+{"timestamp":"00:02:15.022","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:02:15.022","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6FUH8sV6AANaFGS8Q6wwkFB6HaC3"}
+{"timestamp":"00:02:15.455","source":"Browser","level":"LOG","message":"📦 Tasks snapshot received: 0"}
+{"timestamp":"00:02:15.455","source":"Browser","level":"LOG","message":"subscribeToList: merged tasks for list B25nbZORiSvnO9WKCyuh []"}
+{"timestamp":"00:02:15.813","source":"Browser","level":"LOG","message":"📋 Setting up tasks subscription for list: 0B4EHr5InQIZf9iaGmri"}
+{"timestamp":"00:02:15.813","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6BBoXhC883N1nBsYnXiGPLTy5WG2"}
+{"timestamp":"00:02:15.813","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: eIw3QzS5TyN6i1BCbie4gW1uLr23"}
+{"timestamp":"00:02:15.813","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 147yMh67AfggOBYycvvW5PKu7my2"}
+{"timestamp":"00:02:15.814","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:02:15.814","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: LPJMuKpGXmRGJGce3P4kqbBiPT53"}
+{"timestamp":"00:02:15.814","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6FUH8sV6AANaFGS8Q6wwkFB6HaC3"}
+{"timestamp":"00:02:15.814","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: O7IYtwHd8ofCikmK6J6I30L5uuq2"}
+{"timestamp":"00:02:15.814","source":"Browser","level":"LOG","message":"📋 Setting up tasks subscription for list: 0B4EHr5InQIZf9iaGmri"}
+{"timestamp":"00:02:15.814","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6BBoXhC883N1nBsYnXiGPLTy5WG2"}
+{"timestamp":"00:02:15.814","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: eIw3QzS5TyN6i1BCbie4gW1uLr23"}
+{"timestamp":"00:02:15.814","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 147yMh67AfggOBYycvvW5PKu7my2"}
+{"timestamp":"00:02:15.814","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:02:15.814","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: LPJMuKpGXmRGJGce3P4kqbBiPT53"}
+{"timestamp":"00:02:15.814","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6FUH8sV6AANaFGS8Q6wwkFB6HaC3"}
+{"timestamp":"00:02:15.814","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: O7IYtwHd8ofCikmK6J6I30L5uuq2"}
+{"timestamp":"00:02:16.094","source":"Browser","level":"LOG","message":"📦 Tasks snapshot received: 12"}
+{"timestamp":"00:02:16.094","source":"Browser","level":"LOG","message":"subscribeToList: merged tasks for list 0B4EHr5InQIZf9iaGmri [\"C8q1Yh5Gj75JzlGxed4t\",\"nmKOlUorRpmLM0b5HGG4\",\"9CkMjuyGv8c2WBMqY2Tu\",\"NIDK0hXSkkPwTDyNPcf1\",\"YTFhTcx2BPznucN5wniI\",\"nIGpW9rQmthtNdKk6bBE\",\"q1BU3csp7yWbOV4sJuab\",\"2oUBGiJkn06tUwaacMnR\",\"P4rOauve2EKq1vvBvVUS\",\"Rz7FgNlMouJkqqtIgv0u\",\"MLgOIGVLHobdlpynLTUc\",\"MVLKokVi9tqIxH4OYqHB\"]"}
+{"timestamp":"00:02:17.672","source":"Browser","level":"LOG","message":"📋 Setting up tasks subscription for list: LGQIirspTjgdBXbg0HQn"}
+{"timestamp":"00:02:17.672","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:02:17.672","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: eIw3QzS5TyN6i1BCbie4gW1uLr23"}
+{"timestamp":"00:02:17.672","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6BBoXhC883N1nBsYnXiGPLTy5WG2"}
+{"timestamp":"00:02:17.673","source":"Browser","level":"LOG","message":"📋 Setting up tasks subscription for list: LGQIirspTjgdBXbg0HQn"}
+{"timestamp":"00:02:17.673","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:02:17.673","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: eIw3QzS5TyN6i1BCbie4gW1uLr23"}
+{"timestamp":"00:02:17.673","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6BBoXhC883N1nBsYnXiGPLTy5WG2"}
+{"timestamp":"00:02:17.909","source":"Browser","level":"LOG","message":"📦 Tasks snapshot received: 3"}
+{"timestamp":"00:02:17.909","source":"Browser","level":"LOG","message":"subscribeToList: merged tasks for list LGQIirspTjgdBXbg0HQn [\"C8q1Yh5Gj75JzlGxed4t\",\"nmKOlUorRpmLM0b5HGG4\",\"9CkMjuyGv8c2WBMqY2Tu\",\"NIDK0hXSkkPwTDyNPcf1\",\"YTFhTcx2BPznucN5wniI\",\"nIGpW9rQmthtNdKk6bBE\",\"q1BU3csp7yWbOV4sJuab\",\"2oUBGiJkn06tUwaacMnR\",\"P4rOauve2EKq1vvBvVUS\",\"Rz7FgNlMouJkqqtIgv0u\",\"MLgOIGVLHobdlpynLTUc\",\"MVLKokVi9tqIxH4OYqHB\",\"ua1OhUcEWpR9aVZN7rLK\",\"fdlIqI4VfOz9y31iahWs\",\"L1suwyd7TVjeFCfs83ZJ\"]"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"📋 Setting up tasks subscription for list: 0B4EHr5InQIZf9iaGmri"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6BBoXhC883N1nBsYnXiGPLTy5WG2"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: eIw3QzS5TyN6i1BCbie4gW1uLr23"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 147yMh67AfggOBYycvvW5PKu7my2"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: LPJMuKpGXmRGJGce3P4kqbBiPT53"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6FUH8sV6AANaFGS8Q6wwkFB6HaC3"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: O7IYtwHd8ofCikmK6J6I30L5uuq2"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"📋 Setting up tasks subscription for list: 0B4EHr5InQIZf9iaGmri"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6BBoXhC883N1nBsYnXiGPLTy5WG2"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: eIw3QzS5TyN6i1BCbie4gW1uLr23"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 147yMh67AfggOBYycvvW5PKu7my2"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: gxFPgA3gUzPJQRGiAk74TEQhc5j2"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: LPJMuKpGXmRGJGce3P4kqbBiPT53"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: 6FUH8sV6AANaFGS8Q6wwkFB6HaC3"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"👤 Setting up user subscription: O7IYtwHd8ofCikmK6J6I30L5uuq2"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"📦 Tasks snapshot received: 12"}
+{"timestamp":"00:02:19.051","source":"Browser","level":"LOG","message":"subscribeToList: merged tasks for list 0B4EHr5InQIZf9iaGmri [\"ua1OhUcEWpR9aVZN7rLK\",\"fdlIqI4VfOz9y31iahWs\",\"L1suwyd7TVjeFCfs83ZJ\",\"C8q1Yh5Gj75JzlGxed4t\",\"nmKOlUorRpmLM0b5HGG4\",\"9CkMjuyGv8c2WBMqY2Tu\",\"NIDK0hXSkkPwTDyNPcf1\",\"YTFhTcx2BPznucN5wniI\",\"nIGpW9rQmthtNdKk6bBE\",\"q1BU3csp7yWbOV4sJuab\",\"2oUBGiJkn06tUwaacMnR\",\"P4rOauve2EKq1vvBvVUS\",\"Rz7FgNlMouJkqqtIgv0u\",\"MLgOIGVLHobdlpynLTUc\",\"MVLKokVi9tqIxH4OYqHB\"]"}
+{"timestamp":"00:02:20.118","source":"Browser","level":"ERROR","message":"uncaughtError: TypeError: Cannot read properties of null (reading 'node')"}
+{"timestamp":"00:02:20.118","source":"Browser","level":"ERROR","message":"uncaughtError: TypeError: Cannot read properties of null (reading 'node')"}
+{"timestamp":"00:02:20.118","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\\u001b[39m\""}
+{"timestamp":"00:02:20.118","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\u001b[39m"}
+{"timestamp":"00:02:20.118","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\\u001b[39m\""}
+{"timestamp":"00:02:20.118","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\u001b[39m"}
+{"timestamp":"00:03:04.281","source":"Server","level":"LOG","message":"✓ Compiled in 1135ms"}
+{"timestamp":"00:03:10.526","source":"Server","level":"LOG","message":"✓ Compiled in 431ms"}
+{"timestamp":"00:03:10.955","source":"Browser","level":"ERROR","message":"uncaughtError: TypeError: Cannot read properties of null (reading 'node')"}
+{"timestamp":"00:03:10.955","source":"Browser","level":"ERROR","message":"uncaughtError: TypeError: Cannot read properties of null (reading 'node')"}
+{"timestamp":"00:03:10.963","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\\u001b[39m\""}
+{"timestamp":"00:03:10.984","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\u001b[39m"}
+{"timestamp":"00:03:10.986","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\\u001b[39m\""}
+{"timestamp":"00:03:10.987","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\u001b[39m"}
+{"timestamp":"00:03:11.210","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\\u001b[39m\""}
+{"timestamp":"00:03:11.210","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\u001b[39m"}
+{"timestamp":"00:03:11.211","source":"Server","level":"ERROR","message":"[browser] \"\\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\\u001b[39m\""}
+{"timestamp":"00:03:11.211","source":"Browser","level":"ERROR","message":"\u001b[31mUncaught TypeError: Cannot read properties of null (reading 'node')\u001b[39m"}
+{"timestamp":"00:03:11.211","source":"Browser","level":"ERROR","message":"uncaughtError: TypeError: Cannot read properties of null (reading 'node')"}
+{"timestamp":"00:03:11.211","source":"Browser","level":"ERROR","message":"uncaughtError: TypeError: Cannot read properties of null (reading 'node')"}

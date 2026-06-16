@@ -258,7 +258,8 @@ export default function CalendarPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-gray-500 dark:text-slate-400"
+          className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm"
+          style={{ color: "var(--text-secondary)" }}
         >
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-green-500" />
@@ -298,8 +299,13 @@ export default function CalendarPage() {
                   "w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
                   selectedTask.status === "completed"
                     ? "bg-green-500"
-                    : "border-2 border-gray-300 dark:border-slate-600",
+                    : "border-2",
                 )}
+                style={
+                  selectedTask.status !== "completed"
+                    ? { borderColor: "var(--border-color)" }
+                    : {}
+                }
               >
                 {selectedTask.status === "completed" && (
                   <CheckCircle2 size={14} className="text-white" />
@@ -309,15 +315,16 @@ export default function CalendarPage() {
                 <h3
                   className={cn(
                     "font-medium text-lg",
-                    selectedTask.status === "completed"
-                      ? "text-gray-500 dark:text-slate-400 line-through"
-                      : "text-gray-900 dark:text-slate-100",
+                    selectedTask.status === "completed" ? "line-through" : "",
                   )}
                 >
                   {selectedTask.title}
                 </h3>
                 {selectedTask.description && (
-                  <p className="text-gray-500 dark:text-slate-400 mt-1">
+                  <p
+                    className="mt-1"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
                     {selectedTask.description}
                   </p>
                 )}
@@ -331,10 +338,10 @@ export default function CalendarPage() {
                     "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs",
                     isPast(parseISO(selectedTask.dueDate)) &&
                       selectedTask.status !== "completed"
-                      ? "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400"
+                      ? "text-red-700"
                       : isToday(parseISO(selectedTask.dueDate))
-                        ? "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400"
-                        : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400",
+                        ? "text-blue-700"
+                        : "",
                   )}
                 >
                   <CalendarIcon size={12} />
@@ -345,7 +352,13 @@ export default function CalendarPage() {
                 </span>
               )}
 
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400">
+              <span
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  color: "var(--text-secondary)",
+                }}
+              >
                 <ListTodo size={12} />
                 {getListName(selectedTask.listId)}
               </span>
@@ -355,12 +368,12 @@ export default function CalendarPage() {
                   className={cn(
                     "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs",
                     selectedTask.priority === "urgent"
-                      ? "bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400"
+                      ? "text-red-700"
                       : selectedTask.priority === "high"
-                        ? "bg-orange-100 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400"
+                        ? "text-orange-700"
                         : selectedTask.priority === "medium"
-                          ? "bg-yellow-100 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-400"
-                          : "bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400",
+                          ? "text-yellow-700"
+                          : "text-green-700",
                   )}
                 >
                   <Tag size={12} />
@@ -375,7 +388,10 @@ export default function CalendarPage() {
               )}
             </div>
 
-            <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
+            <div
+              className="pt-4 border-t"
+              style={{ borderColor: "var(--border-color)" }}
+            >
               <Button
                 onClick={() => {
                   setIsTaskModalOpen(false);

@@ -53,7 +53,10 @@ export function UpgradeModal({
               >
                 Límite alcanzado
               </h3>
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-gradient-to-r from-blue-500/15 to-indigo-500/15 border border-blue-500/20 text-blue-600 dark:text-blue-400">
+              <span
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide bg-gradient-to-r from-blue-500/15 to-indigo-500/15 border border-blue-500/20"
+                style={{ color: "#2563eb" }}
+              >
                 <Zap size={9} />
                 Pro
               </span>
@@ -81,10 +84,7 @@ export function UpgradeModal({
           {PRO_FEATURES.map((item) => (
             <div key={item} className="flex items-center gap-2.5">
               <div className="w-4 h-4 rounded-full bg-emerald-500/15 flex items-center justify-center flex-shrink-0">
-                <Check
-                  size={10}
-                  className="text-emerald-600 dark:text-emerald-400"
-                />
+                <Check size={10} style={{ color: "#059669" }} />
               </div>
               <span
                 className="text-sm"

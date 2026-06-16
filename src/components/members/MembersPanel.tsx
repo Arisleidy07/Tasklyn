@@ -90,7 +90,11 @@ function InlineNameEditor({
         onKeyDown={handleKeyDown}
         onBlur={() => onSave(value)}
         placeholder={originalName}
-        className="flex-1 min-w-0 h-7 px-2 rounded-md border border-blue-300 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100"
+        className="flex-1 min-w-0 h-7 px-2 rounded-md border border-blue-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+        style={{
+          backgroundColor: "var(--bg-input)",
+          color: "var(--text-primary)",
+        }}
       />
       <button
         type="submit"
@@ -221,7 +225,12 @@ export default function MembersPanel({
                   }}
                   onKeyDown={(e) => e.key === "Enter" && handleSendInvitation()}
                   placeholder="correo@ejemplo.com"
-                  className="w-full h-9 pl-9 pr-3 rounded-lg border border-gray-200 bg-white text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500"
+                  className="w-full h-9 pl-9 pr-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
+                  style={{
+                    border: "1px solid var(--border-input)",
+                    backgroundColor: "var(--bg-input)",
+                    color: "var(--text-primary)",
+                  }}
                 />
               </div>
 
@@ -312,7 +321,10 @@ export default function MembersPanel({
                   ) : (
                     <div className="flex-1 min-w-0 flex items-center gap-1.5">
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate dark:text-slate-100">
+                        <p
+                          className="text-sm font-medium truncate"
+                          style={{ color: "var(--text-primary)" }}
+                        >
                           {displayName}
                           {isSelf && (
                             <span className="text-gray-400 ml-1">(you)</span>

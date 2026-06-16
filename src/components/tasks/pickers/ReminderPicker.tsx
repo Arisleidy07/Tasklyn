@@ -13,6 +13,7 @@ interface ReminderPickerProps {
   currentReminders?: TaskReminder[];
   taskDueDate?: string | null;
   taskDueTime?: string | null;
+  teamMembers?: Array<{ userId: string; name: string }>;
 }
 
 export default function ReminderPicker({
@@ -22,28 +23,69 @@ export default function ReminderPicker({
   currentReminders,
   taskDueDate,
   taskDueTime,
+  teamMembers = [],
 }: ReminderPickerProps) {
   const [showCustom, setShowCustom] = useState(false);
   const [customDate, setCustomDate] = useState(toISODate(new Date()));
   const [customTime, setCustomTime] = useState("09:00");
   const [customAmPm, setCustomAmPm] = useState<"AM" | "PM">("AM");
+  const [recipientType, setRecipientType] = useState<"me" | "team" | "members">(
+    "me",
+  );
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
   const quickOptions = [
     {
       label: "Más tarde",
-      getReminders: () => [{ id: genId(), at: offsetISO(4), sent: false }],
+      getReminders: () => [
+        {
+          id: genId(),
+          at: offsetISO(4),
+          sent: false,
+          recipientType,
+          recipientIds:
+            recipientType === "members" ? selectedMemberIds : undefined,
+        },
+      ],
     },
     {
       label: "Esta noche",
-      getReminders: () => [{ id: genId(), at: tonightISO(), sent: false }],
+      getReminders: () => [
+        {
+          id: genId(),
+          at: tonightISO(),
+          sent: false,
+          recipientType,
+          recipientIds:
+            recipientType === "members" ? selectedMemberIds : undefined,
+        },
+      ],
     },
     {
       label: "Mañana",
-      getReminders: () => [{ id: genId(), at: tomorrowAt(9, 0), sent: false }],
+      getReminders: () => [
+        {
+          id: genId(),
+          at: tomorrowAt(9, 0),
+          sent: false,
+          recipientType,
+          recipientIds:
+            recipientType === "members" ? selectedMemberIds : undefined,
+        },
+      ],
     },
     {
       label: "Próxima semana",
-      getReminders: () => [{ id: genId(), at: nextWeekAt(9, 0), sent: false }],
+      getReminders: () => [
+        {
+          id: genId(),
+          at: nextWeekAt(9, 0),
+          sent: false,
+          recipientType,
+          recipientIds:
+            recipientType === "members" ? selectedMemberIds : undefined,
+        },
+      ],
     },
   ];
 
@@ -54,7 +96,16 @@ export default function ReminderPicker({
     if (customAmPm === "AM" && hour === 12) hour = 0;
     const timeStr = `${String(hour).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
     const at = `${customDate}T${timeStr}:00`;
-    onSelect([{ id: genId(), at, sent: false }]);
+    onSelect([
+      {
+        id: genId(),
+        at,
+        sent: false,
+        recipientType,
+        recipientIds:
+          recipientType === "members" ? selectedMemberIds : undefined,
+      },
+    ]);
     setShowCustom(false);
     onClose();
   };
@@ -67,7 +118,16 @@ export default function ReminderPicker({
     );
     due.setHours(due.getHours() - 1);
     const at = due.toISOString();
-    onSelect([{ id: genId(), at, sent: false }]);
+    onSelect([
+      {
+        id: genId(),
+        at,
+        sent: false,
+        recipientType,
+        recipientIds:
+          recipientType === "members" ? selectedMemberIds : undefined,
+      },
+    ]);
     onClose();
   };
 
@@ -96,26 +156,170 @@ export default function ReminderPicker({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="relative z-10 w-full max-w-[340px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
+                className="relative z-10 w-full max-w-[340px] max-w-[calc(100vw-32px)] rounded-2xl overflow-hidden"
+                style={{
+                  backgroundColor: "var(--bg-modal)",
+                  boxShadow: "var(--shadow-modal)",
+                  border: "1px solid var(--border-color)",
+                }}
               >
                 {/* Header */}
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
+                <div
+                  className="flex items-center justify-between px-5 py-4 border-b"
+                  style={{ borderColor: "var(--border-color)" }}
+                >
                   <div className="flex items-center gap-2">
                     <Bell
                       size={18}
-                      className="text-gray-500 dark:text-slate-400"
+                      style={{ color: "var(--text-secondary)" }}
                     />
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                    <h3
+                      className="text-sm font-semibold"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       Recordarme
                     </h3>
                   </div>
                   <button
                     onClick={onClose}
-                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                    className="p-1.5 rounded-lg transition-colors"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-secondary)";
+                      e.currentTarget.style.color = "var(--text-primary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                    }}
                   >
                     <X size={18} />
                   </button>
                 </div>
+
+                {/* Recipient Selector */}
+                {teamMembers.length > 0 && (
+                  <div
+                    className="px-5 py-3 border-b"
+                    style={{ borderColor: "var(--border-color)" }}
+                  >
+                    <p
+                      className="text-xs font-medium mb-2"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Notificar a:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setRecipientType("me")}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                        style={{
+                          backgroundColor:
+                            recipientType === "me"
+                              ? "var(--bg-secondary)"
+                              : "transparent",
+                          color:
+                            recipientType === "me"
+                              ? "var(--text-primary)"
+                              : "var(--text-tertiary)",
+                          border:
+                            recipientType === "me"
+                              ? "1px solid var(--border-color)"
+                              : "1px solid transparent",
+                        }}
+                      >
+                        Solo yo
+                      </button>
+                      <button
+                        onClick={() => setRecipientType("team")}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                        style={{
+                          backgroundColor:
+                            recipientType === "team"
+                              ? "var(--bg-secondary)"
+                              : "transparent",
+                          color:
+                            recipientType === "team"
+                              ? "var(--text-primary)"
+                              : "var(--text-tertiary)",
+                          border:
+                            recipientType === "team"
+                              ? "1px solid var(--border-color)"
+                              : "1px solid transparent",
+                        }}
+                      >
+                        Todo el equipo
+                      </button>
+                      <button
+                        onClick={() => setRecipientType("members")}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                        style={{
+                          backgroundColor:
+                            recipientType === "members"
+                              ? "var(--bg-secondary)"
+                              : "transparent",
+                          color:
+                            recipientType === "members"
+                              ? "var(--text-primary)"
+                              : "var(--text-tertiary)",
+                          border:
+                            recipientType === "members"
+                              ? "1px solid var(--border-color)"
+                              : "1px solid transparent",
+                        }}
+                      >
+                        Miembros específicos
+                      </button>
+                    </div>
+                    {recipientType === "members" && (
+                      <div className="mt-2 space-y-1">
+                        {teamMembers.map((member) => (
+                          <button
+                            key={member.userId}
+                            onClick={() => {
+                              setSelectedMemberIds((prev) =>
+                                prev.includes(member.userId)
+                                  ? prev.filter((id) => id !== member.userId)
+                                  : [...prev, member.userId],
+                              );
+                            }}
+                            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors"
+                            style={{
+                              backgroundColor: selectedMemberIds.includes(
+                                member.userId,
+                              )
+                                ? "var(--bg-secondary)"
+                                : "transparent",
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            <div
+                              className="w-4 h-4 rounded border flex items-center justify-center"
+                              style={{
+                                borderColor: selectedMemberIds.includes(
+                                  member.userId,
+                                )
+                                  ? "#2563eb"
+                                  : "var(--border-color)",
+                                backgroundColor: selectedMemberIds.includes(
+                                  member.userId,
+                                )
+                                  ? "#2563eb"
+                                  : "transparent",
+                              }}
+                            >
+                              {selectedMemberIds.includes(member.userId) && (
+                                <div className="w-2 h-2 rounded-full bg-white" />
+                              )}
+                            </div>
+                            {member.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Quick options */}
                 <div className="px-5 py-3 space-y-1">
@@ -126,24 +330,41 @@ export default function ReminderPicker({
                         onSelect(opt.getReminders());
                         onClose();
                       }}
-                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors dark:text-slate-300 dark:hover:bg-slate-800"
+                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors"
+                      style={{ color: "var(--text-primary)" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor =
+                          "var(--bg-secondary)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }}
                     >
-                      <span className="font-medium dark:text-slate-200">
-                        {opt.label}
-                      </span>
+                      <span className="font-medium">{opt.label}</span>
                     </button>
                   ))}
 
                   {taskDueDate && (
                     <button
                       onClick={handleAddToDueDate}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50 transition-colors dark:text-slate-300 dark:hover:bg-slate-800"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-colors"
+                      style={{ color: "var(--text-primary)" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor =
+                          "var(--bg-secondary)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }}
                     >
                       <Clock
                         size={14}
-                        className="text-gray-400 dark:text-slate-500"
+                        style={{ color: "var(--text-tertiary)" }}
                       />
-                      <span className="font-medium dark:text-slate-200">
+                      <span
+                        className="font-medium"
+                        style={{ color: "var(--text-primary)" }}
+                      >
                         1 hora antes del vencimiento
                       </span>
                     </button>
@@ -151,7 +372,15 @@ export default function ReminderPicker({
 
                   <button
                     onClick={() => setShowCustom(true)}
-                    className="w-full px-3 py-2.5 rounded-xl text-sm text-gray-900 hover:bg-gray-50 transition-colors font-medium dark:text-slate-100 dark:hover:bg-slate-800"
+                    className="w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                    style={{ color: "var(--text-primary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-secondary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                   >
                     Elegir fecha y hora
                   </button>
@@ -162,7 +391,15 @@ export default function ReminderPicker({
                         onSelect([]);
                         onClose();
                       }}
-                      className="w-full px-3 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-50 transition-colors font-medium dark:hover:bg-red-950/30"
+                      className="w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                      style={{ color: "#ef4444" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor =
+                          "rgba(239,68,68,0.08)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                      }}
                     >
                       Eliminar recordatorio
                     </button>
@@ -174,15 +411,36 @@ export default function ReminderPicker({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="relative z-10 w-full max-w-[340px] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden"
+                className="relative z-10 w-full max-w-[340px] max-w-[calc(100vw-32px)] rounded-2xl overflow-hidden"
+                style={{
+                  backgroundColor: "var(--bg-modal)",
+                  boxShadow: "var(--shadow-modal)",
+                  border: "1px solid var(--border-color)",
+                }}
               >
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100">
+                <div
+                  className="flex items-center justify-between px-5 py-4 border-b"
+                  style={{ borderColor: "var(--border-color)" }}
+                >
+                  <h3
+                    className="text-sm font-semibold"
+                    style={{ color: "var(--text-primary)" }}
+                  >
                     Elegir fecha y hora
                   </h3>
                   <button
                     onClick={() => setShowCustom(false)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                    className="p-1.5 rounded-lg transition-colors"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-secondary)";
+                      e.currentTarget.style.color = "var(--text-primary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                    }}
                   >
                     <X size={18} />
                   </button>
@@ -191,20 +449,31 @@ export default function ReminderPicker({
                 <div className="p-5 space-y-4">
                   {/* Date */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide dark:text-slate-400">
+                    <label
+                      className="text-xs font-medium uppercase tracking-wide"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       Fecha
                     </label>
                     <input
                       type="date"
                       value={customDate}
                       onChange={(e) => setCustomDate(e.target.value)}
-                      className="w-full h-11 px-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      className="w-full h-11 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      style={{
+                        border: "1px solid var(--border-input)",
+                        backgroundColor: "var(--bg-input)",
+                        color: "var(--text-primary)",
+                      }}
                     />
                   </div>
 
                   {/* Time */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-gray-500 uppercase tracking-wide dark:text-slate-400">
+                    <label
+                      className="text-xs font-medium uppercase tracking-wide"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       Hora
                     </label>
                     <div className="flex gap-2">
@@ -212,14 +481,30 @@ export default function ReminderPicker({
                         type="time"
                         value={customTime}
                         onChange={(e) => setCustomTime(e.target.value)}
-                        className="flex-1 h-11 px-3 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent dark:bg-slate-800 dark:border-slate-700 dark:text-slate-100 dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                        className="flex-1 h-11 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{
+                          border: "1px solid var(--border-input)",
+                          backgroundColor: "var(--bg-input)",
+                          color: "var(--text-primary)",
+                        }}
                       />
-                      <div className="flex bg-gray-100 rounded-xl overflow-hidden dark:bg-slate-800">
+                      <div
+                        className="flex rounded-xl overflow-hidden"
+                        style={{ backgroundColor: "var(--bg-secondary)" }}
+                      >
                         {(["AM", "PM"] as const).map((a) => (
                           <button
                             key={a}
                             onClick={() => setCustomAmPm(a)}
-                            className={`px-4 text-sm font-medium transition-colors ${customAmPm === a ? "bg-gray-900 text-white dark:bg-slate-700 dark:text-white" : "text-gray-600 hover:text-gray-900 dark:text-slate-400 dark:hover:text-slate-200"}`}
+                            className="px-4 text-sm font-medium transition-colors"
+                            style={
+                              customAmPm === a
+                                ? {
+                                    backgroundColor: "var(--text-primary)",
+                                    color: "var(--bg-card)",
+                                  }
+                                : { color: "var(--text-secondary)" }
+                            }
                           >
                             {a}
                           </button>
@@ -230,7 +515,11 @@ export default function ReminderPicker({
 
                   <button
                     onClick={handleCustomSave}
-                    className="w-full h-11 bg-gray-900 text-white rounded-xl text-sm font-medium hover:bg-gray-800 transition-colors dark:bg-slate-700 dark:hover:bg-slate-600"
+                    className="w-full h-11 rounded-xl text-sm font-medium transition-colors hover:opacity-90"
+                    style={{
+                      backgroundColor: "var(--text-primary)",
+                      color: "var(--bg-card)",
+                    }}
                   >
                     Guardar recordatorio
                   </button>

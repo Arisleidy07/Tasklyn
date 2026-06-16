@@ -99,22 +99,50 @@ function HistoryCard({ entry, isCurrentUser }: HistoryCardProps) {
     }
   };
 
-  const getActionColor = (action: string) => {
+  const getActionStyle = (action: string): React.CSSProperties => {
     switch (action) {
       case "created":
-        return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-800";
+        return {
+          backgroundColor: "rgba(37,99,235,0.07)",
+          color: "#2563eb",
+          border: "1px solid rgba(37,99,235,0.2)",
+        };
       case "updated":
-        return "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-800";
+        return {
+          backgroundColor: "rgba(202,138,4,0.07)",
+          color: "#ca8a04",
+          border: "1px solid rgba(202,138,4,0.2)",
+        };
       case "completed":
-        return "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800";
+        return {
+          backgroundColor: "rgba(22,163,74,0.07)",
+          color: "#16a34a",
+          border: "1px solid rgba(22,163,74,0.2)",
+        };
       case "archived":
-        return "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950/30 dark:text-gray-400 dark:border-gray-800";
+        return {
+          backgroundColor: "var(--bg-secondary)",
+          color: "var(--text-secondary)",
+          border: "1px solid var(--border-color)",
+        };
       case "deleted":
-        return "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-400 dark:border-red-800";
+        return {
+          backgroundColor: "rgba(239,68,68,0.07)",
+          color: "#dc2626",
+          border: "1px solid rgba(239,68,68,0.2)",
+        };
       case "assigned":
-        return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-800";
+        return {
+          backgroundColor: "rgba(147,51,234,0.07)",
+          color: "#9333ea",
+          border: "1px solid rgba(147,51,234,0.2)",
+        };
       default:
-        return "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950/30 dark:text-gray-400 dark:border-gray-800";
+        return {
+          backgroundColor: "var(--bg-secondary)",
+          color: "var(--text-secondary)",
+          border: "1px solid var(--border-color)",
+        };
     }
   };
 
@@ -130,19 +158,23 @@ function HistoryCard({ entry, isCurrentUser }: HistoryCardProps) {
       animate={{ opacity: 1, x: 0 }}
       whileHover={{ x: 4 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className={cn(
-        "flex items-start gap-4 p-4 rounded-xl border transition-all duration-200",
+      className="flex items-start gap-4 p-4 rounded-xl border transition-all duration-200"
+      style={
         isCurrentUser
-          ? "bg-blue-50/50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800"
-          : "bg-white border-gray-200 dark:bg-slate-900 dark:border-slate-800",
-      )}
+          ? {
+              backgroundColor: "rgba(37,99,235,0.04)",
+              borderColor: "rgba(37,99,235,0.2)",
+            }
+          : {
+              backgroundColor: "var(--bg-card)",
+              borderColor: "var(--border-color)",
+            }
+      }
     >
       {/* Action Icon */}
       <div
-        className={cn(
-          "w-10 h-10 rounded-xl flex items-center justify-center border",
-          getActionColor(entry.action),
-        )}
+        className="w-10 h-10 rounded-xl flex items-center justify-center"
+        style={getActionStyle(entry.action)}
       >
         {getActionIcon(entry.action)}
       </div>
@@ -158,19 +190,25 @@ function HistoryCard({ entry, isCurrentUser }: HistoryCardProps) {
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">
-            <p className="text-sm text-gray-900 dark:text-slate-100">
+            <p className="text-sm" style={{ color: "var(--text-primary)" }}>
               <span className="font-medium">{entry.performedByName}</span>{" "}
-              <span className="text-gray-600 dark:text-slate-400">
+              <span style={{ color: "var(--text-secondary)" }}>
                 {getActionText(entry.action)}
               </span>{" "}
-              <span className="font-medium text-gray-900 dark:text-slate-100">
+              <span
+                className="font-medium"
+                style={{ color: "var(--text-primary)" }}
+              >
                 "{entry.taskTitle}"
               </span>
             </p>
 
             {/* Additional details */}
             {entry.assignedToName && (
-              <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">
+              <p
+                className="text-sm mt-1"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 asignado a{" "}
                 <span className="font-medium">{entry.assignedToName}</span>
               </p>
@@ -178,19 +216,28 @@ function HistoryCard({ entry, isCurrentUser }: HistoryCardProps) {
 
             {entry.completedByName &&
               entry.completedByName !== entry.performedByName && (
-                <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">
+                <p
+                  className="text-sm mt-1"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   realizado por{" "}
                   <span className="font-medium">{entry.completedByName}</span>
                 </p>
               )}
 
             {entry.details && (
-              <p className="text-sm text-gray-500 dark:text-slate-500 mt-1 italic">
+              <p
+                className="text-sm mt-1 italic"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 {entry.details}
               </p>
             )}
 
-            <div className="flex items-center gap-3 mt-2 text-xs text-gray-500 dark:text-slate-400">
+            <div
+              className="flex items-center gap-3 mt-2 text-xs"
+              style={{ color: "var(--text-tertiary)" }}
+            >
               <span className="flex items-center gap-1">
                 <FileText size={12} />
                 {entry.listName}
@@ -233,8 +280,17 @@ function HistoryGroup({ date, entries, currentUserId }: HistoryGroupProps) {
 
   return (
     <div className="space-y-3">
-      <div className="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm py-2">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300">
+      <div
+        className="sticky top-0 z-10 backdrop-blur-sm py-2"
+        style={{
+          backgroundColor:
+            "color-mix(in srgb, var(--bg-page) 95%, transparent)",
+        }}
+      >
+        <h3
+          className="text-sm font-semibold"
+          style={{ color: "var(--text-secondary)" }}
+        >
           {getGroupTitle()}
         </h3>
       </div>
@@ -441,7 +497,12 @@ export default function HistoryPage() {
               placeholder="Buscar en el historial..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
             />
           </div>
 
@@ -449,7 +510,12 @@ export default function HistoryPage() {
             <select
               value={selectedAction}
               onChange={(e) => setSelectedAction(e.target.value)}
-              className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+              className="px-3 py-2.5 text-sm rounded-xl"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
             >
               <option value="all">Todas las acciones</option>
               <option value="created">Creadas</option>
@@ -463,7 +529,12 @@ export default function HistoryPage() {
             <select
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
-              className="px-3 py-2.5 text-sm border border-gray-200 rounded-xl bg-white dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200"
+              className="px-3 py-2.5 text-sm rounded-xl"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
             >
               <option value="all">Todos los usuarios</option>
               <option value={user.id}>{user.name} (Yo)</option>
@@ -478,16 +549,22 @@ export default function HistoryPage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center py-16"
           >
-            <div className="w-20 h-20 rounded-2xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
-              <History
-                size={32}
-                className="text-gray-400 dark:text-slate-500"
-              />
+            <div
+              className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4"
+              style={{ backgroundColor: "var(--bg-secondary)" }}
+            >
+              <History size={32} style={{ color: "var(--text-tertiary)" }} />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-slate-100 mb-2">
+            <h3
+              className="text-xl font-semibold mb-2"
+              style={{ color: "var(--text-primary)" }}
+            >
               Sin historial
             </h3>
-            <p className="text-gray-500 dark:text-slate-400 max-w-sm mx-auto">
+            <p
+              className="max-w-sm mx-auto"
+              style={{ color: "var(--text-secondary)" }}
+            >
               {searchQuery || selectedAction !== "all" || selectedUser !== "all"
                 ? "No se encontraron actividades con los filtros seleccionados."
                 : "No hay actividades registradas aún."}

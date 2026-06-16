@@ -262,20 +262,47 @@ export default function NotificationsPage() {
             <button
               key={tab.id}
               onClick={() => setActiveFilter(tab.id as any)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all border ${
+              className="px-3 py-1.5 rounded-full text-sm font-medium transition-all border"
+              style={
                 activeFilter === tab.id
-                  ? "bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-400/30"
-                  : "border-transparent text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-800"
-              }`}
+                  ? {
+                      backgroundColor: "rgba(37,99,235,0.12)",
+                      color: "var(--text-link)",
+                      borderColor: "rgba(37,99,235,0.3)",
+                    }
+                  : {
+                      borderColor: "transparent",
+                      color: "var(--text-secondary)",
+                    }
+              }
+              onMouseEnter={(e) => {
+                if (activeFilter !== tab.id) {
+                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+                  e.currentTarget.style.color = "var(--text-primary)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeFilter !== tab.id) {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                }
+              }}
             >
               {tab.label}
               {tab.count > 0 && (
                 <span
-                  className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                  className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full"
+                  style={
                     activeFilter === tab.id
-                      ? "bg-blue-200 dark:bg-blue-400/20 text-blue-700 dark:text-blue-200"
-                      : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
-                  }`}
+                      ? {
+                          backgroundColor: "rgba(37,99,235,0.2)",
+                          color: "var(--text-link)",
+                        }
+                      : {
+                          backgroundColor: "var(--bg-tertiary)",
+                          color: "var(--text-tertiary)",
+                        }
+                  }
                 >
                   {tab.count}
                 </span>
@@ -287,7 +314,10 @@ export default function NotificationsPage() {
         {/* Pending Invitations */}
         {showInvitations && pendingNotifications.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-slate-100">
+            <h3
+              className="text-sm font-semibold mb-3"
+              style={{ color: "var(--text-primary)" }}
+            >
               Invitaciones Pendientes
             </h3>
             <motion.div
@@ -313,11 +343,20 @@ export default function NotificationsPage() {
                       y: -1,
                       boxShadow: "0 6px 24px -4px rgba(0,0,0,0.08)",
                     }}
-                    className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-colors cursor-pointer ${
+                    className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-all cursor-pointer"
+                    style={
                       notif.read
-                        ? "bg-white dark:bg-slate-900/60 border-gray-200 dark:border-slate-700"
-                        : "bg-blue-50/50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-400/30"
-                    }`}
+                        ? {
+                            backgroundColor: "var(--bg-card)",
+                            borderColor: "var(--border-color)",
+                            boxShadow: "var(--shadow-card)",
+                          }
+                        : {
+                            backgroundColor: "rgba(37,99,235,0.06)",
+                            borderColor: "rgba(37,99,235,0.25)",
+                            boxShadow: "var(--shadow-card)",
+                          }
+                    }
                     onClick={() => !notif.read && markRead(notif.id)}
                   >
                     <div
@@ -333,11 +372,13 @@ export default function NotificationsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <p
-                          className={`text-sm leading-snug ${
-                            notif.read
-                              ? "text-gray-700 dark:text-slate-400 font-normal"
-                              : "text-gray-900 dark:text-slate-100 font-semibold"
-                          }`}
+                          className="text-sm leading-snug"
+                          style={{
+                            color: notif.read
+                              ? "var(--text-secondary)"
+                              : "var(--text-primary)",
+                            fontWeight: notif.read ? 400 : 600,
+                          }}
                         >
                           {notif.title}
                         </p>
@@ -345,10 +386,16 @@ export default function NotificationsPage() {
                           <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
                         )}
                       </div>
-                      <p className="text-xs mt-0.5 leading-snug text-gray-500 dark:text-slate-400">
+                      <p
+                        className="text-xs mt-0.5 leading-snug"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
                         {notif.body}
                       </p>
-                      <p className="text-[11px] mt-1.5 text-gray-400 dark:text-slate-500">
+                      <p
+                        className="text-[11px] mt-1.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         {timeAgo(notif.createdAt)}
                       </p>
 
@@ -372,7 +419,11 @@ export default function NotificationsPage() {
                               handleDeclineInvitation(notif.id, notif.data);
                             }}
                             disabled={processingId === notif.id}
-                            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 text-xs font-semibold hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-60 min-h-[36px]"
+                            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-colors disabled:opacity-60 min-h-[36px]"
+                            style={{
+                              backgroundColor: "var(--bg-secondary)",
+                              color: "var(--text-primary)",
+                            }}
                           >
                             <X size={12} />
                             Rechazar
@@ -388,7 +439,19 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             archive(notif.id);
                           }}
-                          className="p-2 rounded-lg text-gray-300 dark:text-slate-600 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/15 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          style={{ color: "var(--text-tertiary)" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#2563eb";
+                            e.currentTarget.style.backgroundColor =
+                              "rgba(37,99,235,0.08)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color =
+                              "var(--text-tertiary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }}
                           title="Archivar"
                         >
                           <Archive size={14} />
@@ -398,7 +461,19 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             remove(notif.id);
                           }}
-                          className="p-2 rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          style={{ color: "var(--text-tertiary)" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#ef4444";
+                            e.currentTarget.style.backgroundColor =
+                              "rgba(239,68,68,0.08)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color =
+                              "var(--text-tertiary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }}
                           title="Eliminar"
                         >
                           <Trash2 size={14} />
@@ -415,7 +490,10 @@ export default function NotificationsPage() {
         {/* Other Notifications */}
         {showOther && otherNotifications.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-slate-100">
+            <h3
+              className="text-sm font-semibold mb-3"
+              style={{ color: "var(--text-primary)" }}
+            >
               Otras Notificaciones
             </h3>
             <motion.div
@@ -442,11 +520,20 @@ export default function NotificationsPage() {
                         y: -1,
                         boxShadow: "0 6px 24px -4px rgba(0,0,0,0.08)",
                       }}
-                      className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-colors cursor-pointer ${
+                      className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-all cursor-pointer"
+                      style={
                         notif.read
-                          ? "bg-white dark:bg-slate-900/60 border-gray-200 dark:border-slate-700"
-                          : "bg-blue-50/50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-400/30"
-                      }`}
+                          ? {
+                              backgroundColor: "var(--bg-card)",
+                              borderColor: "var(--border-color)",
+                              boxShadow: "var(--shadow-card)",
+                            }
+                          : {
+                              backgroundColor: "rgba(37,99,235,0.06)",
+                              borderColor: "rgba(37,99,235,0.25)",
+                              boxShadow: "var(--shadow-card)",
+                            }
+                      }
                       onClick={() => !notif.read && markRead(notif.id)}
                     >
                       <div
@@ -462,11 +549,13 @@ export default function NotificationsPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <p
-                            className={`text-sm leading-snug ${
-                              notif.read
-                                ? "text-gray-700 dark:text-slate-400 font-normal"
-                                : "text-gray-900 dark:text-slate-100 font-semibold"
-                            }`}
+                            className="text-sm leading-snug"
+                            style={{
+                              color: notif.read
+                                ? "var(--text-secondary)"
+                                : "var(--text-primary)",
+                              fontWeight: notif.read ? 400 : 600,
+                            }}
                           >
                             {notif.title}
                           </p>
@@ -474,10 +563,16 @@ export default function NotificationsPage() {
                             <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5" />
                           )}
                         </div>
-                        <p className="text-xs mt-0.5 leading-snug text-gray-500 dark:text-slate-400">
+                        <p
+                          className="text-xs mt-0.5 leading-snug"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
                           {notif.body}
                         </p>
-                        <p className="text-[11px] mt-1.5 text-gray-400 dark:text-slate-500">
+                        <p
+                          className="text-[11px] mt-1.5"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
                           {timeAgo(notif.createdAt)}
                         </p>
                       </div>
@@ -488,7 +583,19 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             archive(notif.id);
                           }}
-                          className="p-2 rounded-lg text-gray-300 dark:text-slate-600 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/15 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          style={{ color: "var(--text-tertiary)" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#2563eb";
+                            e.currentTarget.style.backgroundColor =
+                              "rgba(37,99,235,0.08)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color =
+                              "var(--text-tertiary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }}
                           title="Archivar"
                         >
                           <Archive size={14} />
@@ -498,7 +605,19 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             remove(notif.id);
                           }}
-                          className="p-2 rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          style={{ color: "var(--text-tertiary)" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#ef4444";
+                            e.currentTarget.style.backgroundColor =
+                              "rgba(239,68,68,0.08)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color =
+                              "var(--text-tertiary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }}
                           title="Eliminar"
                         >
                           <Trash2 size={14} />
@@ -515,26 +634,37 @@ export default function NotificationsPage() {
         {/* Accepted Invitations */}
         {acceptedNotifications.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold mb-3 text-emerald-700 dark:text-emerald-400">
+            <h3
+              className="text-sm font-semibold mb-3"
+              style={{ color: "#059669" }}
+            >
               Invitaciones Aceptadas
             </h3>
             <div className="space-y-2">
               {acceptedNotifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className="flex items-start gap-4 p-4 rounded-xl border border-emerald-200 dark:border-emerald-400/30 bg-emerald-50/30 dark:bg-emerald-500/10"
+                  className="flex items-start gap-4 p-4 rounded-xl border"
+                  style={{
+                    borderColor: "rgba(16,185,129,0.3)",
+                    backgroundColor: "rgba(16,185,129,0.06)",
+                    boxShadow: "var(--shadow-card)",
+                  }}
                 >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-emerald-100 dark:bg-emerald-500/20">
-                    <CheckCircle2
-                      size={18}
-                      className="text-emerald-600 dark:text-emerald-400"
-                    />
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: "rgba(16,185,129,0.15)" }}
+                  >
+                    <CheckCircle2 size={18} style={{ color: "#059669" }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                    <p
+                      className="text-sm font-semibold"
+                      style={{ color: "#065f46" }}
+                    >
                       {notif.title}
                     </p>
-                    <p className="text-xs mt-1 text-emerald-600 dark:text-emerald-400/80">
+                    <p className="text-xs mt-1" style={{ color: "#059669" }}>
                       Ya tienes acceso a este espacio
                     </p>
                   </div>
@@ -547,32 +677,56 @@ export default function NotificationsPage() {
         {/* Rejected Invitations */}
         {rejectedNotifications.length > 0 && (
           <section>
-            <h3 className="text-sm font-semibold mb-3 text-gray-600 dark:text-slate-400">
+            <h3
+              className="text-sm font-semibold mb-3"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Invitaciones Rechazadas
             </h3>
             <div className="space-y-2">
               {rejectedNotifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className="flex items-start gap-4 p-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50"
+                  className="flex items-start gap-4 p-4 rounded-xl border"
+                  style={{
+                    borderColor: "var(--border-color)",
+                    backgroundColor: "var(--bg-card)",
+                    boxShadow: "var(--shadow-card)",
+                  }}
                 >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 bg-gray-100 dark:bg-slate-700">
-                    <X
-                      size={18}
-                      className="text-gray-500 dark:text-slate-400"
-                    />
+                  <div
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: "var(--bg-secondary)" }}
+                  >
+                    <X size={18} style={{ color: "var(--text-tertiary)" }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-600 dark:text-slate-300">
+                    <p
+                      className="text-sm"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
                       {notif.title}
                     </p>
-                    <p className="text-xs mt-1 text-gray-500 dark:text-slate-400">
+                    <p
+                      className="text-xs mt-1"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
                       Rechazaste esta invitación
                     </p>
                   </div>
                   <button
                     onClick={() => remove(notif.id)}
-                    className="p-1.5 rounded-lg transition-colors text-gray-300 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15"
+                    className="p-1.5 rounded-lg transition-colors"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#ef4444";
+                      e.currentTarget.style.backgroundColor =
+                        "rgba(239,68,68,0.08)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -587,14 +741,20 @@ export default function NotificationsPage() {
           archivedNotifications.length > 0 && (
             <section>
               <div className="flex items-center gap-2 mb-3">
-                <Archive
-                  size={16}
-                  className="text-gray-400 dark:text-slate-400"
-                />
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300">
+                <Archive size={16} style={{ color: "var(--text-tertiary)" }} />
+                <h3
+                  className="text-sm font-semibold"
+                  style={{ color: "var(--text-secondary)" }}
+                >
                   Archivados
                 </h3>
-                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400">
+                <span
+                  className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                  style={{
+                    backgroundColor: "var(--bg-tertiary)",
+                    color: "var(--text-tertiary)",
+                  }}
+                >
                   {archivedNotifications.length}
                 </span>
               </div>
@@ -610,7 +770,12 @@ export default function NotificationsPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, x: -16 }}
                       transition={{ duration: 0.2 }}
-                      className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50"
+                      className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border"
+                      style={{
+                        borderColor: "var(--border-color)",
+                        backgroundColor: "var(--bg-card)",
+                        boxShadow: "var(--shadow-card)",
+                      }}
                     >
                       <div
                         className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 border"
@@ -634,21 +799,48 @@ export default function NotificationsPage() {
                         >
                           {notif.body}
                         </p>
-                        <p className="text-[11px] mt-1.5 text-gray-400 dark:text-slate-500">
+                        <p
+                          className="text-[11px] mt-1.5"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
                           {timeAgo(notif.createdAt)}
                         </p>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => unarchive(notif.id)}
-                          className="p-2 rounded-lg text-gray-300 dark:text-slate-600 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/15 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          style={{ color: "var(--text-tertiary)" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#2563eb";
+                            e.currentTarget.style.backgroundColor =
+                              "rgba(37,99,235,0.08)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color =
+                              "var(--text-tertiary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }}
                           title="Desarchivar"
                         >
                           <Archive size={14} className="rotate-180" />
                         </button>
                         <button
                           onClick={() => remove(notif.id)}
-                          className="p-2 rounded-lg text-gray-300 dark:text-slate-600 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/15 transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          style={{ color: "var(--text-tertiary)" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.color = "#ef4444";
+                            e.currentTarget.style.backgroundColor =
+                              "rgba(239,68,68,0.08)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.color =
+                              "var(--text-tertiary)";
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }}
                           title="Eliminar"
                         >
                           <Trash2 size={14} />

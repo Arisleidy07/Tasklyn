@@ -21,6 +21,7 @@ interface TaskOptionsBarProps {
   dueTime?: string | null;
   reminders?: TaskReminder[];
   recurrence?: RecurrenceConfig | null;
+  teamMembers?: Array<{ userId: string; name: string }>;
   onReminderChange: (reminders: TaskReminder[]) => void;
   onDueDateChange: (date: string | null) => void;
   onRecurrenceChange: (rec: RecurrenceConfig | null) => void;
@@ -32,6 +33,7 @@ export default function TaskOptionsBar({
   dueTime,
   reminders,
   recurrence,
+  teamMembers = [],
   onReminderChange,
   onDueDateChange,
   onRecurrenceChange,
@@ -71,12 +73,28 @@ export default function TaskOptionsBar({
             e.stopPropagation();
             setOpenDropdown(openDropdown === "reminder" ? null : "reminder");
           }}
-          className={cn(
-            "flex items-center justify-center w-8 h-8 rounded-lg transition-all",
+          className="flex items-center justify-center w-8 h-8 rounded-lg transition-all"
+          style={
             hasReminder
-              ? "text-blue-600 bg-blue-50 dark:bg-blue-500/20 hover:bg-blue-100 dark:hover:bg-blue-500/30"
-              : "text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-slate-300",
-          )}
+              ? { color: "#2563eb", backgroundColor: "rgba(37,99,235,0.08)" }
+              : { color: "var(--text-tertiary)" }
+          }
+          onMouseEnter={(e) => {
+            if (hasReminder) {
+              e.currentTarget.style.backgroundColor = "rgba(37,99,235,0.15)";
+            } else {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (hasReminder) {
+              e.currentTarget.style.backgroundColor = "rgba(37,99,235,0.08)";
+            } else {
+              e.currentTarget.style.backgroundColor = "transparent";
+              e.currentTarget.style.color = "var(--text-tertiary)";
+            }
+          }}
           title="Recordatorio"
         >
           <Bell size={16} />
@@ -89,6 +107,7 @@ export default function TaskOptionsBar({
             reminders={reminders}
             taskDueDate={dueDate}
             taskDueTime={dueTime}
+            teamMembers={teamMembers}
             onSelect={(r) => {
               onReminderChange(r);
               setOpenDropdown(null);
@@ -108,12 +127,28 @@ export default function TaskOptionsBar({
             e.stopPropagation();
             setOpenDropdown(openDropdown === "due" ? null : "due");
           }}
-          className={cn(
-            "flex items-center justify-center w-8 h-8 rounded-lg transition-all",
+          className="flex items-center justify-center w-8 h-8 rounded-lg transition-all"
+          style={
             hasDueDate
-              ? "text-amber-600 bg-amber-50 dark:bg-amber-500/20 hover:bg-amber-100 dark:hover:bg-amber-500/30"
-              : "text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-slate-300",
-          )}
+              ? { color: "#d97706", backgroundColor: "rgba(245,158,11,0.08)" }
+              : { color: "var(--text-tertiary)" }
+          }
+          onMouseEnter={(e) => {
+            if (hasDueDate) {
+              e.currentTarget.style.backgroundColor = "rgba(245,158,11,0.15)";
+            } else {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (hasDueDate) {
+              e.currentTarget.style.backgroundColor = "rgba(245,158,11,0.08)";
+            } else {
+              e.currentTarget.style.backgroundColor = "transparent";
+              e.currentTarget.style.color = "var(--text-tertiary)";
+            }
+          }}
           title="Vencimiento"
         >
           <CalendarDays size={16} />
@@ -141,12 +176,28 @@ export default function TaskOptionsBar({
               openDropdown === "recurrence" ? null : "recurrence",
             );
           }}
-          className={cn(
-            "flex items-center justify-center w-8 h-8 rounded-lg transition-all",
+          className="flex items-center justify-center w-8 h-8 rounded-lg transition-all"
+          style={
             hasRecurrence
-              ? "text-green-600 bg-green-50 dark:bg-green-500/20 hover:bg-green-100 dark:hover:bg-green-500/30"
-              : "text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-slate-300",
-          )}
+              ? { color: "#16a34a", backgroundColor: "rgba(22,163,74,0.08)" }
+              : { color: "var(--text-tertiary)" }
+          }
+          onMouseEnter={(e) => {
+            if (hasRecurrence) {
+              e.currentTarget.style.backgroundColor = "rgba(22,163,74,0.15)";
+            } else {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+              e.currentTarget.style.color = "var(--text-secondary)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (hasRecurrence) {
+              e.currentTarget.style.backgroundColor = "rgba(22,163,74,0.08)";
+            } else {
+              e.currentTarget.style.backgroundColor = "transparent";
+              e.currentTarget.style.color = "var(--text-tertiary)";
+            }
+          }}
           title="Repetir"
         >
           <Repeat size={16} />
@@ -179,44 +230,209 @@ function ReminderDropdown({
   taskDueTime,
   onSelect,
   onClear,
+  teamMembers = [],
 }: {
   reminders?: TaskReminder[];
   taskDueDate?: string | null;
   taskDueTime?: string | null;
   onSelect: (r: TaskReminder[]) => void;
   onClear: () => void;
+  teamMembers?: Array<{ userId: string; name: string }>;
 }) {
   const [showCustom, setShowCustom] = useState(false);
   const [customDate, setCustomDate] = useState(toISODate(new Date()));
   const [customTime, setCustomTime] = useState("09:00");
+  const [recipientType, setRecipientType] = useState<"me" | "team" | "members">(
+    "me",
+  );
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
 
   const quickOptions = [
     {
       label: "Más tarde",
-      get: () => [{ id: genId(), at: offsetISO(4), sent: false }],
+      get: () => [
+        {
+          id: genId(),
+          at: offsetISO(4),
+          sent: false,
+          recipientType,
+          recipientIds:
+            recipientType === "members" ? selectedMemberIds : undefined,
+        },
+      ],
     },
     {
       label: "Esta noche",
-      get: () => [{ id: genId(), at: tonightISO(), sent: false }],
+      get: () => [
+        {
+          id: genId(),
+          at: tonightISO(),
+          sent: false,
+          recipientType,
+          recipientIds:
+            recipientType === "members" ? selectedMemberIds : undefined,
+        },
+      ],
     },
     {
       label: "Mañana",
-      get: () => [{ id: genId(), at: tomorrowAt(9, 0), sent: false }],
+      get: () => [
+        {
+          id: genId(),
+          at: tomorrowAt(9, 0),
+          sent: false,
+          recipientType,
+          recipientIds:
+            recipientType === "members" ? selectedMemberIds : undefined,
+        },
+      ],
     },
     {
       label: "Próxima semana",
-      get: () => [{ id: genId(), at: nextWeekAt(9, 0), sent: false }],
+      get: () => [
+        {
+          id: genId(),
+          at: nextWeekAt(9, 0),
+          sent: false,
+          recipientType,
+          recipientIds:
+            recipientType === "members" ? selectedMemberIds : undefined,
+        },
+      ],
     },
   ];
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-[9999] w-[260px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden">
+    <div
+      className="absolute left-0 top-full mt-2 z-[9999] w-[260px] max-w-[calc(100vw-32px)] rounded-2xl shadow-xl overflow-hidden"
+      style={{
+        backgroundColor: "var(--bg-card)",
+        border: "1px solid var(--border-color)",
+        boxShadow: "var(--shadow-modal)",
+      }}
+    >
       {!showCustom ? (
         <div className="p-1.5 space-y-0.5">
+          {/* Recipient Selector */}
+          {teamMembers.length > 0 && (
+            <div
+              className="px-2 py-2 border-b mb-1"
+              style={{ borderColor: "var(--border-color)" }}
+            >
+              <p
+                className="text-[10px] font-medium mb-1.5"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                Notificar a:
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  onClick={() => setRecipientType("me")}
+                  className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors"
+                  style={{
+                    backgroundColor:
+                      recipientType === "me"
+                        ? "var(--bg-secondary)"
+                        : "transparent",
+                    color:
+                      recipientType === "me"
+                        ? "var(--text-primary)"
+                        : "var(--text-tertiary)",
+                  }}
+                >
+                  Solo yo
+                </button>
+                <button
+                  onClick={() => setRecipientType("team")}
+                  className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors"
+                  style={{
+                    backgroundColor:
+                      recipientType === "team"
+                        ? "var(--bg-secondary)"
+                        : "transparent",
+                    color:
+                      recipientType === "team"
+                        ? "var(--text-primary)"
+                        : "var(--text-tertiary)",
+                  }}
+                >
+                  Equipo
+                </button>
+                <button
+                  onClick={() => setRecipientType("members")}
+                  className="px-2 py-1 rounded-md text-[10px] font-medium transition-colors"
+                  style={{
+                    backgroundColor:
+                      recipientType === "members"
+                        ? "var(--bg-secondary)"
+                        : "transparent",
+                    color:
+                      recipientType === "members"
+                        ? "var(--text-primary)"
+                        : "var(--text-tertiary)",
+                  }}
+                >
+                  Específicos
+                </button>
+              </div>
+              {recipientType === "members" && (
+                <div className="mt-1.5 space-y-0.5">
+                  {teamMembers.slice(0, 3).map((member) => (
+                    <button
+                      key={member.userId}
+                      onClick={() => {
+                        setSelectedMemberIds((prev) =>
+                          prev.includes(member.userId)
+                            ? prev.filter((id) => id !== member.userId)
+                            : [...prev, member.userId],
+                        );
+                      }}
+                      className="w-full flex items-center gap-1.5 px-2 py-1 rounded text-[10px] transition-colors text-left"
+                      style={{
+                        backgroundColor: selectedMemberIds.includes(
+                          member.userId,
+                        )
+                          ? "var(--bg-secondary)"
+                          : "transparent",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      <div
+                        className="w-3 h-3 rounded border flex items-center justify-center flex-shrink-0"
+                        style={{
+                          borderColor: selectedMemberIds.includes(member.userId)
+                            ? "#2563eb"
+                            : "var(--border-color)",
+                          backgroundColor: selectedMemberIds.includes(
+                            member.userId,
+                          )
+                            ? "#2563eb"
+                            : "transparent",
+                        }}
+                      >
+                        {selectedMemberIds.includes(member.userId) && (
+                          <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                        )}
+                      </div>
+                      {member.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {reminders && reminders.length > 0 && (
             <button
               onClick={onClear}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors font-medium"
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors font-medium"
+              style={{ color: "#ef4444" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.06)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
               <span>Eliminar aviso</span>
               <X size={14} className="text-red-400" />
@@ -226,7 +442,14 @@ function ReminderDropdown({
             <button
               key={opt.label}
               onClick={() => onSelect(opt.get())}
-              className="w-full text-left px-3 py-2 rounded-xl text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+              className="w-full text-left px-3 py-2 rounded-xl text-sm transition-colors"
+              style={{ color: "var(--text-secondary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
               {opt.label}
             </button>
@@ -240,15 +463,29 @@ function ReminderDropdown({
                 due.setHours(due.getHours() - 1);
                 onSelect([{ id: genId(), at: due.toISOString(), sent: false }]);
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors"
+              style={{ color: "var(--text-secondary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
-              <Clock size={13} className="text-gray-400 dark:text-slate-500" />1
+              <Clock size={13} style={{ color: "var(--text-tertiary)" }} />1
               hora antes del vencimiento
             </button>
           )}
           <button
             onClick={() => setShowCustom(true)}
-            className="w-full text-left px-3 py-2 rounded-xl text-sm text-gray-900 dark:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors font-medium"
+            className="w-full text-left px-3 py-2 rounded-xl text-sm transition-colors font-medium"
+            style={{ color: "var(--text-primary)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
           >
             Elegir fecha y hora
           </button>
@@ -256,27 +493,46 @@ function ReminderDropdown({
       ) : (
         <div className="p-3 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-700 dark:text-slate-300">
+            <span
+              className="text-xs font-semibold"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Elegir fecha y hora
             </span>
             <button
               onClick={() => setShowCustom(false)}
-              className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
+              className="p-1 rounded-lg transition-colors"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
-              <X size={14} className="text-gray-400" />
+              <X size={14} style={{ color: "var(--text-tertiary)" }} />
             </button>
           </div>
           <input
             type="date"
             value={customDate}
             onChange={(e) => setCustomDate(e.target.value)}
-            className="w-full h-9 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full h-9 px-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            style={{
+              border: "1px solid var(--border-input)",
+              backgroundColor: "var(--bg-input)",
+              color: "var(--text-primary)",
+            }}
           />
           <input
             type="time"
             value={customTime}
             onChange={(e) => setCustomTime(e.target.value)}
-            className="w-full h-9 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="w-full h-9 px-3 rounded-xl text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            style={{
+              border: "1px solid var(--border-input)",
+              backgroundColor: "var(--bg-input)",
+              color: "var(--text-primary)",
+            }}
           />
           <button
             onClick={() => {
@@ -341,13 +597,30 @@ function DueDateDropdown({
   };
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-[9999] w-[280px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden">
+    <div
+      className="absolute left-0 top-full mt-2 z-[9999] w-[280px] max-w-[calc(100vw-32px)] rounded-2xl shadow-xl overflow-hidden"
+      style={{
+        backgroundColor: "var(--bg-card)",
+        border: "1px solid var(--border-color)",
+        boxShadow: "var(--shadow-modal)",
+      }}
+    >
       {/* Quick options */}
-      <div className="p-2 space-y-0.5 border-b border-gray-100 dark:border-slate-800">
+      <div
+        className="p-2 space-y-0.5 border-b"
+        style={{ borderColor: "var(--border-color)" }}
+      >
         {selectedDate && (
           <button
             onClick={() => onSelect(null)}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors font-medium"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors font-medium"
+            style={{ color: "#ef4444" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.06)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
           >
             <span>Eliminar vencimiento</span>
             <X size={14} className="text-red-400" />
@@ -357,10 +630,17 @@ function DueDateDropdown({
           <button
             key={opt.label}
             onClick={() => onSelect(opt.get())}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors"
+            style={{ color: "var(--text-secondary)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
           >
             <span>{opt.label}</span>
-            <span className="text-gray-400 text-xs">
+            <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
               {formatDate(opt.get(), { short: true })}
             </span>
           </button>
@@ -380,23 +660,35 @@ function DueDateDropdown({
         <div className="flex items-center justify-between mb-3">
           <button
             onClick={handlePrevMonth}
-            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
+            className="p-1 rounded-lg transition-colors"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
           >
-            <ChevronLeft
-              size={16}
-              className="text-gray-500 dark:text-slate-400"
-            />
+            <ChevronLeft size={16} style={{ color: "var(--text-secondary)" }} />
           </button>
-          <span className="text-xs font-semibold text-gray-900 dark:text-slate-100">
+          <span
+            className="text-xs font-semibold"
+            style={{ color: "var(--text-primary)" }}
+          >
             {MONTHS[month]} {year}
           </span>
           <button
             onClick={handleNextMonth}
-            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
+            className="p-1 rounded-lg transition-colors"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
           >
             <ChevronRight
               size={16}
-              className="text-gray-500 dark:text-slate-400"
+              style={{ color: "var(--text-secondary)" }}
             />
           </button>
         </div>
@@ -421,15 +713,29 @@ function DueDateDropdown({
                 disabled={!day.currentMonth}
                 className={cn(
                   "aspect-square flex items-center justify-center rounded-full text-xs font-medium transition-all",
-                  !day.currentMonth &&
-                    "text-gray-200 dark:text-slate-700 cursor-default",
-                  day.currentMonth &&
-                    "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer",
-                  isSelected && "bg-blue-600 text-white hover:bg-blue-500",
+                  !day.currentMonth && "cursor-default",
+                  day.currentMonth && !isSelected && "cursor-pointer",
+                  isSelected && "bg-blue-600 text-white",
                   isToday &&
                     !isSelected &&
-                    "ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-slate-900",
+                    "ring-2 ring-blue-500 ring-offset-1",
                 )}
+                style={
+                  !day.currentMonth
+                    ? { color: "var(--text-tertiary)", opacity: 0.4 }
+                    : isSelected
+                      ? {}
+                      : { color: "var(--text-primary)" }
+                }
+                onMouseEnter={(e) => {
+                  if (day.currentMonth && !isSelected)
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-secondary)";
+                }}
+                onMouseLeave={(e) => {
+                  if (day.currentMonth && !isSelected)
+                    e.currentTarget.style.backgroundColor = "transparent";
+                }}
               >
                 {day.date}
               </button>
@@ -488,19 +794,38 @@ function RecurrenceDropdown({
 
   if (showCustom) {
     return (
-      <div className="absolute left-0 top-full mt-2 z-[9999] w-[260px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden p-3 space-y-3">
+      <div
+        className="absolute left-0 top-full mt-2 z-[9999] w-[260px] max-w-[calc(100vw-32px)] rounded-2xl shadow-xl p-3 space-y-3"
+        style={{
+          backgroundColor: "var(--bg-card)",
+          border: "1px solid var(--border-color)",
+          boxShadow: "var(--shadow-modal)",
+        }}
+      >
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-700 dark:text-slate-300">
+          <span
+            className="text-xs font-semibold"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Personalizado
           </span>
           <button
             onClick={() => setShowCustom(false)}
-            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
+            className="p-1 rounded-lg transition-colors"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
           >
-            <X size={14} className="text-gray-400" />
+            <X size={14} style={{ color: "var(--text-tertiary)" }} />
           </button>
         </div>
-        <div className="flex bg-gray-100 dark:bg-slate-800 rounded-xl p-1">
+        <div
+          className="flex rounded-xl p-1"
+          style={{ backgroundColor: "var(--bg-secondary)" }}
+        >
           {(
             [
               { key: "days", label: "Días" },
@@ -511,12 +836,16 @@ function RecurrenceDropdown({
             <button
               key={f.key}
               onClick={() => setCustomType(f.key)}
-              className={cn(
-                "flex-1 py-1.5 rounded-lg text-xs font-medium transition-all",
+              className="flex-1 py-1.5 rounded-lg text-xs font-medium transition-all"
+              style={
                 customType === f.key
-                  ? "bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 shadow-sm"
-                  : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200",
-              )}
+                  ? {
+                      backgroundColor: "var(--bg-card)",
+                      color: "var(--text-primary)",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+                    }
+                  : { color: "var(--text-tertiary)" }
+              }
             >
               {f.label}
             </button>
@@ -525,16 +854,39 @@ function RecurrenceDropdown({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setInterval(Math.max(1, interval - 1))}
-            className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 font-semibold hover:bg-gray-200 dark:hover:bg-slate-700 text-sm"
+            className="w-8 h-8 rounded-lg font-semibold text-sm transition-colors"
+            style={{
+              backgroundColor: "var(--bg-secondary)",
+              color: "var(--text-secondary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+            }}
           >
             −
           </button>
-          <span className="flex-1 text-center text-sm font-semibold text-gray-900 dark:text-slate-100">
+          <span
+            className="flex-1 text-center text-sm font-semibold"
+            style={{ color: "var(--text-primary)" }}
+          >
             {interval}
           </span>
           <button
             onClick={() => setInterval(interval + 1)}
-            className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 font-semibold hover:bg-gray-200 dark:hover:bg-slate-700 text-sm"
+            className="w-8 h-8 rounded-lg font-semibold text-sm transition-colors"
+            style={{
+              backgroundColor: "var(--bg-secondary)",
+              color: "var(--text-secondary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+            }}
           >
             +
           </button>
@@ -549,10 +901,26 @@ function RecurrenceDropdown({
                   onClick={() => toggleDay(d.value)}
                   className={cn(
                     "flex-1 aspect-square rounded-lg text-xs font-semibold transition-all",
-                    active
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-700",
+                    active ? "bg-blue-600 text-white" : "",
                   )}
+                  style={
+                    active
+                      ? {}
+                      : {
+                          backgroundColor: "var(--bg-secondary)",
+                          color: "var(--text-tertiary)",
+                        }
+                  }
+                  onMouseEnter={(e) => {
+                    if (!active)
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-tertiary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active)
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-secondary)";
+                  }}
                 >
                   {d.label}
                 </button>
@@ -586,7 +954,14 @@ function RecurrenceDropdown({
   }
 
   return (
-    <div className="absolute left-0 top-full mt-2 z-[9999] w-[220px] bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-gray-100 dark:border-slate-800 overflow-hidden">
+    <div
+      className="absolute left-0 top-full mt-2 z-[9999] w-[220px] max-w-[calc(100vw-32px)] rounded-2xl shadow-xl overflow-hidden"
+      style={{
+        backgroundColor: "var(--bg-card)",
+        border: "1px solid var(--border-color)",
+        boxShadow: "var(--shadow-modal)",
+      }}
+    >
       <div className="p-1.5 space-y-0.5">
         {currentRecurrence && (
           <button
@@ -597,7 +972,14 @@ function RecurrenceDropdown({
                 onSelect(null);
               }
             }}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors font-medium"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors font-medium"
+            style={{ color: "#ef4444" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.06)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
           >
             <span>Eliminar repetición</span>
             <X size={14} className="text-red-400" />
@@ -611,10 +993,17 @@ function RecurrenceDropdown({
               onClick={() => onSelect({ type: opt.type })}
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors",
-                isActive
-                  ? "bg-blue-600 text-white font-medium"
-                  : "text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800",
+                isActive ? "bg-blue-600 text-white font-medium" : "",
               )}
+              style={isActive ? {} : { color: "var(--text-secondary)" }}
+              onMouseEnter={(e) => {
+                if (!isActive)
+                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive)
+                  e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
               <span>{opt.label}</span>
               {isActive && <Check size={14} />}
@@ -623,7 +1012,14 @@ function RecurrenceDropdown({
         })}
         <button
           onClick={() => setShowCustom(true)}
-          className="w-full text-left px-3 py-2 rounded-xl text-sm text-gray-900 dark:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors font-medium"
+          className="w-full text-left px-3 py-2 rounded-xl text-sm transition-colors font-medium"
+          style={{ color: "var(--text-primary)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
         >
           Personalizado...
         </button>
