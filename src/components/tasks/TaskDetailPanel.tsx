@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Task, MemberRole } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
@@ -17,6 +17,7 @@ import TaskComments from "./TaskComments";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import Button from "@/components/ui/Button";
 import { getPriorityConfig } from "@/lib/priority";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 import {
   linkifyAll,
   linkifyLocation,
@@ -82,6 +83,31 @@ export default function TaskDetailPanel({
   const canDelete = canDeleteTask(role);
   const canArchive = canArchiveTask(role);
   const canManageOptions = canManageTaskOptions(role);
+
+  // Collect all unique userIds from task to resolve names
+  const userIdsToResolve = useMemo(() => {
+    if (!task) return [];
+    const ids = new Set<string>();
+    if (task.createdBy) ids.add(task.createdBy);
+    if (task.completedBy) ids.add(task.completedBy);
+    if (task.performedBy) ids.add(task.performedBy);
+    if (task.assignedTo) ids.add(task.assignedTo);
+    task.history?.forEach((h) => {
+      if (h.performedBy) ids.add(h.performedBy);
+    });
+    return Array.from(ids);
+  }, [task?.id, task?.history?.length, task?.completedBy]);
+
+  const { getProfile } = useUserProfiles(userIdsToResolve);
+
+  const resolveName = (
+    uid: string | null | undefined,
+    fallback?: string,
+  ): string => {
+    if (!uid) return fallback || "—";
+    if (user && uid === user.id) return user.name;
+    return memberNames[uid] || getProfile(uid).name || fallback || uid;
+  };
 
   useEffect(() => {
     if (task && isOpen) {
@@ -733,18 +759,7 @@ export default function TaskDetailPanel({
                   className="text-[12px] font-semibold"
                   style={{ color: "var(--text-primary)" }}
                 >
-                  {memberNames[task.completedBy || ""] ||
-                    (() => {
-                      const entry = task.history.findLast?.(
-                        (h) => h.action === "completed",
-                      );
-                      return (
-                        entry?.completedByName ||
-                        entry?.performedByName ||
-                        task.completedBy ||
-                        "—"
-                      );
-                    })()}
+                  {resolveName(task.completedBy)}
                 </span>
               </div>
               {task.performedBy && task.performedBy !== task.completedBy && (
@@ -759,15 +774,7 @@ export default function TaskDetailPanel({
                     className="text-[12px] font-semibold"
                     style={{ color: "var(--text-primary)" }}
                   >
-                    {memberNames[task.performedBy] ||
-                      (() => {
-                        const entry = task.history.findLast?.(
-                          (h) => h.action === "completed",
-                        );
-                        return (
-                          entry?.performedByTaskName || task.performedBy || "—"
-                        );
-                      })()}
+                    {resolveName(task.performedBy)}
                   </span>
                 </div>
               )}
@@ -812,9 +819,7 @@ export default function TaskDetailPanel({
             <div className="space-y-0">
               {[...task.history].reverse().map((entry, i) => {
                 const name =
-                  entry.performedByName ||
-                  memberNames[entry.performedBy] ||
-                  entry.performedBy;
+                  entry.performedByName || resolveName(entry.performedBy);
                 const date = new Date(entry.performedAt);
                 const dateStr = date.toLocaleDateString("es-ES", {
                   day: "numeric",
@@ -889,10 +894,7 @@ export default function TaskDetailPanel({
           >
             <Clock size={11} />
             Creada {timeAgo(task.createdAt)} por{" "}
-            {memberNames[task.createdBy] ||
-              task.history.find?.((h) => h.action === "created")
-                ?.performedByName ||
-              task.createdBy}
+            <strong>{resolveName(task.createdBy)}</strong>
           </span>
         </div>
 
