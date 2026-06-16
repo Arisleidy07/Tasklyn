@@ -76,7 +76,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 
 function getRoleIcon(role: string) {
   if (role === "owner") return <Crown size={12} className="text-yellow-500" />;
-  if (role === "admin") return <Shield size={12} className="text-blue-500" />;
+  if (role === "admin") return <Shield size={12} className="text-gray-500" />;
   return <User size={12} className="text-[var(--text-tertiary)]" />;
 }
 function getRoleLabel(role: string) {
@@ -86,7 +86,7 @@ function getRoleLabel(role: string) {
 }
 function getRoleBadge(role: string) {
   if (role === "owner") return "bg-yellow-50 text-yellow-700 border-yellow-200";
-  if (role === "admin") return "bg-blue-50 text-blue-700 border-blue-200";
+  if (role === "admin") return "bg-gray-100 text-gray-700 border-gray-200";
   return "border";
 }
 
@@ -936,7 +936,7 @@ export default function TeamDetailPage() {
                       }}
                     >
                       <div
-                        className="absolute left-3.5 top-4 w-3 h-3 rounded-full border-2 bg-blue-400 flex-shrink-0"
+                        className="absolute left-3.5 top-4 w-3 h-3 rounded-full border-2 bg-gray-400 flex-shrink-0"
                         style={{ borderColor: "var(--bg-card)" }}
                       />
                       {entry.userPhoto ? (

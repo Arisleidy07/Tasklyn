@@ -445,17 +445,23 @@ export default function ListDetailPage() {
                   </div>
                   {pendingTasks.length > 0 ? (
                     <div className="space-y-1.5">
-                      <AnimatePresence mode="popLayout">
-                        {pendingTasks.map((task) => (
-                          <TaskItem
-                            key={task.id}
-                            task={task}
-                            role={userMember?.role || null}
-                            memberNames={memberNames}
-                            listMembers={list?.members}
-                          />
-                        ))}
-                      </AnimatePresence>
+                      <SortableTaskContainer
+                        tasks={pendingTasks}
+                        onReorder={(newOrder) =>
+                          reorderTasks(newOrder.map((t) => t.id))
+                        }
+                      >
+                        {(task) => (
+                          <SortableTaskItem key={task.id} task={task}>
+                            <TaskItem
+                              task={task}
+                              role={userMember?.role || null}
+                              memberNames={memberNames}
+                              listMembers={list?.members}
+                            />
+                          </SortableTaskItem>
+                        )}
+                      </SortableTaskContainer>
                     </div>
                   ) : (
                     <p className="text-[11px] text-gray-400 italic">
@@ -487,17 +493,23 @@ export default function ListDetailPage() {
                   </div>
                   {completedTasks.length > 0 ? (
                     <div className="space-y-1.5">
-                      <AnimatePresence mode="popLayout">
-                        {completedTasks.map((task) => (
-                          <TaskItem
-                            key={task.id}
-                            task={task}
-                            role={userMember?.role || null}
-                            memberNames={memberNames}
-                            listMembers={list?.members}
-                          />
-                        ))}
-                      </AnimatePresence>
+                      <SortableTaskContainer
+                        tasks={completedTasks}
+                        onReorder={(newOrder) =>
+                          reorderTasks(newOrder.map((t) => t.id))
+                        }
+                      >
+                        {(task) => (
+                          <SortableTaskItem key={task.id} task={task}>
+                            <TaskItem
+                              task={task}
+                              role={userMember?.role || null}
+                              memberNames={memberNames}
+                              listMembers={list?.members}
+                            />
+                          </SortableTaskItem>
+                        )}
+                      </SortableTaskContainer>
                     </div>
                   ) : (
                     <p className="text-[11px] text-gray-400 italic">

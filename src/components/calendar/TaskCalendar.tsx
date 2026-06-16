@@ -365,7 +365,7 @@ function MonthView({
                               }
                     }
                   >
-                    {task.title}
+                    <span className="truncate block">{task.title}</span>
                   </div>
                 ))}
                 {dayTasks.length > 3 && (
@@ -491,7 +491,7 @@ function WeekView({ days, getTasksForDay, onTaskClick }: WeekViewProps) {
                           : { color: "var(--text-primary)" }
                       }
                     >
-                      {task.title}
+                      <span className="truncate block">{task.title}</span>
                     </p>
                   </div>
                   {task.dueTime && (
@@ -626,11 +626,11 @@ function DayView({ day, tasks, onTaskClick }: DayViewProps) {
                         : { color: "var(--text-primary)" }
                     }
                   >
-                    {task.title}
+                    <span className="truncate block">{task.title}</span>
                   </h5>
                   {task.description && (
                     <p
-                      className="text-sm mt-1"
+                      className="text-sm mt-1 line-clamp-2"
                       style={{ color: "var(--text-secondary)" }}
                     >
                       {task.description}
@@ -712,7 +712,7 @@ function DayView({ day, tasks, onTaskClick }: DayViewProps) {
                 }}
               >
                 <p
-                  className="font-medium"
+                  className="font-medium truncate"
                   style={{ color: "var(--text-primary)" }}
                 >
                   {task.title}

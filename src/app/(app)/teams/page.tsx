@@ -106,7 +106,7 @@ function TeamCard({
           <div>
             <div className="flex items-center gap-2">
               <h3
-                className="text-sm font-semibold leading-tight"
+                className="text-sm font-semibold leading-tight truncate"
                 style={{ color: "var(--text-primary)" }}
               >
                 {team.name}

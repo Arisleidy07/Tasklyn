@@ -307,10 +307,9 @@ interface KPICardProps {
     sparklineData: number[];
   };
   index: number;
-  isDark: boolean;
 }
 
-function KPICard({ stat, index, isDark }: KPICardProps) {
+function KPICard({ stat, index }: KPICardProps) {
   return (
     <motion.div
       key={stat.label}
@@ -378,7 +377,6 @@ function KPICard({ stat, index, isDark }: KPICardProps) {
 function ActivityTimeline({
   activities,
   profiles,
-  isDark,
 }: {
   activities: Array<{
     id: string;
@@ -389,7 +387,6 @@ function ActivityTimeline({
     actorId: string;
   }>;
   profiles: Record<string, { name: string; photoURL?: string }>;
-  isDark: boolean;
 }) {
   const getTimeAgo = (dateStr: string) => {
     try {
@@ -513,11 +510,9 @@ function ActivityTimeline({
 function SharedListRow({
   list,
   index,
-  isDark,
 }: {
   list: { id: string; name: string; members: any[]; type: string };
   index: number;
-  isDark: boolean;
 }) {
   const colors = [
     {
@@ -599,8 +594,6 @@ export default function DashboardPage() {
   const { user } = useAuthStore();
   const { getPersonalLists, getSharedLists, getUserLists } = useListStore();
   const { tasks } = useTaskStore();
-  const { theme } = useUIStore();
-  const isDark = theme === "dark";
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [activityProfiles, setActivityProfiles] = useState<
@@ -913,12 +906,7 @@ export default function DashboardPage() {
               className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6"
             >
               {stats.map((stat, i) => (
-                <KPICard
-                  key={stat.label}
-                  stat={stat}
-                  index={i}
-                  isDark={isDark}
-                />
+                <KPICard key={stat.label} stat={stat} index={i} />
               ))}
             </motion.div>
 
@@ -986,12 +974,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="space-y-2">
                       {sharedLists.slice(0, 4).map((list, i) => (
-                        <SharedListRow
-                          key={list.id}
-                          list={list}
-                          index={i}
-                          isDark={false}
-                        />
+                        <SharedListRow key={list.id} list={list} index={i} />
                       ))}
                     </div>
                   </motion.div>
@@ -1088,7 +1071,6 @@ export default function DashboardPage() {
                     <ActivityTimeline
                       activities={recentActivityRaw}
                       profiles={activityProfiles}
-                      isDark={false}
                     />
                   </motion.div>
                 )}

@@ -149,7 +149,7 @@ export default function EditListModal({
       onClose={onClose}
       title="Editar lista"
       description={list.name}
-      size="lg"
+      size="task"
     >
       <div className="space-y-6">
         {/* Tabs */}

@@ -62,7 +62,7 @@ export function useUserProfiles(uids: string[]) {
                 }
               : { name: "Usuario" },
           }))
-          .catch(() => ({ uid, profile: { name: "Usuario" })),
+          .catch(() => ({ uid, profile: { name: "Usuario" } })),
       ),
     ).then((results) => {
       const updated = new Map<string, UserProfile>();
