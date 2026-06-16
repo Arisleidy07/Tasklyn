@@ -4,7 +4,11 @@ import React, { useState, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Camera, X, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { uploadTeamPhoto, deleteTeamPhoto, prepareImageFile } from "@/lib/storage";
+import {
+  uploadTeamPhoto,
+  deleteTeamPhoto,
+  prepareImageFile,
+} from "@/lib/storage";
 import { updateTeam } from "@/lib/firestore";
 
 interface TeamImageProps {
@@ -106,7 +110,9 @@ export default function TeamImage({
         onUpdate?.(downloadURL);
       } catch (err) {
         console.error("Failed to upload team photo:", err);
-        setError(err instanceof Error ? err.message : "Error al subir la imagen");
+        setError(
+          err instanceof Error ? err.message : "Error al subir la imagen",
+        );
       } finally {
         setIsUploading(false);
         // Reset file input
@@ -115,7 +121,7 @@ export default function TeamImage({
         }
       }
     },
-    [teamId, currentPhoto, onUpdate]
+    [teamId, currentPhoto, onUpdate],
   );
 
   const handleRemovePhoto = useCallback(async () => {
@@ -126,7 +132,7 @@ export default function TeamImage({
 
     try {
       await deleteTeamPhoto(currentPhoto);
-      await updateTeam(teamId, { photoURL: null });
+      await updateTeam(teamId, { photoURL: undefined });
       setCurrentPhoto(undefined);
       onUpdate?.("");
     } catch (err) {
@@ -153,7 +159,7 @@ export default function TeamImage({
           sizeMap[size],
           gradient,
           editable && !isUploading && "cursor-pointer",
-          "shadow-sm"
+          "shadow-sm",
         )}
         onClick={handleClick}
         onMouseEnter={() => editable && setShowOverlay(true)}
@@ -190,7 +196,10 @@ export default function TeamImage({
         {/* Loading overlay */}
         {isUploading && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-            <Loader2 size={iconSizeMap[size]} className="text-white animate-spin" />
+            <Loader2
+              size={iconSizeMap[size]}
+              className="text-white animate-spin"
+            />
           </div>
         )}
       </motion.div>

@@ -473,12 +473,16 @@ function ActivityTimeline({ activities }: { activities: ActivityItem[] }) {
 
               <div className="relative flex-shrink-0">
                 {item.userPhotoURL ? (
-                  <img
-                    src={item.userPhotoURL}
-                    alt={item.userName}
-                    className="w-8 h-8 rounded-full object-cover ring-2"
-                    style={{ ringColor: actionColor }}
-                  />
+                  <div
+                    className="w-8 h-8 rounded-full p-[2px]"
+                    style={{ backgroundColor: actionColor }}
+                  >
+                    <img
+                      src={item.userPhotoURL}
+                      alt={item.userName}
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  </div>
                 ) : (
                   <div
                     className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"

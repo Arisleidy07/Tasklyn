@@ -171,7 +171,7 @@ export default function EditListModal({
       description={list.name}
       size="task"
     >
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Tabs */}
         <div
           className="flex rounded-xl p-1 gap-1"
@@ -207,7 +207,7 @@ export default function EditListModal({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
               transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-6"
+              className="space-y-4"
             >
               {/* Section: Nombre */}
               <div className="space-y-2">
@@ -251,7 +251,7 @@ export default function EditListModal({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe el propósito de esta lista..."
                   disabled={!canEdit}
-                  rows={3}
+                  rows={2}
                   className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all resize-none disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{
                     border: "1px solid var(--border-input)",
@@ -381,7 +381,7 @@ export default function EditListModal({
                 />
                 {backgroundImage && (
                   <div
-                    className="w-full h-32 rounded-lg bg-cover bg-center mt-2"
+                    className="w-full h-24 rounded-lg bg-cover bg-center mt-2"
                     style={{ backgroundImage: `url(${backgroundImage})` }}
                   />
                 )}

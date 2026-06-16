@@ -346,7 +346,7 @@ export default function TaskItem({
                 </div>
 
                 {/* Description, location, phones row */}
-                {(task.description || task.location || task.phones) && (
+                {(task.description || task.location || task.phoneNumbers) && (
                   <div
                     className="flex items-center gap-2 mt-1.5 flex-wrap text-[10px] sm:text-[12px]"
                     style={{ color: "var(--text-secondary)" }}
@@ -357,10 +357,10 @@ export default function TaskItem({
                         <span className="truncate">{task.location}</span>
                       </span>
                     )}
-                    {task.phones && task.phones.length > 0 && (
+                    {task.phoneNumbers && task.phoneNumbers.length > 0 && (
                       <span className="flex items-center gap-1 truncate">
                         <Phone size={11} />
-                        <span className="truncate">{task.phones[0]}</span>
+                        <span className="truncate">{task.phoneNumbers[0]}</span>
                       </span>
                     )}
                     {task.description && (
@@ -605,7 +605,7 @@ export default function TaskItem({
         title="Editar tarea"
         size="task"
       >
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Section: Título */}
           <div className="space-y-2">
             <label
@@ -631,141 +631,186 @@ export default function TaskItem({
               style={{ color: "var(--text-secondary)" }}
             >
               Descripción
-            </label>
-            <AutoResizeTextarea
-              value={editDescription}
-              onChange={setEditDescription}
-              placeholder="Añade una descripción..."
-              className="text-sm sm:text-base"
-              minRows={2}
-            />
-          </div>
-
-          {/* Section: Ubicación */}
-          <div className="space-y-2">
-            <label
-              className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <MapPin size={12} style={{ color: "var(--text-tertiary)" }} />
-              Ubicación
-            </label>
-            <AutoResizeTextarea
-              value={editLocation}
-              onChange={setEditLocation}
-              placeholder="Ubicación o dirección"
-              className="text-sm sm:text-base"
-              minRows={1}
-            />
-          </div>
-
-          {/* Section: Teléfonos */}
-          <div className="space-y-2">
-            <label
-              className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              <Phone size={12} style={{ color: "var(--text-tertiary)" }} />
-              Teléfonos
-            </label>
-            <div className="space-y-2">
-              {editPhones.map((phone, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <AutoResizeTextarea
-                    value={phone}
-                    onChange={(v) => handlePhoneChange(index, v)}
-                    placeholder={`Teléfono ${index + 1}`}
-                    className="flex-1 text-sm sm:text-base"
-                    minRows={1}
-                  />
-                  {editPhones.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => handleRemovePhone(index)}
-                      className="p-1.5 rounded-lg transition-colors flex-shrink-0"
-                      style={{ color: "var(--text-tertiary)" }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = "#ef4444";
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(239,68,68,0.08)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = "var(--text-tertiary)";
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }}
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={handleAddPhone}
-                className="flex items-center gap-1.5 text-xs font-medium transition-colors px-3 py-2 rounded-lg"
+              <span
+                className="font-normal ml-1"
                 style={{ color: "var(--text-tertiary)" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "var(--text-secondary)";
-                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "var(--text-tertiary)";
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
               >
-                <Plus size={12} />
-                Agregar teléfono
-              </button>
-            </div>
-          </div>
-
-          {/* Section: Prioridad */}
-          <div className="space-y-2">
-            <label
-              className="text-xs font-semibold uppercase tracking-wide"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Prioridad
+                (opcional)
+              </span>
             </label>
-            <select
-              value={editPriority || ""}
-              onChange={(e) =>
-                setEditPriority(
-                  (e.target.value as Task["priority"]) || undefined,
-                )
-              }
-              className="w-full text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 outline-none"
+            <div
               style={{
                 border: "1px solid var(--border-input)",
                 backgroundColor: "var(--bg-input)",
-                color: "var(--text-primary)",
+                borderRadius: "12px",
+                padding: "12px 16px",
               }}
             >
-              <option value="">⚪ Sin prioridad</option>
-              <option value="urgent">🔴 Crítica</option>
-              <option value="high">🟠 Alta</option>
-              <option value="medium">🟡 Media</option>
-              <option value="low">🟢 Baja</option>
-            </select>
+              <AutoResizeTextarea
+                value={editDescription}
+                onChange={setEditDescription}
+                placeholder="Añade una descripción..."
+                className="text-sm sm:text-base"
+                minRows={2}
+              />
+            </div>
           </div>
 
-          {/* Section: Opciones de fecha/recurrencia */}
-          <div className="space-y-2">
-            <label
-              className="text-xs font-semibold uppercase tracking-wide"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              Fecha y recordatorios
-            </label>
-            <TaskOptionsBar
-              dueDate={editDueDate}
-              dueTime={editDueTime}
-              reminders={editReminders}
-              recurrence={editRecurrence}
-              onReminderChange={(r) => setEditReminders(r)}
-              onDueDateChange={(d) => setEditDueDate(d)}
-              onRecurrenceChange={(r) => setEditRecurrence(r)}
-            />
+          {/* Grid: Ubicación y Teléfonos */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Section: Ubicación */}
+            <div className="space-y-2">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <MapPin size={12} style={{ color: "var(--text-tertiary)" }} />
+                Ubicación
+              </label>
+              <div
+                style={{
+                  border: "1px solid var(--border-input)",
+                  backgroundColor: "var(--bg-input)",
+                  borderRadius: "12px",
+                  padding: "12px 16px",
+                }}
+              >
+                <AutoResizeTextarea
+                  value={editLocation}
+                  onChange={setEditLocation}
+                  placeholder="Ubicación o dirección"
+                  className="text-sm sm:text-base"
+                  minRows={1}
+                />
+              </div>
+            </div>
+
+            {/* Section: Teléfonos */}
+            <div className="space-y-2">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <Phone size={12} style={{ color: "var(--text-tertiary)" }} />
+                Teléfonos
+              </label>
+              <div className="space-y-2">
+                {editPhones.map((phone, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <div
+                      className="flex-1"
+                      style={{
+                        border: "1px solid var(--border-input)",
+                        backgroundColor: "var(--bg-input)",
+                        borderRadius: "12px",
+                        padding: "12px 16px",
+                      }}
+                    >
+                      <AutoResizeTextarea
+                        value={phone}
+                        onChange={(v) => handlePhoneChange(index, v)}
+                        placeholder={`Teléfono ${index + 1}`}
+                        className="text-sm sm:text-base"
+                        minRows={1}
+                      />
+                    </div>
+                    {editPhones.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhone(index)}
+                        className="p-2 rounded-lg transition-colors flex-shrink-0"
+                        style={{ color: "var(--text-tertiary)" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = "#ef4444";
+                          e.currentTarget.style.backgroundColor =
+                            "rgba(239,68,68,0.08)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = "var(--text-tertiary)";
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={handleAddPhone}
+                  className="flex items-center gap-1.5 text-xs font-medium transition-colors px-3 py-2 rounded-lg w-full"
+                  style={{
+                    color: "var(--text-tertiary)",
+                    border: "1px dashed var(--border-color)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-secondary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--text-tertiary)";
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
+                >
+                  <Plus size={12} />
+                  Agregar teléfono
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Grid: Prioridad y Fecha */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Section: Prioridad */}
+            <div className="space-y-2">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                Prioridad
+              </label>
+              <select
+                value={editPriority || ""}
+                onChange={(e) =>
+                  setEditPriority(
+                    (e.target.value as Task["priority"]) || undefined,
+                  )
+                }
+                className="w-full text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 outline-none cursor-pointer"
+                style={{
+                  border: "1px solid var(--border-input)",
+                  backgroundColor: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                  borderRadius: "12px",
+                }}
+              >
+                <option value="">⚪ Sin prioridad</option>
+                <option value="urgent">🔴 Crítica</option>
+                <option value="high">🟠 Alta</option>
+                <option value="medium">🟡 Media</option>
+                <option value="low">🟢 Baja</option>
+              </select>
+            </div>
+
+            {/* Section: Fecha y recordatorios */}
+            <div className="space-y-2">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                Fecha y recordatorios
+              </label>
+              <TaskOptionsBar
+                dueDate={editDueDate}
+                dueTime={editDueTime}
+                reminders={editReminders}
+                recurrence={editRecurrence}
+                onReminderChange={(r) => setEditReminders(r)}
+                onDueDateChange={(d) => setEditDueDate(d)}
+                onRecurrenceChange={(r) => setEditRecurrence(r)}
+              />
+            </div>
           </div>
 
           {/* Actions */}
