@@ -729,56 +729,156 @@ export const updateTeam = async (
 };
 
 export const deleteTeam = async (teamId: string): Promise<void> => {
-  const batch = writeBatch(db);
+  console.log(`[deleteTeam] Starting deletion for team: ${teamId}`);
 
-  // Delete all lists for this team
-  const listsQuery = query(listsCollection, where("teamId", "==", teamId));
-  const listsSnap = await getDocs(listsQuery);
+  const MAX_BATCH_SIZE = 450; // Stay under the 500 limit for safety
 
-  // Delete all tasks for each list
-  for (const listDoc of listsSnap.docs) {
-    const tasksQuery = query(
-      tasksCollection,
-      where("listId", "==", listDoc.id),
+  // Helper to commit a batch and create a new one
+  let currentBatch = writeBatch(db);
+  let operationCount = 0;
+
+  const commitIfNeeded = async () => {
+    if (operationCount >= MAX_BATCH_SIZE) {
+      console.log(
+        `[deleteTeam] Committing batch with ${operationCount} operations`,
+      );
+      await currentBatch.commit();
+      currentBatch = writeBatch(db);
+      operationCount = 0;
+    }
+  };
+
+  try {
+    // 1. Delete all lists for this team and their tasks
+    const listsQuery = query(listsCollection, where("teamId", "==", teamId));
+    const listsSnap = await getDocs(listsQuery);
+    console.log(`[deleteTeam] Found ${listsSnap.docs.length} lists to delete`);
+
+    for (const listDoc of listsSnap.docs) {
+      // Delete tasks for this list
+      const tasksQuery = query(
+        tasksCollection,
+        where("listId", "==", listDoc.id),
+      );
+      const tasksSnap = await getDocs(tasksQuery);
+
+      for (const taskDoc of tasksSnap.docs) {
+        currentBatch.delete(taskDoc.ref);
+        operationCount++;
+        await commitIfNeeded();
+      }
+
+      // Delete comments for tasks in this list
+      const commentsQuery = query(
+        collection(db, "comments"),
+        where("listId", "==", listDoc.id),
+      );
+      const commentsSnap = await getDocs(commentsQuery);
+      for (const commentDoc of commentsSnap.docs) {
+        currentBatch.delete(commentDoc.ref);
+        operationCount++;
+        await commitIfNeeded();
+      }
+
+      // Delete invitations for this list
+      const invitesQuery = query(
+        invitationsCollection,
+        where("listId", "==", listDoc.id),
+      );
+      const invitesSnap = await getDocs(invitesQuery);
+      for (const inviteDoc of invitesSnap.docs) {
+        currentBatch.delete(inviteDoc.ref);
+        operationCount++;
+        await commitIfNeeded();
+      }
+
+      // Delete the list itself
+      currentBatch.delete(listDoc.ref);
+      operationCount++;
+      await commitIfNeeded();
+    }
+
+    // 2. Delete team invitations (by teamId)
+    const teamInvitesQuery = query(
+      invitationsCollection,
+      where("teamId", "==", teamId),
     );
-    const tasksSnap = await getDocs(tasksQuery);
-    tasksSnap.docs.forEach((doc) => {
-      batch.delete(doc.ref);
-    });
-    // Delete the list
-    batch.delete(listDoc.ref);
+    const teamInvitesSnap = await getDocs(teamInvitesQuery);
+    for (const inviteDoc of teamInvitesSnap.docs) {
+      currentBatch.delete(inviteDoc.ref);
+      operationCount++;
+      await commitIfNeeded();
+    }
+
+    // 3. Delete all activity entries for this team
+    const activityQuery = query(collection(db, "teams", teamId, "activity"));
+    const activitySnap = await getDocs(activityQuery);
+    console.log(
+      `[deleteTeam] Found ${activitySnap.docs.length} activity entries to delete`,
+    );
+    for (const activityDoc of activitySnap.docs) {
+      currentBatch.delete(activityDoc.ref);
+      operationCount++;
+      await commitIfNeeded();
+    }
+
+    // 4. Delete all goals for this team
+    const goalsQuery = query(goalsCollection, where("teamId", "==", teamId));
+    const goalsSnap = await getDocs(goalsQuery);
+    console.log(`[deleteTeam] Found ${goalsSnap.docs.length} goals to delete`);
+    for (const goalDoc of goalsSnap.docs) {
+      currentBatch.delete(goalDoc.ref);
+      operationCount++;
+      await commitIfNeeded();
+    }
+
+    // 5. Delete all achievements for this team
+    const achievementsQuery = query(
+      achievementsCollection,
+      where("teamId", "==", teamId),
+    );
+    const achievementsSnap = await getDocs(achievementsQuery);
+    console.log(
+      `[deleteTeam] Found ${achievementsSnap.docs.length} achievements to delete`,
+    );
+    for (const achievementDoc of achievementsSnap.docs) {
+      currentBatch.delete(achievementDoc.ref);
+      operationCount++;
+      await commitIfNeeded();
+    }
+
+    // 6. Delete notifications related to this team
+    const notificationsQuery = query(
+      notificationsCollection,
+      where("teamId", "==", teamId),
+    );
+    const notificationsSnap = await getDocs(notificationsQuery);
+    for (const notifDoc of notificationsSnap.docs) {
+      currentBatch.delete(notifDoc.ref);
+      operationCount++;
+      await commitIfNeeded();
+    }
+
+    // 7. Finally, delete the team document itself
+    const teamRef = doc(db, "teams", teamId);
+    currentBatch.delete(teamRef);
+    operationCount++;
+
+    // Commit final batch
+    if (operationCount > 0) {
+      console.log(
+        `[deleteTeam] Committing final batch with ${operationCount} operations`,
+      );
+      await currentBatch.commit();
+    }
+
+    console.log(`✅ Team deleted successfully: ${teamId}`);
+  } catch (error) {
+    console.error(`❌ [deleteTeam] Error deleting team ${teamId}:`, error);
+    throw new Error(
+      `Failed to delete team: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
-
-  // Delete team document
-  const teamRef = doc(db, "teams", teamId);
-  batch.delete(teamRef);
-
-  // Delete all activity entries for this team
-  const activityQuery = query(collection(db, "teams", teamId, "activity"));
-  const activitySnap = await getDocs(activityQuery);
-  activitySnap.docs.forEach((doc) => {
-    batch.delete(doc.ref);
-  });
-
-  // Delete all goals for this team
-  const goalsQuery = query(goalsCollection, where("teamId", "==", teamId));
-  const goalsSnap = await getDocs(goalsQuery);
-  goalsSnap.docs.forEach((doc) => {
-    batch.delete(doc.ref);
-  });
-
-  // Delete all achievements for this team (stored in root /achievements collection)
-  const achievementsQuery = query(
-    achievementsCollection,
-    where("teamId", "==", teamId),
-  );
-  const achievementsSnap = await getDocs(achievementsQuery);
-  achievementsSnap.docs.forEach((doc) => {
-    batch.delete(doc.ref);
-  });
-
-  await batch.commit();
-  console.log("✅ Team deleted:", teamId);
 };
 
 export const addTeamMember = async (

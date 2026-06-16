@@ -10,8 +10,11 @@ import { useListStore } from "@/stores/listStore";
 import Header from "@/components/layout/Header";
 import Button from "@/components/ui/Button";
 import Avatar from "@/components/ui/Avatar";
+import TeamImage from "@/components/ui/TeamImage";
 import Modal from "@/components/ui/Modal";
 import CreateListModal from "@/components/lists/CreateListModal";
+import DeleteTeamModal from "@/components/teams/DeleteTeamModal";
+import EditTeamModal from "@/components/teams/EditTeamModal";
 import {
   SortableListContainer,
   SortableListItem,
@@ -123,6 +126,7 @@ export default function TeamDetailPage() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showCreateListModal, setShowCreateListModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const team = getTeamById(teamId);
 
@@ -348,7 +352,41 @@ export default function TeamDetailPage() {
   return (
     <>
       <Header
-        title={team.name}
+        title={
+          <div className="flex items-center gap-3">
+            <TeamImage
+              teamId={team.id}
+              name={team.name}
+              photoURL={team.photoURL}
+              size="md"
+              color={team.color}
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <span>{team.name}</span>
+                {userRole === "owner" && (
+                  <button
+                    onClick={() => setShowEditModal(true)}
+                    className="p-1 rounded-md transition-colors"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-secondary)";
+                      e.currentTarget.style.color = "var(--text-primary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                      e.currentTarget.style.color = "var(--text-tertiary)";
+                    }}
+                    title="Editar equipo"
+                  >
+                    <Edit3 size={14} />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        }
         description={`${team.members.length} miembro${team.members.length !== 1 ? "s" : ""} · ${completionRate}% completado`}
         showMenuButton={true}
         actions={
@@ -1475,7 +1513,7 @@ export default function TeamDetailPage() {
       />
 
       {/* Delete Confirmation Modal */}
-      <Modal
+      <DeleteTeamModal
         isOpen={showDeleteModal}
         onClose={() => {
           if (!deleteLoading) {
@@ -1483,95 +1521,21 @@ export default function TeamDetailPage() {
             setDeleteError(null);
           }
         }}
-        title="Eliminar equipo"
-        size="sm"
-      >
-        <div className="p-6 space-y-4">
-          {/* Warning icon + text */}
-          <div className="flex items-start gap-4">
-            <div
-              className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: "rgba(239,68,68,0.1)" }}
-            >
-              <AlertTriangle className="w-5 h-5" style={{ color: "#dc2626" }} />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-[var(--text-primary)] mb-1">
-                ¿Eliminar <span className="font-semibold">"{team?.name}"</span>?
-              </p>
-              <p className="text-sm text-[var(--text-secondary)]">
-                Esta acción es permanente y no se puede deshacer.
-              </p>
-            </div>
-          </div>
+        onConfirm={handleDeleteTeam}
+        team={team}
+        listCount={teamLists.length}
+        memberCount={team.members.length}
+      />
 
-          {/* What gets deleted */}
-          <div
-            className="rounded-xl p-4 space-y-2"
-            style={{ backgroundColor: "var(--bg-secondary)" }}
-          >
-            <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wider mb-2">
-              Se eliminará permanentemente:
-            </p>
-            {[
-              "El equipo y todos sus miembros",
-              "Estadísticas y logros",
-              "Registro de actividad",
-              "Metas y objetivos",
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
-                <span className="text-sm text-[var(--text-secondary)]">
-                  {item}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Error message */}
-          {deleteError && (
-            <div
-              className="flex items-start gap-2 p-3 rounded-xl border"
-              style={{
-                backgroundColor: "rgba(239,68,68,0.06)",
-                borderColor: "rgba(239,68,68,0.25)",
-              }}
-            >
-              <AlertTriangle
-                size={14}
-                className="flex-shrink-0 mt-0.5"
-                style={{ color: "#dc2626" }}
-              />
-              <p className="text-sm" style={{ color: "#dc2626" }}>
-                {deleteError}
-              </p>
-            </div>
-          )}
-
-          <div className="flex gap-3 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowDeleteModal(false);
-                setDeleteError(null);
-              }}
-              disabled={deleteLoading}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button
-              className="flex-1 bg-red-600 hover:bg-red-500 shadow-sm shadow-red-500/20 border-0"
-              style={{ color: "var(--text-on-accent)" }}
-              onClick={handleDeleteTeam}
-              isLoading={deleteLoading}
-              icon={!deleteLoading ? <Trash2 size={14} /> : undefined}
-            >
-              {deleteLoading ? "Eliminando..." : "Eliminar equipo"}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+      {/* Edit Team Modal */}
+      <EditTeamModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        team={team}
+        onSave={async (updates) => {
+          await updateTeam(teamId, updates);
+        }}
+      />
     </>
   );
 }

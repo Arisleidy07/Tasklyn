@@ -1,12 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
-import { useTaskStore } from "@/stores/taskStore";
 import { useListStore } from "@/stores/listStore";
 import { useTeamStore } from "@/stores/teamStore";
-import { useUserProfiles } from "@/hooks/useUserProfiles";
+import { useActivityStore, type ActivityItem } from "@/stores/activityStore";
 import Header from "@/components/layout/Header";
 import Avatar from "@/components/ui/Avatar";
 import {
@@ -17,6 +16,7 @@ import {
   Archive,
   Trash2,
   UserPlus,
+  MessageCircle,
   Clock,
   Search,
   Filter,
@@ -31,19 +31,9 @@ type ActionFilter =
   | "completed"
   | "updated"
   | "assigned"
-  | "archived";
-
-interface ActivityEntry {
-  id: string;
-  action: string;
-  performedBy: string;
-  performedByName: string;
-  performedByPhoto?: string;
-  performedAt: string;
-  taskTitle: string;
-  listName: string;
-  details?: string;
-}
+  | "archived"
+  | "deleted"
+  | "commented";
 
 const ACTION_META: Record<
   string,
@@ -90,12 +80,18 @@ const ACTION_META: Record<
     color: "text-red-600",
     bgStyle: { backgroundColor: "rgba(239,68,68,0.07)" },
   },
+  commented: {
+    label: "comentó",
+    icon: MessageCircle,
+    color: "text-violet-600",
+    bgStyle: { backgroundColor: "rgba(139,92,246,0.07)" },
+  },
 };
 
-function groupByDate(entries: ActivityEntry[]) {
-  const groups: Record<string, ActivityEntry[]> = {};
+function groupByDate(entries: ActivityItem[]) {
+  const groups: Record<string, ActivityItem[]> = {};
   entries.forEach((e) => {
-    const d = parseISO(e.performedAt);
+    const d = parseISO(e.timestamp);
     const key = isToday(d)
       ? "Hoy"
       : isYesterday(d)
@@ -109,139 +105,75 @@ function groupByDate(entries: ActivityEntry[]) {
 
 export default function ActivityPage() {
   const { user } = useAuthStore();
-  const { tasks } = useTaskStore();
-  const { getUserLists } = useListStore();
-  const { currentTeam } = useTeamStore();
+  const { lists, getUserLists } = useListStore();
+  const { currentTeam, teams } = useTeamStore();
+  const {
+    activities,
+    subscribeToUserActivity,
+    subscribeToListActivity,
+    subscribeToTeamActivity,
+    cleanup,
+  } = useActivityStore();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ActionFilter>("all");
 
-  // Collect every foreign UID from tasks (before early return — hooks rule)
-  const allUids = useMemo(() => {
-    if (!user) return [];
-    const uids = new Set<string>();
-    tasks.forEach((task) => {
-      if (task.createdBy) uids.add(task.createdBy);
-      if (task.completedBy) uids.add(task.completedBy);
-      if (task.assignedTo) uids.add(task.assignedTo);
-      if ((task as any).archivedBy) uids.add((task as any).archivedBy);
-      task.history?.forEach((h) => {
-        if (h.performedBy) uids.add(h.performedBy);
-      });
-    });
-    uids.delete(user.id);
-    return [...uids];
-  }, [tasks, user]);
+  // Subscribe to all activity sources
+  useEffect(() => {
+    if (!user) return;
 
-  const { profiles } = useUserProfiles(allUids);
+    // Subscribe to user activity
+    subscribeToUserActivity(user.id);
 
-  const entries = useMemo<ActivityEntry[]>(() => {
-    if (!user) return [];
-    const allLists = getUserLists(user.id);
-    const listNameMap = new Map(allLists.map((l) => [l.id, l.name]));
-    const getListName = (id: string) => listNameMap.get(id) || "Lista";
-    const resolve = (uid: string) =>
-      uid === user.id
-        ? { name: user.name, photoURL: user.photoURL }
-        : {
-            name: profiles.get(uid)?.name ?? "Cargando...",
-            photoURL: profiles.get(uid)?.photoURL,
-          };
-
-    const out: ActivityEntry[] = [];
-    tasks.forEach((task) => {
-      const creator = resolve(task.createdBy);
-      out.push({
-        id: `${task.id}-created`,
-        action: "created",
-        performedBy: task.createdBy,
-        performedByName: creator.name,
-        performedByPhoto: creator.photoURL,
-        performedAt: task.createdAt,
-        taskTitle: task.title,
-        listName: getListName(task.listId),
-      });
-      if (task.completedAt && task.completedBy) {
-        const completer = resolve(task.completedBy);
-        out.push({
-          id: `${task.id}-completed`,
-          action: "completed",
-          performedBy: task.completedBy,
-          performedByName: completer.name,
-          performedByPhoto: completer.photoURL,
-          performedAt: task.completedAt,
-          taskTitle: task.title,
-          listName: getListName(task.listId),
-        });
-      }
-      if (task.assignedTo && task.assignedTo !== task.createdBy) {
-        const assigner = resolve(task.createdBy);
-        const assignee = resolve(task.assignedTo);
-        out.push({
-          id: `${task.id}-assigned`,
-          action: "assigned",
-          performedBy: task.createdBy,
-          performedByName: assigner.name,
-          performedByPhoto: assigner.photoURL,
-          performedAt: task.createdAt,
-          taskTitle: task.title,
-          listName: getListName(task.listId),
-          details: `→ ${assignee.name}`,
-        });
-      }
-      if ((task as any).archivedAt && (task as any).archivedBy) {
-        const archiver = resolve((task as any).archivedBy);
-        out.push({
-          id: `${task.id}-archived`,
-          action: "archived",
-          performedBy: (task as any).archivedBy,
-          performedByName: archiver.name,
-          performedByPhoto: archiver.photoURL,
-          performedAt: (task as any).archivedAt,
-          taskTitle: task.title,
-          listName: getListName(task.listId),
-        });
-      }
-      task.history?.forEach((h) => {
-        if (h.action === "updated") {
-          const actor = resolve(h.performedBy);
-          out.push({
-            id: `${task.id}-hist-${h.id}`,
-            action: "updated",
-            performedBy: h.performedBy,
-            performedByName: actor.name,
-            performedByPhoto: actor.photoURL,
-            performedAt: h.performedAt,
-            taskTitle: task.title,
-            listName: getListName(task.listId),
-            details: h.details,
-          });
-        }
-      });
+    // Subscribe to all list activities
+    const userLists = getUserLists(user.id);
+    userLists.forEach((list) => {
+      subscribeToListActivity(list.id);
     });
 
-    out.sort(
-      (a, b) =>
-        new Date(b.performedAt).getTime() - new Date(a.performedAt).getTime(),
-    );
-    return out;
-  }, [tasks, profiles, user, getUserLists]);
+    // Subscribe to team activities
+    teams.forEach((team) => {
+      subscribeToTeamActivity(team.id);
+    });
 
-  if (!user) return null;
+    return () => {
+      cleanup();
+    };
+  }, [user?.id, lists.length, teams.length]);
 
-  const filtered = entries.filter((e) => {
-    if (filter !== "all" && e.action !== filter) return false;
-    if (
-      search &&
-      !e.taskTitle.toLowerCase().includes(search.toLowerCase()) &&
-      !e.performedByName.toLowerCase().includes(search.toLowerCase())
-    )
-      return false;
-    return true;
-  });
+  // Filter and search activities
+  const filteredActivities = useMemo(() => {
+    let filtered = activities;
 
-  const groups = groupByDate(filtered);
-  const totalToday = entries.filter((e) =>
-    isToday(parseISO(e.performedAt)),
+    // Apply action filter
+    if (filter !== "all") {
+      filtered = filtered.filter((a) => a.action === filter);
+    }
+
+    // Apply search
+    if (search.trim()) {
+      const term = search.toLowerCase();
+      filtered = filtered.filter(
+        (a) =>
+          a.userName.toLowerCase().includes(term) ||
+          a.targetName.toLowerCase().includes(term) ||
+          a.listName?.toLowerCase().includes(term) ||
+          a.details?.toLowerCase().includes(term),
+      );
+    }
+
+    return filtered;
+  }, [activities, filter, search]);
+
+  // Group by date
+  const grouped = useMemo(
+    () => groupByDate(filteredActivities),
+    [filteredActivities],
+  );
+  const groupKeys = Object.keys(grouped);
+
+  // Calculate stats
+  const totalToday = filteredActivities.filter((e) =>
+    isToday(parseISO(e.timestamp)),
   ).length;
 
   return (
@@ -259,9 +191,9 @@ export default function ActivityPage() {
             { label: "Hoy", value: totalToday, color: "text-blue-600" },
             {
               label: "Esta semana",
-              value: entries.filter((e) => {
+              value: filteredActivities.filter((e) => {
                 try {
-                  const d = parseISO(e.performedAt);
+                  const d = parseISO(e.timestamp);
                   const now = new Date();
                   return now.getTime() - d.getTime() < 7 * 86400000;
                 } catch {
@@ -272,12 +204,13 @@ export default function ActivityPage() {
             },
             {
               label: "Completadas",
-              value: entries.filter((e) => e.action === "completed").length,
+              value: filteredActivities.filter((e) => e.action === "completed")
+                .length,
               color: "text-green-600",
             },
             {
               label: "Total eventos",
-              value: entries.length,
+              value: filteredActivities.length,
               color: "text-gray-600",
             },
           ].map((s) => (
@@ -366,7 +299,7 @@ export default function ActivityPage() {
         </div>
 
         {/* Activity Feed */}
-        {filtered.length === 0 ? (
+        {filteredActivities.length === 0 ? (
           <div className="text-center py-16">
             <div
               className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
@@ -379,7 +312,7 @@ export default function ActivityPage() {
             </p>
           </div>
         ) : (
-          Object.entries(groups).map(([date, items]) => (
+          Object.entries(grouped).map(([date, items]) => (
             <div key={date}>
               <div className="flex items-center gap-3 mb-3">
                 <p
@@ -424,8 +357,8 @@ export default function ActivityPage() {
                       }}
                     >
                       <Avatar
-                        name={entry.performedByName}
-                        photoURL={entry.performedByPhoto}
+                        name={entry.userName}
+                        photoURL={entry.userPhotoURL}
                         size="sm"
                       />
                       <div className="flex-1 min-w-0">
@@ -434,17 +367,17 @@ export default function ActivityPage() {
                           style={{ color: "var(--text-primary)" }}
                         >
                           <span className="font-semibold">
-                            {entry.performedByName}
+                            {entry.userName}
                           </span>{" "}
                           <span className={cn("font-medium", meta.color)}>
                             {meta.label}
                           </span>
                           {" la tarea "}
                           <span
-                            className="font-medium"
+                            className="font-medium truncate block"
                             style={{ color: "var(--text-primary)" }}
                           >
-                            "{entry.taskTitle}"
+                            "{entry.targetName}"
                           </span>
                           {entry.details && (
                             <span style={{ color: "var(--text-tertiary)" }}>
@@ -481,7 +414,7 @@ export default function ActivityPage() {
                             className="text-xs"
                             style={{ color: "var(--text-tertiary)" }}
                           >
-                            {format(parseISO(entry.performedAt), "HH:mm", {
+                            {format(parseISO(entry.timestamp), "HH:mm", {
                               locale: es,
                             })}
                           </span>

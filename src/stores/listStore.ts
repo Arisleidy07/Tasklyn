@@ -36,7 +36,10 @@ interface ListState {
   updateList: (
     id: string,
     updates: Partial<
-      Pick<TaskList, "name" | "description" | "teamId" | "color" | "icon">
+      Pick<
+        TaskList,
+        "name" | "description" | "teamId" | "color" | "icon" | "backgroundImage"
+      >
     >,
   ) => Promise<void>;
   deleteList: (id: string) => Promise<void>;

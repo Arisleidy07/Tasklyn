@@ -4,11 +4,11 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { getUser } from "@/lib/firestore";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { useUIStore } from "@/stores/uiStore";
+import { useActivityStore, type ActivityItem } from "@/stores/activityStore";
 import Header from "@/components/layout/Header";
 import ListCard from "@/components/lists/ListCard";
 import CreateListModal from "@/components/lists/CreateListModal";
@@ -372,22 +372,9 @@ function KPICard({ stat, index }: KPICardProps) {
 }
 
 // ============================================
-// ACTIVITY TIMELINE COMPONENT
+// ACTIVITY TIMELINE COMPONENT (REAL ACTIVITY)
 // ============================================
-function ActivityTimeline({
-  activities,
-  profiles,
-}: {
-  activities: Array<{
-    id: string;
-    title: string;
-    listName: string;
-    isCompleted: boolean;
-    date: string;
-    actorId: string;
-  }>;
-  profiles: Record<string, { name: string; photoURL?: string }>;
-}) {
+function ActivityTimeline({ activities }: { activities: ActivityItem[] }) {
   const getTimeAgo = (dateStr: string) => {
     try {
       const diff = Date.now() - parseISO(dateStr).getTime();
@@ -404,6 +391,48 @@ function ActivityTimeline({
     }
   };
 
+  const getActionColor = (action: string) => {
+    switch (action) {
+      case "completed":
+        return "#10b981"; // green
+      case "created":
+        return "#2563eb"; // blue
+      case "updated":
+        return "#f59e0b"; // amber
+      case "deleted":
+        return "#ef4444"; // red
+      case "commented":
+        return "#8b5cf6"; // violet
+      case "assigned":
+        return "#06b6d4"; // cyan
+      case "archived":
+        return "#6b7280"; // gray
+      default:
+        return "#2563eb";
+    }
+  };
+
+  const getActionText = (action: string) => {
+    switch (action) {
+      case "completed":
+        return "completó";
+      case "created":
+        return "creó";
+      case "updated":
+        return "modificó";
+      case "deleted":
+        return "eliminó";
+      case "commented":
+        return "comentó en";
+      case "assigned":
+        return "asignó";
+      case "archived":
+        return "archivó";
+      default:
+        return "modificó";
+    }
+  };
+
   return (
     <div className="relative">
       <div
@@ -412,12 +441,10 @@ function ActivityTimeline({
       />
 
       <div className="space-y-0">
-        {activities.map((item, i) => {
-          const actor = profiles[item.actorId] || {
-            name: "Usuario",
-            photoURL: undefined,
-          };
-          const timeAgo = getTimeAgo(item.date);
+        {activities.slice(0, 4).map((item, i) => {
+          const timeAgo = getTimeAgo(item.timestamp);
+          const actionColor = getActionColor(item.action);
+          const actionText = getActionText(item.action);
 
           return (
             <motion.div
@@ -439,24 +466,28 @@ function ActivityTimeline({
               <div
                 className="relative z-10 w-2.5 h-2.5 rounded-full mt-2.5 flex-shrink-0 border-2"
                 style={{
-                  backgroundColor: item.isCompleted ? "#10b981" : "#2563eb",
+                  backgroundColor: actionColor,
                   borderColor: "var(--bg-primary)",
                 }}
               />
 
               <div className="relative flex-shrink-0">
-                {actor.photoURL ? (
+                {item.userPhotoURL ? (
                   <img
-                    src={actor.photoURL}
-                    alt={actor.name}
-                    className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500"
+                    src={item.userPhotoURL}
+                    alt={item.userName}
+                    className="w-8 h-8 rounded-full object-cover ring-2"
+                    style={{ ringColor: actionColor }}
                   />
                 ) : (
                   <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold bg-gradient-to-br from-emerald-500 to-teal-600"
-                    style={{ color: "var(--text-on-accent)" }}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
+                    style={{
+                      background: `linear-gradient(135deg, ${actionColor}80, ${actionColor})`,
+                      color: "white",
+                    }}
                   >
-                    {actor.name.charAt(0).toUpperCase()}
+                    {item.userName.charAt(0).toUpperCase()}
                   </div>
                 )}
               </div>
@@ -466,27 +497,22 @@ function ActivityTimeline({
                   className="text-sm leading-snug"
                   style={{ color: "var(--text-primary)" }}
                 >
-                  <span className="font-semibold">{actor.name}</span>{" "}
-                  <span
-                    className="font-medium"
-                    style={{
-                      color: item.isCompleted ? "#10b981" : "#2563eb",
-                    }}
-                  >
-                    {item.isCompleted ? "completó" : "creó"}
+                  <span className="font-semibold">{item.userName}</span>{" "}
+                  <span className="font-medium" style={{ color: actionColor }}>
+                    {actionText}
                   </span>{" "}
                   <span
                     className="font-medium"
                     style={{ color: "var(--text-secondary)" }}
                   >
-                    "{item.title}"
+                    "{item.targetName}"
                   </span>
                 </p>
                 <p
                   className="text-[11px] mt-0.5"
                   style={{ color: "var(--text-tertiary)" }}
                 >
-                  {item.listName}
+                  {item.listName || "Lista personal"}
                 </p>
               </div>
 
@@ -592,60 +618,40 @@ export default function DashboardPage() {
     view === "shared" ? "shared" : "personal";
 
   const { user } = useAuthStore();
-  const { getPersonalLists, getSharedLists, getUserLists } = useListStore();
+  const { getPersonalLists, getSharedLists, getUserLists, lists } =
+    useListStore();
   const { tasks } = useTaskStore();
+  const {
+    activities,
+    subscribeToUserActivity,
+    subscribeToListActivity,
+    cleanup,
+  } = useActivityStore();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [activityProfiles, setActivityProfiles] = useState<
-    Record<string, { name: string; photoURL?: string }>
-  >({});
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const allListIds_pre = new Set(
-    (user ? getUserLists(user.id) : []).map((l) => l.id),
-  );
-  const actorIdsKey = tasks
-    .filter(
-      (t) => allListIds_pre.has(t.listId) && (t.completedAt || t.createdAt),
-    )
-    .sort((a, b) => {
-      const ta = a.completedAt || a.createdAt;
-      const tb = b.completedAt || b.createdAt;
-      try {
-        return new Date(tb).getTime() - new Date(ta).getTime();
-      } catch {
-        return 0;
-      }
-    })
-    .slice(0, 4)
-    .map(
-      (t) => t.completedBy || t.assignedTo || t.createdBy || (user?.id ?? ""),
-    )
-    .join("|");
-
+  // Subscribe to activity for user and all their lists
   useEffect(() => {
-    const ids = [...new Set(actorIdsKey.split("|").filter(Boolean))];
-    const missing = ids.filter((id) => !activityProfiles[id]);
-    if (missing.length === 0) return;
-    Promise.all(
-      missing.map(async (id) => {
-        const p = await getUser(id);
-        return { id, name: p?.name || "Usuario", photoURL: p?.photoURL };
-      }),
-    ).then((results) => {
-      setActivityProfiles((prev) => {
-        const next = { ...prev };
-        results.forEach((r) => {
-          next[r.id] = { name: r.name, photoURL: r.photoURL };
-        });
-        return next;
-      });
+    if (!user) return;
+
+    // Subscribe to user activity
+    subscribeToUserActivity(user.id);
+
+    // Subscribe to activity from all lists the user has access to
+    const userLists = getUserLists(user.id);
+    userLists.forEach((list) => {
+      subscribeToListActivity(list.id);
     });
-  }, [actorIdsKey]);
+
+    return () => {
+      cleanup();
+    };
+  }, [user?.id, lists.length]);
 
   // All data calculations BEFORE any conditional returns
   const { reorderLists } = useListStore();
@@ -716,29 +722,6 @@ export default function DashboardPage() {
     low: userTasks.filter((t) => t.priority === "low" && t.status === "pending")
       .length,
   };
-
-  const listNameMap = new Map(allLists.map((l) => [l.id, l.name]));
-
-  const recentActivityRaw = [...userTasks]
-    .filter((t) => t.completedAt || t.createdAt)
-    .sort((a, b) => {
-      const ta = a.completedAt || a.createdAt;
-      const tb = b.completedAt || b.createdAt;
-      try {
-        return parseISO(tb).getTime() - parseISO(ta).getTime();
-      } catch {
-        return 0;
-      }
-    })
-    .slice(0, 4)
-    .map((t) => ({
-      id: t.id,
-      title: t.title,
-      listName: listNameMap.get(t.listId) || "Lista",
-      isCompleted: t.status === "completed",
-      date: t.completedAt || t.createdAt,
-      actorId: t.completedBy || t.assignedTo || t.createdBy || user.id,
-    }));
 
   const totalTasks = completedTasks.length + pendingTasks.length;
   const completionRate =
@@ -919,18 +902,34 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2, duration: 0.5 }}
-                  className="p-5 rounded-2xl border backdrop-blur-md bg-white border-gray-200/80 shadow-sm"
+                  className="p-5 rounded-2xl border backdrop-blur-md shadow-sm"
+                  style={{
+                    backgroundColor: "var(--bg-card)",
+                    borderColor: "var(--border-color)",
+                  }}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50">
-                        <TrendingUp size={18} className="text-blue-600" />
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center"
+                        style={{ backgroundColor: "var(--bg-info)" }}
+                      >
+                        <TrendingUp
+                          size={18}
+                          style={{ color: "var(--text-link)" }}
+                        />
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold text-gray-900">
+                        <h3
+                          className="text-sm font-semibold"
+                          style={{ color: "var(--text-primary)" }}
+                        >
                           Rendimiento semanal
                         </h3>
-                        <p className="text-xs text-gray-500">
+                        <p
+                          className="text-xs"
+                          style={{ color: "var(--text-secondary)" }}
+                        >
                           Tareas completadas vs creadas
                         </p>
                       </div>
@@ -947,18 +946,34 @@ export default function DashboardPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3, duration: 0.5 }}
-                    className="p-5 rounded-2xl border backdrop-blur-md bg-white border-gray-200/80 shadow-sm"
+                    className="p-5 rounded-2xl border backdrop-blur-md shadow-sm"
+                    style={{
+                      backgroundColor: "var(--bg-card)",
+                      borderColor: "var(--border-color)",
+                    }}
                   >
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-50">
-                          <Users size={18} className="text-purple-600" />
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center"
+                          style={{ backgroundColor: "var(--bg-info)" }}
+                        >
+                          <Users
+                            size={18}
+                            style={{ color: "var(--text-link)" }}
+                          />
                         </div>
                         <div>
-                          <h3 className="text-sm font-semibold text-gray-900">
+                          <h3
+                            className="text-sm font-semibold"
+                            style={{ color: "var(--text-primary)" }}
+                          >
                             Listas compartidas
                           </h3>
-                          <p className="text-xs text-gray-500">
+                          <p
+                            className="text-xs"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
                             {sharedLists.length} lista
                             {sharedLists.length !== 1 ? "s" : ""} compartida
                             {sharedLists.length !== 1 ? "s" : ""}
@@ -967,7 +982,8 @@ export default function DashboardPage() {
                       </div>
                       <Link
                         href="/dashboard?section=lists&view=shared"
-                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 transition-colors"
+                        className="text-xs font-semibold hover:opacity-80 transition-colors"
+                        style={{ color: "var(--text-link)" }}
                       >
                         Ver todas las listas
                       </Link>
@@ -988,13 +1004,23 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.3, duration: 0.5 }}
-                  className="p-5 rounded-2xl border backdrop-blur-md bg-white border-gray-200/80 shadow-sm"
+                  className="p-5 rounded-2xl border backdrop-blur-md shadow-sm"
+                  style={{
+                    backgroundColor: "var(--bg-card)",
+                    borderColor: "var(--border-color)",
+                  }}
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg bg-amber-50">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
+                      style={{ backgroundColor: "var(--bg-info)" }}
+                    >
                       🎯
                     </div>
-                    <h3 className="text-sm font-semibold text-gray-900">
+                    <h3
+                      className="text-sm font-semibold"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       Prioridades
                     </h3>
                   </div>
@@ -1010,26 +1036,23 @@ export default function DashboardPage() {
                       return (
                         <div
                           key={key}
-                          className={cn(
-                            "flex items-center justify-between px-3 py-2 rounded-lg",
-                            cfg.bg,
-                            cfg.bgDark,
-                          )}
+                          className="flex items-center justify-between px-3 py-2 rounded-lg"
+                          style={{ backgroundColor: "var(--bg-secondary)" }}
                         >
                           <div className="flex items-center gap-2">
                             <span className="text-sm leading-none">
                               {cfg.emoji}
                             </span>
-                            <span className="text-xs font-medium text-gray-700">
+                            <span
+                              className="text-xs font-medium"
+                              style={{ color: "var(--text-secondary)" }}
+                            >
                               {cfg.label}
                             </span>
                           </div>
                           <span
-                            className={cn(
-                              "text-xs font-bold tabular-nums",
-                              cfg.text,
-                              cfg.textDark,
-                            )}
+                            className="text-xs font-bold tabular-nums"
+                            style={{ color: cfg.text.replace("text-", "") }}
                           >
                             {count}
                           </span>
@@ -1040,38 +1063,52 @@ export default function DashboardPage() {
                 </motion.div>
 
                 {/* Activity Timeline */}
-                {recentActivityRaw.length > 0 && (
+                {activities.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.4, duration: 0.5 }}
-                    className="p-5 rounded-2xl border backdrop-blur-md bg-white border-gray-200/80 shadow-sm"
+                    className="p-5 rounded-2xl border backdrop-blur-md shadow-sm"
+                    style={{
+                      backgroundColor: "var(--bg-card)",
+                      borderColor: "var(--border-color)",
+                    }}
                   >
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-violet-50">
-                          <Activity size={18} className="text-violet-600" />
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center"
+                          style={{ backgroundColor: "var(--bg-info)" }}
+                        >
+                          <Activity
+                            size={18}
+                            style={{ color: "var(--text-link)" }}
+                          />
                         </div>
                         <div>
-                          <h3 className="text-sm font-semibold text-gray-900">
+                          <h3
+                            className="text-sm font-semibold"
+                            style={{ color: "var(--text-primary)" }}
+                          >
                             Actividad reciente
                           </h3>
-                          <p className="text-xs text-gray-500">
-                            Últimas acciones
+                          <p
+                            className="text-xs"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            Últimas {Math.min(activities.length, 4)} acciones
                           </p>
                         </div>
                       </div>
                       <Link
                         href="/activity"
-                        className="text-xs font-semibold text-indigo-600 hover:text-indigo-500 transition-colors"
+                        className="text-xs font-semibold hover:opacity-80 transition-colors"
+                        style={{ color: "var(--text-link)" }}
                       >
                         Ver toda la actividad
                       </Link>
                     </div>
-                    <ActivityTimeline
-                      activities={recentActivityRaw}
-                      profiles={activityProfiles}
-                    />
+                    <ActivityTimeline activities={activities} />
                   </motion.div>
                 )}
               </div>

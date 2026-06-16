@@ -21,6 +21,15 @@ import {
   notifyTaskEdited,
 } from "@/lib/notify";
 import { toISODate } from "@/lib/dateUtils";
+import {
+  logTaskCreated,
+  logTaskCompleted,
+  logTaskUpdated,
+  logTaskDeleted,
+  logTaskAssigned,
+} from "@/lib/activity";
+import { useAuthStore } from "./authStore";
+import { useListStore } from "./listStore";
 
 interface TaskState {
   tasks: Task[];
@@ -73,6 +82,7 @@ interface TaskState {
     completedBy: string,
     completerName?: string,
     listMembers?: Array<{ userId: string; role: string }>,
+    performedByUser?: { id: string; name: string },
   ) => Promise<void>;
   uncompleteTask: (id: string, performedBy: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
@@ -244,6 +254,20 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
     const id = await createTaskInDb(newTaskData);
 
+    // Log activity
+    const currentUser = useAuthStore.getState().user;
+    const list = useListStore.getState().lists.find((l) => l.id === listId);
+    if (currentUser) {
+      logTaskCreated(
+        { id, title, listId, listName: list?.name },
+        {
+          id: currentUser.id,
+          name: currentUser.name,
+          photoURL: currentUser.photoURL,
+        },
+      );
+    }
+
     return {
       id,
       ...newTaskData,
@@ -414,7 +438,13 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     });
   },
 
-  completeTask: async (id, completedBy, completerName, listMembers) => {
+  completeTask: async (
+    id: string,
+    completedBy: string,
+    completerName?: string,
+    listMembers?: Array<{ userId: string; role: string }>,
+    performedByUser?: { id: string; name: string },
+  ) => {
     const task = get().tasks.find((t) => t.id === id);
     if (!task) return;
 
@@ -432,9 +462,35 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       ],
     });
 
+    // Log activity
+    const currentUser = useAuthStore.getState().user;
+    const list = useListStore
+      .getState()
+      .lists.find((l) => l.id === task.listId);
+    if (currentUser) {
+      const actualPerformer = performedByUser || {
+        id: currentUser.id,
+        name: currentUser.name,
+      };
+      logTaskCompleted(
+        {
+          id: task.id,
+          title: task.title,
+          listId: task.listId,
+          listName: list?.name,
+        },
+        {
+          id: currentUser.id,
+          name: currentUser.name,
+          photoURL: currentUser.photoURL,
+        },
+        actualPerformer.id !== currentUser.id ? actualPerformer : undefined,
+      );
+    }
+
     // Notify relevant members (owner and editors, excluding the completer)
     if (completerName && listMembers) {
-      listMembers.forEach((member) => {
+      listMembers.forEach((member: { userId: string; role: string }) => {
         // Notify owner and editors, but not the person who completed it
         if (
           (member.role === "owner" || member.role === "editor") &&
@@ -528,7 +584,32 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     });
   },
 
-  deleteTask: async (id) => {
+  deleteTask: async (id: string) => {
+    const task = get().tasks.find((t) => t.id === id);
+
+    // Log activity before deleting
+    if (task) {
+      const currentUser = useAuthStore.getState().user;
+      const list = useListStore
+        .getState()
+        .lists.find((l) => l.id === task.listId);
+      if (currentUser) {
+        logTaskDeleted(
+          {
+            id: task.id,
+            title: task.title,
+            listId: task.listId,
+            listName: list?.name,
+          },
+          {
+            id: currentUser.id,
+            name: currentUser.name,
+            photoURL: currentUser.photoURL,
+          },
+        );
+      }
+    }
+
     await deleteTaskInDb(id);
     set((state) => ({ tasks: state.tasks.filter((t) => t.id !== id) }));
   },

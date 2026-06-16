@@ -196,7 +196,7 @@ function HistoryCard({ entry, isCurrentUser }: HistoryCardProps) {
                 {getActionText(entry.action)}
               </span>{" "}
               <span
-                className="font-medium"
+                className="font-medium truncate block"
                 style={{ color: "var(--text-primary)" }}
               >
                 "{entry.taskTitle}"

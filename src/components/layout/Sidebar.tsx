@@ -27,6 +27,7 @@ import {
 import { useNotificationStore } from "@/stores/notificationStore";
 import Logo from "@/components/shared/Logo";
 import Avatar from "@/components/ui/Avatar";
+import TeamImage from "@/components/ui/TeamImage";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTeamStore } from "@/stores/teamStore";
@@ -260,8 +261,9 @@ export default function Sidebar() {
                 👥 Equipos
               </p>
             )}
-            {teams.slice(0, 3).map((team) => {
+            {teams.slice(0, 5).map((team) => {
               const active = pathname === `/teams/${team.id}`;
+
               return (
                 <Link
                   key={team.id}
@@ -291,7 +293,13 @@ export default function Sidebar() {
                   }}
                 >
                   {active && <div className="sidebar-indicator" />}
-                  <div className="w-2 h-2 rounded-full flex-shrink-0 bg-gradient-to-br from-blue-400 to-indigo-600" />
+                  <TeamImage
+                    teamId={team.id}
+                    name={team.name}
+                    photoURL={team.photoURL}
+                    size={collapsed ? "sm" : "md"}
+                    className="flex-shrink-0"
+                  />
                   <span className="truncate flex-1">{team.name}</span>
                   {!collapsed && (
                     <span
@@ -311,7 +319,7 @@ export default function Sidebar() {
                 </Link>
               );
             })}
-            {teams.length > 3 && (
+            {teams.length > 5 && (
               <Link
                 href="/teams"
                 className={cn(
@@ -328,7 +336,7 @@ export default function Sidebar() {
                   e.currentTarget.style.color = "var(--text-tertiary)";
                 }}
               >
-                <span className="text-xs">+{teams.length - 3} más</span>
+                <span className="text-xs">+{teams.length - 5} más</span>
               </Link>
             )}
           </div>

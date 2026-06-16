@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { UpgradeModal } from "@/components/shared/UpgradeModal";
+import TeamImage from "@/components/ui/TeamImage";
 import { canCreateMoreTeams } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import type { Team } from "@/types";
@@ -93,16 +94,13 @@ function TeamCard({
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold flex-shrink-0"
-            style={{
-              backgroundColor: "var(--text-primary)",
-              color: "var(--text-on-accent)",
-              opacity: 0.9,
-            }}
-          >
-            {team.icon || team.name.charAt(0).toUpperCase()}
-          </div>
+          <TeamImage
+            teamId={team.id}
+            name={team.name}
+            photoURL={team.photoURL}
+            size="lg"
+            color={team.color}
+          />
           <div>
             <div className="flex items-center gap-2">
               <h3
@@ -472,12 +470,13 @@ export default function TeamsPage() {
             >
               <div className="p-5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div
-                    className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-base shadow-lg"
-                    style={{ color: "var(--text-on-accent)" }}
-                  >
-                    👤
-                  </div>
+                  <TeamImage
+                    teamId={personalTeam.id}
+                    name="Personal"
+                    photoURL={personalTeam.photoURL}
+                    size="lg"
+                    color="#6366f1"
+                  />
                   <div>
                     <div className="flex items-center gap-1.5">
                       <h3

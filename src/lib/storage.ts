@@ -12,6 +12,7 @@ import {
 import { storage } from "./firebase";
 
 const PROFILE_PHOTOS_PATH = "profile-photos";
+const TEAM_PHOTOS_PATH = "team-photos";
 
 /**
  * Upload a profile photo to Firebase Storage
@@ -88,4 +89,35 @@ export async function prepareImageFile(file: File): Promise<File> {
   // For larger images, we could resize here if needed
   // For now, we'll just validate the size
   return file;
+}
+
+/**
+ * Upload a team photo to Firebase Storage
+ * Returns the public download URL
+ */
+export async function uploadTeamPhoto(
+  teamId: string,
+  file: File | Blob | Uint8Array,
+): Promise<string> {
+  const fileName = `photo-${Date.now()}`;
+  const storageRef = ref(storage, `${TEAM_PHOTOS_PATH}/${teamId}/${fileName}`);
+
+  await uploadBytes(storageRef, file, {
+    contentType: file instanceof File ? file.type : "image/jpeg",
+  });
+
+  const downloadURL = await getDownloadURL(storageRef);
+  return downloadURL;
+}
+
+/**
+ * Delete a team photo from Firebase Storage
+ */
+export async function deleteTeamPhoto(downloadURL: string): Promise<void> {
+  try {
+    const storageRef = ref(storage, downloadURL);
+    await deleteObject(storageRef);
+  } catch (error) {
+    console.warn("Failed to delete team photo:", error);
+  }
 }

@@ -34,6 +34,7 @@ export interface Team {
   isPersonal?: boolean; // true = equipo Personal (no eliminable, privado)
   color?: string; // hex color for team avatar
   icon?: string; // emoji icon
+  photoURL?: string; // team photo/image URL
   settings: {
     allowInvites: boolean;
     requireApproval: boolean;
@@ -153,6 +154,7 @@ export interface TaskList {
   // ---- NEW: List settings ----
   color?: string;
   icon?: string;
+  backgroundImage?: string; // URL de imagen de fondo (Unsplash, etc.)
   isArchived?: boolean;
   archivedAt?: string;
   order?: number;

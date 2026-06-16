@@ -48,19 +48,11 @@ export function SortableTaskItem({ task, children }: SortableTaskItemProps) {
 
   return (
     <div ref={setNodeRef} style={style}>
-      <div className="group/task flex items-center gap-1">
-        {/* Drag handle */}
-        <button
-          {...attributes}
-          {...listeners}
-          className="flex-shrink-0 opacity-0 group-hover/task:opacity-100 transition-opacity p-0.5 rounded cursor-grab active:cursor-grabbing touch-none"
-          style={{ color: "var(--text-tertiary)" }}
-          aria-label="Arrastrar para reordenar"
-          tabIndex={-1}
-        >
-          <GripVertical size={14} />
-        </button>
-
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex items-center gap-1 cursor-grab active:cursor-grabbing touch-none"
+      >
         {/* Task content */}
         <div className="flex-1 min-w-0">{children}</div>
       </div>

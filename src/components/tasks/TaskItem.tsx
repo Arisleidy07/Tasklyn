@@ -195,26 +195,33 @@ export default function TaskItem({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8, scale: 0.97 }}
-        whileHover={{ backgroundColor: "var(--bg-hover)" }}
         transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
         className={cn(
-          "group transition-colors relative",
+          "group transition-all relative border-b",
           dropdownOpen && "z-20",
         )}
-        style={
-          isCompleted
-            ? {
-                backgroundColor: "rgba(37,99,235,0.02)",
-              }
-            : {
-                backgroundColor: "transparent",
-              }
-        }
+        style={{
+          borderColor: "var(--border-color)",
+          backgroundColor: isCompleted ? "rgba(37,99,235,0.02)" : "transparent",
+        }}
+        onMouseEnter={(e) => {
+          if (!isCompleted) {
+            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!isCompleted) {
+            e.currentTarget.style.backgroundColor = "transparent";
+          }
+        }}
       >
-        <div className="flex items-center gap-3 py-2.5 px-2 sm:px-3 min-h-[55px] sm:min-h-[60px]">
+        <div className="flex items-center gap-3 py-3 px-3 sm:px-4 min-h-[56px] sm:min-h-[60px]">
           {/* Checkbox */}
           <button
-            onClick={handleToggleComplete}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleComplete();
+            }}
             disabled={!canComplete}
             className={cn(
               "flex-shrink-0 transition-colors cursor-pointer",
@@ -242,7 +249,7 @@ export default function TaskItem({
               <div className="flex-1 min-w-0">
                 <p
                   className={cn(
-                    "text-[14px] sm:text-[15px] font-medium transition-colors leading-tight",
+                    "text-[13px] sm:text-[15px] font-medium transition-colors leading-tight line-clamp-2",
                     isCompleted && "line-through",
                   )}
                   style={{
@@ -259,7 +266,7 @@ export default function TaskItem({
                 />
 
                 {/* Secondary info row */}
-                <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
                   {/* Priority badge */}
                   {task.priority &&
                     (() => {
@@ -337,13 +344,42 @@ export default function TaskItem({
                     </div>
                   )}
                 </div>
+
+                {/* Description, location, phones row */}
+                {(task.description || task.location || task.phones) && (
+                  <div
+                    className="flex items-center gap-2 mt-1.5 flex-wrap text-[10px] sm:text-[12px]"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    {task.location && (
+                      <span className="flex items-center gap-1 truncate">
+                        <MapPin size={11} />
+                        <span className="truncate">{task.location}</span>
+                      </span>
+                    )}
+                    {task.phones && task.phones.length > 0 && (
+                      <span className="flex items-center gap-1 truncate">
+                        <Phone size={11} />
+                        <span className="truncate">{task.phones[0]}</span>
+                      </span>
+                    )}
+                    {task.description && (
+                      <span className="truncate line-clamp-1">
+                        {task.description}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Right: action buttons */}
               <div className="flex items-center gap-0.5 flex-shrink-0">
                 {canEdit && (
                   <button
-                    onClick={handleOpenEdit}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenEdit();
+                    }}
                     className="p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center active:scale-90"
                     style={{ color: "var(--text-tertiary)" }}
                     onMouseEnter={(e) => {
@@ -362,7 +398,10 @@ export default function TaskItem({
                 )}
                 {canArchive && (
                   <button
-                    onClick={handleArchive}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleArchive();
+                    }}
                     className="p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center active:scale-90"
                     style={{ color: "var(--text-tertiary)" }}
                     onMouseEnter={(e) => {
@@ -380,7 +419,10 @@ export default function TaskItem({
                   </button>
                 )}
                 <button
-                  onClick={() => setExpanded(!expanded)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpanded(!expanded);
+                  }}
                   className="p-1.5 rounded-lg transition-colors cursor-pointer flex items-center justify-center active:scale-90"
                   style={{ color: "var(--text-tertiary)" }}
                   onMouseEnter={(e) => {

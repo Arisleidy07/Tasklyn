@@ -7,6 +7,7 @@ import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { useMemberProfiles } from "@/lib/useMemberProfiles";
 import Header from "@/components/layout/Header";
+import ListHeader from "@/components/lists/ListHeader";
 import TaskItem from "@/components/tasks/TaskItem";
 import ArchivedTaskItem from "@/components/tasks/ArchivedTaskItem";
 import EmptyState from "@/components/ui/EmptyState";
@@ -238,83 +239,23 @@ export default function ListDetailPage() {
 
   return (
     <>
-      <Header
-        title={list.name}
-        description={
-          list.description ||
-          `${list.members.length} miembro${list.members.length !== 1 ? "s" : ""}`
-        }
-        badge={
-          archivedCount > 0 && (
-            <span
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
-              style={{
-                backgroundColor: "var(--bg-secondary)",
-                color: "var(--text-secondary)",
-                border: "1px solid var(--border-color)",
-              }}
-            >
-              <Archive size={10} className="text-gray-500" />
-              {archivedCount} archivada
-              {archivedCount !== 1 ? "s" : ""}
-            </span>
-          )
-        }
-        showMenuButton={true}
-        showBackButton={true}
-        onBackClick={handleBackClick}
-        actions={
-          <div className="flex items-center gap-1.5">
-            {/* Miembros — visible to ALL users */}
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setEditModalTab("members");
-                setShowEditModal(true);
-              }}
-              icon={<Users size={15} />}
-            >
-              <span className="hidden sm:inline">Miembros</span>
-            </Button>
-            {/* Editar — owner + editor */}
-            {canEdit && (
-              <Button
-                size="sm"
-                variant="primary"
-                onClick={() => {
-                  setEditModalTab("details");
-                  setShowEditModal(true);
-                }}
-                icon={<Settings2 size={15} />}
-              >
-                <span className="hidden sm:inline">Editar</span>
-              </Button>
-            )}
-            {/* Compartir — owner + editor */}
-            {canShare && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setShowSharePanel(true)}
-                icon={<Share2 size={15} />}
-              >
-                <span className="hidden sm:inline">Compartir</span>
-              </Button>
-            )}
-            {isOwner && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setShowDeleteConfirm(true)}
-                icon={<Trash2 size={15} />}
-                className="text-red-500 hover:text-red-600 hover:bg-red-50"
-              >
-                <span className="hidden sm:inline">Eliminar</span>
-              </Button>
-            )}
-          </div>
-        }
+      <ListHeader
+        list={list}
+        totalTasks={activeTasks.length}
+        canEdit={canEdit}
+        canShare={canShare}
+        isOwner={isOwner}
+        onEdit={() => {
+          setEditModalTab("details");
+          setShowEditModal(true);
+        }}
+        onShare={() => setShowSharePanel(true)}
+        onMembers={() => {
+          setEditModalTab("members");
+          setShowEditModal(true);
+        }}
+        onDelete={() => setShowDeleteConfirm(true)}
+        onBack={handleBackClick}
       />
 
       <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto pb-6">

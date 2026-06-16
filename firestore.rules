@@ -50,6 +50,29 @@ service cloud.firestore {
              (resource.data.createdBy != null && resource.data.createdBy == getAuthUid());
     }
 
+    // Helper to check if user is admin or owner in a team (for the team document itself)
+    function isTeamAdminOrOwner() {
+      let team = resource.data;
+      if (team.owner != null && team.owner == getAuthUid()) return true;
+      if (team.ownerId != null && team.ownerId == getAuthUid()) return true;
+      if (team.createdBy != null && team.createdBy == getAuthUid()) return true;
+      // Also check if user has admin role in members array
+      let members = team.members;
+      if (members != null) {
+        return members.any(m => m.userId == getAuthUid() && (m.role == "owner" || m.role == "admin"));
+      }
+      return false;
+    }
+
+    // Helper to check if a user can delete a team (owner only)
+    function canDeleteTeam() {
+      let team = resource.data;
+      if (team.owner != null && team.owner == getAuthUid()) return true;
+      if (team.ownerId != null && team.ownerId == getAuthUid()) return true;
+      if (team.createdBy != null && team.createdBy == getAuthUid()) return true;
+      return false;
+    }
+
     // Helper to check if user will be team owner after create
     // Checks all possible owner fields for compatibility
     function willBeTeamOwner() {
@@ -119,14 +142,20 @@ service cloud.firestore {
         (request.resource.data.memberIds != null && getAuthUid() in request.resource.data.memberIds)
       );
 
-      // Allow update if user is a member, owner, or joining via invitation
+      // Allow update if user is a member, owner, or joining via invitation, or team owner
       allow update: if isAuth() && (
         isListMember() ||
         isListOwner() ||
-        isJoiningList()
+        isJoiningList() ||
+        isListTeamOwner()
       );
 
-      allow delete: if isAuth() && (isListOwner() || isListTeamOwner());
+      // Allow delete if list owner OR team owner/admin (for cascade delete)
+      allow delete: if isAuth() && (
+        isListOwner() ||
+        isListTeamOwner() ||
+        (resource.data.teamId != null && isTeamOwner(resource.data.teamId))
+      );
     }
 
     match /tasks/{taskId} {
@@ -150,15 +179,11 @@ service cloud.firestore {
       // Allow create if user will be owner
       allow create: if isAuth() && willBeTeamOwner();
 
-      // Allow update if user is the owner, OR user is joining via invitation acceptance
-      allow update: if isAuth() && (isTeamAdminDirect() || isJoiningTeam());
+      // Allow update if user is the owner or admin, OR user is joining via invitation acceptance
+      allow update: if isAuth() && (isTeamAdminOrOwner() || isJoiningTeam());
 
-      // Allow delete if user is team owner
-      allow delete: if isAuth() && (
-        (resource.data.owner != null && resource.data.owner == getAuthUid()) ||
-        (resource.data.ownerId != null && resource.data.ownerId == getAuthUid()) ||
-        (resource.data.createdBy != null && resource.data.createdBy == getAuthUid())
-      );
+      // Allow delete ONLY if user is team owner (not admin)
+      allow delete: if isAuth() && canDeleteTeam();
 
       // Team activity subcollection — team members can read all, write their own
       // Team owner can delete (for team deletion)

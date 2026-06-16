@@ -87,6 +87,11 @@ export default function EditListModal({
   const [name, setName] = useState(list.name);
   const [description, setDescription] = useState(list.description || "");
   const [teamId, setTeamId] = useState(list.teamId || "");
+  const [icon, setIcon] = useState(list.icon || "");
+  const [backgroundImage, setBackgroundImage] = useState(
+    list.backgroundImage || "",
+  );
+  const [color, setColor] = useState(list.color || "");
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
@@ -97,10 +102,22 @@ export default function EditListModal({
       setName(list.name);
       setDescription(list.description || "");
       setTeamId(list.teamId || "");
+      setIcon(list.icon || "");
+      setBackgroundImage(list.backgroundImage || "");
+      setColor(list.color || "");
       setSaved(false);
       setConfirmRemove(null);
     }
-  }, [isOpen, defaultTab, list.name, list.description, list.teamId]);
+  }, [
+    isOpen,
+    defaultTab,
+    list.name,
+    list.description,
+    list.teamId,
+    list.icon,
+    list.backgroundImage,
+    list.color,
+  ]);
 
   if (!user) return null;
 
@@ -117,6 +134,9 @@ export default function EditListModal({
         name: name.trim(),
         description: description.trim(),
         teamId: teamId || undefined,
+        icon: icon || undefined,
+        backgroundImage: backgroundImage || undefined,
+        color: color || undefined,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -270,6 +290,409 @@ export default function EditListModal({
                   </select>
                 </div>
               )}
+
+              {/* Section: Emoji */}
+              <div className="space-y-2">
+                <label
+                  className="text-xs font-semibold uppercase tracking-wide block"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Emoji
+                  <span
+                    className="font-normal"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    (opcional)
+                  </span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    value={icon}
+                    onChange={(e) => setIcon(e.target.value)}
+                    placeholder="📋"
+                    disabled={!canEdit}
+                    maxLength={2}
+                    className="w-20 h-11 px-3 rounded-xl text-2xl text-center focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{
+                      border: "1px solid var(--border-input)",
+                      backgroundColor: "var(--bg-input)",
+                      color: "var(--text-primary)",
+                    }}
+                  />
+                  <div className="flex flex-wrap gap-1 flex-1">
+                    {[
+                      "📋",
+                      "🏠",
+                      "💼",
+                      "🎯",
+                      "⭐",
+                      "🔥",
+                      "💡",
+                      "🚀",
+                      "📚",
+                      "🎨",
+                      "🎵",
+                      "🎮",
+                      "🌟",
+                      "✨",
+                      "💪",
+                      "🎉",
+                    ].map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => setIcon(emoji)}
+                        disabled={!canEdit}
+                        className="w-9 h-9 rounded-lg text-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ backgroundColor: "var(--bg-secondary)" }}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Section: Imagen de fondo */}
+              <div className="space-y-2">
+                <label
+                  className="text-xs font-semibold uppercase tracking-wide block"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Imagen de fondo
+                  <span
+                    className="font-normal"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    (opcional)
+                  </span>
+                </label>
+                <input
+                  value={backgroundImage}
+                  onChange={(e) => setBackgroundImage(e.target.value)}
+                  placeholder="https://..."
+                  disabled={!canEdit}
+                  className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{
+                    border: "1px solid var(--border-input)",
+                    backgroundColor: "var(--bg-input)",
+                    color: "var(--text-primary)",
+                  }}
+                />
+                {backgroundImage && (
+                  <div
+                    className="w-full h-32 rounded-lg bg-cover bg-center mt-2"
+                    style={{ backgroundImage: `url(${backgroundImage})` }}
+                  />
+                )}
+
+                {/* Preset backgrounds */}
+                <div className="mt-4">
+                  <p
+                    className="text-xs font-medium mb-2"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    Fondos sugeridos
+                  </p>
+                  <div className="space-y-3">
+                    {/* Paisajes */}
+                    <div>
+                      <p
+                        className="text-[11px] mb-1.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        Paisajes
+                      </p>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {[
+                          "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=1920&q=80",
+                        ].map((url) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => setBackgroundImage(url)}
+                            disabled={!canEdit}
+                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                            style={{
+                              backgroundImage: `url(${url})`,
+                              borderColor:
+                                backgroundImage === url
+                                  ? "#2563eb"
+                                  : "var(--border-color)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Naturaleza */}
+                    <div>
+                      <p
+                        className="text-[11px] mb-1.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        Naturaleza
+                      </p>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {[
+                          "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1920&q=80",
+                        ].map((url) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => setBackgroundImage(url)}
+                            disabled={!canEdit}
+                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                            style={{
+                              backgroundImage: `url(${url})`,
+                              borderColor:
+                                backgroundImage === url
+                                  ? "#2563eb"
+                                  : "var(--border-color)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Montañas */}
+                    <div>
+                      <p
+                        className="text-[11px] mb-1.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        Montañas
+                      </p>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {[
+                          "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=1920&q=80",
+                        ].map((url) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => setBackgroundImage(url)}
+                            disabled={!canEdit}
+                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                            style={{
+                              backgroundImage: `url(${url})`,
+                              borderColor:
+                                backgroundImage === url
+                                  ? "#2563eb"
+                                  : "var(--border-color)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Playas */}
+                    <div>
+                      <p
+                        className="text-[11px] mb-1.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        Playas
+                      </p>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {[
+                          "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1920&q=80",
+                        ].map((url) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => setBackgroundImage(url)}
+                            disabled={!canEdit}
+                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                            style={{
+                              backgroundImage: `url(${url})`,
+                              borderColor:
+                                backgroundImage === url
+                                  ? "#2563eb"
+                                  : "var(--border-color)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Ciudad */}
+                    <div>
+                      <p
+                        className="text-[11px] mb-1.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        Ciudad
+                      </p>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {[
+                          "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1920&q=80",
+                        ].map((url) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => setBackgroundImage(url)}
+                            disabled={!canEdit}
+                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                            style={{
+                              backgroundImage: `url(${url})`,
+                              borderColor:
+                                backgroundImage === url
+                                  ? "#2563eb"
+                                  : "var(--border-color)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Tecnología */}
+                    <div>
+                      <p
+                        className="text-[11px] mb-1.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        Tecnología
+                      </p>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {[
+                          "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1920&q=80",
+                        ].map((url) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => setBackgroundImage(url)}
+                            disabled={!canEdit}
+                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                            style={{
+                              backgroundImage: `url(${url})`,
+                              borderColor:
+                                backgroundImage === url
+                                  ? "#2563eb"
+                                  : "var(--border-color)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Abstractos */}
+                    <div>
+                      <p
+                        className="text-[11px] mb-1.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        Abstractos
+                      </p>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {[
+                          "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1920&q=80",
+                          "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80",
+                        ].map((url) => (
+                          <button
+                            key={url}
+                            type="button"
+                            onClick={() => setBackgroundImage(url)}
+                            disabled={!canEdit}
+                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                            style={{
+                              backgroundImage: `url(${url})`,
+                              borderColor:
+                                backgroundImage === url
+                                  ? "#2563eb"
+                                  : "var(--border-color)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Gradientes */}
+                    <div>
+                      <p
+                        className="text-[11px] mb-1.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        Gradientes
+                      </p>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {[
+                          "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                          "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                          "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                          "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                          "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+                          "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
+                        ].map((gradient) => (
+                          <button
+                            key={gradient}
+                            type="button"
+                            onClick={() => setBackgroundImage(gradient)}
+                            disabled={!canEdit}
+                            className="w-20 h-12 rounded-lg flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
+                            style={{
+                              background: gradient,
+                              borderColor:
+                                backgroundImage === gradient
+                                  ? "#2563eb"
+                                  : "var(--border-color)",
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section: Color */}
+              <div className="space-y-2">
+                <label
+                  className="text-xs font-semibold uppercase tracking-wide block"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Color
+                  <span
+                    className="font-normal"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    (opcional)
+                  </span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                    disabled={!canEdit}
+                    className="w-12 h-11 rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                  <input
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                    placeholder="#000000"
+                    disabled={!canEdit}
+                    className="flex-1 h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{
+                      border: "1px solid var(--border-input)",
+                      backgroundColor: "var(--bg-input)",
+                      color: "var(--text-primary)",
+                    }}
+                  />
+                </div>
+              </div>
 
               {/* Section: Información */}
               <div className="grid grid-cols-2 gap-3">
