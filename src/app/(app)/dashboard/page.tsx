@@ -279,7 +279,9 @@ function TradingAreaChart({
   if (!chartReady || data.length === 0) {
     return (
       <div className="w-full h-[320px] flex items-center justify-center">
-        <div className="text-sm text-gray-400">Cargando gráfico...</div>
+        <div className="text-sm" style={{ color: "var(--text-tertiary)" }}>
+          Cargando gráfico...
+        </div>
       </div>
     );
   }
@@ -488,7 +490,7 @@ function ActivityTimeline({ activities }: { activities: ActivityItem[] }) {
                     className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold"
                     style={{
                       background: `linear-gradient(135deg, ${actionColor}80, ${actionColor})`,
-                      color: "white",
+                      color: "var(--text-primary)",
                     }}
                   >
                     {item.userName.charAt(0).toUpperCase()}
@@ -573,15 +575,18 @@ function SharedListRow({
         className={cn(
           "group flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer",
           "border transition-all duration-300",
-          "bg-white border-gray-200/60 hover:bg-gray-50",
           "hover:border-blue-300",
         )}
+        style={{
+          backgroundColor: "var(--bg-card)",
+          borderColor: "var(--border-color)",
+        }}
       >
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors bg-gray-100 group-hover:bg-gray-200">
-          <Layout
-            size={16}
-            className="text-gray-500 group-hover:text-gray-700"
-          />
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors"
+          style={{ backgroundColor: "var(--bg-secondary)" }}
+        >
+          <Layout size={16} style={{ color: "var(--text-tertiary)" }} />
         </div>
 
         <div className="flex-1 min-w-0">

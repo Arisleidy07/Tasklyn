@@ -51,10 +51,10 @@ export function SortableTaskItem({ task, children }: SortableTaskItemProps) {
       <div
         {...attributes}
         {...listeners}
-        className="flex items-center gap-1 cursor-grab active:cursor-grabbing touch-none"
+        className="cursor-grab active:cursor-grabbing touch-none"
       >
-        {/* Task content */}
-        <div className="flex-1 min-w-0">{children}</div>
+        {/* Task content - entire card is draggable */}
+        {children}
       </div>
     </div>
   );

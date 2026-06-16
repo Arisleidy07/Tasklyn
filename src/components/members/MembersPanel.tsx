@@ -192,201 +192,207 @@ export default function MembersPanel({
   };
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Miembros"
-      description={`Gestiona quién tiene acceso a "${list.name}"`}
-      size="md"
-    >
-      <div className="space-y-5">
+    <Modal isOpen={isOpen} onClose={onClose} title="" size="sm">
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h2
+            className="text-lg font-semibold"
+            style={{ color: "var(--text-primary)" }}
+          >
+            Miembros
+          </h2>
+          <span className="text-sm" style={{ color: "var(--text-tertiary)" }}>
+            {list.members.length}
+          </span>
+        </div>
+
         {/* Email invite section */}
         {canInvite && (
-          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 space-y-3">
-            <div className="flex items-center gap-2 mb-1">
-              <UserPlus size={15} className="text-blue-600" />
-              <p className="text-sm font-semibold text-gray-800">
-                Invitar por correo
-              </p>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={(e) => {
+                  setInviteEmail(e.target.value);
+                  setInviteError(null);
+                }}
+                onKeyDown={(e) => e.key === "Enter" && handleSendInvitation()}
+                placeholder="Invitar por correo..."
+                className="flex-1 h-10 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
+                style={{
+                  border: "1px solid var(--border-input)",
+                  backgroundColor: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
+              />
+              <Button
+                size="sm"
+                onClick={handleSendInvitation}
+                isLoading={isSending}
+                className="h-10 px-4"
+              >
+                Invitar
+              </Button>
             </div>
-
-            <div className="space-y-2">
-              <div className="relative">
-                <Mail
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => {
-                    setInviteEmail(e.target.value);
-                    setInviteError(null);
-                  }}
-                  onKeyDown={(e) => e.key === "Enter" && handleSendInvitation()}
-                  placeholder="correo@ejemplo.com"
-                  className="w-full h-9 pl-9 pr-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
-                  style={{
-                    border: "1px solid var(--border-input)",
-                    backgroundColor: "var(--bg-input)",
-                    color: "var(--text-primary)",
-                  }}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Select
-                  options={roleOptions}
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value as MemberRole)}
-                  className="!h-9 !text-sm flex-1"
-                />
-                <Button
-                  size="sm"
-                  onClick={handleSendInvitation}
-                  isLoading={isSending}
-                  icon={<Send size={13} />}
-                  className="h-9 px-4"
-                >
-                  Enviar invitación
-                </Button>
-              </div>
-            </div>
-
             <AnimatePresence>
               {inviteError && (
                 <motion.p
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="text-xs text-red-500 flex items-center gap-1"
+                  className="text-xs text-red-500"
                 >
                   {inviteError}
                 </motion.p>
               )}
               {inviteSent && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="flex items-center gap-2 p-2.5 rounded-lg bg-green-50 border border-green-200"
+                  className="text-xs text-green-600"
                 >
-                  <CheckCircle2
-                    size={14}
-                    className="text-green-600 flex-shrink-0"
-                  />
-                  <p className="text-xs text-green-700">
-                    {inviteSent.notified
-                      ? `Notificación enviada a ${inviteSent.email} dentro de TASKLYN.`
-                      : `Correo de invitación enviado a ${inviteSent.email}.`}
-                  </p>
-                </motion.div>
+                  Invitación enviada
+                </motion.p>
               )}
             </AnimatePresence>
           </div>
         )}
 
         {/* Members list */}
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700">
-            Miembros ({list.members.length})
-          </p>
-          <div className="space-y-1">
-            {list.members.map((member) => {
-              const isOwnerMember = member.role === "owner";
-              const isSelf = member.userId === user.id;
-              const displayName = memberNames[member.userId] || "Cargando...";
-              const hasCustomName = !!list.customNames[member.userId];
-              const isEditing = editingUserId === member.userId;
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {list.members.map((member) => {
+            const isOwnerMember = member.role === "owner";
+            const isSelf = member.userId === user.id;
+            const displayName = memberNames[member.userId] || "Cargando...";
+            const hasCustomName = !!list.customNames[member.userId];
+            const isEditing = editingUserId === member.userId;
 
-              return (
-                <div
-                  key={member.userId}
-                  className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 transition-colors"
-                >
-                  <Avatar name={displayName} size="sm" />
+            return (
+              <div
+                key={member.userId}
+                className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                style={{ backgroundColor: "var(--bg-card)" }}
+              >
+                <Avatar name={displayName} size="md" />
 
-                  {/* Name area */}
-                  {isEditing ? (
-                    <InlineNameEditor
-                      currentName={
-                        list.customNames[member.userId] || displayName
-                      }
-                      originalName={displayName}
-                      onSave={(name) =>
-                        handleSaveCustomName(member.userId, name)
-                      }
-                      onCancel={() => setEditingUserId(null)}
-                    />
-                  ) : (
-                    <div className="flex-1 min-w-0 flex items-center gap-1.5">
-                      <div className="min-w-0">
-                        <p
-                          className="text-sm font-medium truncate"
-                          style={{ color: "var(--text-primary)" }}
+                {/* Name area */}
+                {isEditing ? (
+                  <InlineNameEditor
+                    currentName={list.customNames[member.userId] || displayName}
+                    originalName={displayName}
+                    onSave={(name) => handleSaveCustomName(member.userId, name)}
+                    onCancel={() => setEditingUserId(null)}
+                  />
+                ) : (
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p
+                        className="text-sm font-medium truncate"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        {displayName}
+                      </p>
+                      {isSelf && (
+                        <span
+                          className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                          style={{
+                            backgroundColor: "rgba(37,99,235,0.1)",
+                            color: "var(--text-link)",
+                          }}
                         >
-                          {displayName}
-                          {isSelf && (
-                            <span className="text-gray-400 ml-1">(you)</span>
-                          )}
-                        </p>
-                        {hasCustomName && (
-                          <p className="text-[11px] text-gray-400 truncate">
-                            Original:{" "}
-                            {originalNames[member.userId] || "Usuario"}
-                          </p>
-                        )}
-                      </div>
-                      {isOwner && !isOwnerMember && (
-                        <button
-                          onClick={() => setEditingUserId(member.userId)}
-                          className="flex-shrink-0 p-1 rounded-md text-gray-300 hover:text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer"
-                          title="Edit display name for this list"
-                        >
-                          <Pencil size={12} />
-                        </button>
+                          Tú
+                        </span>
                       )}
                     </div>
-                  )}
+                    {hasCustomName && (
+                      <p
+                        className="text-[11px] truncate"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        {originalNames[member.userId] || "Usuario"}
+                      </p>
+                    )}
+                  </div>
+                )}
 
-                  {/* Role / actions (only show when NOT editing) */}
-                  {!isEditing && (
-                    <>
-                      {isOwnerMember ? (
-                        <Badge variant="blue">
-                          <Shield size={10} className="mr-1" />
-                          Owner
-                        </Badge>
-                      ) : canManageRoles && !isSelf ? (
-                        <div className="flex items-center gap-2">
-                          <Select
-                            options={roleOptions}
-                            value={member.role}
-                            onChange={(e) =>
-                              handleRoleChange(member.userId, e.target.value)
-                            }
-                            className="!h-8 !text-xs"
-                          />
-                          {canRemove && (
-                            <button
-                              onClick={() => handleRemoveMember(member.userId)}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <Badge variant={roleBadgeVariant[member.role]}>
-                          {member.role}
-                        </Badge>
-                      )}
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                {/* Role / actions */}
+                {!isEditing && (
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {isOwnerMember ? (
+                      <span
+                        className="text-xs font-medium px-2 py-1 rounded-full"
+                        style={{
+                          backgroundColor: "rgba(59,130,246,0.1)",
+                          color: "#3b82f6",
+                        }}
+                      >
+                        Owner
+                      </span>
+                    ) : canManageRoles && !isSelf ? (
+                      <>
+                        <Select
+                          options={roleOptions}
+                          value={member.role}
+                          onChange={(e) =>
+                            handleRoleChange(member.userId, e.target.value)
+                          }
+                          className="!h-8 !text-xs w-24"
+                        />
+                        {canRemove && (
+                          <button
+                            onClick={() => handleRemoveMember(member.userId)}
+                            className="p-1.5 rounded-lg transition-colors"
+                            style={{ color: "var(--text-tertiary)" }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.color = "#ef4444";
+                              e.currentTarget.style.backgroundColor =
+                                "rgba(239,68,68,0.08)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.color =
+                                "var(--text-tertiary)";
+                              e.currentTarget.style.backgroundColor =
+                                "transparent";
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <span
+                        className="text-xs font-medium px-2 py-1 rounded-full capitalize"
+                        style={{
+                          backgroundColor: "var(--bg-secondary)",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
+                        {member.role}
+                      </span>
+                    )}
+                    {isOwner && !isOwnerMember && !isEditing && (
+                      <button
+                        onClick={() => setEditingUserId(member.userId)}
+                        className="p-1.5 rounded-lg transition-colors"
+                        style={{ color: "var(--text-tertiary)" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = "var(--text-link)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = "var(--text-tertiary)";
+                        }}
+                      >
+                        <Pencil size={12} />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </Modal>

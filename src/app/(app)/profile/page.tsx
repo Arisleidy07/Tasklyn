@@ -428,7 +428,10 @@ export default function ProfilePage() {
                 }}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-gray-500 flex items-center gap-1">
+                  <span
+                    className="text-xs font-medium flex items-center gap-1"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
                     <TrendingUp size={12} />
                     Progreso general de tareas
                   </span>
@@ -478,7 +481,10 @@ export default function ProfilePage() {
                 </Link>
               </div>
               {createdLists.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-4">
+                <p
+                  className="text-sm text-center py-4"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
                   Sin listas todavía
                 </p>
               ) : (
@@ -752,7 +758,8 @@ export default function ProfilePage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-gray-950/40 backdrop-blur-sm"
+                  className="absolute inset-0 backdrop-blur-sm"
+                  style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
                   onClick={() => setShowEditProfile(false)}
                 />
 

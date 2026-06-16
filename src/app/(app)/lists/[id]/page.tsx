@@ -238,27 +238,44 @@ export default function ListDetailPage() {
   };
 
   return (
-    <>
-      <ListHeader
-        list={list}
-        totalTasks={activeTasks.length}
-        canEdit={canEdit}
-        canShare={canShare}
-        isOwner={isOwner}
-        onEdit={() => {
-          setEditModalTab("details");
-          setShowEditModal(true);
+    <div
+      className="min-h-screen w-full"
+      style={{
+        backgroundImage: list.backgroundImage
+          ? `url(${list.backgroundImage})`
+          : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}
+    >
+      {/* Theme Overlay for entire page */}
+      <div
+        className="min-h-screen w-full"
+        style={{
+          backgroundColor: isDark ? "rgba(0, 0, 0, 0.4)" : "rgba(255, 255, 255, 0.15)",
         }}
-        onShare={() => setShowSharePanel(true)}
-        onMembers={() => {
-          setEditModalTab("members");
-          setShowEditModal(true);
-        }}
-        onDelete={() => setShowDeleteConfirm(true)}
-        onBack={handleBackClick}
-      />
+      >
+        <ListHeader
+          list={list}
+          totalTasks={activeTasks.length}
+          canEdit={canEdit}
+          canShare={canShare}
+          isOwner={isOwner}
+          onEdit={() => {
+            setEditModalTab("details");
+            setShowEditModal(true);
+          }}
+          onShare={() => setShowSharePanel(true)}
+          onMembers={() => {
+            setEditModalTab("members");
+            setShowEditModal(true);
+          }}
+          onDelete={() => setShowDeleteConfirm(true)}
+          onBack={handleBackClick}
+        />
 
-      <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto pb-6">
+        <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto pb-6">
         {/* Filtros - Segmented Control (Pendientes, Completadas, Todas) */}
         <div
           className="flex rounded-2xl p-1.5 mb-6 gap-1 shadow-sm"
@@ -370,7 +387,10 @@ export default function ListDetailPage() {
                       <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-semibold">
                         P
                       </span>
-                      <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">
+                      <span
+                        className="text-[11px] font-semibold uppercase tracking-wide"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         Pendientes
                       </span>
                     </div>
@@ -405,7 +425,10 @@ export default function ListDetailPage() {
                       </SortableTaskContainer>
                     </div>
                   ) : (
-                    <p className="text-[11px] text-gray-400 italic">
+                    <p
+                      className="text-[11px] italic"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
                       No hay tareas pendientes.
                     </p>
                   )}
@@ -418,7 +441,10 @@ export default function ListDetailPage() {
                       <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-semibold">
                         C
                       </span>
-                      <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-600">
+                      <span
+                        className="text-[11px] font-semibold uppercase tracking-wide"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
                         Completadas
                       </span>
                     </div>
@@ -453,7 +479,10 @@ export default function ListDetailPage() {
                       </SortableTaskContainer>
                     </div>
                   ) : (
-                    <p className="text-[11px] text-gray-400 italic">
+                    <p
+                      className="text-[11px] italic"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
                       Aún no hay tareas completadas.
                     </p>
                   )}
@@ -857,6 +886,8 @@ export default function ListDetailPage() {
           </div>
         </div>
       </Modal>
+      </div>
+      </div>
     </>
   );
 }

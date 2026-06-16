@@ -219,7 +219,17 @@ export default function NotificationsPage() {
               <>
                 <button
                   onClick={handleMarkAll}
-                  className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors flex items-center justify-center sm:hidden active:scale-90"
+                  className="p-2 rounded-xl transition-colors flex items-center justify-center sm:hidden active:scale-90"
+                  style={{ color: "var(--text-tertiary)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-secondary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "var(--text-tertiary)";
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
                   title="Marcar todo como leído"
                 >
                   <CheckCheck size={20} />

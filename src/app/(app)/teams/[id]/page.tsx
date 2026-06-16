@@ -79,7 +79,8 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 
 function getRoleIcon(role: string) {
   if (role === "owner") return <Crown size={12} className="text-yellow-500" />;
-  if (role === "admin") return <Shield size={12} className="text-gray-500" />;
+  if (role === "admin")
+    return <Shield size={12} style={{ color: "var(--text-tertiary)" }} />;
   return <User size={12} className="text-[var(--text-tertiary)]" />;
 }
 function getRoleLabel(role: string) {
@@ -89,7 +90,7 @@ function getRoleLabel(role: string) {
 }
 function getRoleBadge(role: string) {
   if (role === "owner") return "bg-yellow-50 text-yellow-700 border-yellow-200";
-  if (role === "admin") return "bg-gray-100 text-gray-700 border-gray-200";
+  if (role === "admin") return "border";
   return "border";
 }
 
@@ -344,7 +345,7 @@ export default function TeamDetailPage() {
 
   const medalFor = (idx: number) => {
     if (idx === 0) return { emoji: "🥇", color: "text-yellow-500" };
-    if (idx === 1) return { emoji: "🥈", color: "text-gray-400" };
+    if (idx === 1) return { emoji: "🥈", color: "var(--text-tertiary)" };
     if (idx === 2) return { emoji: "🥉", color: "text-amber-600" };
     return null;
   };
@@ -974,8 +975,11 @@ export default function TeamDetailPage() {
                       }}
                     >
                       <div
-                        className="absolute left-3.5 top-4 w-3 h-3 rounded-full border-2 bg-gray-400 flex-shrink-0"
-                        style={{ borderColor: "var(--bg-card)" }}
+                        className="absolute left-3.5 top-4 w-3 h-3 rounded-full border-2 flex-shrink-0"
+                        style={{
+                          backgroundColor: "var(--text-tertiary)",
+                          borderColor: "var(--bg-card)",
+                        }}
                       />
                       {entry.userPhoto ? (
                         <img
@@ -1151,7 +1155,8 @@ export default function TeamDetailPage() {
             {/* Name */}
             <div className="p-5 rounded-2xl border border-[var(--border-color)] bg-[var(--bg-card)]">
               <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3 flex items-center gap-2">
-                <Edit3 size={15} className="text-gray-400" /> Nombre del equipo
+                <Edit3 size={15} style={{ color: "var(--text-tertiary)" }} />{" "}
+                Nombre del equipo
               </h3>
               {team.isPersonal ? (
                 <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">

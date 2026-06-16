@@ -56,13 +56,19 @@ export function useUserProfiles(uids: string[]) {
             uid,
             profile: u
               ? {
-                  name: u.name,
+                  name: u.name || "Usuario",
                   photoURL: u.photoURL || undefined,
                   email: u.email,
                 }
               : { name: "Usuario" },
           }))
-          .catch(() => ({ uid, profile: { name: "Usuario" } })),
+          .catch((error) => {
+            console.error(
+              `[useUserProfiles] Failed to fetch user ${uid}:`,
+              error,
+            );
+            return { uid, profile: { name: "Usuario" } };
+          }),
       ),
     ).then((results) => {
       const updated = new Map<string, UserProfile>();

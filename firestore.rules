@@ -159,7 +159,17 @@ service cloud.firestore {
     }
 
     match /tasks/{taskId} {
-      allow read, create, update, delete: if isAuth();
+      // Allow read, create, update for authenticated users
+      allow read, create, update: if isAuth();
+      
+      // Allow delete if task owner OR if the task belongs to a list owned by the user
+      // OR if the task belongs to a team where user is owner (for cascade delete)
+      allow delete: if isAuth() && (
+        resource.data.createdBy == getAuthUid() ||
+        (resource.data.listId != null && isListOwner() && get(/databases/$(database)/documents/lists/$(resource.data.listId)).data.owner == getAuthUid()) ||
+        (resource.data.listId != null && isListTeamOwner()) ||
+        (resource.data.listId != null && isTeamOwner(get(/databases/$(database)/documents/lists/$(resource.data.listId)).data.teamId))
+      );
     }
 
     match /invitations/{invitationId} {
@@ -257,7 +267,11 @@ service cloud.firestore {
       allow read: if isAuth();
       allow create: if isAuth() && request.resource.data.authorId == getAuthUid();
       allow update: if isAuth() && resource.data.authorId == getAuthUid();
-      allow delete: if isAuth() && resource.data.authorId == getAuthUid();
+      // Allow delete if comment author OR if comment belongs to a team where user is owner (for cascade delete)
+      allow delete: if isAuth() && (
+        resource.data.authorId == getAuthUid() ||
+        (resource.data.listId != null && isTeamOwner(get(/databases/$(database)/documents/lists/$(resource.data.listId)).data.teamId))
+      );
     }
 
     // Clients - owner and team members can access

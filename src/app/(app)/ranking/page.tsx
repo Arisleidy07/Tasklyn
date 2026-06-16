@@ -59,7 +59,7 @@ function RankingCard({
       case 1:
         return <Crown size={20} className="text-yellow-500" />;
       case 2:
-        return <Medal size={20} className="text-gray-400" />;
+        return <Medal size={20} style={{ color: "var(--text-tertiary)" }} />;
       case 3:
         return <Award size={20} className="text-amber-600" />;
       default:

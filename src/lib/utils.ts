@@ -115,3 +115,61 @@ export function linkifyLocation(location: string): string {
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
   return `<a href="${mapsUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 transition-colors font-medium no-underline hover:no-underline">${location}</a>`;
 }
+
+/**
+ * Detect and convert email addresses to clickable mailto: links
+ * Premium styling - modern blue links
+ */
+export function linkifyEmails(text: string): string {
+  if (!text) return "";
+
+  // Email regex
+  const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
+
+  return text.replace(emailRegex, (match) => {
+    return `<a href="mailto:${match}" class="text-blue-600 hover:text-blue-800 transition-colors font-medium no-underline hover:no-underline">${match}</a>`;
+  });
+}
+
+/**
+ * Detect and convert URLs to clickable links
+ * Premium styling - modern blue links
+ */
+export function linkifyUrls(text: string): string {
+  if (!text) return "";
+
+  // URL regex - matches http, https, www
+  const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/g;
+
+  return text.replace(urlRegex, (match) => {
+    // Add https:// if it starts with www
+    const href = match.startsWith("www") ? `https://${match}` : match;
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 transition-colors font-medium no-underline hover:no-underline">${match}</a>`;
+  });
+}
+
+/**
+ * Comprehensive linkify function that handles:
+ * - Phone numbers (tel:)
+ * - Email addresses (mailto:)
+ * - URLs (http/https)
+ * - Locations (Google Maps)
+ * Premium styling - modern blue links
+ */
+export function linkifyAll(text: string, isLocation: boolean = false): string {
+  if (!text) return "";
+
+  let result = text;
+
+  // First, handle locations specially if this is a location field
+  if (isLocation) {
+    result = linkifyLocation(result);
+  } else {
+    // For non-location text, apply phone, email, and URL linkification
+    result = linkifyPhoneNumbers(result);
+    result = linkifyEmails(result);
+    result = linkifyUrls(result);
+  }
+
+  return result;
+}

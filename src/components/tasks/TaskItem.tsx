@@ -47,6 +47,9 @@ import {
   formatActivityDateTime,
   linkifyPhoneNumbers,
   linkifyLocation,
+  linkifyAll,
+  linkifyEmails,
+  linkifyUrls,
 } from "@/lib/utils";
 import { toISODate } from "@/lib/dateUtils";
 import { getPriorityConfig } from "@/lib/priority";
@@ -196,26 +199,32 @@ export default function TaskItem({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -8, scale: 0.97 }}
         transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-        className={cn(
-          "group transition-all relative border-b",
-          dropdownOpen && "z-20",
-        )}
+        className={cn("group transition-all relative", dropdownOpen && "z-20")}
         style={{
-          borderColor: "var(--border-color)",
-          backgroundColor: isCompleted ? "rgba(37,99,235,0.02)" : "transparent",
+          borderRadius: "20px",
+          backgroundColor: isCompleted
+            ? "rgba(37,99,235,0.02)"
+            : "var(--bg-card)",
+          boxShadow: isCompleted
+            ? "none"
+            : "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)",
+          marginBottom: "12px",
+          padding: "16px",
         }}
         onMouseEnter={(e) => {
           if (!isCompleted) {
-            e.currentTarget.style.backgroundColor = "var(--bg-hover)";
+            e.currentTarget.style.boxShadow =
+              "0 4px 6px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.03)";
           }
         }}
         onMouseLeave={(e) => {
           if (!isCompleted) {
-            e.currentTarget.style.backgroundColor = "transparent";
+            e.currentTarget.style.boxShadow =
+              "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06)";
           }
         }}
       >
-        <div className="flex items-center gap-3 py-3 px-3 sm:px-4 min-h-[56px] sm:min-h-[60px]">
+        <div className="flex items-center gap-3 min-h-[56px] sm:min-h-[60px]">
           {/* Checkbox */}
           <button
             onClick={(e) => {
@@ -354,20 +363,63 @@ export default function TaskItem({
                     {task.location && (
                       <span className="flex items-center gap-1 truncate">
                         <MapPin size={11} />
-                        <span className="truncate">{task.location}</span>
+                        <span
+                          className="truncate"
+                          dangerouslySetInnerHTML={{
+                            __html: linkifyLocation(task.location),
+                          }}
+                        />
                       </span>
                     )}
                     {task.phoneNumbers && task.phoneNumbers.length > 0 && (
                       <span className="flex items-center gap-1 truncate">
                         <Phone size={11} />
-                        <span className="truncate">{task.phoneNumbers[0]}</span>
+                        <span
+                          className="truncate"
+                          dangerouslySetInnerHTML={{
+                            __html: linkifyPhoneNumbers(task.phoneNumbers[0]),
+                          }}
+                        />
                       </span>
                     )}
                     {task.description && (
-                      <span className="truncate line-clamp-1">
-                        {task.description}
-                      </span>
+                      <span
+                        className="truncate line-clamp-1"
+                        dangerouslySetInnerHTML={{
+                          __html: linkifyAll(task.description),
+                        }}
+                      />
                     )}
+                  </div>
+                )}
+
+                {/* Task Options Bar - Always visible below task */}
+                {canManageOptions && !isCompleted && (
+                  <div className="mt-2">
+                    <TaskOptionsBar
+                      dueDate={task.dueDate}
+                      dueTime={task.dueTime}
+                      reminders={task.reminders || []}
+                      recurrence={task.recurrence}
+                      onReminderChange={(r) =>
+                        user && updateTask(task.id, { reminders: r }, user.id)
+                      }
+                      onDueDateChange={(d) => {
+                        if (!user) return;
+                        updateTask(
+                          task.id,
+                          {
+                            dueDate: d,
+                            dueTime: d ? task.dueTime || null : null,
+                          },
+                          user.id,
+                        );
+                      }}
+                      onRecurrenceChange={(r) => {
+                        if (!user) return;
+                        updateTask(task.id, { recurrence: r }, user.id);
+                      }}
+                    />
                   </div>
                 )}
               </div>
@@ -478,41 +530,6 @@ export default function TaskItem({
               style={{ borderColor: "var(--border-color)" }}
             >
               <div className="p-3 sm:p-4">
-                {/* Options bar */}
-                {canManageOptions && !isCompleted && (
-                  <div className="mb-3">
-                    <TaskOptionsBar
-                      dueDate={task.dueDate}
-                      dueTime={task.dueTime}
-                      reminders={task.reminders || []}
-                      recurrence={task.recurrence}
-                      onReminderChange={(r) =>
-                        user && updateTask(task.id, { reminders: r }, user.id)
-                      }
-                      onDueDateChange={(d) => {
-                        if (!user) return;
-                        updateTask(
-                          task.id,
-                          {
-                            dueDate: d,
-                            dueTime: d ? task.dueTime || null : null,
-                          },
-                          user.id,
-                        );
-                      }}
-                      onRecurrenceChange={(r) => {
-                        if (!user) return;
-                        const updates: Partial<Task> = { recurrence: r };
-                        if (r && !task.dueDate) {
-                          updates.dueDate = toISODate(new Date());
-                        }
-                        updateTask(task.id, updates, user.id, user.name);
-                      }}
-                      onDropdownOpenChange={setDropdownOpen}
-                    />
-                  </div>
-                )}
-
                 {/* Meta */}
                 <div className="flex items-center flex-wrap gap-2 mb-3">
                   <span
@@ -602,15 +619,15 @@ export default function TaskItem({
       <Modal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
-        title="Editar tarea"
+        title=""
         size="task"
       >
-        <div className="space-y-5">
+        <div className="space-y-6">
           {/* Section: Título */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <label
               className="text-xs font-semibold uppercase tracking-wide"
-              style={{ color: "var(--text-secondary)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               Título
             </label>
@@ -619,16 +636,16 @@ export default function TaskItem({
               onChange={setEditTitle}
               placeholder="Título de la tarea"
               autoFocus
-              className="text-base sm:text-lg font-semibold"
+              className="text-lg font-semibold"
               minRows={1}
             />
           </div>
 
           {/* Section: Descripción */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <label
               className="text-xs font-semibold uppercase tracking-wide"
-              style={{ color: "var(--text-secondary)" }}
+              style={{ color: "var(--text-tertiary)" }}
             >
               Descripción
               <span
@@ -642,15 +659,15 @@ export default function TaskItem({
               style={{
                 border: "1px solid var(--border-input)",
                 backgroundColor: "var(--bg-input)",
-                borderRadius: "12px",
-                padding: "12px 16px",
+                borderRadius: "16px",
+                padding: "16px",
               }}
             >
               <AutoResizeTextarea
                 value={editDescription}
                 onChange={setEditDescription}
                 placeholder="Añade una descripción..."
-                className="text-sm sm:text-base"
+                className="text-base"
                 minRows={2}
               />
             </div>
@@ -659,39 +676,39 @@ export default function TaskItem({
           {/* Grid: Ubicación y Teléfonos */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Section: Ubicación */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <label
                 className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-                style={{ color: "var(--text-secondary)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
-                <MapPin size={12} style={{ color: "var(--text-tertiary)" }} />
+                <MapPin size={12} />
                 Ubicación
               </label>
               <div
                 style={{
                   border: "1px solid var(--border-input)",
                   backgroundColor: "var(--bg-input)",
-                  borderRadius: "12px",
-                  padding: "12px 16px",
+                  borderRadius: "16px",
+                  padding: "16px",
                 }}
               >
                 <AutoResizeTextarea
                   value={editLocation}
                   onChange={setEditLocation}
                   placeholder="Ubicación o dirección"
-                  className="text-sm sm:text-base"
+                  className="text-base"
                   minRows={1}
                 />
               </div>
             </div>
 
             {/* Section: Teléfonos */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <label
                 className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-                style={{ color: "var(--text-secondary)" }}
+                style={{ color: "var(--text-tertiary)" }}
               >
-                <Phone size={12} style={{ color: "var(--text-tertiary)" }} />
+                <Phone size={12} />
                 Teléfonos
               </label>
               <div className="space-y-2">
@@ -702,15 +719,15 @@ export default function TaskItem({
                       style={{
                         border: "1px solid var(--border-input)",
                         backgroundColor: "var(--bg-input)",
-                        borderRadius: "12px",
-                        padding: "12px 16px",
+                        borderRadius: "16px",
+                        padding: "16px",
                       }}
                     >
                       <AutoResizeTextarea
                         value={phone}
                         onChange={(v) => handlePhoneChange(index, v)}
                         placeholder={`Teléfono ${index + 1}`}
-                        className="text-sm sm:text-base"
+                        className="text-base"
                         minRows={1}
                       />
                     </div>
@@ -718,7 +735,7 @@ export default function TaskItem({
                       <button
                         type="button"
                         onClick={() => handleRemovePhone(index)}
-                        className="p-2 rounded-lg transition-colors flex-shrink-0"
+                        className="p-2 rounded-xl transition-colors flex-shrink-0 mt-1"
                         style={{ color: "var(--text-tertiary)" }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.color = "#ef4444";
@@ -738,7 +755,7 @@ export default function TaskItem({
                 <button
                   type="button"
                   onClick={handleAddPhone}
-                  className="flex items-center gap-1.5 text-xs font-medium transition-colors px-3 py-2 rounded-lg w-full"
+                  className="flex items-center gap-1.5 text-xs font-medium transition-colors px-4 py-2.5 rounded-xl w-full"
                   style={{
                     color: "var(--text-tertiary)",
                     border: "1px dashed var(--border-color)",
@@ -760,57 +777,34 @@ export default function TaskItem({
             </div>
           </div>
 
-          {/* Grid: Prioridad y Fecha */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Section: Prioridad */}
-            <div className="space-y-2">
-              <label
-                className="text-xs font-semibold uppercase tracking-wide"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                Prioridad
-              </label>
-              <select
-                value={editPriority || ""}
-                onChange={(e) =>
-                  setEditPriority(
-                    (e.target.value as Task["priority"]) || undefined,
-                  )
-                }
-                className="w-full text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500/30 outline-none cursor-pointer"
-                style={{
-                  border: "1px solid var(--border-input)",
-                  backgroundColor: "var(--bg-input)",
-                  color: "var(--text-primary)",
-                  borderRadius: "12px",
-                }}
-              >
-                <option value="">⚪ Sin prioridad</option>
-                <option value="urgent">🔴 Crítica</option>
-                <option value="high">🟠 Alta</option>
-                <option value="medium">🟡 Media</option>
-                <option value="low">🟢 Baja</option>
-              </select>
-            </div>
-
-            {/* Section: Fecha y recordatorios */}
-            <div className="space-y-2">
-              <label
-                className="text-xs font-semibold uppercase tracking-wide"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                Fecha y recordatorios
-              </label>
-              <TaskOptionsBar
-                dueDate={editDueDate}
-                dueTime={editDueTime}
-                reminders={editReminders}
-                recurrence={editRecurrence}
-                onReminderChange={(r) => setEditReminders(r)}
-                onDueDateChange={(d) => setEditDueDate(d)}
-                onRecurrenceChange={(r) => setEditRecurrence(r)}
-              />
-            </div>
+          {/* Section: Prioridad */}
+          <div className="space-y-3">
+            <label
+              className="text-xs font-semibold uppercase tracking-wide"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              Prioridad
+            </label>
+            <select
+              value={editPriority || ""}
+              onChange={(e) =>
+                setEditPriority(
+                  (e.target.value as Task["priority"]) || undefined,
+                )
+              }
+              className="w-full text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 outline-none cursor-pointer"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
+            >
+              <option value="">⚪ Sin prioridad</option>
+              <option value="urgent">🔴 Crítica</option>
+              <option value="high">🟠 Alta</option>
+              <option value="medium">🟡 Media</option>
+              <option value="low">🟢 Baja</option>
+            </select>
           </div>
 
           {/* Actions */}

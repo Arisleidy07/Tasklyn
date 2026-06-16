@@ -164,796 +164,450 @@ export default function EditListModal({
   ];
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Editar lista"
-      description={list.name}
-      size="task"
-    >
-      <div className="space-y-4">
-        {/* Tabs */}
-        <div
-          className="flex rounded-xl p-1 gap-1"
-          style={{ backgroundColor: "var(--bg-secondary)" }}
-        >
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer"
-              style={
-                activeTab === tab.id
-                  ? {
-                      backgroundColor: "var(--bg-card)",
-                      color: "var(--text-primary)",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-                    }
-                  : { color: "var(--text-secondary)" }
-              }
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
+    <Modal isOpen={isOpen} onClose={onClose} title="" size="task">
+      <div className="space-y-5">
+        {/* Header con emoji y nombre */}
+        <div className="flex items-start gap-4">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+            style={{ backgroundColor: "var(--bg-secondary)" }}
+          >
+            {icon || "📋"}
+          </div>
+          <div className="flex-1 min-w-0">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nombre de la lista"
+              disabled={!canEdit}
+              className="w-full text-xl font-semibold bg-transparent border-none focus:outline-none focus:ring-0 disabled:opacity-60 disabled:cursor-not-allowed"
+              style={{ color: "var(--text-primary)" }}
+            />
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Descripción (opcional)"
+              disabled={!canEdit}
+              rows={1}
+              className="w-full text-sm bg-transparent border-none focus:outline-none focus:ring-0 resize-none disabled:opacity-60 disabled:cursor-not-allowed mt-1"
+              style={{ color: "var(--text-secondary)" }}
+            />
+          </div>
         </div>
 
-        <AnimatePresence mode="wait">
-          {/* ── Details Tab ── */}
-          {activeTab === "details" && (
-            <motion.div
-              key="details"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-4"
-            >
-              {/* Section: Nombre */}
-              <div className="space-y-2">
-                <label
-                  className="text-xs font-semibold uppercase tracking-wide block"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Nombre de la lista
-                </label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSaveDetails()}
-                  placeholder="Mi lista de tareas"
-                  disabled={!canEdit}
-                  className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                  style={{
-                    border: "1px solid var(--border-input)",
-                    backgroundColor: "var(--bg-input)",
-                    color: "var(--text-primary)",
-                  }}
-                />
-              </div>
+        {/* Emoji selector */}
+        <div className="space-y-2">
+          <label
+            className="text-xs font-semibold uppercase tracking-wide"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            Emoji
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {[
+              "📋",
+              "🏠",
+              "💼",
+              "🎯",
+              "⭐",
+              "🔥",
+              "💡",
+              "🚀",
+              "📚",
+              "🎨",
+              "🎵",
+              "🎮",
+            ].map((emoji) => (
+              <button
+                key={emoji}
+                type="button"
+                onClick={() => setIcon(emoji)}
+                disabled={!canEdit}
+                className="w-10 h-10 rounded-xl text-xl hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor:
+                    icon === emoji
+                      ? "var(--bg-tertiary)"
+                      : "var(--bg-secondary)",
+                }}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        </div>
 
-              {/* Section: Descripción */}
-              <div className="space-y-2">
-                <label
-                  className="text-xs font-semibold uppercase tracking-wide block"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Descripción{" "}
-                  <span
-                    className="font-normal"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    (opcional)
-                  </span>
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe el propósito de esta lista..."
-                  disabled={!canEdit}
-                  rows={2}
-                  className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all resize-none disabled:opacity-60 disabled:cursor-not-allowed"
-                  style={{
-                    border: "1px solid var(--border-input)",
-                    backgroundColor: "var(--bg-input)",
-                    color: "var(--text-primary)",
-                  }}
-                />
-              </div>
+        {/* Color selector para círculo del sidebar */}
+        <div className="space-y-2">
+          <label
+            className="text-xs font-semibold uppercase tracking-wide"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            Color del círculo
+          </label>
+          <div className="flex gap-2">
+            {[
+              { value: "#3b82f6", label: "🔵" },
+              { value: "#8b5cf6", label: "🟣" },
+              { value: "#22c55e", label: "🟢" },
+              { value: "#f97316", label: "🟠" },
+              { value: "#ef4444", label: "🔴" },
+              { value: "#eab308", label: "🟡" },
+              { value: "#1f2937", label: "⚫" },
+            ].map(({ value, label }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setColor(value)}
+                disabled={!canEdit}
+                className="w-8 h-8 rounded-full transition-transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: value,
+                  border:
+                    color === value
+                      ? "2px solid white"
+                      : "2px solid transparent",
+                  boxShadow:
+                    color === value ? "0 0 0 2px var(--border-color)" : "none",
+                }}
+                title={label}
+              />
+            ))}
+          </div>
+        </div>
 
-              {/* Section: Equipo */}
-              {teams.length > 0 && (
-                <div className="space-y-2">
-                  <label
-                    className="text-xs font-semibold uppercase tracking-wide block"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Equipo
-                  </label>
-                  <select
-                    value={teamId}
-                    onChange={(e) => setTeamId(e.target.value)}
-                    disabled={!canEdit}
-                    className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{
-                      border: "1px solid var(--border-input)",
-                      backgroundColor: "var(--bg-input)",
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <option value="">Sin equipo</option>
-                    {teams.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Section: Emoji */}
-              <div className="space-y-2">
-                <label
-                  className="text-xs font-semibold uppercase tracking-wide block"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Emoji
-                  <span
-                    className="font-normal"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    (opcional)
-                  </span>
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    value={icon}
-                    onChange={(e) => setIcon(e.target.value)}
-                    placeholder="📋"
-                    disabled={!canEdit}
-                    maxLength={2}
-                    className="w-20 h-11 px-3 rounded-xl text-2xl text-center focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{
-                      border: "1px solid var(--border-input)",
-                      backgroundColor: "var(--bg-input)",
-                      color: "var(--text-primary)",
-                    }}
-                  />
-                  <div className="flex flex-wrap gap-1 flex-1">
-                    {[
-                      "📋",
-                      "🏠",
-                      "💼",
-                      "🎯",
-                      "⭐",
-                      "🔥",
-                      "💡",
-                      "🚀",
-                      "📚",
-                      "🎨",
-                      "🎵",
-                      "🎮",
-                      "🌟",
-                      "✨",
-                      "💪",
-                      "🎉",
-                    ].map((emoji) => (
-                      <button
-                        key={emoji}
-                        type="button"
-                        onClick={() => setIcon(emoji)}
-                        disabled={!canEdit}
-                        className="w-9 h-9 rounded-lg text-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{ backgroundColor: "var(--bg-secondary)" }}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Section: Imagen de fondo */}
-              <div className="space-y-2">
-                <label
-                  className="text-xs font-semibold uppercase tracking-wide block"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Imagen de fondo
-                  <span
-                    className="font-normal"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    (opcional)
-                  </span>
-                </label>
-                <input
-                  value={backgroundImage}
-                  onChange={(e) => setBackgroundImage(e.target.value)}
-                  placeholder="https://..."
-                  disabled={!canEdit}
-                  className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                  style={{
-                    border: "1px solid var(--border-input)",
-                    backgroundColor: "var(--bg-input)",
-                    color: "var(--text-primary)",
-                  }}
-                />
-                {backgroundImage && (
-                  <div
-                    className="w-full h-24 rounded-lg bg-cover bg-center mt-2"
-                    style={{ backgroundImage: `url(${backgroundImage})` }}
-                  />
-                )}
-
-                {/* Preset backgrounds */}
-                <div className="mt-4">
-                  <p
-                    className="text-xs font-medium mb-2"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Fondos sugeridos
-                  </p>
-                  <div className="space-y-3">
-                    {/* Paisajes */}
-                    <div>
-                      <p
-                        className="text-[11px] mb-1.5"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        Paisajes
-                      </p>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {[
-                          "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=1920&q=80",
-                        ].map((url) => (
-                          <button
-                            key={url}
-                            type="button"
-                            onClick={() => setBackgroundImage(url)}
-                            disabled={!canEdit}
-                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                            style={{
-                              backgroundImage: `url(${url})`,
-                              borderColor:
-                                backgroundImage === url
-                                  ? "#2563eb"
-                                  : "var(--border-color)",
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Naturaleza */}
-                    <div>
-                      <p
-                        className="text-[11px] mb-1.5"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        Naturaleza
-                      </p>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {[
-                          "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1920&q=80",
-                        ].map((url) => (
-                          <button
-                            key={url}
-                            type="button"
-                            onClick={() => setBackgroundImage(url)}
-                            disabled={!canEdit}
-                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                            style={{
-                              backgroundImage: `url(${url})`,
-                              borderColor:
-                                backgroundImage === url
-                                  ? "#2563eb"
-                                  : "var(--border-color)",
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Montañas */}
-                    <div>
-                      <p
-                        className="text-[11px] mb-1.5"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        Montañas
-                      </p>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {[
-                          "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=1920&q=80",
-                        ].map((url) => (
-                          <button
-                            key={url}
-                            type="button"
-                            onClick={() => setBackgroundImage(url)}
-                            disabled={!canEdit}
-                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                            style={{
-                              backgroundImage: `url(${url})`,
-                              borderColor:
-                                backgroundImage === url
-                                  ? "#2563eb"
-                                  : "var(--border-color)",
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Playas */}
-                    <div>
-                      <p
-                        className="text-[11px] mb-1.5"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        Playas
-                      </p>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {[
-                          "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=1920&q=80",
-                        ].map((url) => (
-                          <button
-                            key={url}
-                            type="button"
-                            onClick={() => setBackgroundImage(url)}
-                            disabled={!canEdit}
-                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                            style={{
-                              backgroundImage: `url(${url})`,
-                              borderColor:
-                                backgroundImage === url
-                                  ? "#2563eb"
-                                  : "var(--border-color)",
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Ciudad */}
-                    <div>
-                      <p
-                        className="text-[11px] mb-1.5"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        Ciudad
-                      </p>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {[
-                          "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1920&q=80",
-                        ].map((url) => (
-                          <button
-                            key={url}
-                            type="button"
-                            onClick={() => setBackgroundImage(url)}
-                            disabled={!canEdit}
-                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                            style={{
-                              backgroundImage: `url(${url})`,
-                              borderColor:
-                                backgroundImage === url
-                                  ? "#2563eb"
-                                  : "var(--border-color)",
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Tecnología */}
-                    <div>
-                      <p
-                        className="text-[11px] mb-1.5"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        Tecnología
-                      </p>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {[
-                          "https://images.unsplash.com/photo-1518770660439-4636190af475?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1920&q=80",
-                        ].map((url) => (
-                          <button
-                            key={url}
-                            type="button"
-                            onClick={() => setBackgroundImage(url)}
-                            disabled={!canEdit}
-                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                            style={{
-                              backgroundImage: `url(${url})`,
-                              borderColor:
-                                backgroundImage === url
-                                  ? "#2563eb"
-                                  : "var(--border-color)",
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Abstractos */}
-                    <div>
-                      <p
-                        className="text-[11px] mb-1.5"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        Abstractos
-                      </p>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {[
-                          "https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=1920&q=80",
-                          "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80",
-                        ].map((url) => (
-                          <button
-                            key={url}
-                            type="button"
-                            onClick={() => setBackgroundImage(url)}
-                            disabled={!canEdit}
-                            className="w-20 h-12 rounded-lg bg-cover bg-center flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                            style={{
-                              backgroundImage: `url(${url})`,
-                              borderColor:
-                                backgroundImage === url
-                                  ? "#2563eb"
-                                  : "var(--border-color)",
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Gradientes */}
-                    <div>
-                      <p
-                        className="text-[11px] mb-1.5"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        Gradientes
-                      </p>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {[
-                          "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                          "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
-                          "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
-                          "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-                          "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
-                          "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
-                        ].map((gradient) => (
-                          <button
-                            key={gradient}
-                            type="button"
-                            onClick={() => setBackgroundImage(gradient)}
-                            disabled={!canEdit}
-                            className="w-20 h-12 rounded-lg flex-shrink-0 border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105"
-                            style={{
-                              background: gradient,
-                              borderColor:
-                                backgroundImage === gradient
-                                  ? "#2563eb"
-                                  : "var(--border-color)",
-                            }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section: Color */}
-              <div className="space-y-2">
-                <label
-                  className="text-xs font-semibold uppercase tracking-wide block"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Color
-                  <span
-                    className="font-normal"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    (opcional)
-                  </span>
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="color"
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    disabled={!canEdit}
-                    className="w-12 h-11 rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  />
-                  <input
-                    value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    placeholder="#000000"
-                    disabled={!canEdit}
-                    className="flex-1 h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                    style={{
-                      border: "1px solid var(--border-input)",
-                      backgroundColor: "var(--bg-input)",
-                      color: "var(--text-primary)",
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Section: Información */}
-              <div className="grid grid-cols-2 gap-3">
-                <div
-                  className="rounded-xl p-4 border"
-                  style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    borderColor: "var(--border-color)",
-                  }}
-                >
-                  <p
-                    className="text-xs font-semibold uppercase tracking-wide mb-2"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Tipo
-                  </p>
-                  <p
-                    className="text-sm font-semibold"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    {list.type === "shared" ? "Compartida" : "Personal"}
-                  </p>
-                </div>
-                <div
-                  className="rounded-xl p-4 border"
-                  style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    borderColor: "var(--border-color)",
-                  }}
-                >
-                  <p
-                    className="text-xs font-semibold uppercase tracking-wide mb-2"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Tu rol
-                  </p>
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full",
-                      myRole
-                        ? roleConfig[myRole].pill
-                        : "bg-gray-100 text-gray-600",
-                    )}
-                  >
-                    {myRole && roleConfig[myRole].icon}
-                    {myRole ? roleConfig[myRole].label : "Sin rol"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Actions */}
-              {canEdit && (
-                <div
-                  className="flex items-center justify-end gap-3 pt-4 border-t"
-                  style={{ borderColor: "var(--border-color)" }}
-                >
-                  <Button variant="ghost" onClick={onClose}>
-                    Cancelar
-                  </Button>
-                  <Button
-                    onClick={handleSaveDetails}
-                    isLoading={isSaving}
-                    disabled={!name.trim() || isSaving}
-                    icon={
-                      saved ? (
-                        <Check size={16} className="text-white" />
-                      ) : (
-                        <Save size={16} />
-                      )
-                    }
-                  >
-                    {saved ? "¡Guardado!" : "Guardar cambios"}
-                  </Button>
-                </div>
-              )}
-            </motion.div>
+        {/* Imagen de fondo */}
+        <div className="space-y-2">
+          <label
+            className="text-xs font-semibold uppercase tracking-wide"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            Imagen de fondo
+          </label>
+          <input
+            value={backgroundImage}
+            onChange={(e) => setBackgroundImage(e.target.value)}
+            placeholder="https://..."
+            disabled={!canEdit}
+            className="w-full h-10 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{
+              border: "1px solid var(--border-input)",
+              backgroundColor: "var(--bg-input)",
+              color: "var(--text-primary)",
+            }}
+          />
+          {backgroundImage && (
+            <div
+              className="w-full h-20 rounded-xl bg-cover bg-center mt-2"
+              style={{ backgroundImage: `url(${backgroundImage})` }}
+            />
           )}
-
-          {/* ── Members Tab ── */}
-          {activeTab === "members" && (
-            <motion.div
-              key="members"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
-              transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-              className="space-y-3"
+          <details className="mt-2">
+            <summary
+              className="text-xs font-medium cursor-pointer hover:underline"
+              style={{ color: "var(--text-link)" }}
             >
-              {list.members.map((member, index) => {
-                const profile = memberProfiles[member.userId];
-                const isOwnerMember = member.role === "owner";
-                const isSelf = member.userId === user.id;
-                const displayName =
-                  profile?.name || (isSelf ? user.name : "Cargando...");
-                const displayEmail = profile?.email || "";
-                const photoURL = profile?.photoURL || "";
-                const isConfirmingRemove = confirmRemove === member.userId;
-
-                return (
-                  <motion.div
-                    key={member.userId}
-                    layout
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.96 }}
-                    transition={{ delay: index * 0.04 }}
-                    className="rounded-xl border transition-all duration-200 overflow-hidden"
-                    style={
-                      isConfirmingRemove
-                        ? {
-                            borderColor: "rgba(239,68,68,0.3)",
-                            backgroundColor: "rgba(239,68,68,0.06)",
-                          }
-                        : {
-                            borderColor: "var(--border-color)",
-                            backgroundColor: "var(--bg-card)",
-                          }
-                    }
-                  >
-                    {isConfirmingRemove ? (
-                      <div className="flex items-center gap-3 p-4">
-                        <AlertTriangle
-                          size={18}
-                          className="text-red-500 flex-shrink-0"
-                        />
-                        <p
-                          className="flex-1 text-sm font-medium"
-                          style={{ color: "#dc2626" }}
-                        >
-                          ¿Eliminar a{" "}
-                          <span className="font-bold">{displayName}</span>?
-                        </p>
-                        <div className="flex gap-2 flex-shrink-0">
-                          <button
-                            onClick={() => setConfirmRemove(null)}
-                            className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors"
-                            style={{
-                              color: "var(--text-secondary)",
-                              backgroundColor: "var(--bg-card)",
-                              border: "1px solid var(--border-color)",
-                            }}
-                          >
-                            Cancelar
-                          </button>
-                          <button
-                            onClick={() => handleRemoveMember(member.userId)}
-                            className="px-3 py-1.5 text-xs font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-3 p-4">
-                        {/* Avatar */}
-                        <div className="flex-shrink-0">
-                          <Avatar
-                            name={displayName}
-                            photoURL={photoURL}
-                            size="lg"
-                          />
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p
-                              className="font-semibold text-sm truncate"
-                              style={{ color: "var(--text-primary)" }}
-                            >
-                              {displayName}
-                            </p>
-                            {isSelf && (
-                              <span
-                                className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold flex-shrink-0"
-                                style={{
-                                  backgroundColor: "rgba(37,99,235,0.1)",
-                                  color: "var(--text-link)",
-                                }}
-                              >
-                                Tú
-                              </span>
-                            )}
-                          </div>
-                          {displayEmail && (
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <Mail
-                                size={9}
-                                className="flex-shrink-0"
-                                style={{ color: "var(--text-tertiary)" }}
-                              />
-                              <p
-                                className="text-[11px] truncate"
-                                style={{ color: "var(--text-tertiary)" }}
-                              >
-                                {displayEmail}
-                              </p>
-                            </div>
-                          )}
-                          <span
-                            className={cn(
-                              "inline-flex items-center gap-1 mt-1.5 text-[10px] font-semibold px-2 py-0.5 rounded-full",
-                              roleConfig[member.role].pill,
-                            )}
-                          >
-                            {roleConfig[member.role].icon}
-                            {roleConfig[member.role].label}
-                          </span>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          {canManageRoles && !isOwnerMember && (
-                            <Select
-                              options={roleOptions}
-                              value={member.role}
-                              onChange={(e) =>
-                                handleRoleChange(member.userId, e.target.value)
-                              }
-                              className="!h-9 !text-xs !w-28"
-                            />
-                          )}
-                          {canRemove && !isSelf && !isOwnerMember && (
-                            <button
-                              onClick={() => setConfirmRemove(member.userId)}
-                              className="p-2 rounded-lg transition-colors flex items-center justify-center"
-                              style={{ color: "var(--text-tertiary)" }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.color = "#ef4444";
-                                e.currentTarget.style.backgroundColor =
-                                  "rgba(239,68,68,0.08)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.color =
-                                  "var(--text-tertiary)";
-                                e.currentTarget.style.backgroundColor =
-                                  "transparent";
-                              }}
-                              title="Eliminar miembro"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </motion.div>
-                );
-              })}
-
-              {list.members.length === 0 && (
-                <div
-                  className="text-center py-10 text-sm"
+              Ver fondos sugeridos
+            </summary>
+            <div className="mt-3 space-y-4">
+              {/* Paisajes */}
+              <div>
+                <p
+                  className="text-[11px] mb-2"
                   style={{ color: "var(--text-tertiary)" }}
                 >
-                  No hay miembros en esta lista
+                  Paisajes
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
+                    "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80",
+                    "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&q=80",
+                  ].map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setBackgroundImage(url)}
+                      disabled={!canEdit}
+                      className="w-full h-16 rounded-lg bg-cover bg-center transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundImage: `url(${url})`,
+                        border:
+                          backgroundImage === url
+                            ? "2px solid #2563eb"
+                            : "2px solid transparent",
+                      }}
+                    />
+                  ))}
                 </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+              </div>
+
+              {/* Naturaleza */}
+              <div>
+                <p
+                  className="text-[11px] mb-2"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Naturaleza
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80",
+                    "https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?w=800&q=80",
+                    "https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80",
+                  ].map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setBackgroundImage(url)}
+                      disabled={!canEdit}
+                      className="w-full h-16 rounded-lg bg-cover bg-center transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundImage: `url(${url})`,
+                        border:
+                          backgroundImage === url
+                            ? "2px solid #2563eb"
+                            : "2px solid transparent",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Montañas */}
+              <div>
+                <p
+                  className="text-[11px] mb-2"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Montañas
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
+                    "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&q=80",
+                    "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=800&q=80",
+                  ].map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setBackgroundImage(url)}
+                      disabled={!canEdit}
+                      className="w-full h-16 rounded-lg bg-cover bg-center transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundImage: `url(${url})`,
+                        border:
+                          backgroundImage === url
+                            ? "2px solid #2563eb"
+                            : "2px solid transparent",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Ciudad */}
+              <div>
+                <p
+                  className="text-[11px] mb-2"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Ciudad
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=800&q=80",
+                    "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800&q=80",
+                    "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&q=80",
+                  ].map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setBackgroundImage(url)}
+                      disabled={!canEdit}
+                      className="w-full h-16 rounded-lg bg-cover bg-center transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundImage: `url(${url})`,
+                        border:
+                          backgroundImage === url
+                            ? "2px solid #2563eb"
+                            : "2px solid transparent",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Minimalismo */}
+              <div>
+                <p
+                  className="text-[11px] mb-2"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Minimalismo
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    "https://images.unsplash.com/photo-1494438639946-1ebd1d20bf85?w=800&q=80",
+                    "https://images.unsplash.com/photo-1507643179173-442f06a5d9b9?w=800&q=80",
+                    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
+                  ].map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setBackgroundImage(url)}
+                      disabled={!canEdit}
+                      className="w-full h-16 rounded-lg bg-cover bg-center transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundImage: `url(${url})`,
+                        border:
+                          backgroundImage === url
+                            ? "2px solid #2563eb"
+                            : "2px solid transparent",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Oficina */}
+              <div>
+                <p
+                  className="text-[11px] mb-2"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Oficina
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
+                    "https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80",
+                    "https://images.unsplash.com/photo-1497215842964-222b430dc094?w=800&q=80",
+                  ].map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setBackgroundImage(url)}
+                      disabled={!canEdit}
+                      className="w-full h-16 rounded-lg bg-cover bg-center transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundImage: `url(${url})`,
+                        border:
+                          backgroundImage === url
+                            ? "2px solid #2563eb"
+                            : "2px solid transparent",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Tecnología */}
+              <div>
+                <p
+                  className="text-[11px] mb-2"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Tecnología
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
+                    "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=80",
+                    "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&q=80",
+                  ].map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => setBackgroundImage(url)}
+                      disabled={!canEdit}
+                      className="w-full h-16 rounded-lg bg-cover bg-center transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundImage: `url(${url})`,
+                        border:
+                          backgroundImage === url
+                            ? "2px solid #2563eb"
+                            : "2px solid transparent",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Gradientes */}
+              <div>
+                <p
+                  className="text-[11px] mb-2"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Gradientes
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                    "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                    "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                    "linear-gradient(135deg, #fa709a 0%, #fee140 100%)",
+                    "linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)",
+                  ].map((gradient) => (
+                    <button
+                      key={gradient}
+                      type="button"
+                      onClick={() => setBackgroundImage(gradient)}
+                      disabled={!canEdit}
+                      className="w-full h-16 rounded-lg transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        background: gradient,
+                        border:
+                          backgroundImage === gradient
+                            ? "2px solid #2563eb"
+                            : "2px solid transparent",
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        {/* Actions */}
+        <div
+          className="flex items-center justify-between pt-4 border-t"
+          style={{ borderColor: "var(--border-color)" }}
+        >
+          <Button
+            variant="ghost"
+            onClick={onClose}
+            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+          >
+            Cancelar
+          </Button>
+          <div className="flex gap-2">
+            {myRole === "owner" && (
+              <Button
+                variant="danger"
+                onClick={() => {
+                  if (confirm("¿Eliminar esta lista permanentemente?")) {
+                    // Handle delete
+                    onClose();
+                  }
+                }}
+                className="text-sm"
+              >
+                Eliminar
+              </Button>
+            )}
+            <Button
+              onClick={handleSaveDetails}
+              disabled={!name.trim() || isSaving}
+              isLoading={isSaving}
+            >
+              Guardar
+            </Button>
+          </div>
+        </div>
       </div>
     </Modal>
   );

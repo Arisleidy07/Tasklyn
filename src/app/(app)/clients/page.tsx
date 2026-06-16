@@ -114,7 +114,14 @@ function ClientForm({ initial, onClose, onSave, title }: ClientFormProps) {
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="transition-colors"
+              style={{ color: "var(--text-tertiary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--text-secondary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-tertiary)";
+              }}
             >
               <X size={16} />
             </button>
@@ -394,7 +401,8 @@ export default function ClientsPage() {
         <div className="relative">
           <Search
             size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2"
+            style={{ color: "var(--text-tertiary)" }}
           />
           <input
             value={search}
@@ -543,13 +551,27 @@ export default function ClientsPage() {
                     </button>
                     <button
                       onClick={() => setEditing(client)}
-                      className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                      className="p-2 transition-colors"
+                      style={{ color: "var(--text-tertiary)" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "#2563eb";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "var(--text-tertiary)";
+                      }}
                     >
                       <Edit3 size={14} />
                     </button>
                     <button
                       onClick={() => handleDelete(client.id)}
-                      className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                      className="p-2 transition-colors"
+                      style={{ color: "var(--text-tertiary)" }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "#ef4444";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "var(--text-tertiary)";
+                      }}
                     >
                       <Trash2 size={14} />
                     </button>
@@ -568,7 +590,8 @@ export default function ClientsPage() {
                       <div className="flex items-start gap-2">
                         <FileText
                           size={14}
-                          className="text-gray-400 mt-0.5 flex-shrink-0"
+                          className="mt-0.5 flex-shrink-0"
+                          style={{ color: "var(--text-tertiary)" }}
                         />
                         <p
                           className="text-sm whitespace-pre-wrap"

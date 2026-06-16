@@ -70,13 +70,13 @@ function HistoryCard({ entry, isCurrentUser }: HistoryCardProps) {
       case "completed":
         return <CheckCircle2 size={16} className="text-green-500" />;
       case "archived":
-        return <Archive size={16} className="text-gray-500" />;
+        return <Archive size={16} style={{ color: "var(--text-tertiary)" }} />;
       case "deleted":
         return <Trash2 size={16} className="text-red-500" />;
       case "assigned":
         return <Users size={16} className="text-purple-500" />;
       default:
-        return <Activity size={16} className="text-gray-500" />;
+        return <Activity size={16} style={{ color: "var(--text-tertiary)" }} />;
     }
   };
 
@@ -491,7 +491,8 @@ export default function HistoryPage() {
           <div className="relative flex-1">
             <Search
               size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2"
+              style={{ color: "var(--text-tertiary)" }}
             />
             <input
               type="text"
