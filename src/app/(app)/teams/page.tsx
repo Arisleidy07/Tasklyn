@@ -94,9 +94,10 @@ function TeamCard({
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-base font-bold flex-shrink-0"
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold flex-shrink-0"
             style={{
               backgroundColor: "var(--text-primary)",
+              color: "var(--text-on-accent)",
               opacity: 0.9,
             }}
           >
@@ -207,11 +208,12 @@ function TeamCard({
           {team.members.slice(0, 4).map((m, i) => (
             <div
               key={m.userId}
-              className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-white text-[9px] font-bold shadow-sm flex-shrink-0"
+              className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-[9px] font-bold shadow-sm flex-shrink-0"
               style={{
                 zIndex: 10 - i,
                 borderColor: "var(--bg-card)",
                 backgroundColor: "var(--text-primary)",
+                color: "var(--text-on-accent)",
                 opacity: 0.8,
               }}
             >
@@ -470,7 +472,10 @@ export default function TeamsPage() {
             >
               <div className="p-5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-base shadow-lg">
+                  <div
+                    className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-base shadow-lg"
+                    style={{ color: "var(--text-on-accent)" }}
+                  >
                     👤
                   </div>
                   <div>

@@ -37,6 +37,11 @@ service cloud.firestore {
       );
     }
 
+    // Helper to check if user is team owner for a list (checks list's teamId)
+    function isListTeamOwner() {
+      return resource.data.teamId != null && isTeamOwner(resource.data.teamId);
+    }
+
     // Helper to check if user is team admin/owner — uses resource.data (no get() call)
     // Checks both 'owner' and 'ownerId' fields for compatibility
     function isTeamAdminDirect() {
@@ -121,7 +126,7 @@ service cloud.firestore {
         isJoiningList()
       );
 
-      allow delete: if isAuth() && isListOwner();
+      allow delete: if isAuth() && (isListOwner() || isListTeamOwner());
     }
 
     match /tasks/{taskId} {

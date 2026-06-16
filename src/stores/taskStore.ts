@@ -59,6 +59,7 @@ interface TaskState {
         | "recurrence"
         | "priority"
         | "tags"
+        | "order"
       >
     >,
     performedBy: string,
@@ -78,6 +79,7 @@ interface TaskState {
   subscribeToList: (listId: string) => void;
   unsubscribeFromList: (listId: string) => void;
   unsubscribeAll: () => void;
+  reorderTasks: (taskIds: string[]) => Promise<void>;
 }
 
 // ---- Helper functions ----
@@ -570,5 +572,25 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   unsubscribeAll: () => {
     get().taskUnsubscribes.forEach((unsubscribe) => unsubscribe());
     set({ taskUnsubscribes: new Map(), tasks: [] });
+  },
+
+  reorderTasks: async (taskIds) => {
+    // Optimistic update: reorder local state
+    set((state) => {
+      const taskMap = new Map(state.tasks.map((t) => [t.id, t]));
+      const reorderedTasks = taskIds
+        .map((id) => taskMap.get(id))
+        .filter((t): t is Task => t !== undefined);
+      return { tasks: reorderedTasks };
+    });
+
+    // Persist to Firestore: update order field for each task
+    const tasks = get().tasks;
+    for (let i = 0; i < tasks.length; i++) {
+      const task = tasks[i];
+      if (task.order !== i) {
+        await updateTaskInDb(task.id, { order: i });
+      }
+    }
   },
 }));

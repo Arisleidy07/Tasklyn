@@ -455,7 +455,10 @@ export default function RankingPage() {
                     </div>
 
                     <div className="mt-8">
-                      <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                      <div
+                        className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-2xl font-bold shadow-lg"
+                        style={{ color: "var(--text-on-accent)" }}
+                      >
                         {user.name.charAt(0)}
                       </div>
                       <h3

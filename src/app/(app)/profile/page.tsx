@@ -558,7 +558,7 @@ export default function ProfilePage() {
                         Correo electrónico
                       </p>
                       <p
-                        className="text-xs truncate max-w-[160px]"
+                        className="text-xs truncate"
                         style={{ color: "var(--text-tertiary)" }}
                       >
                         {user.email}
@@ -762,7 +762,7 @@ export default function ProfilePage() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 8 }}
                   transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                  className="relative z-10 w-full max-w-[400px] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+                  className="relative z-10 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
                   style={{
                     backgroundColor: "var(--bg-card)",
                     border: "1px solid var(--border-color)",
@@ -821,8 +821,11 @@ export default function ProfilePage() {
                         </div>
                         <button
                           onClick={() => fileInputRef.current?.click()}
-                          className="absolute -bottom-1 -right-1 w-8 h-8 text-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
-                          style={{ backgroundColor: "#2563eb" }}
+                          className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+                          style={{
+                            backgroundColor: "#2563eb",
+                            color: "var(--text-on-accent)",
+                          }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = "#1d4ed8";
                           }}
@@ -947,7 +950,7 @@ export default function ProfilePage() {
                         onClick={handleSaveProfile}
                         disabled={!editName.trim() || isSavingProfile}
                         className={cn(
-                          "flex-1 h-11 px-4 rounded-xl text-sm font-medium text-white transition-all",
+                          "flex-1 h-11 px-4 rounded-xl text-sm font-medium transition-all",
                           !editName.trim() || isSavingProfile
                             ? "cursor-not-allowed"
                             : "bg-blue-600 hover:bg-blue-500 hover:shadow-lg active:scale-[0.98]",
@@ -958,7 +961,7 @@ export default function ProfilePage() {
                                 backgroundColor: "var(--bg-tertiary)",
                                 color: "var(--text-tertiary)",
                               }
-                            : {}
+                            : { color: "var(--text-on-accent)" }
                         }
                       >
                         {isSavingProfile ? (

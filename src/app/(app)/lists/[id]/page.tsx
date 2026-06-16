@@ -16,6 +16,10 @@ import Input from "@/components/ui/Input";
 import PremiumMembersPanel from "@/components/members/PremiumMembersPanel";
 import EditListModal from "@/components/members/EditListModal";
 import {
+  SortableTaskContainer,
+  SortableTaskItem,
+} from "@/components/tasks/SortableTaskContainer";
+import {
   Plus,
   Share2,
   Trash2,
@@ -42,8 +46,13 @@ export default function ListDetailPage() {
 
   const { user } = useAuthStore();
   const { getList, deleteList, getDisplayName } = useListStore();
-  const { getTasksByList, subscribeToList, unsubscribeFromList, createTask } =
-    useTaskStore();
+  const {
+    getTasksByList,
+    subscribeToList,
+    unsubscribeFromList,
+    createTask,
+    reorderTasks,
+  } = useTaskStore();
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
   const [showAddTask, setShowAddTask] = useState(false);
   const [showSharePanel, setShowSharePanel] = useState(false);
@@ -347,7 +356,7 @@ export default function ListDetailPage() {
               <span
                 className={cn(
                   "text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none tracking-wide",
-                  filter === key ? "bg-blue-600 text-white shadow-sm" : "",
+                  filter === key ? "bg-blue-600 shadow-sm" : "",
                 )}
                 style={
                   filter !== key
@@ -355,7 +364,7 @@ export default function ListDetailPage() {
                         backgroundColor: "var(--bg-tertiary)",
                         color: "var(--text-tertiary)",
                       }
-                    : {}
+                    : { color: "var(--text-on-accent)" }
                 }
               >
                 {count}
@@ -486,17 +495,23 @@ export default function ListDetailPage() {
             )
           ) : (
             <>
-              <AnimatePresence mode="popLayout">
-                {filteredTasks.map((task) => (
-                  <TaskItem
-                    key={task.id}
-                    task={task}
-                    role={userMember?.role || null}
-                    memberNames={memberNames}
-                    listMembers={list?.members}
-                  />
-                ))}
-              </AnimatePresence>
+              <SortableTaskContainer
+                tasks={filteredTasks}
+                onReorder={(newOrder) =>
+                  reorderTasks(newOrder.map((t) => t.id))
+                }
+              >
+                {(task) => (
+                  <SortableTaskItem key={task.id} task={task}>
+                    <TaskItem
+                      task={task}
+                      role={userMember?.role || null}
+                      memberNames={memberNames}
+                      listMembers={list?.members}
+                    />
+                  </SortableTaskItem>
+                )}
+              </SortableTaskContainer>
 
               {filteredTasks.length === 0 && (
                 <EmptyState
@@ -590,7 +605,10 @@ export default function ListDetailPage() {
                   className="w-7 h-7 rounded-xl flex items-center justify-center"
                   style={{ backgroundColor: "var(--text-primary)" }}
                 >
-                  <Archive size={14} className="text-white" />
+                  <Archive
+                    size={14}
+                    style={{ color: "var(--text-on-accent)" }}
+                  />
                 </div>
                 <div className="flex flex-col">
                   <span
@@ -599,8 +617,11 @@ export default function ListDetailPage() {
                   >
                     Ver tareas archivadas
                     <span
-                      className="text-[10px] font-medium px-1.5 py-0.5 rounded-md text-white"
-                      style={{ backgroundColor: "var(--text-primary)" }}
+                      className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
+                      style={{
+                        backgroundColor: "var(--text-primary)",
+                        color: "var(--text-on-accent)",
+                      }}
                     >
                       {archivedCount}
                     </span>

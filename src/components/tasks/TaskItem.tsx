@@ -108,9 +108,9 @@ export default function TaskItem({
   };
 
   const handleCompletionConfirm = async (performedBy: string | null) => {
-    if (!user) return;
-    completeTask(task.id, user.id, user.name, listMembers);
-    // The TaskCompletionModal already handles updating the task with completedBy/performedBy
+    // TaskCompletionModal already handles the completion logic
+    // Just close the modal
+    setShowCompletionModal(false);
   };
 
   const handleOpenEdit = () => {
@@ -213,7 +213,7 @@ export default function TaskItem({
               }
         }
       >
-        <div className="flex items-start gap-2.5 p-3">
+        <div className="flex items-start gap-2 p-2">
           {/* Checkbox */}
           <button
             onClick={handleToggleComplete}
@@ -233,18 +233,18 @@ export default function TaskItem({
                 : "Sin permiso para completar tareas"
             }
           >
-            {isCompleted ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+            {isCompleted ? <CheckCircle2 size={16} /> : <Circle size={16} />}
           </button>
 
           {/* Content column */}
           <div className="flex-1 min-w-0">
             {/* ── Title row: content left, actions right ── */}
-            <div className="flex items-start gap-1.5">
+            <div className="flex items-start gap-1">
               {/* Left: title + badges */}
               <div className="flex-1 min-w-0">
                 <p
                   className={cn(
-                    "text-[14px] font-medium transition-colors leading-snug",
+                    "text-[13px] font-medium transition-colors leading-snug",
                     isCompleted && "line-through",
                   )}
                   style={{

@@ -49,7 +49,10 @@ function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
     >
       {isPopular && (
         <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-semibold shadow-md tracking-wide">
+          <span
+            className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-[11px] font-semibold shadow-md tracking-wide"
+            style={{ color: "var(--text-on-accent)" }}
+          >
             <Sparkles size={11} />
             MOST POPULAR
           </span>
@@ -85,9 +88,9 @@ function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
         {isFree ? (
           <Zap size={20} style={{ color: "var(--text-tertiary)" }} />
         ) : plan.id === "business" ? (
-          <Building2 size={20} className="text-white" />
+          <Building2 size={20} style={{ color: "var(--text-on-accent)" }} />
         ) : (
-          <Crown size={20} className="text-white" />
+          <Crown size={20} style={{ color: "var(--text-on-accent)" }} />
         )}
       </div>
 
@@ -170,11 +173,17 @@ function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
             Comenzar gratis
           </button>
         ) : isPopular ? (
-          <button className="w-full h-10 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-200 active:scale-[0.98]">
+          <button
+            className="w-full h-10 rounded-xl text-sm font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-md shadow-blue-500/20 hover:shadow-blue-500/30 transition-all duration-200 active:scale-[0.98]"
+            style={{ color: "var(--text-on-accent)" }}
+          >
             ✨ Suscribirse ahora
           </button>
         ) : (
-          <button className="w-full h-10 rounded-xl text-sm font-semibold bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white shadow-md shadow-violet-500/20 hover:shadow-violet-500/30 transition-all duration-200 active:scale-[0.98]">
+          <button
+            className="w-full h-10 rounded-xl text-sm font-semibold bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 shadow-md shadow-violet-500/20 hover:shadow-violet-500/30 transition-all duration-200 active:scale-[0.98]"
+            style={{ color: "var(--text-on-accent)" }}
+          >
             🚀 Comenzar
           </button>
         )}

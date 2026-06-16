@@ -337,7 +337,7 @@ export default function ActivityPage() {
                 onClick={() => setFilter(f)}
                 className={cn(
                   "px-3 py-2 rounded-xl text-xs font-medium transition-colors border",
-                  filter === f ? "bg-blue-600 text-white border-blue-600" : "",
+                  filter === f ? "bg-blue-600 border-blue-600" : "",
                 )}
                 style={
                   filter !== f
@@ -346,7 +346,7 @@ export default function ActivityPage() {
                         color: "var(--text-secondary)",
                         borderColor: "var(--border-color)",
                       }
-                    : {}
+                    : { color: "var(--text-on-accent)" }
                 }
               >
                 {f === "all"

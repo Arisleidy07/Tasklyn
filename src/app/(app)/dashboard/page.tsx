@@ -358,7 +358,7 @@ function KPICard({ stat, index, isDark }: KPICardProps) {
             isDark && "shadow-lg",
           )}
         >
-          <stat.icon size={18} className="text-white" />
+          <stat.icon size={18} style={{ color: "var(--text-on-accent)" }} />
         </div>
         <span
           className={cn(
@@ -501,7 +501,7 @@ function ActivityTimeline({
                 ) : (
                   <div
                     className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold",
+                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold",
                       "bg-gradient-to-br",
                       item.isCompleted
                         ? "from-emerald-500 to-teal-600"
@@ -514,6 +514,7 @@ function ActivityTimeline({
                           ? "shadow-[0_0_12px_rgba(6,182,212,0.4)]"
                           : "",
                     )}
+                    style={{ color: "var(--text-on-accent)" }}
                   >
                     {actor.name.charAt(0).toUpperCase()}
                   </div>
@@ -602,7 +603,7 @@ function SharedListRow({
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.3 + index * 0.08, duration: 0.4 }}
         className={cn(
-          "group flex items-center gap-3 p-3 rounded-xl cursor-pointer",
+          "group flex items-center gap-2.5 p-2.5 rounded-lg cursor-pointer",
           "border transition-all duration-300",
           isDark
             ? "bg-slate-900/30 border-slate-800/50 hover:bg-slate-800/50"
@@ -613,14 +614,14 @@ function SharedListRow({
       >
         <div
           className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors",
+            "w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors",
             isDark
               ? "bg-slate-800 group-hover:bg-slate-700"
               : "bg-gray-100 group-hover:bg-gray-200",
           )}
         >
           <Layout
-            size={18}
+            size={16}
             className={cn(
               isDark
                 ? "text-slate-400 group-hover:text-slate-300"
@@ -631,31 +632,23 @@ function SharedListRow({
 
         <div className="flex-1 min-w-0">
           <p
-            className={cn(
-              "text-sm font-medium truncate transition-colors",
-              isDark
-                ? "text-slate-200 group-hover:text-white"
-                : "text-gray-800 group-hover:text-gray-900",
-            )}
+            className="text-xs font-medium truncate transition-colors"
+            style={{ color: "var(--text-primary)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "var(--text-primary)";
+            }}
           >
             {list.name}
           </p>
-          <p
-            className={cn(
-              "text-[11px]",
-              isDark ? "text-slate-500" : "text-gray-400",
-            )}
-          >
+          <p className="text-[10px]" style={{ color: "var(--text-tertiary)" }}>
             {list.members.length} miembro{list.members.length !== 1 ? "s" : ""}
           </p>
         </div>
 
         <ArrowUpRight
-          size={16}
-          className={cn(
-            "opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-y-0.5 translate-x-0.5",
-            isDark ? "text-slate-400" : "text-gray-400",
-          )}
+          size={14}
+          className="opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-y-0.5 translate-x-0.5"
+          style={{ color: "var(--text-tertiary)" }}
         />
       </motion.div>
     </Link>

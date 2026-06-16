@@ -136,6 +136,7 @@ export interface Task {
   tags?: string[];
   estimatedTime?: number; // in minutes
   actualTime?: number; // in minutes
+  order?: number; // for drag & drop reordering
 }
 
 // ---- Enhanced TaskList ----

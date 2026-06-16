@@ -149,12 +149,12 @@ export default function EditListModal({
       onClose={onClose}
       title="Editar lista"
       description={list.name}
-      size="xl"
+      size="lg"
     >
-      <div className="p-6 space-y-0">
+      <div className="p-4 sm:p-6 space-y-0 max-h-[60vh] overflow-y-auto">
         {/* Tabs */}
         <div
-          className="flex rounded-xl p-1 mb-6 gap-1"
+          className="flex rounded-xl p-1 mb-4 sm:mb-6 gap-1"
           style={{ backgroundColor: "var(--bg-secondary)" }}
         >
           {tabs.map((tab) => (

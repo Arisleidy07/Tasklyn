@@ -103,7 +103,7 @@ function ClientForm({ initial, onClose, onSave, title }: ClientFormProps) {
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                <Users size={18} className="text-white" />
+                <Users size={18} style={{ color: "var(--text-on-accent)" }} />
               </div>
               <h3
                 className="text-lg font-semibold"
@@ -310,7 +310,8 @@ function ClientForm({ initial, onClose, onSave, title }: ClientFormProps) {
               <button
                 type="submit"
                 disabled={saving || !name.trim()}
-                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+                style={{ color: "var(--text-on-accent)" }}
               >
                 {saving ? "Guardando..." : "Guardar"}
               </button>
@@ -380,7 +381,8 @@ export default function ClientsPage() {
         actions={
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-sm font-medium rounded-xl transition-colors"
+            style={{ color: "var(--text-on-accent)" }}
           >
             <Plus size={16} /> Nuevo cliente
           </button>
@@ -438,7 +440,8 @@ export default function ClientsPage() {
             {!search && (
               <button
                 onClick={() => setShowCreate(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-blue-600 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+                style={{ color: "var(--text-on-accent)" }}
               >
                 Agregar cliente
               </button>

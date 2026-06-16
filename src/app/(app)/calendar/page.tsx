@@ -308,7 +308,10 @@ export default function CalendarPage() {
                 }
               >
                 {selectedTask.status === "completed" && (
-                  <CheckCircle2 size={14} className="text-white" />
+                  <CheckCircle2
+                    size={14}
+                    style={{ color: "var(--text-on-accent)" }}
+                  />
                 )}
               </div>
               <div>

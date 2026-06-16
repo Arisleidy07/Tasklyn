@@ -41,8 +41,9 @@ export default function Logo({
           className={cn(
             s.text,
             "font-bold tracking-tight",
-            textClassName || "text-gray-900",
+            textClassName || "text-[var(--text-primary)]",
           )}
+          style={{ color: textClassName ? undefined : "var(--text-primary)" }}
         >
           TASKLYN
         </span>

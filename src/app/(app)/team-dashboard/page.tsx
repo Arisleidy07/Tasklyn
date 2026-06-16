@@ -248,7 +248,7 @@ function CreateGoalModal({
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-                <Target size={18} className="text-white" />
+                <Target size={18} style={{ color: "var(--text-on-accent)" }} />
               </div>
               <div>
                 <h3
@@ -392,7 +392,8 @@ function CreateGoalModal({
               <button
                 type="submit"
                 disabled={saving || !title.trim()}
-                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+                style={{ color: "var(--text-on-accent)" }}
               >
                 {saving ? "Guardando..." : "Crear meta"}
               </button>
@@ -453,7 +454,7 @@ function KPICard({
             bg,
           )}
         >
-          <Icon size={20} className="text-white" />
+          <Icon size={20} style={{ color: "var(--text-on-accent)" }} />
         </div>
         {change !== undefined && (
           <div
@@ -562,7 +563,8 @@ export default function TeamDashboardPage() {
           </p>
           <button
             onClick={() => (window.location.href = "/teams")}
-            className="px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="px-4 py-2 bg-blue-600 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors"
+            style={{ color: "var(--text-on-accent)" }}
           >
             Ir a Equipos
           </button>

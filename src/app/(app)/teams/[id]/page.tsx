@@ -719,7 +719,7 @@ export default function TeamDetailPage() {
                             <span className="text-xs text-[var(--text-tertiary)]">
                               {listTasks.length} tareas · {done} completadas
                             </span>
-                            <div className="flex-1 h-1 bg-[var(--bg-secondary)] rounded-full overflow-hidden max-w-[80px]">
+                            <div className="flex-1 h-1 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-blue-500 rounded-full"
                                 style={{ width: `${progress}%` }}
@@ -946,7 +946,10 @@ export default function TeamDetailPage() {
                           className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+                        <div
+                          className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs font-bold flex-shrink-0"
+                          style={{ color: "var(--text-on-accent)" }}
+                        >
                           {entry.userName.charAt(0).toUpperCase()}
                         </div>
                       )}
@@ -1558,7 +1561,8 @@ export default function TeamDetailPage() {
               Cancelar
             </Button>
             <Button
-              className="flex-1 bg-red-600 hover:bg-red-500 text-white shadow-sm shadow-red-500/20 border-0"
+              className="flex-1 bg-red-600 hover:bg-red-500 shadow-sm shadow-red-500/20 border-0"
+              style={{ color: "var(--text-on-accent)" }}
               onClick={handleDeleteTeam}
               isLoading={deleteLoading}
               icon={!deleteLoading ? <Trash2 size={14} /> : undefined}

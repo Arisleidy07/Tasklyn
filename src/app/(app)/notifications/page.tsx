@@ -219,7 +219,7 @@ export default function NotificationsPage() {
               <>
                 <button
                   onClick={handleMarkAll}
-                  className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center sm:hidden active:scale-90"
+                  className="p-2 rounded-xl text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors flex items-center justify-center sm:hidden active:scale-90"
                   title="Marcar todo como leído"
                 >
                   <CheckCheck size={20} />
@@ -408,7 +408,8 @@ export default function NotificationsPage() {
                               handleAcceptInvitation(notif.id, notif.data!);
                             }}
                             disabled={processingId === notif.id}
-                            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60 min-h-[36px]"
+                            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-blue-600 text-xs font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60 min-h-[36px]"
+                            style={{ color: "var(--text-on-accent)" }}
                           >
                             <Check size={12} />
                             Aceptar
@@ -439,7 +440,7 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             archive(notif.id);
                           }}
-                          className="p-2 rounded-lg transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg transition-colors flex-shrink-0 flex items-center justify-center"
                           style={{ color: "var(--text-tertiary)" }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "#2563eb";
@@ -461,7 +462,7 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             remove(notif.id);
                           }}
-                          className="p-2 rounded-lg transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg transition-colors flex-shrink-0 flex items-center justify-center"
                           style={{ color: "var(--text-tertiary)" }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "#ef4444";
@@ -583,7 +584,7 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             archive(notif.id);
                           }}
-                          className="p-2 rounded-lg transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg transition-colors flex-shrink-0 flex items-center justify-center"
                           style={{ color: "var(--text-tertiary)" }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "#2563eb";
@@ -605,7 +606,7 @@ export default function NotificationsPage() {
                             e.stopPropagation();
                             remove(notif.id);
                           }}
-                          className="p-2 rounded-lg transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg transition-colors flex-shrink-0 flex items-center justify-center"
                           style={{ color: "var(--text-tertiary)" }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "#ef4444";
@@ -809,7 +810,7 @@ export default function NotificationsPage() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => unarchive(notif.id)}
-                          className="p-2 rounded-lg transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg transition-colors flex-shrink-0 flex items-center justify-center"
                           style={{ color: "var(--text-tertiary)" }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "#2563eb";
@@ -828,7 +829,7 @@ export default function NotificationsPage() {
                         </button>
                         <button
                           onClick={() => remove(notif.id)}
-                          className="p-2 rounded-lg transition-colors flex-shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
+                          className="p-2 rounded-lg transition-colors flex-shrink-0 flex items-center justify-center"
                           style={{ color: "var(--text-tertiary)" }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "#ef4444";

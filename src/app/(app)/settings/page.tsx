@@ -175,7 +175,10 @@ export default function SettingsPage() {
                 }}
               >
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm shadow-blue-500/25">
-                  <stat.icon size={14} className="text-white" />
+                  <stat.icon
+                    size={14}
+                    style={{ color: "var(--text-on-accent)" }}
+                  />
                 </div>
                 <p
                   className="text-2xl font-bold tabular-nums"
