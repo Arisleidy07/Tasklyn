@@ -16,10 +16,7 @@ import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import PremiumMembersPanel from "@/components/members/PremiumMembersPanel";
 import EditListModal from "@/components/members/EditListModal";
-import {
-  SortableTaskContainer,
-  SortableTaskItem,
-} from "@/components/tasks/SortableTaskContainer";
+import { SortableTaskContainer } from "@/components/tasks/SortableTaskContainer";
 import {
   Plus,
   Share2,
@@ -412,15 +409,15 @@ export default function ListDetailPage() {
                             reorderTasks(newOrder.map((t) => t.id))
                           }
                         >
-                          {(task) => (
-                            <SortableTaskItem key={task.id} task={task}>
-                              <TaskItem
-                                task={task}
-                                role={userMember?.role || null}
-                                memberNames={memberNames}
-                                listMembers={list?.members}
-                              />
-                            </SortableTaskItem>
+                          {(task, dragHandleProps, isDragging) => (
+                            <TaskItem
+                              task={task}
+                              role={userMember?.role || null}
+                              memberNames={memberNames}
+                              listMembers={list?.members}
+                              dragHandleProps={dragHandleProps}
+                              isDragging={isDragging}
+                            />
                           )}
                         </SortableTaskContainer>
                       </div>
@@ -466,15 +463,15 @@ export default function ListDetailPage() {
                             reorderTasks(newOrder.map((t) => t.id))
                           }
                         >
-                          {(task) => (
-                            <SortableTaskItem key={task.id} task={task}>
-                              <TaskItem
-                                task={task}
-                                role={userMember?.role || null}
-                                memberNames={memberNames}
-                                listMembers={list?.members}
-                              />
-                            </SortableTaskItem>
+                          {(task, dragHandleProps, isDragging) => (
+                            <TaskItem
+                              task={task}
+                              role={userMember?.role || null}
+                              memberNames={memberNames}
+                              listMembers={list?.members}
+                              dragHandleProps={dragHandleProps}
+                              isDragging={isDragging}
+                            />
                           )}
                         </SortableTaskContainer>
                       </div>
@@ -497,15 +494,15 @@ export default function ListDetailPage() {
                     reorderTasks(newOrder.map((t) => t.id))
                   }
                 >
-                  {(task) => (
-                    <SortableTaskItem key={task.id} task={task}>
-                      <TaskItem
-                        task={task}
-                        role={userMember?.role || null}
-                        memberNames={memberNames}
-                        listMembers={list?.members}
-                      />
-                    </SortableTaskItem>
+                  {(task, dragHandleProps, isDragging) => (
+                    <TaskItem
+                      task={task}
+                      role={userMember?.role || null}
+                      memberNames={memberNames}
+                      listMembers={list?.members}
+                      dragHandleProps={dragHandleProps}
+                      isDragging={isDragging}
+                    />
                   )}
                 </SortableTaskContainer>
 

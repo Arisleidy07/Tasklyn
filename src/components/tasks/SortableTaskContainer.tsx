@@ -10,6 +10,8 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -19,13 +21,23 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical } from "lucide-react";
 import type { Task } from "@/types";
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+export interface DragHandleProps {
+  ref: (node: HTMLElement | null) => void;
+  attributes: Record<string, unknown>;
+  listeners: Record<string, unknown> | undefined;
+}
 
 // ── SortableTaskItem ──────────────────────────────────────────────────────────
 interface SortableTaskItemProps {
   task: Task;
-  children: React.ReactNode;
+  /** Render prop: receives drag handle props to place inside the card */
+  children: (
+    dragHandleProps: DragHandleProps,
+    isDragging: boolean,
+  ) => React.ReactNode;
 }
 
 export function SortableTaskItem({ task, children }: SortableTaskItemProps) {
@@ -42,35 +54,19 @@ export function SortableTaskItem({ task, children }: SortableTaskItemProps) {
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition: transition ?? "transform 200ms ease",
-    opacity: isDragging ? 0.4 : 1,
-    zIndex: isDragging ? 50 : undefined,
-    position: "relative",
+    opacity: isDragging ? 0.35 : 1,
+    zIndex: isDragging ? 999 : undefined,
+  };
+
+  const dragHandleProps: DragHandleProps = {
+    ref: setActivatorNodeRef,
+    attributes: attributes as unknown as Record<string, unknown>,
+    listeners: listeners as unknown as Record<string, unknown> | undefined,
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="relative group/sortable">
-      {/* Grip handle - only this triggers drag, keeps scroll free */}
-      <div
-        ref={setActivatorNodeRef}
-        {...attributes}
-        {...listeners}
-        className={[
-          "absolute left-0 top-0 bottom-0 w-7 z-10",
-          "flex items-center justify-center",
-          "opacity-0 group-hover/sortable:opacity-100",
-          "cursor-grab active:cursor-grabbing",
-          "touch-none select-none",
-          "transition-opacity duration-150",
-        ].join(" ")}
-        style={{ borderRadius: "20px 0 0 20px" }}
-        title="Mantén presionado para reorganizar"
-      >
-        <GripVertical
-          size={14}
-          style={{ color: "var(--text-tertiary)", pointerEvents: "none" }}
-        />
-      </div>
-      {children}
+    <div ref={setNodeRef} style={style}>
+      {children(dragHandleProps, isDragging)}
     </div>
   );
 }
@@ -79,7 +75,11 @@ export function SortableTaskItem({ task, children }: SortableTaskItemProps) {
 interface SortableTaskContainerProps {
   tasks: Task[];
   onReorder: (newOrder: Task[]) => void;
-  children: (task: Task) => React.ReactNode;
+  children: (
+    task: Task,
+    dragHandleProps: DragHandleProps,
+    isDragging: boolean,
+  ) => React.ReactNode;
 }
 
 export function SortableTaskContainer({
@@ -87,20 +87,29 @@ export function SortableTaskContainer({
   onReorder,
   children,
 }: SortableTaskContainerProps) {
+  const [activeId, setActiveId] = React.useState<string | null>(null);
+
   const sensors = useSensors(
-    // Desktop: requires moving 8px before drag starts (prevents accidental drags on click)
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    // Mobile: requires holding 500ms + tolerates 10px of movement (allows scroll to work freely)
+    // Desktop mouse: 5px distance threshold before drag activates
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    // Mobile touch: 200ms hold + generous 15px tolerance so scroll still works
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 500, tolerance: 10 },
+      activationConstraint: { delay: 200, tolerance: 15 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
 
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  }, []);
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      setActiveId(null);
       const { active, over } = event;
       if (!over || active.id === over.id) return;
       const oldIndex = tasks.findIndex((t) => t.id === active.id);
@@ -111,18 +120,64 @@ export function SortableTaskContainer({
     [tasks, onReorder],
   );
 
+  const handleDragCancel = useCallback(() => setActiveId(null), []);
+
+  const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
+
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
       <SortableContext
         items={tasks.map((t) => t.id)}
         strategy={verticalListSortingStrategy}
       >
-        {tasks.map((task) => children(task))}
+        {tasks.map((task) => (
+          <SortableTaskItem key={task.id} task={task}>
+            {(dragHandleProps, isDragging) =>
+              children(task, dragHandleProps, isDragging)
+            }
+          </SortableTaskItem>
+        ))}
       </SortableContext>
+
+      {/* Drag overlay: floating ghost while dragging */}
+      <DragOverlay dropAnimation={{ duration: 150, easing: "ease" }}>
+        {activeTask ? (
+          <div
+            style={{
+              opacity: 0.9,
+              boxShadow: "0 16px 40px rgba(0,0,0,0.25)",
+              borderRadius: "14px",
+              transform: "rotate(1.5deg) scale(1.02)",
+              pointerEvents: "none",
+            }}
+          >
+            <div
+              style={{
+                borderRadius: "14px",
+                backgroundColor: "var(--bg-card)",
+                border: "1px solid var(--border-color)",
+                padding: "11px 14px",
+              }}
+            >
+              <p
+                style={{
+                  color: "var(--text-primary)",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                }}
+              >
+                {activeTask.title}
+              </p>
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }

@@ -20,7 +20,9 @@ import {
   FileText,
   User,
   Tag,
+  GripVertical,
 } from "lucide-react";
+import type { DragHandleProps } from "./SortableTaskContainer";
 import { cn } from "@/lib/utils";
 import { getPriorityConfig } from "@/lib/priority";
 import { linkifyLocation, linkifyPhoneNumbers } from "@/lib/utils";
@@ -30,6 +32,8 @@ interface TaskItemProps {
   role: MemberRole | null;
   memberNames: Record<string, string>;
   listMembers?: Array<{ userId: string; role: string }>;
+  dragHandleProps?: DragHandleProps;
+  isDragging?: boolean;
 }
 
 export default function TaskItem({
@@ -37,6 +41,8 @@ export default function TaskItem({
   role,
   memberNames,
   listMembers,
+  dragHandleProps,
+  isDragging,
 }: TaskItemProps) {
   const [showDetailPanel, setShowDetailPanel] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
@@ -72,12 +78,11 @@ export default function TaskItem({
   return (
     <>
       <motion.div
-        layout
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -6, scale: 0.98 }}
         transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-        className="group select-none"
+        className="group/task select-none"
         style={{
           borderRadius: "14px",
           backgroundColor: isCompleted
@@ -86,16 +91,46 @@ export default function TaskItem({
           boxShadow: isCompleted ? "none" : "0 1px 3px rgba(0,0,0,0.06)",
           marginBottom: "6px",
           border: "1px solid var(--border-color)",
+          opacity: isDragging ? 0.4 : 1,
         }}
       >
         {/* ── Main clickable row ── */}
         <div
-          className="flex items-start gap-3 px-3 pt-3 pb-2 cursor-pointer"
+          className="flex items-start gap-2 px-2 pt-3 pb-2 cursor-pointer"
           onClick={() => setShowDetailPanel(true)}
         >
+          {/* Drag handle — left of checkbox, in-flow, never overlapping */}
+          {dragHandleProps && (
+            <div
+              ref={dragHandleProps.ref}
+              {...(dragHandleProps.attributes as React.HTMLAttributes<HTMLDivElement>)}
+              {...(dragHandleProps.listeners as React.HTMLAttributes<HTMLDivElement>)}
+              onClick={(e) => e.stopPropagation()}
+              className={cn(
+                "flex-shrink-0 flex items-center justify-center rounded select-none",
+                "cursor-grab active:cursor-grabbing",
+                /* Mobile: larger hit area, always slightly visible so user knows it's draggable */
+                "w-7 h-7 sm:w-5 sm:h-5",
+                "opacity-40 sm:opacity-0 sm:group-hover/task:opacity-60",
+                "transition-opacity duration-150",
+              )}
+              style={{
+                color: "var(--text-tertiary)",
+                touchAction: "none",
+                marginTop: "1px",
+              }}
+              title="Mantener presionado para mover"
+            >
+              <GripVertical size={16} />
+            </div>
+          )}
+
           {/* Checkbox */}
           <button
-            onClick={handleToggleComplete}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleToggleComplete(e);
+            }}
             disabled={!canComplete}
             className={cn(
               "flex-shrink-0 mt-0.5 transition-all",
