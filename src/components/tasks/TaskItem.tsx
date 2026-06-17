@@ -9,19 +9,7 @@ import { motion } from "framer-motion";
 import TaskCompletionModal from "./TaskCompletionModal";
 import TaskDetailPanel from "./TaskDetailPanel";
 import TaskOptionsBar from "./TaskOptionsBar";
-import {
-  CheckCircle2,
-  Circle,
-  CalendarDays,
-  Bell,
-  Repeat,
-  MapPin,
-  Phone,
-  FileText,
-  User,
-  Tag,
-  GripVertical,
-} from "lucide-react";
+import { CheckCircle2, Circle, User, Tag, GripVertical } from "lucide-react";
 import type { DragHandleProps } from "./SortableTaskContainer";
 import { cn } from "@/lib/utils";
 import { getPriorityConfig } from "@/lib/priority";
@@ -155,81 +143,52 @@ export default function TaskItem({
               {task.title}
             </p>
 
-            {/* Badges */}
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              {pc && (
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border",
-                    pc.bg,
-                    pc.bgDark,
-                    pc.text,
-                    pc.textDark,
-                    pc.border,
-                    pc.borderDark,
-                  )}
-                >
-                  <span className="text-[8px]">{pc.emoji}</span>
-                  {pc.label}
-                </span>
-              )}
-              {task.dueDate && (
-                <span
-                  className="inline-flex items-center gap-1 text-[10px] font-medium"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  <CalendarDays size={10} />
-                  {new Date(task.dueDate).toLocaleDateString("es-ES", {
-                    day: "numeric",
-                    month: "short",
-                  })}
-                </span>
-              )}
-              {task.reminders && task.reminders.length > 0 && (
-                <Bell size={10} style={{ color: "var(--text-tertiary)" }} />
-              )}
-              {task.recurrence && (
-                <Repeat size={10} style={{ color: "#059669" }} />
-              )}
-              {/* Mobile-only: show icons for hidden content */}
-              <span className="sm:hidden inline-flex items-center gap-1.5">
-                {hasDescription && (
-                  <FileText
-                    size={10}
+            {/* Badges row: priority + assigned + tags */}
+            {(pc ||
+              (task.assignedTo && memberNames[task.assignedTo]) ||
+              (task.tags && task.tags.length > 0)) && (
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
+                {pc && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border",
+                      pc.bg,
+                      pc.bgDark,
+                      pc.text,
+                      pc.textDark,
+                      pc.border,
+                      pc.borderDark,
+                    )}
+                  >
+                    <span className="text-[8px]">{pc.emoji}</span>
+                    {pc.label}
+                  </span>
+                )}
+                {task.assignedTo && memberNames[task.assignedTo] && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[10px]"
                     style={{ color: "var(--text-tertiary)" }}
-                  />
+                  >
+                    <User size={10} />
+                    {memberNames[task.assignedTo]}
+                  </span>
                 )}
-                {hasLocation && (
-                  <MapPin size={10} style={{ color: "var(--text-tertiary)" }} />
+                {task.tags && task.tags.length > 0 && (
+                  <span
+                    className="inline-flex items-center gap-1 text-[10px]"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    <Tag size={10} />
+                    {task.tags[0]}
+                    {task.tags.length > 1 && ` +${task.tags.length - 1}`}
+                  </span>
                 )}
-                {hasPhones && (
-                  <Phone size={10} style={{ color: "var(--text-tertiary)" }} />
-                )}
-              </span>
-              {task.assignedTo && memberNames[task.assignedTo] && (
-                <span
-                  className="inline-flex items-center gap-1 text-[10px]"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  <User size={10} />
-                  {memberNames[task.assignedTo]}
-                </span>
-              )}
-              {task.tags && task.tags.length > 0 && (
-                <span
-                  className="inline-flex items-center gap-1 text-[10px]"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  <Tag size={10} />
-                  {task.tags[0]}
-                  {task.tags.length > 1 && ` +${task.tags.length - 1}`}
-                </span>
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Desktop-only: expanded description/location/phones */}
+            {/* Expanded info: description / location / phones — visible on ALL screens */}
             {!isCompleted && (hasDescription || hasLocation || hasPhones) && (
-              <div className="hidden sm:flex flex-col gap-1.5 mt-2 pr-2">
+              <div className="flex flex-col gap-1.5 mt-2 pr-1">
                 {hasDescription && (
                   <p
                     className="text-[12px] leading-relaxed line-clamp-2"
@@ -240,7 +199,7 @@ export default function TaskItem({
                 )}
                 {hasLocation && (
                   <span
-                    className="text-[12px] flex items-center gap-1"
+                    className="text-[12px]"
                     style={{ color: "var(--text-tertiary)" }}
                     dangerouslySetInnerHTML={{
                       __html: `<span style="display:inline-flex;align-items:center;gap:4px;color:var(--text-tertiary)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>${linkifyLocation(task.location!)}</span>`,
@@ -265,10 +224,11 @@ export default function TaskItem({
           </div>
         </div>
 
-        {/* Desktop-only TaskOptionsBar — reminder/due/recurrence directly on card */}
+        {/* TaskOptionsBar — reminder/due/recurrence — visible on all screens when not completed */}
         {!isCompleted && canManageOptions && (
           <div
-            className="hidden sm:block px-12 pb-3"
+            className="px-3 pb-3"
+            style={{ paddingLeft: dragHandleProps ? "2.75rem" : "2.5rem" }}
             onClick={(e) => e.stopPropagation()}
           >
             <TaskOptionsBar

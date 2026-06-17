@@ -90,13 +90,13 @@ export function SortableTaskContainer({
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const sensors = useSensors(
-    // Desktop mouse: 5px distance threshold before drag activates
+    // Desktop mouse: 8px distance before drag activates (prevents clicks from triggering drag)
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
+      activationConstraint: { distance: 8 },
     }),
-    // Mobile touch: 200ms hold + generous 15px tolerance so scroll still works
+    // Mobile touch: 350ms long-press + 8px tolerance — scroll works freely until long-press
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 200, tolerance: 15 },
+      activationConstraint: { delay: 350, tolerance: 8 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,

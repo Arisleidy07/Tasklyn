@@ -3,13 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import {
-  LayoutDashboard,
-  FolderOpen,
-  Bell,
-  User,
-  Settings,
-} from "lucide-react";
+import { LayoutDashboard, FolderOpen, Bell, User, Users } from "lucide-react";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +19,7 @@ export default function MobileNav() {
     { name: "Listas", href: "/dashboard?section=lists", icon: FolderOpen },
     { name: "Alertas", href: "/notifications", icon: Bell, badge: unreadCount },
     { name: "Perfil", href: "/profile", icon: User },
-    { name: "Config", href: "/settings", icon: Settings },
+    { name: "Equipos", href: "/teams", icon: Users },
   ];
 
   const isActive = (href: string) => {

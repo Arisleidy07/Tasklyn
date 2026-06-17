@@ -60,6 +60,7 @@ export default function ListDetailPage() {
   );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDescription, setNewTaskDescription] = useState("");
   const [newTaskLocation, setNewTaskLocation] = useState("");
@@ -379,20 +380,15 @@ export default function ListDetailPage() {
                 <div className="space-y-4">
                   {/* Bloque de pendientes */}
                   <section>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-semibold">
-                          P
-                        </span>
-                        <span
-                          className="text-[11px] font-semibold uppercase tracking-wide"
-                          style={{ color: "var(--text-tertiary)" }}
-                        >
-                          Pendientes
-                        </span>
-                      </div>
+                    <div className="flex items-center justify-between mb-2">
                       <span
-                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                        className="text-[11px] font-semibold uppercase tracking-widest"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        Pendientes
+                      </span>
+                      <span
+                        className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
                         style={{
                           backgroundColor: "var(--bg-tertiary)",
                           color: "var(--text-tertiary)",
@@ -431,59 +427,72 @@ export default function ListDetailPage() {
                     )}
                   </section>
 
-                  {/* Bloque de completadas */}
-                  <section>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-semibold">
-                          C
-                        </span>
-                        <span
-                          className="text-[11px] font-semibold uppercase tracking-wide"
-                          style={{ color: "var(--text-tertiary)" }}
-                        >
-                          Completadas
-                        </span>
-                      </div>
-                      <span
-                        className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
-                        style={{
-                          backgroundColor: "var(--bg-tertiary)",
-                          color: "var(--text-tertiary)",
-                        }}
+                  {/* Bloque de completadas — colapsado por defecto */}
+                  {completedTasks.length > 0 && (
+                    <section>
+                      <button
+                        onClick={() => setShowCompleted((v) => !v)}
+                        className="flex items-center justify-between w-full mb-2 group"
                       >
-                        {completedTasks.length}
-                      </span>
-                    </div>
-                    {completedTasks.length > 0 ? (
-                      <div className="space-y-1.5">
-                        <SortableTaskContainer
-                          tasks={completedTasks}
-                          onReorder={(newOrder) =>
-                            reorderTasks(newOrder.map((t) => t.id))
-                          }
-                        >
-                          {(task, dragHandleProps, isDragging) => (
-                            <TaskItem
-                              task={task}
-                              role={userMember?.role || null}
-                              memberNames={memberNames}
-                              listMembers={list?.members}
-                              dragHandleProps={dragHandleProps}
-                              isDragging={isDragging}
-                            />
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="text-[11px] font-semibold uppercase tracking-widest"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
+                            Completadas
+                          </span>
+                          <span
+                            className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
+                            style={{
+                              backgroundColor: "var(--bg-tertiary)",
+                              color: "var(--text-tertiary)",
+                            }}
+                          >
+                            {completedTasks.length}
+                          </span>
+                        </div>
+                        <ChevronDown
+                          size={14}
+                          className={cn(
+                            "transition-transform duration-200",
+                            showCompleted && "rotate-180",
                           )}
-                        </SortableTaskContainer>
-                      </div>
-                    ) : (
-                      <p
-                        className="text-[11px] italic"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        Aún no hay tareas completadas.
-                      </p>
-                    )}
-                  </section>
+                          style={{ color: "var(--text-tertiary)" }}
+                        />
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {showCompleted && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2, ease: "easeInOut" }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-1.5 pt-0.5">
+                              <SortableTaskContainer
+                                tasks={completedTasks}
+                                onReorder={(newOrder) =>
+                                  reorderTasks(newOrder.map((t) => t.id))
+                                }
+                              >
+                                {(task, dragHandleProps, isDragging) => (
+                                  <TaskItem
+                                    task={task}
+                                    role={userMember?.role || null}
+                                    memberNames={memberNames}
+                                    listMembers={list?.members}
+                                    dragHandleProps={dragHandleProps}
+                                    isDragging={isDragging}
+                                  />
+                                )}
+                              </SortableTaskContainer>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </section>
+                  )}
                 </div>
               )
             ) : (
