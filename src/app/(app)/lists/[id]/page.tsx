@@ -229,10 +229,7 @@ export default function ListDetailPage() {
   };
 
   const handleBackClick = () => {
-    const search = new URLSearchParams();
-    search.set("section", "lists");
-    search.set("view", list.type === "shared" ? "shared" : "personal");
-    router.push(`/dashboard?${search.toString()}`);
+    router.push("/dashboard?section=lists&view=todas");
   };
 
   return (

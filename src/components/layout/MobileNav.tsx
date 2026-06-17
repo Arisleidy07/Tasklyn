@@ -16,7 +16,11 @@ export default function MobileNav() {
 
   const items = [
     { name: "Inicio", href: "/dashboard", icon: LayoutDashboard },
-    { name: "Listas", href: "/dashboard?section=lists", icon: FolderOpen },
+    {
+      name: "Listas",
+      href: "/dashboard?section=lists&view=todas",
+      icon: FolderOpen,
+    },
     { name: "Alertas", href: "/notifications", icon: Bell, badge: unreadCount },
     { name: "Perfil", href: "/profile", icon: User },
     { name: "Equipos", href: "/teams", icon: Users },
@@ -27,7 +31,7 @@ export default function MobileNav() {
       // "Inicio" activo solo cuando no hay section/view params
       return pathname === "/dashboard" && !section && !view;
     }
-    if (href === "/dashboard?section=lists") {
+    if (href === "/dashboard?section=lists&view=todas") {
       // "Listas" activo cuando en dashboard con section/view o dentro de una lista
       return (
         (pathname === "/dashboard" && (!!section || !!view)) ||

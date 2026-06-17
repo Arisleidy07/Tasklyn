@@ -620,11 +620,15 @@ function SharedListRow({
 export default function DashboardPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const view = searchParams.get("view") as "personal" | "shared" | null;
+  const view = searchParams.get("view") as
+    | "todas"
+    | "personal"
+    | "shared"
+    | null;
   const section = searchParams.get("section");
   const isListsSection = section === "lists" || view !== null;
-  const activeTab: "personal" | "shared" =
-    view === "shared" ? "shared" : "personal";
+  const activeTab: "todas" | "personal" | "shared" =
+    view === "shared" ? "shared" : view === "personal" ? "personal" : "todas";
 
   const { user } = useAuthStore();
   const { getPersonalLists, getSharedLists, getUserLists, lists } =
@@ -712,7 +716,7 @@ export default function DashboardPage() {
     });
   }, [completedTasks, userTasks, today]);
 
-  const handleTabChange = (tab: "personal" | "shared") => {
+  const handleTabChange = (tab: "todas" | "personal" | "shared") => {
     router.replace(`/dashboard?section=lists&view=${tab}`);
   };
 
@@ -824,35 +828,46 @@ export default function DashboardPage() {
           }}
         >
           <div className="flex max-w-[1400px] mx-auto px-3 sm:px-4 md:px-8">
-            {(["personal", "shared"] as const).map((tab) => {
-              const isTabActive = activeTab === tab;
+            {[
+              {
+                key: "todas" as const,
+                label: "Todas",
+                count: allLists.length,
+                icon: <Layout size={14} />,
+              },
+              {
+                key: "personal" as const,
+                label: "Personales",
+                count: personalLists.length,
+                icon: <FolderOpen size={14} />,
+              },
+              {
+                key: "shared" as const,
+                label: "Compartidas",
+                count: sharedLists.length,
+                icon: <Users size={14} />,
+              },
+            ].map(({ key, label, count, icon }) => {
+              const isTabActive = activeTab === key;
               return (
                 <button
-                  key={tab}
-                  onClick={() => handleTabChange(tab)}
+                  key={key}
+                  onClick={() => handleTabChange(key)}
                   className="relative flex items-center gap-2 py-3.5 px-4 sm:px-5 text-sm font-medium transition-all duration-200"
                   style={{
                     color: isTabActive ? "#2563eb" : "var(--text-secondary)",
                   }}
                   onMouseEnter={(e) => {
-                    if (!isTabActive) {
+                    if (!isTabActive)
                       e.currentTarget.style.color = "var(--text-primary)";
-                    }
                   }}
                   onMouseLeave={(e) => {
-                    if (!isTabActive) {
+                    if (!isTabActive)
                       e.currentTarget.style.color = "var(--text-secondary)";
-                    }
                   }}
                 >
-                  {tab === "personal" ? (
-                    <FolderOpen size={14} />
-                  ) : (
-                    <Users size={14} />
-                  )}
-                  <span>
-                    {tab === "personal" ? "Personales" : "Compartidas"}
-                  </span>
+                  {icon}
+                  <span>{label}</span>
                   <span
                     className="text-xs px-1.5 py-0.5 rounded-md font-semibold transition-colors"
                     style={{
@@ -864,9 +879,7 @@ export default function DashboardPage() {
                         : "var(--text-secondary)",
                     }}
                   >
-                    {tab === "personal"
-                      ? personalLists.length
-                      : sharedLists.length}
+                    {count}
                   </span>
                   {isTabActive && (
                     <motion.span
@@ -990,7 +1003,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       <Link
-                        href="/dashboard?section=lists&view=shared"
+                        href="/dashboard?section=lists&view=todas"
                         className="text-xs font-semibold hover:opacity-80 transition-colors"
                         style={{ color: "var(--text-link)" }}
                       >
@@ -1128,6 +1141,57 @@ export default function DashboardPage() {
         {/* Lists Section */}
         {isListsSection && (
           <div className="mt-6">
+            {activeTab === "todas" && (
+              <>
+                {allLists.length === 0 ? (
+                  <EmptyState
+                    icon={<ListTodo size={24} />}
+                    title="Aún no tienes listas"
+                    description="Crea tu primera lista para empezar a organizar tus tareas."
+                    action={
+                      <Button
+                        size="sm"
+                        onClick={() => setShowCreateModal(true)}
+                        icon={<Plus size={14} />}
+                      >
+                        Crear lista
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <SortableListContainer
+                    lists={allLists.sort(
+                      (a, b) => (a.order ?? 0) - (b.order ?? 0),
+                    )}
+                    wrapperClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
+                    onReorder={(newOrder) =>
+                      reorderLists(newOrder.map((l) => l.id))
+                    }
+                  >
+                    {(list, index, total, moveUp, moveDown) => (
+                      <SortableListItem
+                        key={list.id}
+                        list={list}
+                        index={index}
+                        total={total}
+                        onMoveUp={moveUp}
+                        onMoveDown={moveDown}
+                        showMoveButtons
+                      >
+                        <motion.div
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.04, duration: 0.35 }}
+                        >
+                          <ListCard list={list} />
+                        </motion.div>
+                      </SortableListItem>
+                    )}
+                  </SortableListContainer>
+                )}
+              </>
+            )}
+
             {activeTab === "personal" && (
               <>
                 {personalLists.length === 0 ? (
