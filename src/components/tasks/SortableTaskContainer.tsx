@@ -45,7 +45,6 @@ export function SortableTaskItem({ task, children }: SortableTaskItemProps) {
     attributes,
     listeners,
     setNodeRef,
-    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -53,22 +52,18 @@ export function SortableTaskItem({ task, children }: SortableTaskItemProps) {
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition: transition ?? "transform 200ms ease",
-    opacity: isDragging ? 0.35 : 1,
+    transition:
+      transition ?? "transform 200ms cubic-bezier(0.25,0.46,0.45,0.94)",
     zIndex: isDragging ? 999 : undefined,
   };
 
   const dragHandleProps: DragHandleProps = {
-    ref: setActivatorNodeRef,
+    ref: (node: HTMLElement | null) => setNodeRef(node),
     attributes: attributes as unknown as Record<string, unknown>,
     listeners: listeners as unknown as Record<string, unknown> | undefined,
   };
 
-  return (
-    <div ref={setNodeRef} style={style}>
-      {children(dragHandleProps, isDragging)}
-    </div>
-  );
+  return <div style={style}>{children(dragHandleProps, isDragging)}</div>;
 }
 
 // ── SortableTaskContainer ─────────────────────────────────────────────────────

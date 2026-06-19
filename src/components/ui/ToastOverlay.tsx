@@ -32,7 +32,7 @@ export default function ToastOverlay() {
               "toast-panel pointer-events-auto w-[320px] sm:w-[360px] backdrop-blur-md rounded-2xl shadow-2xl p-4 flex items-start gap-3",
             )}
             style={{
-              backgroundColor: "rgba(var(--bg-card-rgb, 255, 255, 255), 0.95)",
+              backgroundColor: "var(--bg-card)",
               borderColor: "var(--border-color)",
               borderWidth: "1px",
               borderStyle: "solid",

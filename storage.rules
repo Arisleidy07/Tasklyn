@@ -1,0 +1,39 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function getAuthUid() {
+      return request.auth.uid;
+    }
+
+    // Profile photos — owner can read/write, others can read
+    match /profile-photos/{userId}/{allPaths=**} {
+      allow read: if isAuth();
+      allow write: if isAuth() && getAuthUid() == userId;
+    }
+
+    // Team photos — any auth user can read, team owner path controls write
+    match /team-photos/{teamId}/{allPaths=**} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+    }
+
+    // Background images library — any auth user can read
+    // Only the uploader (matched by folder userId) can write/delete
+    match /background-images/{userId}/{allPaths=**} {
+      allow read: if isAuth();
+      allow write: if isAuth() && getAuthUid() == userId;
+      allow delete: if isAuth() && getAuthUid() == userId;
+    }
+
+    // Fallback: deny all other paths
+    match /{allPaths=**} {
+      allow read: if isAuth();
+      allow write: if false;
+    }
+  }
+}

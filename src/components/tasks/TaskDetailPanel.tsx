@@ -11,7 +11,6 @@ import {
   canDeleteTask,
   canArchiveTask,
   canManageTaskOptions,
-  canCompleteTask,
 } from "@/lib/permissions";
 import TaskOptionsBar from "./TaskOptionsBar";
 import TaskComments from "./TaskComments";
@@ -19,12 +18,7 @@ import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import Button from "@/components/ui/Button";
 import { getPriorityConfig } from "@/lib/priority";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
-import {
-  linkifyAll,
-  linkifyLocation,
-  linkifyPhoneNumbers,
-  timeAgo,
-} from "@/lib/utils";
+import { timeAgo } from "@/lib/utils";
 import {
   X,
   Edit2,
@@ -39,6 +33,7 @@ import {
   Clock,
   ChevronDown,
   Plus,
+  Save,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -62,16 +57,18 @@ export default function TaskDetailPanel({
   const { user } = useAuthStore();
   const { updateTask, deleteTask, archiveTask } = useTaskStore();
 
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [editingDescription, setEditingDescription] = useState(false);
-  const [editTitle, setEditTitle] = useState("");
-  const [editDescription, setEditDescription] = useState("");
-  const [editLocation, setEditLocation] = useState("");
-  const [editingLocation, setEditingLocation] = useState(false);
-  const [editPhones, setEditPhones] = useState<string[]>([""]);
-  const [editingPhones, setEditingPhones] = useState(false);
-  const [editPriority, setEditPriority] = useState<Task["priority"]>(undefined);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  // ── Single global edit mode ──
+  const [editMode, setEditMode] = useState(false);
+
+  // ── Draft state (only committed on "Guardar cambios") ──
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftDescription, setDraftDescription] = useState("");
+  const [draftLocation, setDraftLocation] = useState("");
+  const [draftPhones, setDraftPhones] = useState<string[]>([""]);
+  const [draftPriority, setDraftPriority] =
+    useState<Task["priority"]>(undefined);
+
+  const [priorityMenuOpen, setPriorityMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -118,94 +115,108 @@ export default function TaskDetailPanel({
     };
   }, [isOpen]);
 
+  // Reset draft & close edit mode when task changes or panel opens
   useEffect(() => {
     if (task && isOpen) {
-      setEditTitle(task.title);
-      setEditDescription(task.description || "");
-      setEditLocation(task.location || "");
-      setEditPhones(task.phoneNumbers?.length ? [...task.phoneNumbers] : [""]);
-      setEditPriority(task.priority);
-      setEditingTitle(false);
-      setEditingDescription(false);
-      setEditingLocation(false);
-      setEditingPhones(false);
+      setDraftTitle(task.title);
+      setDraftDescription(task.description || "");
+      setDraftLocation(task.location || "");
+      setDraftPhones(task.phoneNumbers?.length ? [...task.phoneNumbers] : [""]);
+      setDraftPriority(task.priority);
+      setEditMode(false);
+      setPriorityMenuOpen(false);
       setShowDeleteConfirm(false);
     }
   }, [task?.id, isOpen]);
 
+  // Auto-focus title input when edit mode activates
   useEffect(() => {
-    if (editingTitle && titleInputRef.current) {
+    if (editMode && titleInputRef.current) {
       titleInputRef.current.focus();
       titleInputRef.current.select();
     }
-  }, [editingTitle]);
+  }, [editMode]);
 
+  // Escape closes panel (or exits edit mode first)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        if (editMode) {
+          handleCancelEdit();
+        } else {
+          onClose();
+        }
+      }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  }, [editMode, onClose]);
 
   if (!task) return null;
 
-  const saveField = async (updates: Partial<Task>) => {
-    if (!user) return;
+  // Enter edit mode — copy current task values into draft
+  const handleEnterEdit = () => {
+    setDraftTitle(task.title);
+    setDraftDescription(task.description || "");
+    setDraftLocation(task.location || "");
+    setDraftPhones(task.phoneNumbers?.length ? [...task.phoneNumbers] : [""]);
+    setDraftPriority(task.priority);
+    setEditMode(true);
+  };
+
+  // Cancel — discard all drafts
+  const handleCancelEdit = () => {
+    setDraftTitle(task.title);
+    setDraftDescription(task.description || "");
+    setDraftLocation(task.location || "");
+    setDraftPhones(task.phoneNumbers?.length ? [...task.phoneNumbers] : [""]);
+    setDraftPriority(task.priority);
+    setEditMode(false);
+    setPriorityMenuOpen(false);
+  };
+
+  // Save — commit all drafts at once
+  const handleSaveEdit = async () => {
+    if (!user || !draftTitle.trim()) return;
     setIsSaving(true);
     try {
-      await updateTask(task.id, updates, user.id, user.name);
+      const updates: Partial<Task> = {};
+      if (draftTitle.trim() !== task.title) updates.title = draftTitle.trim();
+      if (draftDescription !== (task.description || ""))
+        updates.description = draftDescription.trim() || undefined;
+      if (draftLocation !== (task.location || ""))
+        updates.location = draftLocation.trim() || undefined;
+      const validPhones = draftPhones.filter((p) => p.trim());
+      const currentPhones = task.phoneNumbers || [];
+      if (JSON.stringify(validPhones) !== JSON.stringify(currentPhones))
+        updates.phoneNumbers = validPhones.length ? validPhones : undefined;
+      if (draftPriority !== task.priority) updates.priority = draftPriority;
+      if (Object.keys(updates).length > 0)
+        await updateTask(task.id, updates, user.id, user.name);
+      setEditMode(false);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleSaveTitle = async () => {
-    if (!editTitle.trim()) return;
-    setEditingTitle(false);
-    if (editTitle.trim() !== task.title)
-      await saveField({ title: editTitle.trim() });
-  };
-
-  const handleSaveDescription = async () => {
-    setEditingDescription(false);
-    if (editDescription !== (task.description || ""))
-      await saveField({ description: editDescription.trim() });
-  };
-
-  const handleSaveLocation = async () => {
-    setEditingLocation(false);
-    if (editLocation !== (task.location || ""))
-      await saveField({ location: editLocation.trim() || undefined });
-  };
-
-  const handleSavePhones = async () => {
-    setEditingPhones(false);
-    const validPhones = editPhones.filter((p) => p.trim());
-    const current = task.phoneNumbers || [];
-    if (JSON.stringify(validPhones) !== JSON.stringify(current))
-      await saveField({
-        phoneNumbers: validPhones.length ? validPhones : undefined,
-      });
-  };
-
-  const handleSavePriority = async (p: Task["priority"]) => {
-    setEditPriority(p);
-    setDropdownOpen(false);
-    if (p !== task.priority) await saveField({ priority: p });
+  // Immediate saves for options bar (due date, reminders, recurrence)
+  const saveField = async (updates: Partial<Task>) => {
+    if (!user) return;
+    await updateTask(task.id, updates, user.id, user.name);
   };
 
   const handleDelete = () => {
     deleteTask(task.id);
     onClose();
   };
+
   const handleArchive = () => {
     if (!user) return;
     archiveTask(task.id, user.id);
     onClose();
   };
 
-  const pc = editPriority ? getPriorityConfig(editPriority) : null;
+  const pc = draftPriority ? getPriorityConfig(draftPriority) : null;
   const isCompleted = task.status === "completed";
 
   // ─── PANEL CONTENT ─────────────────────────────────────────────
@@ -216,46 +227,96 @@ export default function TaskDetailPanel({
     >
       {/* ── Header ── */}
       <div
-        className="flex-shrink-0 flex items-center justify-between px-5 py-3 border-b"
+        className="flex-shrink-0 flex items-center justify-between gap-2 px-4 py-3 border-b"
         style={{ borderColor: "var(--border-color)" }}
       >
-        <div className="flex items-center gap-2">
-          {isCompleted && (
-            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">
-              Completada
+        {/* Left: status badge / edit-mode action buttons */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          {isCompleted && !editMode && (
+            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 border border-green-500/20 flex-shrink-0">
+              ✓ Completada
             </span>
           )}
-          {isSaving && (
-            <span
-              className="text-[11px]"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              Guardando...
-            </span>
+          {editMode && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleCancelEdit}
+                disabled={isSaving}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  color: "var(--text-secondary)",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <X size={12} /> Cancelar
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={isSaving || !draftTitle.trim()}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                style={{
+                  background:
+                    isSaving || !draftTitle.trim()
+                      ? "var(--bg-secondary)"
+                      : "linear-gradient(135deg,#2563eb,#1d4ed8)",
+                  color:
+                    isSaving || !draftTitle.trim()
+                      ? "var(--text-tertiary)"
+                      : "#fff",
+                  boxShadow:
+                    isSaving || !draftTitle.trim()
+                      ? "none"
+                      : "0 2px 8px rgba(37,99,235,0.35)",
+                }}
+              >
+                {isSaving ? (
+                  "Guardando..."
+                ) : (
+                  <>
+                    <Save size={12} /> Guardar cambios
+                  </>
+                )}
+              </button>
+            </div>
           )}
         </div>
-        <div className="flex items-center gap-1">
-          {canArchive && (
+
+        {/* Right: Archivar · Editar · Eliminar · Cerrar */}
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {canArchive && !editMode && (
             <button
               onClick={handleArchive}
               title="Archivar"
-              className="p-2 rounded-lg transition-colors"
-              style={{ color: "var(--text-tertiary)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all"
+              style={{
+                color: "var(--text-secondary)",
+                backgroundColor: "var(--bg-secondary)",
               }}
             >
-              <Archive size={16} />
+              <Archive size={13} />
+              <span className="hidden sm:inline">Archivar</span>
             </button>
           )}
-          {canDelete && (
+          {canEdit && !isCompleted && !editMode && (
+            <button
+              onClick={handleEnterEdit}
+              title="Editar"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all"
+              style={{
+                color: "#2563eb",
+                backgroundColor: "rgba(37,99,235,0.1)",
+              }}
+            >
+              <Edit2 size={13} />
+              <span className="hidden sm:inline">Editar</span>
+            </button>
+          )}
+          {canDelete && !editMode && (
             <button
               onClick={() => setShowDeleteConfirm(true)}
               title="Eliminar"
-              className="p-2 rounded-lg transition-colors"
+              className="p-2 rounded-xl transition-all"
               style={{ color: "var(--text-tertiary)" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = "#ef4444";
@@ -266,12 +327,12 @@ export default function TaskDetailPanel({
                 e.currentTarget.style.backgroundColor = "transparent";
               }}
             >
-              <Trash2 size={16} />
+              <Trash2 size={15} />
             </button>
           )}
           <button
             onClick={onClose}
-            className="p-2 rounded-lg transition-colors ml-1"
+            className="p-2 rounded-xl transition-all ml-0.5"
             style={{ color: "var(--text-tertiary)" }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
@@ -280,7 +341,7 @@ export default function TaskDetailPanel({
               e.currentTarget.style.backgroundColor = "transparent";
             }}
           >
-            <X size={18} />
+            <X size={17} />
           </button>
         </div>
       </div>
@@ -295,36 +356,28 @@ export default function TaskDetailPanel({
         <div className="px-5 py-5 space-y-5">
           {/* 1. TÍTULO */}
           <div>
-            {editingTitle && canEdit ? (
+            {editMode ? (
               <input
                 ref={titleInputRef}
-                value={editTitle}
-                onChange={(e) => setEditTitle(e.target.value)}
-                onBlur={handleSaveTitle}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveTitle();
-                  if (e.key === "Escape") setEditingTitle(false);
+                value={draftTitle}
+                onChange={(e) => setDraftTitle(e.target.value)}
+                className="w-full text-xl font-semibold px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  border: "1.5px solid var(--border-color)",
+                  color: "var(--text-primary)",
                 }}
-                className="w-full text-xl font-semibold bg-transparent border-b-2 border-blue-500 outline-none py-1"
-                style={{ color: "var(--text-primary)" }}
+                placeholder="Título de la tarea"
               />
             ) : (
               <h2
                 className={cn(
-                  "text-xl font-semibold leading-snug cursor-pointer group/title flex items-start gap-2",
+                  "text-xl font-semibold leading-snug",
                   isCompleted && "line-through opacity-60",
                 )}
                 style={{ color: "var(--text-primary)" }}
-                onClick={() => canEdit && setEditingTitle(true)}
               >
-                <span className="flex-1">{task.title}</span>
-                {canEdit && (
-                  <Edit2
-                    size={13}
-                    className="flex-shrink-0 opacity-0 group-hover/title:opacity-40 transition-opacity mt-1"
-                    style={{ color: "var(--text-tertiary)" }}
-                  />
-                )}
+                {task.title}
               </h2>
             )}
           </div>
@@ -337,59 +390,34 @@ export default function TaskDetailPanel({
             >
               <FileText size={11} /> Descripción
             </p>
-            {editingDescription && canEdit ? (
-              <div className="space-y-2">
+            {editMode ? (
+              <div
+                className="rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/40 transition-all"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  border: "1.5px solid var(--border-color)",
+                }}
+              >
                 <AutoResizeTextarea
-                  value={editDescription}
-                  onChange={setEditDescription}
+                  value={draftDescription}
+                  onChange={setDraftDescription}
                   placeholder="Añade una descripción..."
-                  className="text-sm px-3 py-2.5"
+                  className="text-sm px-4 py-3 w-full"
                   minRows={3}
-                  autoFocus
                 />
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleSaveDescription}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    Guardar
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingDescription(false);
-                      setEditDescription(task.description || "");
-                    }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                    style={{
-                      backgroundColor: "var(--bg-secondary)",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </div>
               </div>
             ) : (
               <div
-                className={cn(
-                  "text-sm rounded-xl px-3 py-2.5 min-h-[40px] cursor-pointer transition-colors leading-relaxed",
-                  canEdit && "hover:ring-1 hover:ring-blue-300",
-                )}
+                className="text-sm rounded-2xl px-4 py-3 min-h-[44px] leading-relaxed"
                 style={{
                   backgroundColor: "var(--bg-secondary)",
                   color: task.description
                     ? "var(--text-primary)"
                     : "var(--text-tertiary)",
                 }}
-                onClick={() => canEdit && setEditingDescription(true)}
-                dangerouslySetInnerHTML={{
-                  __html: task.description
-                    ? linkifyAll(task.description)
-                    : canEdit
-                      ? "Añade una descripción..."
-                      : "Sin descripción",
-                }}
-              />
+              >
+                {task.description || "Sin descripción"}
+              </div>
             )}
           </div>
 
@@ -401,67 +429,40 @@ export default function TaskDetailPanel({
             >
               <MapPin size={11} /> Ubicación
             </p>
-            {editingLocation && canEdit ? (
-              <div className="space-y-2">
-                <input
-                  value={editLocation}
-                  onChange={(e) => setEditLocation(e.target.value)}
-                  placeholder="Añade una dirección o lugar..."
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSaveLocation();
-                    if (e.key === "Escape") setEditingLocation(false);
-                  }}
-                  className="w-full text-sm rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    border: "1px solid var(--border-input)",
-                    color: "var(--text-primary)",
-                  }}
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleSaveLocation}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    Guardar
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingLocation(false);
-                      setEditLocation(task.location || "");
-                    }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                    style={{
-                      backgroundColor: "var(--bg-secondary)",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div
-                className={cn(
-                  "text-sm rounded-xl px-3 py-2.5 min-h-[40px] cursor-pointer transition-colors",
-                  canEdit && "hover:ring-1 hover:ring-blue-300",
-                )}
+            {editMode ? (
+              <input
+                value={draftLocation}
+                onChange={(e) => setDraftLocation(e.target.value)}
+                placeholder="Añade una dirección o lugar..."
+                className="w-full text-sm rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
                 style={{
                   backgroundColor: "var(--bg-secondary)",
-                  color: task.location
-                    ? "var(--text-primary)"
-                    : "var(--text-tertiary)",
-                }}
-                onClick={() => canEdit && setEditingLocation(true)}
-                dangerouslySetInnerHTML={{
-                  __html: task.location
-                    ? linkifyLocation(task.location)
-                    : canEdit
-                      ? "Añade una ubicación..."
-                      : "Sin ubicación",
+                  border: "1.5px solid var(--border-color)",
+                  color: "var(--text-primary)",
                 }}
               />
+            ) : (
+              <div
+                className="text-sm rounded-2xl px-4 py-3 min-h-[44px] flex items-center"
+                style={{ backgroundColor: "var(--bg-secondary)" }}
+              >
+                {task.location ? (
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(task.location)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 hover:underline"
+                    style={{ color: "#3b82f6" }}
+                  >
+                    <MapPin size={13} style={{ color: "#3b82f6" }} />
+                    {task.location}
+                  </a>
+                ) : (
+                  <span style={{ color: "var(--text-tertiary)" }}>
+                    Sin ubicación
+                  </span>
+                )}
+              </div>
             )}
           </div>
 
@@ -473,201 +474,210 @@ export default function TaskDetailPanel({
             >
               <Phone size={11} /> Teléfonos
             </p>
-            {editingPhones && canEdit ? (
+            {editMode ? (
               <div className="space-y-2">
-                {editPhones.map((phone, i) => (
+                {draftPhones.map((phone, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => {
-                        const u = [...editPhones];
+                        const u = [...draftPhones];
                         u[i] = e.target.value;
-                        setEditPhones(u);
+                        setDraftPhones(u);
                       }}
-                      placeholder={"Teléfono " + (i + 1)}
-                      className="flex-1 text-sm rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder={`Teléfono ${i + 1}`}
+                      className="flex-1 text-sm rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
                       style={{
                         backgroundColor: "var(--bg-secondary)",
-                        border: "1px solid var(--border-input)",
+                        border: "1.5px solid var(--border-color)",
                         color: "var(--text-primary)",
                       }}
                     />
-                    {editPhones.length > 1 && (
+                    {draftPhones.length > 1 && (
                       <button
                         onClick={() =>
-                          setEditPhones(editPhones.filter((_, j) => j !== i))
+                          setDraftPhones(
+                            draftPhones.filter((_, j: number) => j !== i),
+                          )
                         }
-                        style={{ color: "var(--text-tertiary)" }}
+                        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{
+                          backgroundColor: "rgba(239,68,68,0.08)",
+                          color: "#ef4444",
+                        }}
                       >
-                        <X size={16} />
+                        <X size={14} />
                       </button>
                     )}
                   </div>
                 ))}
                 <button
-                  onClick={() => setEditPhones([...editPhones, ""])}
-                  className="text-xs text-blue-600 font-medium flex items-center gap-1 hover:text-blue-700"
+                  onClick={() => setDraftPhones([...draftPhones, ""])}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors"
+                  style={{
+                    color: "#2563eb",
+                    backgroundColor: "rgba(37,99,235,0.08)",
+                  }}
                 >
                   <Plus size={12} /> Añadir teléfono
                 </button>
-                <div className="flex gap-2 pt-1">
-                  <button
-                    onClick={handleSavePhones}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-600 text-white hover:bg-blue-700"
-                  >
-                    Guardar
-                  </button>
-                  <button
-                    onClick={() => {
-                      setEditingPhones(false);
-                      setEditPhones(
-                        task.phoneNumbers?.length
-                          ? [...task.phoneNumbers]
-                          : [""],
-                      );
-                    }}
-                    className="px-3 py-1.5 rounded-lg text-xs font-medium"
-                    style={{
-                      backgroundColor: "var(--bg-secondary)",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </div>
               </div>
             ) : (
               <div
-                className={cn(
-                  "text-sm rounded-xl px-3 py-2.5 min-h-[40px] cursor-pointer transition-colors",
-                  canEdit && "hover:ring-1 hover:ring-blue-300",
-                )}
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  color: task.phoneNumbers?.filter((p) => p.trim()).length
-                    ? "var(--text-primary)"
-                    : "var(--text-tertiary)",
-                }}
-                onClick={() => canEdit && setEditingPhones(true)}
+                className="text-sm rounded-2xl px-4 py-3 min-h-[44px]"
+                style={{ backgroundColor: "var(--bg-secondary)" }}
               >
                 {task.phoneNumbers?.filter((p) => p.trim()).length ? (
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {task.phoneNumbers
                       .filter((p) => p.trim())
                       .map((p, i) => (
-                        <div
+                        <a
                           key={i}
-                          dangerouslySetInnerHTML={{
-                            __html: linkifyPhoneNumbers(p),
-                          }}
-                        />
+                          href={`tel:${p.replace(/\s/g, "")}`}
+                          className="flex items-center gap-2 hover:underline"
+                          style={{ color: "#16a34a" }}
+                        >
+                          <Phone size={13} style={{ color: "#16a34a" }} />
+                          {p}
+                        </a>
                       ))}
                   </div>
-                ) : canEdit ? (
-                  "Añade un número de teléfono..."
                 ) : (
-                  "Sin teléfonos"
+                  <span style={{ color: "var(--text-tertiary)" }}>
+                    Sin teléfonos
+                  </span>
                 )}
               </div>
             )}
           </div>
 
           {/* 5. PRIORIDAD */}
-          {canEdit && (
+          {(canEdit || task.priority) && (
             <div className="relative">
               <p
-                className="text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+                className="text-[11px] font-bold uppercase tracking-widest mb-2"
                 style={{ color: "var(--text-tertiary)" }}
               >
                 Prioridad
               </p>
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-colors"
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  borderColor: "var(--border-color)",
-                  color: "var(--text-secondary)",
-                }}
-              >
-                {pc ? (
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1.5 text-sm font-medium",
-                      pc.text,
-                    )}
-                  >
-                    <span>{pc.emoji}</span> {pc.label}
-                  </span>
-                ) : (
-                  <span style={{ color: "var(--text-tertiary)" }}>
-                    Sin prioridad
-                  </span>
-                )}
-                <ChevronDown
-                  size={14}
-                  style={{ color: "var(--text-tertiary)" }}
-                />
-              </button>
-              <AnimatePresence>
-                {dropdownOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    transition={{ duration: 0.1 }}
-                    className="absolute left-0 top-full mt-1 z-50 rounded-xl shadow-xl border overflow-hidden w-44"
+              {editMode ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setPriorityMenuOpen((v) => !v)}
+                    className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
                     style={{
-                      backgroundColor: "var(--bg-card)",
-                      borderColor: "var(--border-color)",
+                      backgroundColor: "var(--bg-secondary)",
+                      border: "1.5px solid var(--border-color)",
+                      color: "var(--text-secondary)",
                     }}
                   >
-                    {(
-                      [undefined, "low", "medium", "high", "urgent"] as const
-                    ).map((p) => {
-                      const cfg = p ? getPriorityConfig(p) : null;
-                      return (
-                        <button
-                          key={p ?? "none"}
-                          onClick={() => handleSavePriority(p)}
-                          className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left transition-colors"
-                          style={{ color: "var(--text-secondary)" }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              "var(--bg-secondary)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              "transparent";
-                          }}
-                        >
-                          {cfg ? (
-                            <span
-                              className={cn(
-                                "flex items-center gap-1.5 font-medium",
-                                cfg.text,
-                              )}
+                    {pc ? (
+                      <span
+                        className={cn(
+                          "flex items-center gap-2 font-semibold",
+                          pc.text,
+                        )}
+                      >
+                        <span>{pc.emoji}</span> {pc.label}
+                      </span>
+                    ) : (
+                      <span style={{ color: "var(--text-tertiary)" }}>
+                        Sin prioridad
+                      </span>
+                    )}
+                    <ChevronDown
+                      size={15}
+                      style={{ color: "var(--text-tertiary)" }}
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {priorityMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.12 }}
+                        className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl shadow-2xl overflow-hidden"
+                        style={{
+                          backgroundColor: "var(--bg-card)",
+                          border: "1px solid var(--border-color)",
+                        }}
+                      >
+                        {(
+                          [
+                            undefined,
+                            "low",
+                            "medium",
+                            "high",
+                            "urgent",
+                          ] as const
+                        ).map((p) => {
+                          const cfg = p ? getPriorityConfig(p) : null;
+                          return (
+                            <button
+                              key={p ?? "none"}
+                              onClick={() => {
+                                setDraftPriority(p);
+                                setPriorityMenuOpen(false);
+                              }}
+                              className="w-full flex items-center justify-between px-4 py-3 text-sm transition-colors"
+                              style={{ color: "var(--text-secondary)" }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "var(--bg-secondary)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "transparent";
+                              }}
                             >
-                              <span>{cfg.emoji}</span> {cfg.label}
-                            </span>
-                          ) : (
-                            <span style={{ color: "var(--text-tertiary)" }}>
-                              Sin prioridad
-                            </span>
-                          )}
-                          {editPriority === p && (
-                            <Check
-                              size={14}
-                              className="ml-auto text-blue-500"
-                            />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                              {cfg ? (
+                                <span
+                                  className={cn(
+                                    "flex items-center gap-2 font-semibold",
+                                    cfg.text,
+                                  )}
+                                >
+                                  <span>{cfg.emoji}</span> {cfg.label}
+                                </span>
+                              ) : (
+                                <span style={{ color: "var(--text-tertiary)" }}>
+                                  Sin prioridad
+                                </span>
+                              )}
+                              {draftPriority === p && (
+                                <Check size={14} className="text-blue-500" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div
+                  className="text-sm rounded-2xl px-4 py-3"
+                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                >
+                  {pc ? (
+                    <span
+                      className={cn(
+                        "flex items-center gap-2 font-semibold",
+                        pc.text,
+                      )}
+                    >
+                      <span>{pc.emoji}</span> {pc.label}
+                    </span>
+                  ) : (
+                    <span style={{ color: "var(--text-tertiary)" }}>
+                      Sin prioridad
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -693,7 +703,7 @@ export default function TaskDetailPanel({
                   })
                 }
                 onRecurrenceChange={(r) => saveField({ recurrence: r })}
-                onDropdownOpenChange={setDropdownOpen}
+                onDropdownOpenChange={() => {}}
               />
             </div>
           )}

@@ -25,7 +25,7 @@ export default function CreateTaskForm({
   const [location, setLocation] = useState("");
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>([""]);
   const [priority, setPriority] = useState<
-    "low" | "medium" | "high" | "urgent" | undefined
+    "low" | "normal" | "medium" | "high" | "urgent" | undefined
   >(undefined);
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
@@ -235,7 +235,9 @@ export default function CreateTaskForm({
                             ? "#f97316"
                             : cfg.dot.includes("yellow")
                               ? "#eab308"
-                              : "#22c55e",
+                              : cfg.dot.includes("blue")
+                                ? "#3b82f6"
+                                : "#22c55e",
                         color: "white",
                         borderColor: "transparent",
                       }

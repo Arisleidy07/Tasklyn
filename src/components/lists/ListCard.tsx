@@ -67,7 +67,12 @@ export default function ListCard({ list }: ListCardProps) {
         {/* Header */}
         <div className="flex items-start justify-between mb-2">
           <div className="flex-1 min-w-0 pr-2">
-            <div className="flex items-center gap-1 mb-0.5">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              {list.icon && (
+                <span className="text-base leading-none flex-shrink-0">
+                  {list.icon}
+                </span>
+              )}
               <h3
                 className="text-[13px] font-semibold truncate transition-colors leading-tight"
                 style={{ color: "var(--text-primary)" }}

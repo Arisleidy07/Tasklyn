@@ -34,7 +34,7 @@ export default function Header({
         borderColor: "var(--border-color)",
       }}
     >
-      <div className="flex items-center gap-2 px-3 md:px-8 py-3 md:py-5 max-w-full min-h-[60px] md:min-h-[72px]">
+      <div className="flex items-center gap-2 px-3 md:px-8 py-3 md:py-5 max-w-full min-h-[60px] md:min-h-[72px] flex-wrap">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {showBackButton && (
             <button

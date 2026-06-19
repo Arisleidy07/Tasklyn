@@ -7,7 +7,7 @@ import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import Avatar from "@/components/ui/Avatar";
-import { CheckCircle2, X } from "lucide-react";
+import { CheckCircle2, X, UserCheck, UserCog } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface TaskCompletionModalProps {
@@ -29,7 +29,9 @@ export default function TaskCompletionModal({
 }: TaskCompletionModalProps) {
   const { user } = useAuthStore();
   const { completeTask } = useTaskStore();
-  const [selectedPerformer, setSelectedPerformer] = useState<string | null>(null);
+  const [selectedPerformer, setSelectedPerformer] = useState<string | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
 
   const otherMemberUids = listMembers
@@ -55,13 +57,7 @@ export default function TaskCompletionModal({
         ? { id: selectedPerformer, name: getProfile(selectedPerformer).name }
         : undefined;
 
-      await completeTask(
-        taskId,
-        user.id,
-        user.name,
-        listMembers,
-        performer,
-      );
+      await completeTask(taskId, user.id, user.name, listMembers, performer);
 
       onConfirm(selectedPerformer);
       onClose();
@@ -73,46 +69,74 @@ export default function TaskCompletionModal({
   };
 
   const showMemberList = otherMembers.length > 0;
+  const iDidTheWork = selectedPerformer === null;
+  const someoneElseDidTheWork = selectedPerformer !== null;
 
   return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[99998]"
-            style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+            style={{
+              backgroundColor: "rgba(0,0,0,0.55)",
+              backdropFilter: "blur(6px)",
+            }}
             onClick={onClose}
           />
-          <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-4">
+
+          {/* Modal — slides up on mobile, centered on desktop */}
+          <div className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center sm:p-4">
             <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.97 }}
+              initial={{ opacity: 0, y: 32, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.97 }}
-              transition={{ type: "spring", damping: 30, stiffness: 350 }}
+              exit={{ opacity: 0, y: 24, scale: 0.97 }}
+              transition={{ type: "spring", damping: 28, stiffness: 360 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full rounded-2xl shadow-2xl overflow-hidden"
+              className="w-full sm:max-w-[400px] rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
               style={{
-                maxWidth: showMemberList ? "420px" : "360px",
                 backgroundColor: "var(--bg-card)",
                 border: "1px solid var(--border-color)",
+                maxHeight: "85dvh",
               }}
             >
+              {/* Pull handle (mobile) */}
+              <div className="flex justify-center pt-3 pb-1 sm:hidden flex-shrink-0">
+                <div
+                  className="w-8 h-1 rounded-full"
+                  style={{ backgroundColor: "var(--border-color)" }}
+                />
+              </div>
+
               {/* Header */}
-              <div className="flex items-center justify-between px-5 pt-5 pb-4">
+              <div className="flex items-start justify-between px-5 pt-5 pb-3 flex-shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-green-50">
-                    <CheckCircle2 size={18} className="text-green-600" />
+                  <div
+                    className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: "rgba(22,163,74,0.12)" }}
+                  >
+                    <CheckCircle2 size={22} style={{ color: "#16a34a" }} />
                   </div>
                   <div>
-                    <p className="text-[13px] font-semibold" style={{ color: "var(--text-primary)" }}>
+                    <p
+                      className="text-[15px] font-semibold"
+                      style={{ color: "var(--text-primary)" }}
+                    >
                       Completar tarea
                     </p>
                     <p
-                      className="text-[11px] truncate max-w-[200px]"
-                      style={{ color: "var(--text-tertiary)" }}
+                      className="text-[12px] leading-snug mt-0.5"
+                      style={{
+                        color: "var(--text-tertiary)",
+                        maxWidth: "240px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
                     >
                       {taskTitle}
                     </p>
@@ -120,80 +144,230 @@ export default function TaskCompletionModal({
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-lg transition-colors"
+                  className="p-2 rounded-xl flex-shrink-0 transition-colors"
                   style={{ color: "var(--text-tertiary)" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "var(--bg-secondary)"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-secondary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                  }}
                 >
-                  <X size={16} />
+                  <X size={18} />
                 </button>
               </div>
 
-              {/* Member picker — only shown when list has other members */}
-              {showMemberList && (
-                <div className="px-5 pb-4 space-y-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: "var(--text-tertiary)" }}>
-                    ¿Quién la realizó?
-                  </p>
+              {/* ── COMPLETADA POR ── */}
+              <div className="px-5 pb-4">
+                <div
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl mb-2"
+                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                >
+                  <UserCheck size={14} style={{ color: "#3b82f6" }} />
+                  <span
+                    className="text-[11px] font-semibold uppercase tracking-wide"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    Completada por
+                  </span>
+                </div>
+                <div
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl border"
+                  style={{
+                    backgroundColor: "rgba(59,130,246,0.06)",
+                    borderColor: "rgba(59,130,246,0.25)",
+                  }}
+                >
+                  <Avatar name={user.name} photoURL={user.photoURL} size="md" />
+                  <div>
+                    <p
+                      className="text-[13px] font-medium"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      {user.name}
+                      <span
+                        className="ml-1.5 text-[10px] font-normal px-1.5 py-0.5 rounded-md"
+                        style={{
+                          backgroundColor: "rgba(59,130,246,0.15)",
+                          color: "#3b82f6",
+                        }}
+                      >
+                        Yo
+                      </span>
+                    </p>
+                    <p
+                      className="text-[11px]"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      Estás marcando esta tarea como completada
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-                  {/* Yo mismo */}
+              {/* ── REALIZADA POR ── */}
+              {showMemberList && (
+                <div className="px-5 pb-4">
+                  <div
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl mb-2"
+                    style={{ backgroundColor: "var(--bg-secondary)" }}
+                  >
+                    <UserCog size={14} style={{ color: "#8b5cf6" }} />
+                    <span
+                      className="text-[11px] font-semibold uppercase tracking-wide"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      Realizada por
+                    </span>
+                  </div>
+
+                  {/* Opción: Yo mismo */}
                   <button
                     onClick={() => setSelectedPerformer(null)}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all",
-                      selectedPerformer === null
-                        ? "border-blue-500 bg-blue-50"
-                        : "border-transparent"
-                    )}
-                    style={selectedPerformer !== null ? { backgroundColor: "var(--bg-secondary)", borderColor: "transparent" } : {}}
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all mb-2"
+                    style={
+                      iDidTheWork
+                        ? {
+                            backgroundColor: "rgba(22,163,74,0.08)",
+                            border: "1.5px solid #16a34a",
+                          }
+                        : {
+                            backgroundColor: "var(--bg-secondary)",
+                            border: "1.5px solid transparent",
+                          }
+                    }
                   >
-                    <Avatar name={user.name} photoURL={user.photoURL} size="sm" />
-                    <span className="flex-1 text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
-                      {user.name} <span className="font-normal text-[11px]" style={{ color: "var(--text-tertiary)" }}>(yo)</span>
-                    </span>
-                    {selectedPerformer === null && (
-                      <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                        <CheckCircle2 size={10} className="text-white" />
-                      </div>
-                    )}
-                  </button>
-
-                  {/* Otros miembros */}
-                  {otherMembers.map((m) => (
-                    <button
-                      key={m.userId}
-                      onClick={() => setSelectedPerformer(m.userId)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border text-left transition-all",
-                        selectedPerformer === m.userId
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-transparent"
-                      )}
-                      style={selectedPerformer !== m.userId ? { backgroundColor: "var(--bg-secondary)", borderColor: "transparent" } : {}}
-                    >
-                      <Avatar name={m.name} photoURL={m.photoURL} size="sm" />
-                      <span className="flex-1 text-[13px] font-medium" style={{ color: "var(--text-primary)" }}>
-                        {m.name}
-                      </span>
-                      {selectedPerformer === m.userId && (
-                        <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                          <CheckCircle2 size={10} className="text-white" />
+                    <div className="relative flex-shrink-0">
+                      <Avatar
+                        name={user.name}
+                        photoURL={user.photoURL}
+                        size="md"
+                      />
+                      {iDidTheWork && (
+                        <div
+                          className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{
+                            backgroundColor: "#16a34a",
+                            border: "2px solid var(--bg-card)",
+                          }}
+                        >
+                          <CheckCircle2 size={9} className="text-white" />
                         </div>
                       )}
-                    </button>
-                  ))}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className="text-[13px] font-medium truncate"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        {user.name}
+                        <span
+                          className="ml-1.5 text-[10px] font-normal px-1.5 py-0.5 rounded-md"
+                          style={{
+                            backgroundColor: "var(--bg-tertiary)",
+                            color: "var(--text-tertiary)",
+                          }}
+                        >
+                          Yo
+                        </span>
+                      </p>
+                      <p
+                        className="text-[11px]"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        Yo realicé el trabajo
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Opción: Otro miembro */}
+                  <div className="space-y-1.5 max-h-44 overflow-y-auto">
+                    {otherMembers.map((m) => {
+                      const isSelected = selectedPerformer === m.userId;
+                      return (
+                        <button
+                          key={m.userId}
+                          onClick={() => setSelectedPerformer(m.userId)}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-all"
+                          style={
+                            isSelected
+                              ? {
+                                  backgroundColor: "rgba(139,92,246,0.08)",
+                                  border: "1.5px solid #8b5cf6",
+                                }
+                              : {
+                                  backgroundColor: "var(--bg-secondary)",
+                                  border: "1.5px solid transparent",
+                                }
+                          }
+                        >
+                          <div className="relative flex-shrink-0">
+                            <Avatar
+                              name={m.name}
+                              photoURL={m.photoURL}
+                              size="md"
+                            />
+                            {isSelected && (
+                              <div
+                                className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full flex items-center justify-center"
+                                style={{
+                                  backgroundColor: "#8b5cf6",
+                                  border: "2px solid var(--bg-card)",
+                                }}
+                              >
+                                <CheckCircle2 size={9} className="text-white" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className="text-[13px] font-medium truncate"
+                              style={{ color: "var(--text-primary)" }}
+                            >
+                              {m.name}
+                            </p>
+                            <p
+                              className="text-[11px]"
+                              style={{ color: "var(--text-tertiary)" }}
+                            >
+                              Realizó el trabajo por mí
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
-              {/* Footer buttons */}
+              {/* No members: simple confirm text */}
+              {!showMemberList && (
+                <div className="px-5 pb-4 flex-shrink-0">
+                  <div
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                    style={{ backgroundColor: "rgba(22,163,74,0.06)" }}
+                  >
+                    <CheckCircle2 size={14} style={{ color: "#16a34a" }} />
+                    <p
+                      className="text-[13px]"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Se marcará como completada por ti
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Footer */}
               <div
-                className="flex gap-3 px-5 py-4 border-t"
+                className="flex gap-3 px-5 py-4 flex-shrink-0 border-t"
                 style={{ borderColor: "var(--border-color)" }}
               >
                 <button
                   onClick={onClose}
                   disabled={loading}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                  className="flex-1 py-3 rounded-2xl text-sm font-medium transition-colors"
                   style={{
                     backgroundColor: "var(--bg-secondary)",
                     color: "var(--text-secondary)",
@@ -204,21 +378,45 @@ export default function TaskCompletionModal({
                 <button
                   onClick={handleConfirm}
                   disabled={loading}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-2xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
                   style={{
-                    backgroundColor: loading ? "rgba(22,163,74,0.5)" : "#16a34a",
+                    background: loading
+                      ? "rgba(22,163,74,0.6)"
+                      : "linear-gradient(135deg, #16a34a, #15803d)",
                     color: "#fff",
+                    boxShadow: loading
+                      ? "none"
+                      : "0 2px 10px rgba(22,163,74,0.35)",
                   }}
                 >
                   {loading ? (
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    <svg
+                      className="animate-spin h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8H4z"
+                      />
                     </svg>
                   ) : (
-                    <CheckCircle2 size={15} />
+                    <CheckCircle2 size={16} />
                   )}
-                  {loading ? "Guardando..." : "Completar"}
+                  {loading
+                    ? "Guardando..."
+                    : iDidTheWork
+                      ? "Completar tarea"
+                      : "Completar por otra persona"}
                 </button>
               </div>
             </motion.div>

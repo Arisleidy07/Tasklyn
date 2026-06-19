@@ -408,12 +408,13 @@ export default function HistoryPage() {
       }
 
       task.history?.forEach((historyEntry) => {
+        const storedName = (historyEntry as any).performedByName;
         history.push({
           id: `${task.id}-history-${historyEntry.id}`,
           action: historyEntry.action,
           performedBy: historyEntry.performedBy,
           performedByName:
-            resolveName(historyEntry.performedBy) ?? "Cargando...",
+            resolveName(historyEntry.performedBy) ?? storedName ?? "Usuario",
           performedByPhoto: resolvePhoto(historyEntry.performedBy),
           performedAt: historyEntry.performedAt,
           taskTitle: task.title,

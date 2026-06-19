@@ -92,7 +92,7 @@ export default function Modal({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="relative w-[95%] max-h-[90vh] rounded-2xl overflow-hidden flex flex-col"
+              className="relative w-[95%] max-h-[90vh] rounded-2xl flex flex-col overflow-hidden"
               style={{
                 backgroundColor: "var(--bg-modal)",
                 borderColor: "var(--border-color)",
@@ -145,7 +145,7 @@ export default function Modal({
               </div>
               {/* Content */}
               <div
-                className="flex-1 overflow-y-auto"
+                className="flex-1 overflow-y-auto flex flex-col min-h-0"
                 style={{ backgroundColor: "var(--bg-modal)" }}
               >
                 {children}
@@ -179,7 +179,7 @@ export default function Modal({
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              "relative w-full max-h-[90vh] rounded-2xl overflow-hidden flex flex-col",
+              "relative w-full max-h-[90vh] rounded-2xl flex flex-col overflow-hidden",
               sizeMap[size],
             )}
             style={{
@@ -232,7 +232,7 @@ export default function Modal({
               </div>
             )}
             <div
-              className="flex-1 overflow-y-auto"
+              className="flex-1 overflow-y-auto flex flex-col min-h-0"
               style={{ backgroundColor: "var(--bg-modal)" }}
             >
               {children}

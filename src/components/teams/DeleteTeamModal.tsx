@@ -2,7 +2,14 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { AlertTriangle, X, Loader2, Users, FolderOpen, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  X,
+  Loader2,
+  Users,
+  FolderOpen,
+  Trash2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import type { Team } from "@/types";
@@ -26,14 +33,7 @@ export default function DeleteTeamModal({
 }: DeleteTeamModalProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [confirmText, setConfirmText] = useState("");
-
-  const expectedText = `eliminar ${team.name}`;
-  const canDelete = confirmText.toLowerCase().trim() === expectedText.toLowerCase();
-
   const handleConfirm = async () => {
-    if (!canDelete) return;
-
     setIsDeleting(true);
     setError(null);
 
@@ -44,7 +44,7 @@ export default function DeleteTeamModal({
       setError(
         err instanceof Error
           ? err.message
-          : "Error al eliminar el equipo. Verifica que tienes permisos de propietario."
+          : "Error al eliminar el equipo. Verifica que tienes permisos de propietario.",
       );
     } finally {
       setIsDeleting(false);
@@ -53,7 +53,6 @@ export default function DeleteTeamModal({
 
   const handleClose = () => {
     if (isDeleting) return;
-    setConfirmText("");
     setError(null);
     onClose();
   };
@@ -70,7 +69,7 @@ export default function DeleteTeamModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9980]"
           />
 
           {/* Modal */}
@@ -79,22 +78,26 @@ export default function DeleteTeamModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 400 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+            className="fixed inset-0 z-[9981] flex items-center justify-center p-4 pointer-events-none"
           >
             <div
-              className={cn(
-                "w-full max-w-md rounded-2xl shadow-2xl pointer-events-auto",
-                "border border-red-100 dark:border-red-900/50"
-              )}
+              className="w-full max-w-md rounded-2xl shadow-2xl pointer-events-auto"
               style={{
                 backgroundColor: "var(--bg-card)",
+                border: "1px solid rgba(239,68,68,0.3)",
               }}
             >
               {/* Header */}
               <div className="p-6 pb-4">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                  <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: "rgba(239,68,68,0.12)" }}
+                  >
+                    <AlertTriangle
+                      className="w-6 h-6"
+                      style={{ color: "#ef4444" }}
+                    />
                   </div>
                   <div className="flex-1">
                     <h2
@@ -114,7 +117,14 @@ export default function DeleteTeamModal({
                   <button
                     onClick={handleClose}
                     disabled={isDeleting}
-                    className="p-1.5 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="p-1.5 rounded-lg transition-colors"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-secondary)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
                     style={{ color: "var(--text-tertiary)" }}
                   >
                     <X size={18} />
@@ -154,63 +164,21 @@ export default function DeleteTeamModal({
                 </div>
 
                 {/* What will be deleted */}
-                <div className="space-y-2 mb-6">
-                  <p
-                    className="text-sm font-medium"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Se eliminará:
-                  </p>
-                  <ul className="space-y-1.5">
-                    {[
-                      "Todas las listas del equipo",
-                      "Todas las tareas y comentarios",
-                      "Historial de actividad",
-                      "Configuración y metas",
-                      "Invitaciones pendientes",
-                    ].map((item) => (
-                      <li
-                        key={item}
-                        className="flex items-center gap-2 text-sm"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        <Trash2 size={12} className="text-red-400" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Confirmation input */}
-                <div className="space-y-2">
-                  <label
-                    className="text-sm font-medium"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    Escribe{" "}
-                    <span className="font-semibold" style={{ color: "var(--text-primary)" }}>
-                      "eliminar {team.name}"
-                    </span>{" "}
-                    para confirmar
-                  </label>
-                  <input
-                    type="text"
-                    value={confirmText}
-                    onChange={(e) => setConfirmText(e.target.value)}
-                    disabled={isDeleting}
-                    placeholder={`eliminar ${team.name}`}
-                    className={cn(
-                      "w-full px-4 py-2.5 rounded-xl text-sm transition-all outline-none",
-                      "border-2 focus:ring-0",
-                      canDelete
-                        ? "border-red-300 focus:border-red-500"
-                        : "border-gray-200 dark:border-gray-700 focus:border-blue-500"
-                    )}
-                    style={{
-                      backgroundColor: "var(--bg-input)",
-                      color: "var(--text-primary)",
-                    }}
-                  />
+                <div className="space-y-1.5">
+                  {[
+                    "Miembros del equipo",
+                    "Configuración e información",
+                    "Invitaciones pendientes",
+                  ].map((item) => (
+                    <div
+                      key={item}
+                      className="flex items-center gap-2 text-sm"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      <div className="w-1 h-1 rounded-full bg-red-400 flex-shrink-0" />
+                      {item}
+                    </div>
+                  ))}
                 </div>
 
                 {/* Error message */}
@@ -218,9 +186,13 @@ export default function DeleteTeamModal({
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="mt-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+                    className="mt-4 p-3 rounded-xl"
+                    style={{
+                      backgroundColor: "rgba(239,68,68,0.08)",
+                      border: "1px solid rgba(239,68,68,0.2)",
+                    }}
                   >
-                    <p className="text-sm text-red-600 dark:text-red-400">
+                    <p className="text-sm" style={{ color: "#ef4444" }}>
                       {error}
                     </p>
                   </motion.div>
@@ -228,33 +200,44 @@ export default function DeleteTeamModal({
               </div>
 
               {/* Footer */}
-              <div className="p-6 pt-4 border-t border-gray-100 dark:border-gray-800">
+              <div
+                className="p-6 pt-4 border-t"
+                style={{ borderColor: "var(--border-color)" }}
+              >
                 <div className="flex gap-3">
-                  <Button
-                    variant="outline"
+                  <button
                     onClick={handleClose}
                     disabled={isDeleting}
-                    className="flex-1"
+                    className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      color: "var(--text-secondary)",
+                    }}
                   >
                     Cancelar
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     onClick={handleConfirm}
-                    disabled={!canDelete || isDeleting}
-                    className={cn(
-                      "flex-1",
-                      canDelete && "bg-red-600 hover:bg-red-700 text-white"
-                    )}
+                    disabled={isDeleting}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                    style={{
+                      backgroundColor: isDeleting
+                        ? "rgba(239,68,68,0.5)"
+                        : "#ef4444",
+                      color: "#fff",
+                    }}
                   >
                     {isDeleting ? (
                       <>
-                        <Loader2 size={16} className="mr-2 animate-spin" />
+                        <Loader2 size={15} className="animate-spin" />{" "}
                         Eliminando...
                       </>
                     ) : (
-                      "Eliminar equipo"
+                      <>
+                        <Trash2 size={15} /> Eliminar equipo
+                      </>
                     )}
-                  </Button>
+                  </button>
                 </div>
               </div>
             </div>

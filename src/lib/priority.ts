@@ -5,15 +5,15 @@ export type PriorityLevel = NonNullable<Task["priority"]>;
 export interface PriorityConfig {
   label: string;
   emoji: string;
-  dot: string;           // Tailwind bg color for dot
-  text: string;          // Tailwind text color
+  dot: string; // Tailwind bg color for dot
+  text: string; // Tailwind text color
   textDark: string;
-  bg: string;            // Tailwind bg for badge (light)
+  bg: string; // Tailwind bg for badge (light)
   bgDark: string;
-  border: string;        // Tailwind border color
+  border: string; // Tailwind border color
   borderDark: string;
-  cardBorder: string;    // left border for task cards
-  cardBg: string;        // subtle bg for task cards
+  cardBorder: string; // left border for task cards
+  cardBg: string; // subtle bg for task cards
   cardBgDark: string;
 }
 
@@ -59,6 +59,20 @@ export const PRIORITY_CONFIG: Record<PriorityLevel, PriorityConfig> = {
     cardBorder: "border-l-yellow-500",
     cardBg: "bg-yellow-50/40",
     cardBgDark: "dark:bg-yellow-950/10",
+  },
+  normal: {
+    label: "Normal",
+    emoji: "🔵",
+    dot: "bg-blue-400",
+    text: "text-blue-600",
+    textDark: "dark:text-blue-400",
+    bg: "bg-blue-50",
+    bgDark: "dark:bg-blue-950/30",
+    border: "border-blue-200",
+    borderDark: "dark:border-blue-800/50",
+    cardBorder: "border-l-blue-400",
+    cardBg: "bg-blue-50/40",
+    cardBgDark: "dark:bg-blue-950/10",
   },
   low: {
     label: "Baja",

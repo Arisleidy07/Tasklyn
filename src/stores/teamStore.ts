@@ -22,7 +22,6 @@ import {
   createAchievement,
   subscribeToUserAchievements,
   subscribeToTeamAchievements,
-  ensurePersonalTeam,
 } from "@/lib/firestore";
 
 interface TeamState {
@@ -90,7 +89,6 @@ interface TeamState {
   ) => "owner" | "admin" | "member" | null;
   isTeamOwner: (teamId: string, userId: string) => boolean;
   isTeamAdmin: (teamId: string, userId: string) => boolean;
-  ensurePersonalTeam: (userId: string) => Promise<string>;
 }
 
 let teamsUnsubscribe: (() => void) | null = null;
@@ -331,17 +329,6 @@ export const useTeamStore = create<TeamState>()(
       getPersonalTeam: (userId: string) => {
         const { teams } = get();
         return teams.find((t) => t.isPersonal && t.owner === userId) || null;
-      },
-
-      ensurePersonalTeam: async (userId: string) => {
-        try {
-          const teamId = await ensurePersonalTeam(userId);
-          await get().refreshTeams(userId);
-          return teamId;
-        } catch (error) {
-          console.error("Failed to ensure personal team:", error);
-          throw error;
-        }
       },
 
       getUserRoleInTeam: (teamId: string, userId: string) => {

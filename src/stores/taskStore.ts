@@ -35,6 +35,7 @@ interface TaskState {
   tasks: Task[];
   isLoading: boolean;
   taskUnsubscribes: Map<string, Unsubscribe>;
+  pendingOrder: Map<string, number>; // taskId -> optimistic order while Firestore write is in-flight
   getTasksByList: (listId: string) => Task[];
   getTask: (id: string) => Task | undefined;
   createTask: (params: {
@@ -49,7 +50,7 @@ interface TaskState {
     dueTime?: string | null;
     reminders?: TaskReminder[];
     recurrence?: RecurrenceConfig | null;
-    priority?: "low" | "medium" | "high" | "urgent";
+    priority?: "low" | "normal" | "medium" | "high" | "urgent";
     tags?: string[];
   }) => Promise<Task>;
   updateTask: (
@@ -215,6 +216,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   tasks: [],
   isLoading: false,
   taskUnsubscribes: new Map(),
+  pendingOrder: new Map(),
 
   getTasksByList: (listId) => get().tasks.filter((t) => t.listId === listId),
 
@@ -638,18 +640,19 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     // Unsubscribe existing listener for this list
     get().taskUnsubscribes.get(listId)?.();
 
-    const unsubscribe = subscribeToListTasks(listId, (tasks) => {
+    const unsubscribe = subscribeToListTasks(listId, (incomingTasks) => {
       set((state) => {
         const otherTasks = state.tasks.filter((t) => t.listId !== listId);
-        // Merge tasks, replacing any with same ID to prevent duplicates
         const taskMap = new Map(otherTasks.map((t) => [t.id, t]));
-        tasks.forEach((t) => taskMap.set(t.id, t));
+        // Apply optimistic order overrides from pendingOrder
+        incomingTasks.forEach((t) => {
+          const pending = state.pendingOrder.get(t.id);
+          taskMap.set(
+            t.id,
+            pending !== undefined ? { ...t, order: pending } : t,
+          );
+        });
         const mergedTasks = Array.from(taskMap.values());
-        console.log(
-          "subscribeToList: merged tasks for list",
-          listId,
-          mergedTasks.map((t) => t.id),
-        );
         return { tasks: mergedTasks };
       });
     });
@@ -676,22 +679,29 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
 
   reorderTasks: async (taskIds) => {
-    // Optimistic update: reorder local state
+    // 1. Optimistic update + register pending order to prevent snapshot snap-back
     set((state) => {
-      const taskMap = new Map(state.tasks.map((t) => [t.id, t]));
-      const reorderedTasks = taskIds
-        .map((id) => taskMap.get(id))
-        .filter((t): t is Task => t !== undefined);
-      return { tasks: reorderedTasks };
+      const newPending = new Map(state.pendingOrder);
+      taskIds.forEach((id, i) => newPending.set(id, i));
+      const updated = state.tasks.map((t) => {
+        const idx = taskIds.indexOf(t.id);
+        return idx !== -1 ? { ...t, order: idx } : t;
+      });
+      return { tasks: updated, pendingOrder: newPending };
     });
 
-    // Persist to Firestore: update order field for each task
-    const tasks = get().tasks;
-    for (let i = 0; i < tasks.length; i++) {
-      const task = tasks[i];
-      if (task.order !== i) {
-        await updateTaskInDb(task.id, { order: i });
-      }
+    // 2. Persist all at once in parallel
+    try {
+      await Promise.all(
+        taskIds.map((id, i) => updateTaskInDb(id, { order: i })),
+      );
+    } finally {
+      // 3. Clear pending overrides once Firestore has confirmed
+      set((state) => {
+        const newPending = new Map(state.pendingOrder);
+        taskIds.forEach((id) => newPending.delete(id));
+        return { pendingOrder: newPending };
+      });
     }
   },
 }));

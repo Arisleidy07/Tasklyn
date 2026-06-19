@@ -15,6 +15,7 @@ import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
 import PremiumMembersPanel from "@/components/members/PremiumMembersPanel";
+import MembersPanel from "@/components/members/MembersPanel";
 import EditListModal from "@/components/members/EditListModal";
 import { SortableTaskContainer } from "@/components/tasks/SortableTaskContainer";
 import {
@@ -59,8 +60,9 @@ export default function ListDetailPage() {
     "details",
   );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showMembersPanel, setShowMembersPanel] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
-  const [showCompleted, setShowCompleted] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(true);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDescription, setNewTaskDescription] = useState("");
   const [newTaskLocation, setNewTaskLocation] = useState("");
@@ -262,10 +264,7 @@ export default function ListDetailPage() {
             setShowEditModal(true);
           }}
           onShare={() => setShowSharePanel(true)}
-          onMembers={() => {
-            setEditModalTab("members");
-            setShowEditModal(true);
-          }}
+          onMembers={() => setShowMembersPanel(true)}
           onDelete={() => setShowDeleteConfirm(true)}
           onBack={handleBackClick}
         />
@@ -602,11 +601,14 @@ export default function ListDetailPage() {
                 <div className="flex items-center gap-2 flex-1">
                   <div
                     className="w-7 h-7 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: "var(--text-primary)" }}
+                    style={{
+                      backgroundColor: "var(--bg-tertiary)",
+                      border: "1px solid var(--border-color)",
+                    }}
                   >
                     <Archive
                       size={14}
-                      style={{ color: "var(--text-on-accent)" }}
+                      style={{ color: "var(--text-secondary)" }}
                     />
                   </div>
                   <div className="flex flex-col">
@@ -618,8 +620,9 @@ export default function ListDetailPage() {
                       <span
                         className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
                         style={{
-                          backgroundColor: "var(--text-primary)",
-                          color: "var(--text-on-accent)",
+                          backgroundColor: "var(--bg-tertiary)",
+                          color: "var(--text-secondary)",
+                          border: "1px solid var(--border-color)",
                         }}
                       >
                         {archivedCount}
@@ -683,8 +686,9 @@ export default function ListDetailPage() {
             setNewTaskPhones([""]);
           }}
           title="Añadir nueva tarea"
+          size="task"
         >
-          <div className="space-y-5">
+          <div className="space-y-5 p-5 sm:p-6">
             {/* Título de la tarea */}
             <div className="space-y-1.5">
               <label
@@ -848,6 +852,15 @@ export default function ListDetailPage() {
           onClose={() => setShowSharePanel(false)}
         />
 
+        {/* Members panel */}
+        <MembersPanel
+          list={list}
+          memberNames={memberNames}
+          originalNames={memberNames}
+          isOpen={showMembersPanel}
+          onClose={() => setShowMembersPanel(false)}
+        />
+
         {/* Edit list + members management */}
         <EditListModal
           list={list}
@@ -863,8 +876,15 @@ export default function ListDetailPage() {
           onClose={() => setShowDeleteConfirm(false)}
           title="¿Eliminar lista?"
         >
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg text-red-700 text-sm">
+          <div className="space-y-4 p-5">
+            <div
+              className="flex items-start gap-3 p-3 rounded-lg text-sm"
+              style={{
+                backgroundColor: "rgba(239,68,68,0.08)",
+                color: "var(--text-danger, #dc2626)",
+                border: "1px solid rgba(239,68,68,0.2)",
+              }}
+            >
               <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
               <p>
                 Esto eliminará permanentemente &quot;{list.name}&quot; y todas

@@ -647,7 +647,7 @@ export default function NotificationsPage() {
           <section>
             <h3
               className="text-sm font-semibold mb-3"
-              style={{ color: "#059669" }}
+              style={{ color: "var(--text-success, #059669)" }}
             >
               Invitaciones Aceptadas
             </h3>
@@ -658,7 +658,7 @@ export default function NotificationsPage() {
                   className="flex items-start gap-4 p-4 rounded-xl border"
                   style={{
                     borderColor: "rgba(16,185,129,0.3)",
-                    backgroundColor: "rgba(16,185,129,0.06)",
+                    backgroundColor: "var(--bg-card)",
                     boxShadow: "var(--shadow-card)",
                   }}
                 >
@@ -666,16 +666,16 @@ export default function NotificationsPage() {
                     className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: "rgba(16,185,129,0.15)" }}
                   >
-                    <CheckCircle2 size={18} style={{ color: "#059669" }} />
+                    <CheckCircle2 size={18} className="text-emerald-500" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p
                       className="text-sm font-semibold"
-                      style={{ color: "#065f46" }}
+                      style={{ color: "var(--text-primary)" }}
                     >
                       {notif.title}
                     </p>
-                    <p className="text-xs mt-1" style={{ color: "#059669" }}>
+                    <p className="text-xs mt-1 text-emerald-500">
                       Ya tienes acceso a este espacio
                     </p>
                   </div>

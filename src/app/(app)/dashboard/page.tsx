@@ -147,11 +147,11 @@ function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
 // ============================================
 function TradingAreaChart({
   data,
-  theme,
 }: {
   data: { label: string; done: number; created: number }[];
-  theme: "light" | "dark";
 }) {
+  const { theme } = useUIStore();
+  const isDark = theme === "dark";
   const [chartReady, setChartReady] = useState(false);
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -225,7 +225,7 @@ function TradingAreaChart({
       axisTicks: { show: false },
       labels: {
         style: {
-          colors: "#64748b",
+          colors: isDark ? "#94a3b8" : "#64748b",
           fontSize: "11px",
           fontWeight: 500,
         },
@@ -235,13 +235,13 @@ function TradingAreaChart({
       show: true,
       labels: {
         style: {
-          colors: "#64748b",
+          colors: isDark ? "#94a3b8" : "#64748b",
           fontSize: "11px",
         },
       },
     },
     tooltip: {
-      theme: "light",
+      theme: isDark ? "dark" : "light",
       shared: true,
       intersect: false,
       y: {
@@ -258,7 +258,7 @@ function TradingAreaChart({
       fontSize: "11px",
       fontFamily: "Inter, sans-serif",
       labels: {
-        colors: "#64748b",
+        colors: isDark ? "#94a3b8" : "#64748b",
       },
       markers: {
         offsetX: -4,
@@ -957,9 +957,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </div>
-                  {mounted && (
-                    <TradingAreaChart data={weekData} theme="light" />
-                  )}
+                  {mounted && <TradingAreaChart data={weekData} />}
                 </motion.div>
 
                 {/* Shared Lists */}

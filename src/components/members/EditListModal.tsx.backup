@@ -1,0 +1,1462 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { TaskList, MemberRole } from "@/types";
+import { useListStore } from "@/stores/listStore";
+import { useAuthStore } from "@/stores/authStore";
+import { getUserRole, canEditList } from "@/lib/permissions";
+import {
+  X,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Trash2,
+  AlertTriangle,
+  Download,
+  Edit2,
+  GripVertical,
+  MoreVertical,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import type { User } from "@/types";
+import {
+  subscribeToBackgrounds,
+  deleteBackgroundImageDoc,
+  subscribeToBgCategories,
+  addBgCategory,
+  updateBgCategory,
+  deleteBgCategory,
+  reorderBgCategories,
+  type BackgroundImage,
+} from "@/lib/firestore";
+import type { BgCategoryConfig } from "@/types";
+import { deleteBackgroundImage } from "@/lib/storage";
+import ImageUploadModal from "./ImageUploadModal";
+
+interface EditListModalProps {
+  list: TaskList;
+  memberProfiles: Record<string, User>;
+  isOpen: boolean;
+  onClose: () => void;
+  defaultTab?: "details" | "members";
+}
+
+const QUICK_EMOJIS = [
+  "📋",
+  "🏠",
+  "💼",
+  "🎯",
+  "⭐",
+  "🔥",
+  "💡",
+  "🚀",
+  "📚",
+  "🎨",
+  "🎵",
+  "🎮",
+  "🛠️",
+  "🔧",
+  "⚙️",
+  "💻",
+  "📱",
+  "🗂️",
+  "✅",
+  "🏆",
+];
+const MORE_EMOJIS = [
+  "🌍",
+  "🌱",
+  "🌊",
+  "🧩",
+  "🎪",
+  "🎭",
+  "🦋",
+  "🐝",
+  "🌸",
+  "🍀",
+  "🏋️",
+  "🎬",
+  "📷",
+  "🎤",
+  "🎸",
+  "🧪",
+  "🔬",
+  "🧲",
+  "🛡️",
+  "💎",
+  "🌙",
+  "☀️",
+  "⚡",
+  "🎁",
+  "📦",
+  "🗺️",
+  "🧭",
+  "🔑",
+  "💰",
+  "📊",
+  "📈",
+  "📉",
+  "🗝️",
+  "🏗️",
+  "🚗",
+  "✈️",
+  "🏖️",
+  "🎲",
+  "🧸",
+];
+
+// Fallback categories (used until user creates their own)
+const FALLBACK_CATEGORIES: BgCategoryConfig[] = [
+  {
+    id: "temp-1",
+    name: "Naturaleza",
+    emoji: "🌿",
+    order: 0,
+    createdBy: "system",
+    createdAt: "",
+  },
+  {
+    id: "temp-2",
+    name: "Paisajes",
+    emoji: "🏞️",
+    order: 1,
+    createdBy: "system",
+    createdAt: "",
+  },
+  {
+    id: "temp-3",
+    name: "Ciudad",
+    emoji: "🏙️",
+    order: 2,
+    createdBy: "system",
+    createdAt: "",
+  },
+  {
+    id: "temp-4",
+    name: "Tecnología",
+    emoji: "💻",
+    order: 3,
+    createdBy: "system",
+    createdAt: "",
+  },
+  {
+    id: "temp-5",
+    name: "Abstracto",
+    emoji: "🎨",
+    order: 4,
+    createdBy: "system",
+    createdAt: "",
+  },
+];
+
+const COLORS = [
+  { value: "#3b82f6", name: "Azul" },
+  { value: "#8b5cf6", name: "Morado" },
+  { value: "#22c55e", name: "Verde" },
+  { value: "#f97316", name: "Naranja" },
+  { value: "#ef4444", name: "Rojo" },
+  { value: "#eab308", name: "Amarillo" },
+  { value: "#ec4899", name: "Rosa" },
+  { value: "#1f2937", name: "Negro" },
+];
+
+export default function EditListModal({
+  list,
+  memberProfiles,
+  isOpen,
+  onClose,
+}: EditListModalProps) {
+  const { user } = useAuthStore();
+  const { updateList } = useListStore();
+  const [name, setName] = useState(list.name);
+  const [description, setDescription] = useState(list.description || "");
+  const [icon, setIcon] = useState(list.icon || "");
+  const [backgroundImage, setBackgroundImage] = useState(
+    list.backgroundImage || "",
+  );
+  const [color, setColor] = useState(list.color || "");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [showMoreEmojis, setShowMoreEmojis] = useState(false);
+
+  // Background library
+  const [allBackgrounds, setAllBackgrounds] = useState<BackgroundImage[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<BackgroundImage | null>(
+    null,
+  );
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(
+    null,
+  );
+  const [uploadModalCategory, setUploadModalCategory] =
+    useState<string>("Naturaleza");
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [mobileActionTarget, setMobileActionTarget] =
+    useState<BackgroundImage | null>(null);
+
+  // Dynamic categories state
+  const [categories, setCategories] = useState<BgCategoryConfig[]>([]);
+  const [isManagingCategories, setIsManagingCategories] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryEmoji, setNewCategoryEmoji] = useState("📁");
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(
+    null,
+  );
+  const [editCategoryName, setEditCategoryName] = useState("");
+  const [editCategoryEmoji, setEditCategoryEmoji] = useState("");
+  const [isSavingCategory, setIsSavingCategory] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const unsubBackgrounds = subscribeToBackgrounds(setAllBackgrounds);
+    const unsubCategories = subscribeToBgCategories((cats) => {
+      if (cats.length > 0) {
+        setCategories(cats);
+      } else {
+        // Use fallbacks if no categories exist yet
+        setCategories(FALLBACK_CATEGORIES);
+      }
+    });
+    return () => {
+      unsubBackgrounds();
+      unsubCategories();
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setName(list.name);
+      setDescription(list.description || "");
+      setIcon(list.icon || "");
+      setBackgroundImage(list.backgroundImage || "");
+      setColor(list.color || "");
+      setSaved(false);
+      setShowMoreEmojis(false);
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [
+    isOpen,
+    list.name,
+    list.description,
+    list.icon,
+    list.backgroundImage,
+    list.color,
+  ]);
+
+  if (!user || typeof document === "undefined") return null;
+
+  const myRole = getUserRole(list, user.id);
+  const canEdit = canEditList(myRole);
+
+  const openUploadModal = (categoryName: string) => {
+    setUploadModalCategory(categoryName);
+    setShowUploadModal(true);
+  };
+
+  // Category CRUD functions
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim() || !user || isSavingCategory) return;
+    setIsSavingCategory(true);
+    try {
+      await addBgCategory({
+        name: newCategoryName.trim(),
+        emoji: newCategoryEmoji,
+        order: categories.length,
+        createdBy: user.id,
+      });
+      setNewCategoryName("");
+      setNewCategoryEmoji("📁");
+    } finally {
+      setIsSavingCategory(false);
+    }
+  };
+
+  const handleUpdateCategory = async (id: string) => {
+    if (!editCategoryName.trim() || isSavingCategory) return;
+    setIsSavingCategory(true);
+    try {
+      await updateBgCategory(id, {
+        name: editCategoryName.trim(),
+        emoji: editCategoryEmoji,
+      });
+      setEditingCategoryId(null);
+    } finally {
+      setIsSavingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (
+      !confirm(
+        "¿Eliminar esta categoría? Las imágenes no se eliminarán, pero quedarán sin categoría.",
+      )
+    )
+      return;
+    await deleteBgCategory(id);
+  };
+
+  const moveCategory = (index: number, direction: -1 | 1) => {
+    const newCategories = [...categories];
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= newCategories.length) return;
+
+    // Swap
+    [newCategories[index], newCategories[newIndex]] = [
+      newCategories[newIndex],
+      newCategories[index],
+    ];
+
+    // Update order
+    const reordered = newCategories.map((cat, i) => ({ ...cat, order: i }));
+    setCategories(reordered);
+
+    // Persist
+    reorderBgCategories(reordered.map((c) => c.id));
+  };
+
+  const downloadImage = async (url: string, name?: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = objectUrl;
+      const ext = blob.type.split("/")[1] || "jpg";
+      a.download = name ? `${name}.${ext}` : `imagen.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      console.error("Download error:", err);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await deleteBackgroundImageDoc(deleteTarget.id);
+      await deleteBackgroundImage(deleteTarget.url);
+      if (backgroundImage === deleteTarget.url) setBackgroundImage("");
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!name.trim() || isSaving) return;
+    setIsSaving(true);
+    try {
+      const updates: Record<string, string> = { name: name.trim() };
+      if (description.trim()) updates.description = description.trim();
+      if (icon) updates.icon = icon;
+      if (backgroundImage) updates.backgroundImage = backgroundImage;
+      if (color) updates.color = color;
+      await updateList(list.id, updates as any);
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        onClose();
+      }, 1200);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const allEmojis = showMoreEmojis
+    ? [...QUICK_EMOJIS, ...MORE_EMOJIS]
+    : QUICK_EMOJIS;
+
+  const content = (
+    <div
+      style={{
+        backgroundColor: "var(--bg-card)",
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        minHeight: 0,
+        overflow: "hidden",
+      }}
+    >
+      {/* Header */}
+      <div
+        className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b"
+        style={{ borderColor: "var(--border-color)" }}
+      >
+        <h2
+          className="text-base font-semibold"
+          style={{ color: "var(--text-primary)" }}
+        >
+          Editar lista
+        </h2>
+        <button
+          onClick={onClose}
+          className="p-1.5 rounded-lg transition-colors"
+          style={{ color: "var(--text-tertiary)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      {/* ── Scrollable Body ── */}
+      <div
+        className="overflow-y-auto overscroll-contain"
+        style={{ flex: "1 1 0", minHeight: 0 }}
+      >
+        <div className="px-5 py-5 space-y-5">
+          {/* Name */}
+          <div>
+            <label
+              className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              Nombre
+            </label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nombre de la lista"
+              disabled={!canEdit}
+              className="w-full h-11 px-4 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40 disabled:opacity-60 transition-all"
+              style={{
+                backgroundColor: "var(--bg-secondary)",
+                border: "1px solid var(--border-input)",
+                color: "var(--text-primary)",
+              }}
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label
+              className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              Descripción
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Descripción (opcional)"
+              disabled={!canEdit}
+              rows={2}
+              className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 resize-none disabled:opacity-60 transition-all"
+              style={{
+                backgroundColor: "var(--bg-secondary)",
+                border: "1px solid var(--border-input)",
+                color: "var(--text-primary)",
+              }}
+            />
+          </div>
+
+          {/* Emoji / Icon */}
+          <div>
+            <label
+              className="block text-xs font-semibold uppercase tracking-wide mb-2"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              Icono
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {allEmojis.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => setIcon(emoji === icon ? "" : emoji)}
+                  disabled={!canEdit}
+                  className="w-10 h-10 rounded-xl text-xl transition-all hover:scale-110 disabled:opacity-50"
+                  style={{
+                    backgroundColor:
+                      icon === emoji
+                        ? color
+                          ? color + "22"
+                          : "rgba(37,99,235,0.12)"
+                        : "var(--bg-secondary)",
+                    border:
+                      icon === emoji
+                        ? `2px solid ${color || "#3b82f6"}`
+                        : "2px solid transparent",
+                    boxShadow:
+                      icon === emoji
+                        ? `0 0 0 1px ${color || "#3b82f6"}44`
+                        : "none",
+                  }}
+                >
+                  {emoji}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => setShowMoreEmojis(!showMoreEmojis)}
+                className="flex items-center gap-1 px-3 h-10 rounded-xl text-xs font-medium transition-colors"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  color: "var(--text-secondary)",
+                  border: "2px solid transparent",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+                }}
+              >
+                {showMoreEmojis ? (
+                  <>
+                    <ChevronUp size={12} /> Menos
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={12} /> Más
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Color */}
+          <div>
+            <label
+              className="block text-xs font-semibold uppercase tracking-wide mb-2"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              Color
+            </label>
+            <div className="flex gap-2 flex-wrap">
+              {COLORS.map(({ value, name: cname }) => (
+                <button
+                  key={value}
+                  type="button"
+                  title={cname}
+                  onClick={() => setColor(color === value ? "" : value)}
+                  disabled={!canEdit}
+                  className="w-8 h-8 rounded-full transition-all hover:scale-110 disabled:opacity-50 flex items-center justify-center"
+                  style={{
+                    backgroundColor: value,
+                    boxShadow:
+                      color === value
+                        ? `0 0 0 3px var(--bg-card), 0 0 0 5px ${value}`
+                        : "none",
+                    transform: color === value ? "scale(1.15)" : "scale(1)",
+                  }}
+                >
+                  {color === value && (
+                    <Check size={12} className="text-white drop-shadow" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Background image section ── */}
+          {canEdit && (
+            <div>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-3">
+                <label
+                  className="text-xs font-semibold uppercase tracking-wide"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Imagen de fondo
+                </label>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsManagingCategories((v) => !v)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
+                    style={{
+                      backgroundColor: isManagingCategories
+                        ? "rgba(139,92,246,0.1)"
+                        : "var(--bg-secondary)",
+                      color: isManagingCategories
+                        ? "#8b5cf6"
+                        : "var(--text-secondary)",
+                      border: "1px solid var(--border-color)",
+                    }}
+                  >
+                    <Edit2 size={11} />
+                    {isManagingCategories ? "Listo" : "Categorías"}
+                  </button>
+                  {backgroundImage && (
+                    <button
+                      type="button"
+                      onClick={() => setBackgroundImage("")}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all"
+                      style={{
+                        backgroundColor: "rgba(239,68,68,0.1)",
+                        color: "#ef4444",
+                        border: "1px solid rgba(239,68,68,0.2)",
+                      }}
+                    >
+                      <X size={11} />
+                      Quitar fondo
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Category Management Panel ── */}
+              {isManagingCategories && (
+                <div
+                  className="mb-4 p-4 rounded-2xl border"
+                  style={{
+                    backgroundColor: "rgba(139,92,246,0.04)",
+                    borderColor: "rgba(139,92,246,0.2)",
+                  }}
+                >
+                  <p
+                    className="text-[11px] font-semibold uppercase tracking-wide mb-3"
+                    style={{ color: "#8b5cf6" }}
+                  >
+                    Gestionar categorías
+                  </p>
+
+                  {/* Create new category */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <input
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="Nueva categoría..."
+                      className="flex-1 px-3 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40"
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        border: "1px solid var(--border-color)",
+                        color: "var(--text-primary)",
+                      }}
+                    />
+                    <select
+                      value={newCategoryEmoji}
+                      onChange={(e) => setNewCategoryEmoji(e.target.value)}
+                      className="px-2 py-2 rounded-xl text-sm focus:outline-none"
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        border: "1px solid var(--border-color)",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      {QUICK_EMOJIS.slice(0, 20).map((emoji) => (
+                        <option key={emoji} value={emoji}>
+                          {emoji}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={handleCreateCategory}
+                      disabled={!newCategoryName.trim() || isSavingCategory}
+                      className="px-3 py-2 rounded-xl text-sm font-semibold transition-all"
+                      style={{
+                        backgroundColor: newCategoryName.trim()
+                          ? "rgba(139,92,246,0.15)"
+                          : "var(--bg-secondary)",
+                        color: newCategoryName.trim()
+                          ? "#8b5cf6"
+                          : "var(--text-tertiary)",
+                      }}
+                    >
+                      <Plus size={16} />
+                    </button>
+                  </div>
+
+                  {/* List existing categories */}
+                  <div className="space-y-1.5">
+                    {categories.map((cat, idx) => (
+                      <div
+                        key={cat.id}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl"
+                        style={{ backgroundColor: "var(--bg-secondary)" }}
+                      >
+                        {/* Reorder controls */}
+                        <div className="flex flex-col">
+                          <button
+                            onClick={() => moveCategory(idx, -1)}
+                            disabled={idx === 0}
+                            className="p-0.5 rounded hover:bg-violet-500/10 disabled:opacity-30"
+                          >
+                            <ChevronUp size={12} style={{ color: "#8b5cf6" }} />
+                          </button>
+                          <button
+                            onClick={() => moveCategory(idx, 1)}
+                            disabled={idx === categories.length - 1}
+                            className="p-0.5 rounded hover:bg-violet-500/10 disabled:opacity-30"
+                          >
+                            <ChevronDown
+                              size={12}
+                              style={{ color: "#8b5cf6" }}
+                            />
+                          </button>
+                        </div>
+
+                        <span className="text-lg">{cat.emoji || "📁"}</span>
+
+                        {editingCategoryId === cat.id ? (
+                          <>
+                            <input
+                              type="text"
+                              value={editCategoryName}
+                              onChange={(e) =>
+                                setEditCategoryName(e.target.value)
+                              }
+                              className="flex-1 px-2 py-1 rounded-lg text-sm"
+                              style={{
+                                backgroundColor: "var(--bg-card)",
+                                border: "1px solid var(--border-color)",
+                                color: "var(--text-primary)",
+                              }}
+                              autoFocus
+                            />
+                            <select
+                              value={editCategoryEmoji}
+                              onChange={(e) =>
+                                setEditCategoryEmoji(e.target.value)
+                              }
+                              className="px-2 py-1 rounded-lg text-sm"
+                              style={{
+                                backgroundColor: "var(--bg-card)",
+                                border: "1px solid var(--border-color)",
+                              }}
+                            >
+                              {QUICK_EMOJIS.slice(0, 20).map((emoji) => (
+                                <option key={emoji} value={emoji}>
+                                  {emoji}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              onClick={() => handleUpdateCategory(cat.id)}
+                              disabled={
+                                !editCategoryName.trim() || isSavingCategory
+                              }
+                              className="p-1.5 rounded-lg"
+                              style={{
+                                backgroundColor: "rgba(22,163,74,0.1)",
+                                color: "#16a34a",
+                              }}
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              onClick={() => setEditingCategoryId(null)}
+                              className="p-1.5 rounded-lg"
+                              style={{
+                                backgroundColor: "var(--bg-tertiary)",
+                                color: "var(--text-tertiary)",
+                              }}
+                            >
+                              <X size={14} />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span
+                              className="flex-1 text-sm font-medium truncate"
+                              style={{ color: "var(--text-primary)" }}
+                            >
+                              {cat.name}
+                            </span>
+                            <button
+                              onClick={() => {
+                                setEditingCategoryId(cat.id);
+                                setEditCategoryName(cat.name);
+                                setEditCategoryEmoji(cat.emoji || "📁");
+                              }}
+                              className="p-1.5 rounded-lg transition-colors"
+                              style={{ color: "var(--text-tertiary)" }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "var(--bg-tertiary)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "transparent";
+                              }}
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            {!cat.id.startsWith("temp-") && (
+                              <button
+                                onClick={() => handleDeleteCategory(cat.id)}
+                                className="p-1.5 rounded-lg transition-colors"
+                                style={{ color: "#ef4444" }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "rgba(239,68,68,0.1)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "transparent";
+                                }}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Active background preview — uses <img> to avoid shorthand conflict */}
+              {backgroundImage &&
+                (() => {
+                  const activeBgDoc = allBackgrounds.find(
+                    (b) => b.url === backgroundImage,
+                  );
+                  return (
+                    <div
+                      className="w-full mb-3 rounded-xl overflow-hidden flex flex-col items-center justify-center"
+                      style={{
+                        border: "2px solid #3b82f6",
+                        backgroundColor: "var(--bg-secondary)",
+                      }}
+                    >
+                      <img
+                        src={backgroundImage}
+                        alt="Fondo activo"
+                        className="w-full"
+                        style={{
+                          objectFit: "contain",
+                          maxHeight: "120px",
+                          display: "block",
+                        }}
+                      />
+                      <div
+                        className="w-full flex items-center justify-between px-3 py-2"
+                        style={{ backgroundColor: "rgba(37,99,235,0.07)" }}
+                      >
+                        <span
+                          className="text-[11px] font-semibold flex items-center gap-1.5"
+                          style={{ color: "#2563eb" }}
+                        >
+                          <Check size={11} /> Imagen activa
+                        </span>
+                        {activeBgDoc && (
+                          <span
+                            className="text-[10px]"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
+                            {activeBgDoc.category}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+              {/* ── Category sections ── */}
+              <div className="space-y-4">
+                {categories.map((category, categoryIndex) => {
+                  const items = allBackgrounds.filter(
+                    (b) => b.category === category.name,
+                  );
+                  return (
+                    <div key={category.id}>
+                      {/* Category header + add button */}
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">
+                            {category.emoji || "📁"}
+                          </span>
+                          <span
+                            className="text-[11px] font-bold uppercase tracking-widest"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
+                            {category.name}
+                          </span>
+                          {items.length > 0 && (
+                            <span
+                              className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
+                              style={{
+                                backgroundColor: "rgba(37,99,235,0.1)",
+                                color: "#2563eb",
+                              }}
+                            >
+                              {items.length}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openUploadModal(category.name)}
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all"
+                          style={{
+                            backgroundColor: "rgba(37,99,235,0.1)",
+                            color: "#2563eb",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "rgba(37,99,235,0.18)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "rgba(37,99,235,0.1)";
+                          }}
+                        >
+                          <Plus size={11} />
+                          Subir
+                        </button>
+                      </div>
+
+                      {items.length === 0 ? (
+                        /* Empty state — clickable drop zone */
+                        <button
+                          type="button"
+                          onClick={() => openUploadModal(category.name)}
+                          className="w-full flex items-center justify-center gap-2 py-4 rounded-xl text-[12px] transition-all"
+                          style={{
+                            border: "1.5px dashed var(--border-color)",
+                            color: "var(--text-tertiary)",
+                            backgroundColor: "transparent",
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "var(--bg-secondary)";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                          }}
+                        >
+                          <Plus size={13} />
+                          Añadir imágenes de {category.name.toLowerCase()}
+                        </button>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {items.map((b) => {
+                            const isSelected = backgroundImage === b.url;
+                            const canDel = b.uploadedBy === user.id;
+                            return (
+                              <div
+                                key={b.id}
+                                className="relative group/img flex flex-col"
+                              >
+                                {/* Image tile */}
+                                <div
+                                  className="relative w-full rounded-2xl overflow-hidden cursor-pointer select-none"
+                                  style={{
+                                    height: "120px",
+                                    border: isSelected
+                                      ? "3px solid #3b82f6"
+                                      : "2px solid var(--border-color)",
+                                    boxShadow: isSelected
+                                      ? "0 0 0 3px rgba(59,130,246,0.25)"
+                                      : "none",
+                                    backgroundColor: "var(--bg-secondary)",
+                                    transition:
+                                      "border-color 0.15s, box-shadow 0.15s",
+                                  }}
+                                  onClick={() =>
+                                    setBackgroundImage(isSelected ? "" : b.url)
+                                  }
+                                  onTouchStart={() => {
+                                    const t = setTimeout(() => {
+                                      setMobileActionTarget(b);
+                                    }, 600);
+                                    setLongPressTimer(t);
+                                  }}
+                                  onTouchEnd={() => {
+                                    if (longPressTimer) {
+                                      clearTimeout(longPressTimer);
+                                      setLongPressTimer(null);
+                                    }
+                                  }}
+                                  onTouchMove={() => {
+                                    if (longPressTimer) {
+                                      clearTimeout(longPressTimer);
+                                      setLongPressTimer(null);
+                                    }
+                                  }}
+                                >
+                                  <img
+                                    src={b.url}
+                                    alt={b.displayName || b.category}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                  />
+                                  {/* Selected overlay */}
+                                  {isSelected && (
+                                    <div
+                                      className="absolute inset-0 flex items-center justify-center"
+                                      style={{
+                                        backgroundColor:
+                                          "rgba(59,130,246,0.22)",
+                                      }}
+                                    >
+                                      <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center shadow-lg">
+                                        <Check
+                                          size={13}
+                                          className="text-white"
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                  {/* Desktop hover overlay with Download + Delete */}
+                                  <div
+                                    className="absolute inset-0 flex items-end justify-center pb-2 gap-2 opacity-0 group-hover/img:opacity-100 transition-opacity"
+                                    style={{
+                                      background:
+                                        "linear-gradient(to top,rgba(0,0,0,0.62) 0%,transparent 65%)",
+                                    }}
+                                  >
+                                    {/* Download — always available */}
+                                    <button
+                                      type="button"
+                                      title="Descargar"
+                                      className="hidden sm:flex w-8 h-8 rounded-xl items-center justify-center transition-all"
+                                      style={{
+                                        backgroundColor:
+                                          "rgba(255,255,255,0.92)",
+                                        color: "#1d4ed8",
+                                      }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        downloadImage(b.url, b.displayName);
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor =
+                                          "#fff";
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor =
+                                          "rgba(255,255,255,0.92)";
+                                      }}
+                                    >
+                                      <Download size={14} />
+                                    </button>
+                                    {/* Delete — only owner */}
+                                    {canDel && (
+                                      <button
+                                        type="button"
+                                        title="Eliminar"
+                                        className="hidden sm:flex w-8 h-8 rounded-xl items-center justify-center transition-all"
+                                        style={{
+                                          backgroundColor:
+                                            "rgba(239,68,68,0.88)",
+                                          color: "#fff",
+                                        }}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setDeleteTarget(b);
+                                        }}
+                                        onMouseEnter={(e) => {
+                                          e.currentTarget.style.backgroundColor =
+                                            "#ef4444";
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          e.currentTarget.style.backgroundColor =
+                                            "rgba(239,68,68,0.88)";
+                                        }}
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                                {/* Name label */}
+                                {b.displayName && (
+                                  <p
+                                    className="text-[10px] text-center mt-1 truncate px-1 font-medium"
+                                    style={{ color: "var(--text-tertiary)" }}
+                                  >
+                                    {b.displayName}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
+                          {/* Inline add more */}
+                          <button
+                            type="button"
+                            onClick={() => openUploadModal(category.name)}
+                            className="rounded-2xl flex flex-col items-center justify-center gap-2 transition-all"
+                            style={{
+                              height: "120px",
+                              border: "1.5px dashed var(--border-color)",
+                              color: "var(--text-tertiary)",
+                              backgroundColor: "transparent",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor =
+                                "var(--bg-secondary)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor =
+                                "transparent";
+                            }}
+                          >
+                            <Plus size={20} />
+                            <span className="text-[11px] font-medium">
+                              Agregar
+                            </span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ImageUploadModal */}
+          <ImageUploadModal
+            isOpen={showUploadModal}
+            onClose={() => setShowUploadModal(false)}
+            defaultCategory={uploadModalCategory}
+            availableCategories={categories.map((c) => c.name)}
+            user={user}
+            onUploaded={(url) => setBackgroundImage(url)}
+          />
+
+          {/* ── Mobile long-press action sheet ── */}
+          <AnimatePresence>
+            {mobileActionTarget && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-[99996]"
+                  style={{
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                    backdropFilter: "blur(4px)",
+                  }}
+                  onClick={() => setMobileActionTarget(null)}
+                />
+                <motion.div
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "100%" }}
+                  transition={{ type: "spring", damping: 32, stiffness: 320 }}
+                  className="fixed bottom-0 left-0 right-0 z-[99997] rounded-t-3xl overflow-hidden"
+                  style={{
+                    backgroundColor: "var(--bg-card)",
+                    border: "1px solid var(--border-color)",
+                  }}
+                >
+                  {/* Handle */}
+                  <div className="flex justify-center pt-3 pb-2">
+                    <div
+                      className="w-10 h-1.5 rounded-full"
+                      style={{ backgroundColor: "var(--border-color)" }}
+                    />
+                  </div>
+                  {/* Preview */}
+                  <div className="px-5 pb-3">
+                    <div
+                      className="w-full h-28 rounded-2xl overflow-hidden"
+                      style={{ border: "1px solid var(--border-color)" }}
+                    >
+                      <img
+                        src={mobileActionTarget.url}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    {mobileActionTarget.displayName && (
+                      <p
+                        className="text-sm font-semibold mt-2 text-center truncate"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        {mobileActionTarget.displayName}
+                      </p>
+                    )}
+                    <p
+                      className="text-[11px] text-center"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      {mobileActionTarget.category}
+                    </p>
+                  </div>
+                  {/* Actions */}
+                  <div className="px-5 pb-4 space-y-2">
+                    <button
+                      onClick={() => {
+                        downloadImage(
+                          mobileActionTarget.url,
+                          mobileActionTarget.displayName,
+                        );
+                        setMobileActionTarget(null);
+                      }}
+                      className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl text-sm font-semibold transition-colors"
+                      style={{
+                        backgroundColor: "rgba(37,99,235,0.1)",
+                        color: "#2563eb",
+                      }}
+                    >
+                      <Download size={17} />
+                      Descargar imagen
+                    </button>
+                    {mobileActionTarget.uploadedBy === user.id && (
+                      <button
+                        onClick={() => {
+                          setDeleteTarget(mobileActionTarget);
+                          setMobileActionTarget(null);
+                        }}
+                        className="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl text-sm font-semibold transition-colors"
+                        style={{
+                          backgroundColor: "rgba(239,68,68,0.1)",
+                          color: "#ef4444",
+                        }}
+                      >
+                        <Trash2 size={17} />
+                        Eliminar imagen
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setMobileActionTarget(null)}
+                      className="w-full py-3.5 rounded-2xl text-sm font-medium"
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                  {/* Safe area bottom spacer */}
+                  <div
+                    className="h-safe-bottom"
+                    style={{
+                      paddingBottom: "env(safe-area-inset-bottom, 16px)",
+                    }}
+                  />
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+
+          {/* ── Delete image confirmation modal ── */}
+          <AnimatePresence>
+            {deleteTarget && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-[99998]"
+                  style={{
+                    backgroundColor: "rgba(0,0,0,0.6)",
+                    backdropFilter: "blur(6px)",
+                  }}
+                  onClick={() => !isDeleting && setDeleteTarget(null)}
+                />
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    transition={{ type: "spring", damping: 28, stiffness: 360 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden"
+                    style={{
+                      backgroundColor: "var(--bg-card)",
+                      border: "1px solid rgba(239,68,68,0.2)",
+                    }}
+                  >
+                    <div className="p-5">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div
+                          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                          style={{ backgroundColor: "rgba(239,68,68,0.1)" }}
+                        >
+                          <AlertTriangle
+                            size={16}
+                            style={{ color: "#ef4444" }}
+                          />
+                        </div>
+                        <div>
+                          <p
+                            className="text-sm font-semibold"
+                            style={{ color: "var(--text-primary)" }}
+                          >
+                            ¿Eliminar esta imagen?
+                          </p>
+                          <p
+                            className="text-[11px]"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
+                            Esta acción no se puede deshacer.
+                          </p>
+                        </div>
+                      </div>
+                      <div
+                        className="w-full rounded-xl overflow-hidden mb-4 flex items-center justify-center"
+                        style={{
+                          border: "1px solid var(--border-color)",
+                          backgroundColor: "var(--bg-secondary)",
+                        }}
+                      >
+                        <img
+                          src={deleteTarget.url}
+                          alt="Vista previa"
+                          className="w-full object-contain"
+                          style={{ maxHeight: "120px" }}
+                        />
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setDeleteTarget(null)}
+                          disabled={isDeleting}
+                          className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+                          style={{
+                            backgroundColor: "var(--bg-secondary)",
+                            color: "var(--text-secondary)",
+                          }}
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={handleDeleteConfirm}
+                          disabled={isDeleting}
+                          className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+                          style={{
+                            backgroundColor: isDeleting
+                              ? "rgba(239,68,68,0.5)"
+                              : "#ef4444",
+                            color: "#fff",
+                          }}
+                        >
+                          {isDeleting ? (
+                            <svg
+                              className="animate-spin w-4 h-4"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              />
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v8H4z"
+                              />
+                            </svg>
+                          ) : (
+                            <Trash2 size={14} />
+                          )}
+                          Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* ── Sticky Footer ── */}
+      <div
+        className="flex-shrink-0 flex items-center justify-between gap-3 px-5 py-4 border-t"
+        style={{
+          borderColor: "var(--border-color)",
+          backgroundColor: "var(--bg-card)",
+        }}
+      >
+        <button
+          onClick={onClose}
+          className="px-4 py-2.5 rounded-xl text-sm font-medium transition-colors min-w-[90px]"
+          style={{
+            backgroundColor: "var(--bg-secondary)",
+            color: "var(--text-secondary)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+          }}
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={!name.trim() || isSaving || !canEdit}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 min-w-[130px] justify-center"
+          style={{
+            backgroundColor: saved ? "#16a34a" : "#2563eb",
+            color: "#fff",
+          }}
+        >
+          {saved ? <Check size={15} /> : null}
+          {isSaving ? "Guardando..." : saved ? "Guardado ✓" : "Guardar cambios"}
+        </button>
+      </div>
+    </div>
+  );
+
+  return createPortal(
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9990]"
+            style={{
+              backgroundColor: "rgba(0,0,0,0.55)",
+              backdropFilter: "blur(4px)",
+            }}
+            onClick={onClose}
+          />
+
+          {/* Mobile: fullscreen */}
+          <div
+            className="sm:hidden fixed inset-0 z-[9991] flex flex-col"
+            style={{ backgroundColor: "var(--bg-card)" }}
+          >
+            {content}
+          </div>
+
+          {/* Desktop: centered modal */}
+          <div className="hidden sm:flex fixed inset-0 z-[9991] items-center justify-center p-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ type: "spring", damping: 30, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl"
+              style={{
+                height: "min(90vh, 700px)",
+                display: "flex",
+                flexDirection: "column",
+                backgroundColor: "var(--bg-card)",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              {content}
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>,
+    document.body,
+  );
+}

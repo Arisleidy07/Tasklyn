@@ -75,19 +75,7 @@ export async function prepareImageFile(file: File): Promise<File> {
     throw new Error("Solo se permiten archivos de imagen");
   }
 
-  // Validate file size (5MB limit)
-  const MAX_SIZE = 5 * 1024 * 1024;
-  if (file.size > MAX_SIZE) {
-    throw new Error("La imagen no puede superar los 5MB");
-  }
-
-  // If image is already small enough, return as-is
-  if (file.size <= 1024 * 1024) {
-    return file;
-  }
-
-  // For larger images, we could resize here if needed
-  // For now, we'll just validate the size
+  // No size limit - return file as-is
   return file;
 }
 
@@ -119,5 +107,49 @@ export async function deleteTeamPhoto(downloadURL: string): Promise<void> {
     await deleteObject(storageRef);
   } catch (error) {
     console.warn("Failed to delete team photo:", error);
+  }
+}
+
+const BACKGROUND_IMAGES_PATH = "background-images";
+
+/**
+ * Upload a background image to Firebase Storage
+ * Returns the public download URL
+ */
+export async function uploadBackgroundImage(
+  userId: string,
+  file: File | Blob,
+): Promise<string> {
+  await prepareImageFile(
+    file instanceof File
+      ? file
+      : new File([file], "bg.jpg", { type: "image/jpeg" }),
+  );
+  const ext =
+    (file instanceof File ? file.name : "bg.jpg").split(".").pop() || "jpg";
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const storageRef = ref(
+    storage,
+    `${BACKGROUND_IMAGES_PATH}/${userId}/${fileName}`,
+  );
+
+  await uploadBytes(storageRef, file, {
+    contentType: file instanceof File ? file.type : "image/jpeg",
+  });
+
+  return getDownloadURL(storageRef);
+}
+
+/**
+ * Delete a background image from Firebase Storage
+ */
+export async function deleteBackgroundImage(
+  downloadURL: string,
+): Promise<void> {
+  try {
+    const storageRef = ref(storage, downloadURL);
+    await deleteObject(storageRef);
+  } catch (error) {
+    console.warn("Failed to delete background image:", error);
   }
 }

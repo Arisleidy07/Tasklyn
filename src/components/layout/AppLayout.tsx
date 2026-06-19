@@ -9,7 +9,6 @@ import ToastOverlay from "@/components/ui/ToastOverlay";
 import { useNotificationEngine } from "@/hooks/useNotificationEngine";
 import { useUIStore } from "@/stores/uiStore";
 import { useAuthStore } from "@/stores/authStore";
-import { useTeamStore } from "@/stores/teamStore";
 import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
@@ -20,7 +19,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
   useNotificationEngine();
   const { sidebarCollapsed, theme } = useUIStore();
   const { user } = useAuthStore();
-  const { ensurePersonalTeam } = useTeamStore();
   const [mounted] = useState(() => typeof window !== "undefined");
 
   useEffect(() => {
@@ -34,12 +32,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
       html.classList.remove("dark");
     }
   }, [theme]);
-
-  useEffect(() => {
-    if (user?.id) {
-      ensurePersonalTeam(user.id).catch(() => {});
-    }
-  }, [user?.id]);
 
   return (
     <div

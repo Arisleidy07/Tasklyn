@@ -136,7 +136,7 @@ export interface Task {
   parentTaskId?: string | null; // for generated recurring tasks
   completedCount?: number; // how many times this recurring task has been completed
   // ---- NEW: Team fields ----
-  priority?: "low" | "medium" | "high" | "urgent";
+  priority?: "low" | "normal" | "medium" | "high" | "urgent";
   tags?: string[];
   estimatedTime?: number; // in minutes
   actualTime?: number; // in minutes
@@ -443,4 +443,16 @@ export interface Announcement {
   content: string;
   createdAt: string;
   readBy: string[]; // userIds who have read
+}
+
+// ---- Background Image Categories ----
+export interface BgCategoryConfig {
+  id: string;
+  name: string;
+  emoji?: string;
+  color?: string; // hex color
+  order: number; // for sorting
+  createdBy: string;
+  createdAt: string;
+  updatedAt?: string;
 }

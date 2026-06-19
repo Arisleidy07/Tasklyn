@@ -3,6 +3,17 @@
 // All CRUD operations + real-time listeners
 // ============================================
 
+export interface BackgroundImage {
+  id: string;
+  url: string;
+  category: string;
+  uploadedBy: string;
+  uploaderName?: string;
+  displayName?: string;
+  createdAt: string;
+  order?: number;
+}
+
 import {
   collection,
   doc,
@@ -23,12 +34,12 @@ import {
   writeBatch,
   runTransaction,
   Transaction,
+  deleteField,
   DocumentReference,
   DocumentData,
   Unsubscribe,
   arrayUnion,
   increment,
-  deleteField,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type {
@@ -203,7 +214,11 @@ export const updateList = async (
 ): Promise<void> => {
   const listRef = doc(db, "lists", listId);
   const { id, createdAt, ...rest } = updates;
-  await updateDoc(listRef, withTimestamps(rest));
+  const cleaned: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(rest)) {
+    cleaned[k] = v === undefined || v === "" ? deleteField() : v;
+  }
+  await updateDoc(listRef, withTimestamps(cleaned));
 };
 
 export const deleteList = async (listId: string): Promise<void> => {
@@ -491,10 +506,14 @@ export const subscribeToListTasks = (
           })),
         } as Task;
       });
-      tasks.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      );
+      tasks.sort((a, b) => {
+        const ao = a.order ?? Number.MAX_SAFE_INTEGER;
+        const bo = b.order ?? Number.MAX_SAFE_INTEGER;
+        if (ao !== bo) return ao - bo;
+        return (
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+        );
+      });
       callback(tasks);
     },
     (error) => {
@@ -619,38 +638,6 @@ export const createTeam = async (
   });
 
   console.log("✅ Team created with full configuration:", teamRef.id);
-  return teamRef.id;
-};
-
-/**
- * Ensures every user has a "Personal" team on first login.
- * Idempotent — safe to call on every login.
- */
-export const ensurePersonalTeam = async (userId: string): Promise<string> => {
-  const q = query(
-    teamsCollection,
-    where("owner", "==", userId),
-    where("isPersonal", "==", true),
-  );
-  const snap = await getDocs(q);
-  if (!snap.empty) return snap.docs[0].id;
-
-  const teamRef = doc(teamsCollection);
-  const now = new Date().toISOString();
-  await setDoc(teamRef, {
-    name: "Personal",
-    description: "Tu espacio de trabajo personal",
-    owner: userId,
-    isPersonal: true,
-    color: "#6366f1",
-    icon: "👤",
-    members: [{ userId, role: "owner", joinedAt: now }],
-    memberIds: [userId],
-    settings: { allowInvites: false, requireApproval: false },
-    stats: { totalTasks: 0, completedTasks: 0, totalMembers: 1, totalLists: 0 },
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  });
   return teamRef.id;
 };
 
@@ -1410,4 +1397,148 @@ export const subscribeToNotifications = (
       callback([]);
     },
   );
+};
+
+// ============================================
+// BACKGROUND IMAGES LIBRARY
+// ============================================
+
+export const backgroundImagesCollection = collection(db, "backgroundImages");
+
+/** Subscribe to all background images, sorted by category then date */
+export const subscribeToBackgrounds = (
+  callback: (images: BackgroundImage[]) => void,
+): Unsubscribe => {
+  return onSnapshot(
+    query(backgroundImagesCollection, orderBy("createdAt", "desc")),
+    (snap) => {
+      const images = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          ...data,
+          id: d.id,
+          createdAt:
+            typeof data.createdAt === "string"
+              ? data.createdAt
+              : toDate(data.createdAt),
+        } as BackgroundImage;
+      });
+      callback(images);
+    },
+    () => callback([]),
+  );
+};
+
+/** Add a background image entry to Firestore */
+export const addBackgroundImage = async (
+  image: Omit<BackgroundImage, "id" | "createdAt">,
+): Promise<BackgroundImage> => {
+  const ref = doc(backgroundImagesCollection);
+  const now = new Date().toISOString();
+  const data: Omit<BackgroundImage, "id"> = { ...image, createdAt: now };
+  await setDoc(ref, data);
+  return { ...data, id: ref.id };
+};
+
+/** Update a background image entry in Firestore */
+export const updateBackgroundImage = async (
+  id: string,
+  updates: Partial<Omit<BackgroundImage, "id" | "createdAt">>,
+): Promise<void> => {
+  const ref = doc(backgroundImagesCollection, id);
+  await updateDoc(ref, { ...updates, updatedAt: new Date().toISOString() });
+};
+
+/** Delete a background image entry from Firestore */
+export const deleteBackgroundImageDoc = async (id: string): Promise<void> => {
+  await deleteDoc(doc(backgroundImagesCollection, id));
+};
+
+// ============================================
+// BACKGROUND IMAGE CATEGORIES
+// ============================================
+
+export const bgCategoriesCollection = collection(db, "bgCategories");
+
+/** Subscribe to all background image categories, sorted by order */
+export const subscribeToBgCategories = (
+  callback: (categories: import("@/types").BgCategoryConfig[]) => void,
+): Unsubscribe => {
+  return onSnapshot(
+    query(bgCategoriesCollection, orderBy("order", "asc")),
+    (snap) => {
+      const categories = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          ...data,
+          id: d.id,
+          createdAt:
+            typeof data.createdAt === "string"
+              ? data.createdAt
+              : toDate(data.createdAt),
+          updatedAt: data.updatedAt
+            ? typeof data.updatedAt === "string"
+              ? data.updatedAt
+              : toDate(data.updatedAt)
+            : undefined,
+        } as import("@/types").BgCategoryConfig;
+      });
+      callback(categories);
+    },
+    () => callback([]),
+  );
+};
+
+/** Add a new background image category */
+export const addBgCategory = async (
+  category: Omit<
+    import("@/types").BgCategoryConfig,
+    "id" | "createdAt" | "updatedAt"
+  >,
+): Promise<import("@/types").BgCategoryConfig> => {
+  const ref = doc(bgCategoriesCollection);
+  const now = new Date().toISOString();
+  const data = { ...category, createdAt: now, updatedAt: now };
+  await setDoc(ref, data);
+  return { ...data, id: ref.id };
+};
+
+/** Update a background image category */
+export const updateBgCategory = async (
+  id: string,
+  updates: Partial<
+    Omit<import("@/types").BgCategoryConfig, "id" | "createdAt">
+  >,
+): Promise<void> => {
+  const ref = doc(bgCategoriesCollection, id);
+  await updateDoc(ref, { ...updates, updatedAt: new Date().toISOString() });
+};
+
+/** Delete a background image category */
+export const deleteBgCategory = async (id: string): Promise<void> => {
+  await deleteDoc(doc(bgCategoriesCollection, id));
+};
+
+/** Reorder categories by updating their order field */
+export const reorderBgCategories = async (
+  orderedIds: string[],
+): Promise<void> => {
+  const batch = writeBatch(db);
+  orderedIds.forEach((id, index) => {
+    const ref = doc(bgCategoriesCollection, id);
+    batch.update(ref, { order: index, updatedAt: new Date().toISOString() });
+  });
+  await batch.commit();
+};
+
+/** Reorder background images within a category by updating their order field */
+export const reorderBackgroundImages = async (
+  orderedImages: { id: string; order: number }[],
+): Promise<void> => {
+  const batch = writeBatch(db);
+  orderedImages.forEach((img) => {
+    const ref = doc(backgroundImagesCollection, img.id);
+    batch.update(ref, { order: img.order });
+  });
+  await batch.commit();
 };

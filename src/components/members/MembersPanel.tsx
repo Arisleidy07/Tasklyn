@@ -191,25 +191,77 @@ export default function MembersPanel({
     setEditingUserId(null);
   };
 
+  const roleColors: Record<
+    MemberRole,
+    { bg: string; text: string; label: string }
+  > = {
+    owner: {
+      bg: "rgba(234,179,8,0.12)",
+      text: "#b45309",
+      label: "Propietario",
+    },
+    admin: { bg: "rgba(59,130,246,0.12)", text: "#2563eb", label: "Admin" },
+    editor: { bg: "rgba(16,185,129,0.12)", text: "#059669", label: "Editor" },
+    viewer: {
+      bg: "rgba(107,114,128,0.12)",
+      text: "#6b7280",
+      label: "Observador",
+    },
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="" size="sm">
-      <div className="space-y-4">
+    <Modal isOpen={isOpen} onClose={onClose} size="lg">
+      <div className="flex flex-col flex-1 min-h-0">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h2
-            className="text-lg font-semibold"
-            style={{ color: "var(--text-primary)" }}
+        <div
+          className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b"
+          style={{ borderColor: "var(--border-color)" }}
+        >
+          <div>
+            <h2
+              className="text-base font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Miembros de la lista
+            </h2>
+            <p
+              className="text-xs mt-0.5"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              {list.members.length}{" "}
+              {list.members.length === 1 ? "miembro" : "miembros"} · {list.name}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: "var(--text-tertiary)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
           >
-            Miembros
-          </h2>
-          <span className="text-sm" style={{ color: "var(--text-tertiary)" }}>
-            {list.members.length}
-          </span>
+            <XIcon size={18} />
+          </button>
         </div>
 
-        {/* Email invite section */}
+        {/* Invite section */}
         {canInvite && (
-          <div className="space-y-2">
+          <div
+            className="flex-shrink-0 px-6 py-4 border-b"
+            style={{
+              borderColor: "var(--border-color)",
+              backgroundColor: "var(--bg-secondary)",
+            }}
+          >
+            <p
+              className="text-xs font-semibold uppercase tracking-wide mb-2.5"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              Invitar por correo
+            </p>
             <div className="flex gap-2">
               <input
                 type="email"
@@ -219,7 +271,7 @@ export default function MembersPanel({
                   setInviteError(null);
                 }}
                 onKeyDown={(e) => e.key === "Enter" && handleSendInvitation()}
-                placeholder="Invitar por correo..."
+                placeholder="correo@ejemplo.com"
                 className="flex-1 h-10 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
                 style={{
                   border: "1px solid var(--border-input)",
@@ -227,172 +279,225 @@ export default function MembersPanel({
                   color: "var(--text-primary)",
                 }}
               />
-              <Button
-                size="sm"
-                onClick={handleSendInvitation}
-                isLoading={isSending}
-                className="h-10 px-4"
+              <select
+                value={inviteRole}
+                onChange={(e) => setInviteRole(e.target.value as MemberRole)}
+                className="h-10 px-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 appearance-none cursor-pointer"
+                style={{
+                  border: "1px solid var(--border-input)",
+                  backgroundColor: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
               >
+                <option value="editor">Editor</option>
+                <option value="viewer">Observador</option>
+              </select>
+              <button
+                onClick={handleSendInvitation}
+                disabled={isSending || !inviteEmail.trim()}
+                className="flex items-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
+                style={{ backgroundColor: "#2563eb", color: "#fff" }}
+              >
+                {isSending ? (
+                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Send size={14} />
+                )}
                 Invitar
-              </Button>
+              </button>
             </div>
             <AnimatePresence>
               {inviteError && (
                 <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="text-xs text-red-500"
+                  className="text-xs mt-2"
+                  style={{ color: "#ef4444" }}
                 >
                   {inviteError}
                 </motion.p>
               )}
               {inviteSent && (
-                <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="text-xs text-green-600"
+                  className="flex items-center gap-1.5 mt-2"
                 >
-                  Invitación enviada
-                </motion.p>
+                  <CheckCircle2 size={13} className="text-emerald-500" />
+                  <p className="text-xs text-emerald-600">
+                    Invitación enviada a {inviteSent.email}
+                  </p>
+                </motion.div>
               )}
             </AnimatePresence>
           </div>
         )}
 
         {/* Members list */}
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          {list.members.map((member) => {
-            const isOwnerMember = member.role === "owner";
-            const isSelf = member.userId === user.id;
-            const displayName = memberNames[member.userId] || "Cargando...";
-            const hasCustomName = !!list.customNames[member.userId];
-            const isEditing = editingUserId === member.userId;
+        <div className="flex-1 overflow-y-auto min-h-0">
+          <div className="px-6 py-3 space-y-1.5">
+            {list.members.map((member) => {
+              const isOwnerMember = member.role === "owner";
+              const isSelf = member.userId === user.id;
+              const displayName = memberNames[member.userId] || "Cargando...";
+              const hasCustomName = !!list.customNames[member.userId];
+              const isEditing = editingUserId === member.userId;
+              const rc = roleColors[member.role] ?? roleColors.viewer;
 
-            return (
-              <div
-                key={member.userId}
-                className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                style={{ backgroundColor: "var(--bg-card)" }}
-              >
-                <Avatar name={displayName} size="md" />
-
-                {/* Name area */}
-                {isEditing ? (
-                  <InlineNameEditor
-                    currentName={list.customNames[member.userId] || displayName}
-                    originalName={displayName}
-                    onSave={(name) => handleSaveCustomName(member.userId, name)}
-                    onCancel={() => setEditingUserId(null)}
+              return (
+                <motion.div
+                  key={member.userId}
+                  layout
+                  className="flex items-center gap-3 p-3 rounded-xl transition-colors"
+                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.backgroundColor =
+                      "var(--bg-tertiary)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.backgroundColor =
+                      "var(--bg-secondary)";
+                  }}
+                >
+                  <Avatar
+                    name={displayName}
+                    size="md"
+                    className="flex-shrink-0"
                   />
-                ) : (
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p
-                        className="text-sm font-medium truncate"
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        {displayName}
-                      </p>
-                      {isSelf && (
-                        <span
-                          className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-                          style={{
-                            backgroundColor: "rgba(37,99,235,0.1)",
-                            color: "var(--text-link)",
-                          }}
+
+                  {/* Name */}
+                  {isEditing ? (
+                    <InlineNameEditor
+                      currentName={
+                        list.customNames[member.userId] || displayName
+                      }
+                      originalName={displayName}
+                      onSave={(name) =>
+                        handleSaveCustomName(member.userId, name)
+                      }
+                      onCancel={() => setEditingUserId(null)}
+                    />
+                  ) : (
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p
+                          className="text-sm font-medium truncate"
+                          style={{ color: "var(--text-primary)" }}
                         >
-                          Tú
+                          {displayName}
+                        </p>
+                        {isSelf && (
+                          <span
+                            className="text-[10px] px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0"
+                            style={{
+                              backgroundColor: "rgba(37,99,235,0.1)",
+                              color: "#2563eb",
+                            }}
+                          >
+                            Tú
+                          </span>
+                        )}
+                      </div>
+                      {hasCustomName && (
+                        <p
+                          className="text-[11px] truncate"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
+                          {originalNames[member.userId]}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Role + actions */}
+                  {!isEditing && (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {isOwnerMember ? (
+                        <span
+                          className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                          style={{ backgroundColor: rc.bg, color: rc.text }}
+                        >
+                          {rc.label}
+                        </span>
+                      ) : canManageRoles && !isSelf ? (
+                        <>
+                          <select
+                            value={member.role}
+                            onChange={(e) =>
+                              handleRoleChange(member.userId, e.target.value)
+                            }
+                            className="h-8 px-2 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30 appearance-none cursor-pointer"
+                            style={{
+                              border: "1px solid var(--border-input)",
+                              backgroundColor: "var(--bg-input)",
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            <option value="editor">Editor</option>
+                            <option value="viewer">Observador</option>
+                            {myRole === "owner" && (
+                              <option value="admin">Admin</option>
+                            )}
+                          </select>
+                          {isOwner && (
+                            <button
+                              onClick={() => setEditingUserId(member.userId)}
+                              className="p-1.5 rounded-lg transition-colors"
+                              style={{ color: "var(--text-tertiary)" }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = "#2563eb";
+                                e.currentTarget.style.backgroundColor =
+                                  "rgba(37,99,235,0.08)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color =
+                                  "var(--text-tertiary)";
+                                e.currentTarget.style.backgroundColor =
+                                  "transparent";
+                              }}
+                              title="Editar nombre"
+                            >
+                              <Pencil size={13} />
+                            </button>
+                          )}
+                          {canRemove && (
+                            <button
+                              onClick={() => handleRemoveMember(member.userId)}
+                              className="p-1.5 rounded-lg transition-colors"
+                              style={{ color: "var(--text-tertiary)" }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = "#ef4444";
+                                e.currentTarget.style.backgroundColor =
+                                  "rgba(239,68,68,0.08)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color =
+                                  "var(--text-tertiary)";
+                                e.currentTarget.style.backgroundColor =
+                                  "transparent";
+                              }}
+                              title="Eliminar miembro"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </>
+                      ) : (
+                        <span
+                          className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                          style={{ backgroundColor: rc.bg, color: rc.text }}
+                        >
+                          {rc.label}
                         </span>
                       )}
                     </div>
-                    {hasCustomName && (
-                      <p
-                        className="text-[11px] truncate"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        {originalNames[member.userId] || "Usuario"}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {/* Role / actions */}
-                {!isEditing && (
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {isOwnerMember ? (
-                      <span
-                        className="text-xs font-medium px-2 py-1 rounded-full"
-                        style={{
-                          backgroundColor: "rgba(59,130,246,0.1)",
-                          color: "#3b82f6",
-                        }}
-                      >
-                        Owner
-                      </span>
-                    ) : canManageRoles && !isSelf ? (
-                      <>
-                        <Select
-                          options={roleOptions}
-                          value={member.role}
-                          onChange={(e) =>
-                            handleRoleChange(member.userId, e.target.value)
-                          }
-                          className="!h-8 !text-xs w-24"
-                        />
-                        {canRemove && (
-                          <button
-                            onClick={() => handleRemoveMember(member.userId)}
-                            className="p-1.5 rounded-lg transition-colors"
-                            style={{ color: "var(--text-tertiary)" }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.color = "#ef4444";
-                              e.currentTarget.style.backgroundColor =
-                                "rgba(239,68,68,0.08)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.color =
-                                "var(--text-tertiary)";
-                              e.currentTarget.style.backgroundColor =
-                                "transparent";
-                            }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
-                      </>
-                    ) : (
-                      <span
-                        className="text-xs font-medium px-2 py-1 rounded-full capitalize"
-                        style={{
-                          backgroundColor: "var(--bg-secondary)",
-                          color: "var(--text-secondary)",
-                        }}
-                      >
-                        {member.role}
-                      </span>
-                    )}
-                    {isOwner && !isOwnerMember && !isEditing && (
-                      <button
-                        onClick={() => setEditingUserId(member.userId)}
-                        className="p-1.5 rounded-lg transition-colors"
-                        style={{ color: "var(--text-tertiary)" }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.color = "var(--text-link)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.color = "var(--text-tertiary)";
-                        }}
-                      >
-                        <Pencil size={12} />
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  )}
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </Modal>
