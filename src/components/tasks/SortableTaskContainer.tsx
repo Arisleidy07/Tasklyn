@@ -5,7 +5,6 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
-  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
@@ -88,16 +87,12 @@ export function SortableTaskContainer({
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const sensors = useSensors(
-    // Desktop mouse: 8px movement before drag activates (no accidental drags on click)
+    // PointerSensor with delay+tolerance = long-press to drag on any device.
+    // Mouse: drag starts after holding 500ms without moving >10px.
+    // Touch: same — hold still for 500ms, then drag activates.
+    // If the user scrolls (moves finger >10px) before 500ms → drag cancelled, scroll wins.
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    }),
-    // Mobile touch: 500ms hold on the grip handle activates drag.
-    // tolerance:8 = if finger drifts >8px during the hold window, the drag is cancelled.
-    // The grip handle has touchAction:none so the browser yields touch control to JS.
-    // The rest of the card has no touchAction override — scroll works freely.
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 500, tolerance: 8 },
+      activationConstraint: { delay: 500, tolerance: 10 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
