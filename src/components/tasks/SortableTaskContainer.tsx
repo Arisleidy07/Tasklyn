@@ -5,6 +5,7 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
+  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
@@ -87,11 +88,14 @@ export function SortableTaskContainer({
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const sensors = useSensors(
-    // TaskItem handles the 500ms hold timer and switches touchAction to "none"
-    // after the hold completes. Once touchAction:none is set, dnd-kit needs only
-    // a tiny movement (distance:3) to confirm the drag has started.
+    // Desktop: 8px movement to activate drag (no accidental drag on click)
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 3 },
+      activationConstraint: { distance: 8 },
+    }),
+    // Mobile: listeners are on the grip handle (touchAction:none scoped there).
+    // Hold grip 500ms to activate drag. tolerance:8 = cancel if finger drifts.
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 500, tolerance: 8 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,

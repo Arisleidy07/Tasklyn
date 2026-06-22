@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState } from "react";
 import { Task, MemberRole } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -41,52 +41,9 @@ export default function TaskItem({
 }: TaskItemProps) {
   const [showDetailPanel, setShowDetailPanel] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [dragReady, setDragReady] = useState(false);
 
   const { user } = useAuthStore();
   const { uncompleteTask, updateTask } = useTaskStore();
-
-  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const startPosRef = useRef<{ x: number; y: number } | null>(null);
-
-  const cancelHold = useCallback(() => {
-    if (holdTimerRef.current) {
-      clearTimeout(holdTimerRef.current);
-      holdTimerRef.current = null;
-    }
-    startPosRef.current = null;
-    setDragReady(false);
-  }, []);
-
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if ((e.target as HTMLElement).closest("button,a,input,textarea,select"))
-      return;
-    startPosRef.current = { x: e.clientX, y: e.clientY };
-    holdTimerRef.current = setTimeout(() => {
-      setDragReady(true);
-      if (navigator.vibrate) navigator.vibrate(30);
-    }, 500);
-  }, []);
-
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!startPosRef.current) return;
-      const dx = e.clientX - startPosRef.current.x;
-      const dy = e.clientY - startPosRef.current.y;
-      if (Math.sqrt(dx * dx + dy * dy) > 10) {
-        cancelHold();
-      }
-    },
-    [cancelHold],
-  );
-
-  const handlePointerUp = useCallback(() => {
-    cancelHold();
-  }, [cancelHold]);
-
-  useEffect(() => {
-    if (!isDragging) cancelHold();
-  }, [isDragging, cancelHold]);
 
   const isCompleted = task.status === "completed";
   const canComplete = canCompleteTask(role);
@@ -130,22 +87,8 @@ export default function TaskItem({
           string,
           unknown
         > as React.HTMLAttributes<HTMLDivElement>)}
-        {...(dragReady && dragHandleProps?.listeners
-          ? (dragHandleProps.listeners as Record<
-              string,
-              unknown
-            > as React.HTMLAttributes<HTMLDivElement>)
-          : {})}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
         className="group/task select-none"
-        style={{
-          marginBottom: "4px",
-          touchAction: dragReady ? "none" : "pan-y",
-          cursor: dragReady ? "grab" : "default",
-        }}
+        style={{ marginBottom: "4px" }}
       >
         <motion.div
           initial={{ opacity: 0, y: 4 }}
@@ -174,17 +117,31 @@ export default function TaskItem({
             }}
             style={{ cursor: "pointer" }}
           >
-            {/* Grip — visual indicator only; long-press anywhere on card activates drag */}
+            {/* Grip handle — touch target: 44px tall, always visible on mobile.
+                touchAction:none is scoped HERE only so the rest of card scrolls freely.
+                Hold for 500ms (TouchSensor delay) to activate drag. */}
             {dragHandleProps && (
               <div
-                className="flex-shrink-0 flex items-center justify-center pointer-events-none"
-                style={{ padding: "4px 2px", minWidth: "20px" }}
-                aria-hidden="true"
+                {...(dragHandleProps.listeners as Record<
+                  string,
+                  unknown
+                > as React.HTMLAttributes<HTMLDivElement>)}
+                onClick={(e) => e.stopPropagation()}
+                className="flex-shrink-0 flex items-center justify-center"
+                style={{
+                  touchAction: "none",
+                  cursor: "grab",
+                  padding: "4px 6px",
+                  minWidth: "32px",
+                  minHeight: "44px",
+                  WebkitUserSelect: "none",
+                  userSelect: "none",
+                }}
+                aria-label="Mantén presionado para mover"
               >
                 <GripVertical
-                  size={14}
-                  className="opacity-25 sm:opacity-0 sm:group-hover/task:opacity-35 transition-opacity duration-150"
-                  style={{ color: "var(--text-tertiary)" }}
+                  size={16}
+                  style={{ color: "var(--text-tertiary)", opacity: 0.5 }}
                 />
               </div>
             )}
