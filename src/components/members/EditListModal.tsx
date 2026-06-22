@@ -481,13 +481,22 @@ export default function EditListModal({
     if (!name.trim()) return;
     setIsSaving(true);
     try {
-      await updateList(list.id, {
+      const updates: Partial<
+        Pick<
+          TaskList,
+          "name" | "description" | "color" | "icon" | "backgroundImage"
+        >
+      > = {
         name: name.trim(),
         description: description.trim(),
         color,
         icon: emoji.trim(),
-        backgroundImage: backgroundImage || undefined,
-      });
+      };
+      // Only include backgroundImage if the user explicitly changed it in this session
+      if (backgroundImage !== (list.backgroundImage || "")) {
+        updates.backgroundImage = backgroundImage || undefined;
+      }
+      await updateList(list.id, updates);
       setSaved(true);
       setTimeout(() => {
         if (isMountedRef.current) {

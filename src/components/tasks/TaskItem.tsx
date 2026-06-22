@@ -87,6 +87,10 @@ export default function TaskItem({
           string,
           unknown
         > as React.HTMLAttributes<HTMLDivElement>)}
+        {...(dragHandleProps?.listeners as Record<
+          string,
+          unknown
+        > as React.HTMLAttributes<HTMLDivElement>)}
         className="group/task select-none"
         style={{
           marginBottom: "4px",
@@ -94,7 +98,11 @@ export default function TaskItem({
       >
         <motion.div
           initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
+          animate={{
+            opacity: isDragging ? 0.35 : 1,
+            scale: isDragging ? 1.0 : 1,
+            y: 0,
+          }}
           exit={{ opacity: 0, scale: 0.98 }}
           transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
           style={{
@@ -104,7 +112,6 @@ export default function TaskItem({
               : "var(--bg-card)",
             boxShadow: isCompleted ? "none" : "0 1px 2px rgba(0,0,0,0.06)",
             border: "1px solid var(--border-color)",
-            opacity: isDragging ? 0.35 : 1,
           }}
         >
           {/* ── Main clickable row ── */}
@@ -116,32 +123,17 @@ export default function TaskItem({
             }}
             style={{ cursor: "pointer" }}
           >
-            {/* Grip — listeners ONLY here; scroll is free everywhere else */}
+            {/* Grip — visual hint only; drag activates via long-press on entire card */}
             {dragHandleProps && (
               <div
-                {...(dragHandleProps.listeners as Record<
-                  string,
-                  unknown
-                > as React.HTMLAttributes<HTMLDivElement>)}
-                onClick={(e) => e.stopPropagation()}
-                className="flex-shrink-0 mt-1 flex items-center justify-center"
-                style={{
-                  cursor: "grab",
-                  touchAction: "none",
-                  padding: "4px 2px",
-                  borderRadius: "4px",
-                  WebkitUserSelect: "none",
-                  userSelect: "none",
-                }}
-                aria-label="Arrastrar tarea"
+                className="flex-shrink-0 mt-1 flex items-center justify-center pointer-events-none"
+                style={{ padding: "4px 2px" }}
+                aria-hidden="true"
               >
                 <GripVertical
                   size={14}
-                  className="opacity-30 sm:opacity-0 sm:group-hover/task:opacity-40 transition-opacity duration-150"
-                  style={{
-                    color: "var(--text-tertiary)",
-                    pointerEvents: "none",
-                  }}
+                  className="opacity-20 sm:opacity-0 sm:group-hover/task:opacity-30 transition-opacity duration-150"
+                  style={{ color: "var(--text-tertiary)" }}
                 />
               </div>
             )}

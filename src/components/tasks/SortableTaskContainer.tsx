@@ -5,7 +5,6 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
-  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
@@ -27,9 +26,9 @@ import type { Task } from "@/types";
 export interface DragHandleProps {
   /** Attach to the card wrapper element for position tracking */
   setNodeRef: (node: HTMLElement | null) => void;
-  /** Attach to the card wrapper (a11y attributes) */
+  /** Attach to the card wrapper (a11y + listeners — whole-card long-press) */
   attributes: Record<string, unknown>;
-  /** Attach ONLY to the grip handle element — this is what initiates drag */
+  /** Attach to the entire card wrapper for whole-card long-press drag */
   listeners: Record<string, unknown> | undefined;
 }
 
@@ -88,13 +87,14 @@ export function SortableTaskContainer({
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const sensors = useSensors(
-    // Desktop: small distance threshold on the grip handle prevents misclicks
+    // PointerSensor covers both mouse and touch via pointer events.
+    // delay: 500ms long-press; tolerance: 8px — if finger moves >8px scroll wins.
+    // On desktop the distance constraint is used instead (no delay needed).
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    }),
-    // Mobile: 500ms long-press on the grip handle; tolerance lets scroll win if user moves finger
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 500, tolerance: 5 },
+      activationConstraint: {
+        delay: 500,
+        tolerance: 8,
+      },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,

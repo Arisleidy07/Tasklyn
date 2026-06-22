@@ -235,24 +235,49 @@ export default function ListDetailPage() {
   };
 
   return (
-    <div
-      className="min-h-screen w-full"
-      style={{
-        backgroundImage: list.backgroundImage
-          ? `url(${list.backgroundImage})`
-          : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "fixed",
-      }}
-    >
-      {/* Theme Overlay for entire page */}
+    <div className="relative min-h-screen w-full">
+      {/* Fixed background — stays still while content scrolls. Works on iOS Safari. */}
       <div
-        className="min-h-screen w-full"
+        aria-hidden="true"
         style={{
-          backgroundColor: "rgba(0, 0, 0, 0.3)",
+          position: "fixed",
+          inset: 0,
+          zIndex: 0,
         }}
       >
+        {list.backgroundImage ? (
+          <img
+            src={list.backgroundImage}
+            alt=""
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center",
+              display: "block",
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            }}
+          />
+        )}
+        {/* Overlay */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.30)",
+          }}
+        />
+      </div>
+
+      {/* Scrollable content layer */}
+      <div className="relative min-h-screen w-full" style={{ zIndex: 1 }}>
         <ListHeader
           list={list}
           totalTasks={activeTasks.length}
