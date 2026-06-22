@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Task, MemberRole } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -41,9 +41,52 @@ export default function TaskItem({
 }: TaskItemProps) {
   const [showDetailPanel, setShowDetailPanel] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [dragReady, setDragReady] = useState(false);
 
   const { user } = useAuthStore();
   const { uncompleteTask, updateTask } = useTaskStore();
+
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  const cancelHold = useCallback(() => {
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+    startPosRef.current = null;
+    setDragReady(false);
+  }, []);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest("button,a,input,textarea,select"))
+      return;
+    startPosRef.current = { x: e.clientX, y: e.clientY };
+    holdTimerRef.current = setTimeout(() => {
+      setDragReady(true);
+      if (navigator.vibrate) navigator.vibrate(30);
+    }, 500);
+  }, []);
+
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!startPosRef.current) return;
+      const dx = e.clientX - startPosRef.current.x;
+      const dy = e.clientY - startPosRef.current.y;
+      if (Math.sqrt(dx * dx + dy * dy) > 10) {
+        cancelHold();
+      }
+    },
+    [cancelHold],
+  );
+
+  const handlePointerUp = useCallback(() => {
+    cancelHold();
+  }, [cancelHold]);
+
+  useEffect(() => {
+    if (!isDragging) cancelHold();
+  }, [isDragging, cancelHold]);
 
   const isCompleted = task.status === "completed";
   const canComplete = canCompleteTask(role);
@@ -87,13 +130,21 @@ export default function TaskItem({
           string,
           unknown
         > as React.HTMLAttributes<HTMLDivElement>)}
-        {...(dragHandleProps?.listeners as Record<
-          string,
-          unknown
-        > as React.HTMLAttributes<HTMLDivElement>)}
+        {...(dragReady && dragHandleProps?.listeners
+          ? (dragHandleProps.listeners as Record<
+              string,
+              unknown
+            > as React.HTMLAttributes<HTMLDivElement>)
+          : {})}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         className="group/task select-none"
         style={{
           marginBottom: "4px",
+          touchAction: dragReady ? "none" : "pan-y",
+          cursor: dragReady ? "grab" : "default",
         }}
       >
         <motion.div

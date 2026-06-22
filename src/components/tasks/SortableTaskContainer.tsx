@@ -87,12 +87,11 @@ export function SortableTaskContainer({
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const sensors = useSensors(
-    // PointerSensor with delay+tolerance = long-press to drag on any device.
-    // Mouse: drag starts after holding 500ms without moving >10px.
-    // Touch: same — hold still for 500ms, then drag activates.
-    // If the user scrolls (moves finger >10px) before 500ms → drag cancelled, scroll wins.
+    // TaskItem handles the 500ms hold timer and switches touchAction to "none"
+    // after the hold completes. Once touchAction:none is set, dnd-kit needs only
+    // a tiny movement (distance:3) to confirm the drag has started.
     useSensor(PointerSensor, {
-      activationConstraint: { delay: 500, tolerance: 10 },
+      activationConstraint: { distance: 3 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
