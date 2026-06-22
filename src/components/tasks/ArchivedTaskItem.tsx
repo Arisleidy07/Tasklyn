@@ -57,101 +57,125 @@ export default function ArchivedTaskItem({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -6 }}
         transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="rounded-xl overflow-hidden opacity-70 hover:opacity-100 transition-opacity"
+        className="group/archived rounded-2xl overflow-hidden transition-all duration-200"
         style={{
           border: "1px solid var(--border-color)",
-          backgroundColor: "var(--bg-secondary)",
+          backgroundColor: "var(--bg-card)",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 0 0 0 transparent",
         }}
+        whileHover={{ boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}
       >
+        {/* Archived accent stripe */}
+        <div
+          className="h-0.5 w-full"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(156,163,175,0.4) 0%, rgba(156,163,175,0.1) 100%)",
+          }}
+        />
+
         <div className="flex items-start gap-3 p-4">
-          <div className="flex-1 min-w-0 space-y-2">
-            {/* Tarea */}
-            <div className="flex items-start gap-2">
-              <span
-                className="text-xs font-bold uppercase tracking-wide flex-shrink-0 mt-0.5"
-                style={{ color: "var(--text-secondary)" }}
+          {/* Archive icon badge */}
+          <div
+            className="flex-shrink-0 mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center"
+            style={{
+              backgroundColor: "var(--bg-secondary)",
+              border: "1px solid var(--border-color)",
+            }}
+          >
+            <Clock size={13} style={{ color: "var(--text-tertiary)" }} />
+          </div>
+
+          <div className="flex-1 min-w-0 space-y-2.5">
+            {/* Title */}
+            <p
+              className="text-sm font-medium leading-snug break-words whitespace-normal line-through"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {task.title}
+            </p>
+
+            {/* Details row */}
+            {task.phoneNumbers?.length || task.location || task.description ? (
+              <div
+                className="rounded-xl px-3 py-2.5 space-y-2"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  border: "1px solid var(--border-color)",
+                }}
               >
-                Tarea
-              </span>
-              <p
-                className="text-sm font-medium flex-1 leading-relaxed line-through break-words whitespace-normal"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                {task.title}
-              </p>
-            </div>
-
-            {/* Teléfonos */}
-            {task.phoneNumbers && task.phoneNumbers.length > 0 && (
-              <div className="flex items-start gap-2">
-                <span
-                  className="text-xs font-bold uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  <Phone size={10} className="text-blue-500" />
-                  Teléfonos
-                </span>
-                <span
-                  className="text-sm flex-1 leading-relaxed"
-                  dangerouslySetInnerHTML={{
-                    __html: task.phoneNumbers
-                      .map((phone) => linkifyPhoneNumbers(phone))
-                      .join(' <span class="text-gray-300 mx-1">•</span> '),
-                  }}
-                />
+                {task.phoneNumbers && task.phoneNumbers.length > 0 && (
+                  <div className="flex items-start gap-2">
+                    <Phone
+                      size={11}
+                      className="flex-shrink-0 mt-0.5 text-blue-500"
+                    />
+                    <span
+                      className="text-[12px] leading-relaxed flex-1"
+                      style={{ color: "var(--text-secondary)" }}
+                      dangerouslySetInnerHTML={{
+                        __html: task.phoneNumbers
+                          .map((phone) => linkifyPhoneNumbers(phone))
+                          .join(
+                            ' <span style="color:var(--text-muted);margin:0 4px">·</span> ',
+                          ),
+                      }}
+                    />
+                  </div>
+                )}
+                {task.location && (
+                  <div className="flex items-start gap-2">
+                    <MapPin
+                      size={11}
+                      className="flex-shrink-0 mt-0.5 text-blue-500"
+                    />
+                    <span
+                      className="text-[12px] leading-relaxed flex-1"
+                      style={{ color: "var(--text-secondary)" }}
+                      dangerouslySetInnerHTML={{
+                        __html: linkifyLocation(task.location),
+                      }}
+                    />
+                  </div>
+                )}
+                {task.description && (
+                  <div className="flex items-start gap-2">
+                    <FileText
+                      size={11}
+                      className="flex-shrink-0 mt-0.5"
+                      style={{ color: "var(--text-tertiary)" }}
+                    />
+                    <p
+                      className="text-[12px] leading-relaxed flex-1"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      {task.description}
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
-
-            {/* Ubicación */}
-            {task.location && (
-              <div className="flex items-start gap-2">
-                <span
-                  className="text-xs font-bold uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  <MapPin size={10} className="text-blue-500" />
-                  Ubicación
-                </span>
-                <span
-                  className="text-sm flex-1 leading-relaxed"
-                  dangerouslySetInnerHTML={{
-                    __html: linkifyLocation(task.location),
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Descripción */}
-            {task.description && (
-              <div className="flex items-start gap-2">
-                <span
-                  className="text-xs font-bold uppercase tracking-wide flex-shrink-0 mt-0.5 flex items-center gap-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  <FileText
-                    size={10}
-                    style={{ color: "var(--text-tertiary)" }}
-                  />
-                  Descripción
-                </span>
-                <p
-                  className="text-sm flex-1 leading-relaxed"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {task.description}
-                </p>
-              </div>
-            )}
+            ) : null}
 
             {/* Meta */}
-            <div
-              className="flex items-center gap-2 text-[11px] pt-1"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              <Clock size={10} />
-              Archivada {timeAgo(task.archivedAt || task.createdAt)}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span
+                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  color: "var(--text-tertiary)",
+                  border: "1px solid var(--border-color)",
+                }}
+              >
+                <Clock size={9} />
+                {timeAgo(task.archivedAt || task.createdAt)}
+              </span>
               {task.archivedBy && (
-                <span>· por {getUserName(task.archivedBy)}</span>
+                <span
+                  className="text-[11px]"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  · por {getUserName(task.archivedBy)}
+                </span>
               )}
             </div>
           </div>
@@ -161,16 +185,18 @@ export default function ArchivedTaskItem({
             {canEdit && (
               <button
                 onClick={handleRestore}
-                className="p-2 rounded-lg transition-colors cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center active:scale-90"
+                className="p-2 rounded-xl transition-all duration-150 cursor-pointer min-w-[34px] min-h-[34px] flex items-center justify-center active:scale-90"
                 style={{ color: "var(--text-tertiary)" }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = "#2563eb";
                   e.currentTarget.style.backgroundColor =
                     "rgba(37,99,235,0.08)";
+                  e.currentTarget.style.borderColor = "rgba(37,99,235,0.2)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.color = "var(--text-tertiary)";
                   e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.borderColor = "transparent";
                 }}
                 title="Restaurar tarea"
               >
@@ -180,7 +206,7 @@ export default function ArchivedTaskItem({
             {canDelete && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="p-2 rounded-lg transition-colors cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center active:scale-90"
+                className="p-2 rounded-xl transition-all duration-150 cursor-pointer min-w-[34px] min-h-[34px] flex items-center justify-center active:scale-90"
                 style={{ color: "var(--text-tertiary)" }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.color = "#ef4444";

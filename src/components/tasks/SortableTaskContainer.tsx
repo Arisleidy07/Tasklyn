@@ -25,8 +25,11 @@ import type { Task } from "@/types";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 export interface DragHandleProps {
-  ref: (node: HTMLElement | null) => void;
+  /** Attach to the card wrapper element for position tracking */
+  setNodeRef: (node: HTMLElement | null) => void;
+  /** Attach to the card wrapper (a11y attributes) */
   attributes: Record<string, unknown>;
+  /** Attach ONLY to the grip handle element — this is what initiates drag */
   listeners: Record<string, unknown> | undefined;
 }
 
@@ -58,7 +61,7 @@ export function SortableTaskItem({ task, children }: SortableTaskItemProps) {
   };
 
   const dragHandleProps: DragHandleProps = {
-    ref: (node: HTMLElement | null) => setNodeRef(node),
+    setNodeRef: (node: HTMLElement | null) => setNodeRef(node),
     attributes: attributes as unknown as Record<string, unknown>,
     listeners: listeners as unknown as Record<string, unknown> | undefined,
   };
@@ -85,13 +88,13 @@ export function SortableTaskContainer({
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const sensors = useSensors(
-    // Desktop mouse: 8px distance before drag activates (prevents clicks from triggering drag)
+    // Desktop: small distance threshold on the grip handle prevents misclicks
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
+      activationConstraint: { distance: 5 },
     }),
-    // Mobile touch: 350ms long-press + 8px tolerance — scroll works freely until long-press
+    // Mobile: 500ms long-press on the grip handle; tolerance lets scroll win if user moves finger
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 350, tolerance: 8 },
+      activationConstraint: { delay: 500, tolerance: 5 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,

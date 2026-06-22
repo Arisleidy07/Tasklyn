@@ -82,20 +82,14 @@ export default function TaskItem({
   return (
     <>
       <div
-        ref={dragHandleProps?.ref as React.Ref<HTMLDivElement>}
+        ref={dragHandleProps?.setNodeRef as React.Ref<HTMLDivElement>}
         {...(dragHandleProps?.attributes as Record<
-          string,
-          unknown
-        > as React.HTMLAttributes<HTMLDivElement>)}
-        {...(dragHandleProps?.listeners as Record<
           string,
           unknown
         > as React.HTMLAttributes<HTMLDivElement>)}
         className="group/task select-none"
         style={{
           marginBottom: "4px",
-          cursor: dragHandleProps ? "grab" : "default",
-          touchAction: "none",
         }}
       >
         <motion.div
@@ -122,13 +116,34 @@ export default function TaskItem({
             }}
             style={{ cursor: "pointer" }}
           >
-            {/* Grip — purely visual hint, drag happens on entire card */}
+            {/* Grip — listeners ONLY here; scroll is free everywhere else */}
             {dragHandleProps && (
-              <GripVertical
-                size={14}
-                className="flex-shrink-0 mt-1 opacity-0 group-hover/task:opacity-30 transition-opacity duration-150"
-                style={{ color: "var(--text-tertiary)" }}
-              />
+              <div
+                {...(dragHandleProps.listeners as Record<
+                  string,
+                  unknown
+                > as React.HTMLAttributes<HTMLDivElement>)}
+                onClick={(e) => e.stopPropagation()}
+                className="flex-shrink-0 mt-1 flex items-center justify-center"
+                style={{
+                  cursor: "grab",
+                  touchAction: "none",
+                  padding: "4px 2px",
+                  borderRadius: "4px",
+                  WebkitUserSelect: "none",
+                  userSelect: "none",
+                }}
+                aria-label="Arrastrar tarea"
+              >
+                <GripVertical
+                  size={14}
+                  className="opacity-30 sm:opacity-0 sm:group-hover/task:opacity-40 transition-opacity duration-150"
+                  style={{
+                    color: "var(--text-tertiary)",
+                    pointerEvents: "none",
+                  }}
+                />
+              </div>
             )}
 
             {/* Checkbox */}

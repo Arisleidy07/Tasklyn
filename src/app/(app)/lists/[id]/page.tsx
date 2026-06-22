@@ -423,7 +423,7 @@ export default function ListDetailPage() {
                     )}
                   </section>
 
-                  {/* Bloque de completadas — colapsado por defecto */}
+                  {/* Bloque de completadas — expandido por defecto, colapsable */}
                   {completedTasks.length > 0 && (
                     <section>
                       <button
@@ -431,6 +431,10 @@ export default function ListDetailPage() {
                         className="flex items-center justify-between w-full mb-2 group"
                       >
                         <div className="flex items-center gap-2">
+                          <CheckCircle2
+                            size={12}
+                            style={{ color: "var(--text-tertiary)" }}
+                          />
                           <span
                             className="text-[11px] font-semibold uppercase tracking-widest"
                             style={{ color: "var(--text-tertiary)" }}
@@ -447,14 +451,22 @@ export default function ListDetailPage() {
                             {completedTasks.length}
                           </span>
                         </div>
-                        <ChevronDown
-                          size={14}
-                          className={cn(
-                            "transition-transform duration-200",
-                            showCompleted && "rotate-180",
-                          )}
-                          style={{ color: "var(--text-tertiary)" }}
-                        />
+                        <div className="flex items-center gap-1">
+                          <span
+                            className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
+                            {showCompleted ? "Colapsar" : "Expandir"}
+                          </span>
+                          <ChevronDown
+                            size={14}
+                            className={cn(
+                              "transition-transform duration-200",
+                              showCompleted && "rotate-180",
+                            )}
+                            style={{ color: "var(--text-tertiary)" }}
+                          />
+                        </div>
                       </button>
                       <AnimatePresence initial={false}>
                         {showCompleted && (
@@ -543,119 +555,113 @@ export default function ListDetailPage() {
 
           {/* Área de archivados dentro de la lista */}
           {archivedCount > 0 && (
-            <div
-              className="mt-10 pt-6 border-t border-dashed"
-              style={{ borderColor: "var(--border-color)" }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
+            <div className="mt-10">
+              {/* Section divider */}
+              <div className="flex items-center gap-3 mb-4">
+                <div
+                  className="flex-1 h-px"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, var(--border-color) 0%, transparent 100%)",
+                  }}
+                />
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-widest px-2"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Archivados
+                </span>
+                <div
+                  className="flex-1 h-px"
+                  style={{
+                    background:
+                      "linear-gradient(90deg, transparent 0%, var(--border-color) 100%)",
+                  }}
+                />
+              </div>
+
+              {/* Toggle button */}
+              <button
+                onClick={() => setShowArchived(!showArchived)}
+                className="flex items-center gap-3 w-full text-left px-4 py-3 rounded-2xl transition-all duration-200"
+                style={{
+                  backgroundColor: "var(--bg-card)",
+                  border: "1px solid var(--border-color)",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+                  e.currentTarget.style.boxShadow =
+                    "0 2px 8px rgba(0,0,0,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "var(--bg-card)";
+                  e.currentTarget.style.boxShadow =
+                    "0 1px 3px rgba(0,0,0,0.06)";
+                }}
+              >
+                <div
+                  className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(156,163,175,0.2) 0%, rgba(156,163,175,0.08) 100%)",
+                    border: "1px solid var(--border-color)",
+                  }}
+                >
+                  <Archive
+                    size={14}
+                    style={{ color: "var(--text-secondary)" }}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="text-sm font-semibold leading-snug"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {showArchived
+                      ? "Ocultar archivadas"
+                      : "Ver tareas archivadas"}
+                  </p>
+                  <p
+                    className="text-[11px] mt-0.5"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    {archivedCount} tarea{archivedCount !== 1 ? "s" : ""} ·
+                    Restaurar o eliminar
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <span
-                    className="inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-semibold"
+                    className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
                     style={{
                       backgroundColor: "var(--bg-secondary)",
                       color: "var(--text-tertiary)",
-                    }}
-                  >
-                    A
-                  </span>
-                  <div>
-                    <p
-                      className="text-xs font-semibold uppercase tracking-wide"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
-                      Área de archivados
-                    </p>
-                    <p
-                      className="text-[11px]"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
-                      Tareas guardadas para referencia. Puedes restaurar o
-                      eliminar.
-                    </p>
-                  </div>
-                </div>
-                {!showArchived && (
-                  <span
-                    className="text-[11px] hidden sm:inline-flex"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    {archivedCount} archivada{archivedCount !== 1 ? "s" : ""}{" "}
-                    ocultas
-                  </span>
-                )}
-              </div>
-
-              <button
-                onClick={() => setShowArchived(!showArchived)}
-                className="mt-3 flex items-center gap-2 w-full text-left group px-3 py-2 rounded-2xl transition-colors border border-transparent"
-                style={{ backgroundColor: "var(--bg-secondary)" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
-                  e.currentTarget.style.borderColor = "var(--border-color)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-                  e.currentTarget.style.borderColor = "transparent";
-                }}
-              >
-                <div className="flex items-center gap-2 flex-1">
-                  <div
-                    className="w-7 h-7 rounded-xl flex items-center justify-center"
-                    style={{
-                      backgroundColor: "var(--bg-tertiary)",
                       border: "1px solid var(--border-color)",
                     }}
                   >
-                    <Archive
-                      size={14}
-                      style={{ color: "var(--text-secondary)" }}
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <span
-                      className="text-sm font-semibold flex items-center gap-1"
-                      style={{ color: "var(--text-primary)" }}
-                    >
-                      Ver tareas archivadas
-                      <span
-                        className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
-                        style={{
-                          backgroundColor: "var(--bg-tertiary)",
-                          color: "var(--text-secondary)",
-                          border: "1px solid var(--border-color)",
-                        }}
-                      >
-                        {archivedCount}
-                      </span>
-                    </span>
-                    <span
-                      className="text-[11px]"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      Toca para desplegar todas las tareas archivadas de esta
-                      lista.
-                    </span>
-                  </div>
+                    {archivedCount}
+                  </span>
+                  <ChevronDown
+                    size={14}
+                    className={cn(
+                      "transition-transform duration-200",
+                      showArchived && "rotate-180",
+                    )}
+                    style={{ color: "var(--text-tertiary)" }}
+                  />
                 </div>
-                <ChevronDown
-                  size={14}
-                  className={cn(
-                    "transition-transform",
-                    showArchived && "rotate-180",
-                  )}
-                />
               </button>
 
-              <AnimatePresence>
+              <AnimatePresence initial={false}>
                 {showArchived && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden mt-3"
+                    transition={{ duration: 0.22, ease: "easeInOut" }}
+                    className="overflow-hidden"
                   >
-                    <div className="space-y-2 pt-1">
+                    <div className="space-y-2 pt-3">
                       <AnimatePresence mode="popLayout">
                         {archivedTasks.map((task) => (
                           <ArchivedTaskItem
