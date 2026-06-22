@@ -87,10 +87,6 @@ export default function TaskItem({
           string,
           unknown
         > as React.HTMLAttributes<HTMLDivElement>)}
-        {...(dragHandleProps?.listeners as Record<
-          string,
-          unknown
-        > as React.HTMLAttributes<HTMLDivElement>)}
         className="group/task select-none"
         style={{
           marginBottom: "4px",
@@ -123,17 +119,31 @@ export default function TaskItem({
             }}
             style={{ cursor: "pointer" }}
           >
-            {/* Grip — visual hint only; drag activates via long-press on entire card */}
+            {/* Grip handle — listeners + touchAction:none here only.
+                This lets the rest of the card scroll freely on mobile.
+                Hold this handle for 500ms to start dragging. */}
             {dragHandleProps && (
               <div
-                className="flex-shrink-0 mt-1 flex items-center justify-center pointer-events-none"
-                style={{ padding: "4px 2px" }}
-                aria-hidden="true"
+                {...(dragHandleProps.listeners as Record<
+                  string,
+                  unknown
+                > as React.HTMLAttributes<HTMLDivElement>)}
+                onClick={(e) => e.stopPropagation()}
+                className="flex-shrink-0 flex items-center justify-center"
+                style={{
+                  cursor: "grab",
+                  touchAction: "none",
+                  padding: "6px 4px",
+                  minWidth: "28px",
+                  minHeight: "44px",
+                  WebkitUserSelect: "none",
+                  userSelect: "none",
+                }}
+                aria-label="Mantén presionado para mover"
               >
                 <GripVertical
-                  size={14}
-                  className="opacity-20 sm:opacity-0 sm:group-hover/task:opacity-30 transition-opacity duration-150"
-                  style={{ color: "var(--text-tertiary)" }}
+                  size={15}
+                  style={{ color: "var(--text-tertiary)", opacity: 0.5 }}
                 />
               </div>
             )}
