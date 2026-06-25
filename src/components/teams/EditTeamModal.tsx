@@ -2,7 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, Camera, Type, FileText, Palette, Check } from "lucide-react";
+import {
+  X,
+  Loader2,
+  Camera,
+  Type,
+  FileText,
+  Palette,
+  Check,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import TeamImage from "@/components/ui/TeamImage";
@@ -10,20 +18,41 @@ import type { Team } from "@/types";
 
 const PRESET_COLORS = [
   { name: "Blue", value: "#3b82f6", gradient: "from-blue-500 to-indigo-600" },
-  { name: "Purple", value: "#8b5cf6", gradient: "from-violet-500 to-purple-600" },
-  { name: "Emerald", value: "#10b981", gradient: "from-emerald-500 to-teal-600" },
-  { name: "Orange", value: "#f59e0b", gradient: "from-orange-500 to-amber-600" },
+  {
+    name: "Purple",
+    value: "#8b5cf6",
+    gradient: "from-violet-500 to-purple-600",
+  },
+  {
+    name: "Emerald",
+    value: "#10b981",
+    gradient: "from-emerald-500 to-teal-600",
+  },
+  {
+    name: "Orange",
+    value: "#f59e0b",
+    gradient: "from-orange-500 to-amber-600",
+  },
   { name: "Rose", value: "#f43f5e", gradient: "from-rose-500 to-pink-600" },
   { name: "Cyan", value: "#06b6d4", gradient: "from-cyan-500 to-blue-600" },
   { name: "Lime", value: "#84cc16", gradient: "from-lime-500 to-green-600" },
-  { name: "Fuchsia", value: "#d946ef", gradient: "from-fuchsia-500 to-purple-600" },
+  {
+    name: "Fuchsia",
+    value: "#d946ef",
+    gradient: "from-fuchsia-500 to-purple-600",
+  },
 ];
 
 interface EditTeamModalProps {
   isOpen: boolean;
   onClose: () => void;
   team: Team;
-  onSave: (updates: { name: string; description: string; color: string }) => Promise<void>;
+  onSave: (updates: {
+    name: string;
+    description: string;
+    color: string;
+    photoURL?: string;
+  }) => Promise<void>;
 }
 
 export default function EditTeamModal({
@@ -34,7 +63,9 @@ export default function EditTeamModal({
 }: EditTeamModalProps) {
   const [name, setName] = useState(team.name);
   const [description, setDescription] = useState(team.description || "");
-  const [selectedColor, setSelectedColor] = useState(team.color || PRESET_COLORS[0].value);
+  const [selectedColor, setSelectedColor] = useState(
+    team.color || PRESET_COLORS[0].value,
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoURL, setPhotoURL] = useState(team.photoURL);
@@ -70,13 +101,12 @@ export default function EditTeamModal({
         name: name.trim(),
         description: description.trim(),
         color: selectedColor,
+        photoURL: photoURL,
       });
       onClose();
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "Error al guardar los cambios"
+        err instanceof Error ? err.message : "Error al guardar los cambios",
       );
     } finally {
       setIsSaving(false);
@@ -129,7 +159,10 @@ export default function EditTeamModal({
                     className="w-10 h-10 rounded-xl flex items-center justify-center"
                     style={{ backgroundColor: "var(--bg-secondary)" }}
                   >
-                    <Camera size={18} style={{ color: "var(--text-secondary)" }} />
+                    <Camera
+                      size={18}
+                      style={{ color: "var(--text-secondary)" }}
+                    />
                   </div>
                   <div>
                     <h2
@@ -152,7 +185,8 @@ export default function EditTeamModal({
                   className="p-1.5 rounded-lg transition-colors"
                   style={{ color: "var(--text-tertiary)" }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+                    e.currentTarget.style.backgroundColor =
+                      "var(--bg-secondary)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
@@ -210,7 +244,7 @@ export default function EditTeamModal({
                     maxLength={60}
                     className={cn(
                       "w-full px-4 py-2.5 rounded-xl text-sm transition-all outline-none",
-                      "border focus:ring-2 focus:ring-blue-500/20"
+                      "border focus:ring-2 focus:ring-blue-500/20",
                     )}
                     style={{
                       backgroundColor: "var(--bg-input)",
@@ -244,7 +278,7 @@ export default function EditTeamModal({
                     maxLength={200}
                     className={cn(
                       "w-full px-4 py-2.5 rounded-xl text-sm transition-all outline-none resize-none",
-                      "border focus:ring-2 focus:ring-blue-500/20"
+                      "border focus:ring-2 focus:ring-blue-500/20",
                     )}
                     style={{
                       backgroundColor: "var(--bg-input)",
@@ -280,7 +314,7 @@ export default function EditTeamModal({
                           "flex items-center justify-center",
                           selectedColor === color.value
                             ? "ring-2 ring-offset-2 ring-blue-500 scale-110"
-                            : "hover:scale-105"
+                            : "hover:scale-105",
                         )}
                         style={{
                           background: `linear-gradient(135deg, ${color.value}, ${color.value}dd)`,

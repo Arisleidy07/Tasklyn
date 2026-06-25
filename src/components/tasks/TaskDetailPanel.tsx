@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Task, MemberRole } from "@/types";
@@ -21,7 +27,6 @@ import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { timeAgo } from "@/lib/utils";
 import {
   X,
-  Edit2,
   Trash2,
   Archive,
   Phone,
@@ -33,7 +38,7 @@ import {
   Clock,
   ChevronDown,
   Plus,
-  Save,
+  Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -57,26 +62,40 @@ export default function TaskDetailPanel({
   const { user } = useAuthStore();
   const { updateTask, deleteTask, archiveTask } = useTaskStore();
 
-  // ── Single global edit mode ──
-  const [editMode, setEditMode] = useState(false);
-
-  // ── Draft state (only committed on "Guardar cambios") ──
-  const [draftTitle, setDraftTitle] = useState("");
-  const [draftDescription, setDraftDescription] = useState("");
-  const [draftLocation, setDraftLocation] = useState("");
-  const [draftPhones, setDraftPhones] = useState<string[]>([""]);
-  const [draftPriority, setDraftPriority] =
+  // ── Inline editable state ──
+  const [localTitle, setLocalTitle] = useState("");
+  const [localDescription, setLocalDescription] = useState("");
+  const [localLocation, setLocalLocation] = useState("");
+  const [localPhones, setLocalPhones] = useState<string[]>([""]);
+  const [localPriority, setLocalPriority] =
     useState<Task["priority"]>(undefined);
 
   const [priorityMenuOpen, setPriorityMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const titleInputRef = useRef<HTMLInputElement>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const debounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   const canEdit = canEditTask(role);
   const canDelete = canDeleteTask(role);
   const canArchive = canArchiveTask(role);
   const canManageOptions = canManageTaskOptions(role);
+
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  }, []);
+
+  const debounceSave = useCallback(
+    (field: string, updates: Partial<Task>, delay = 700) => {
+      if (!user) return;
+      if (debounceRef.current[field]) clearTimeout(debounceRef.current[field]);
+      debounceRef.current[field] = setTimeout(() => {
+        updateTask(task!.id, updates, user.id, user.name);
+      }, delay);
+    },
+    [user, task],
+  );
 
   // Resolve all userIds in task to real names
   const userIdsToResolve = useMemo(() => {
@@ -115,91 +134,30 @@ export default function TaskDetailPanel({
     };
   }, [isOpen]);
 
-  // Reset draft & close edit mode when task changes or panel opens
+  // Sync local state when task changes or panel opens
   useEffect(() => {
     if (task && isOpen) {
-      setDraftTitle(task.title);
-      setDraftDescription(task.description || "");
-      setDraftLocation(task.location || "");
-      setDraftPhones(task.phoneNumbers?.length ? [...task.phoneNumbers] : [""]);
-      setDraftPriority(task.priority);
-      setEditMode(false);
+      setLocalTitle(task.title);
+      setLocalDescription(task.description || "");
+      setLocalLocation(task.location || "");
+      setLocalPhones(task.phoneNumbers?.length ? [...task.phoneNumbers] : [""]);
+      setLocalPriority(task.priority);
       setPriorityMenuOpen(false);
       setShowDeleteConfirm(false);
     }
   }, [task?.id, isOpen]);
 
-  // Auto-focus title input when edit mode activates
-  useEffect(() => {
-    if (editMode && titleInputRef.current) {
-      titleInputRef.current.focus();
-      titleInputRef.current.select();
-    }
-  }, [editMode]);
-
-  // Escape closes panel (or exits edit mode first)
+  // Escape closes panel
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (editMode) {
-          handleCancelEdit();
-        } else {
-          onClose();
-        }
-      }
+      if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [editMode, onClose]);
+  }, [onClose]);
 
   if (!task) return null;
 
-  // Enter edit mode — copy current task values into draft
-  const handleEnterEdit = () => {
-    setDraftTitle(task.title);
-    setDraftDescription(task.description || "");
-    setDraftLocation(task.location || "");
-    setDraftPhones(task.phoneNumbers?.length ? [...task.phoneNumbers] : [""]);
-    setDraftPriority(task.priority);
-    setEditMode(true);
-  };
-
-  // Cancel — discard all drafts
-  const handleCancelEdit = () => {
-    setDraftTitle(task.title);
-    setDraftDescription(task.description || "");
-    setDraftLocation(task.location || "");
-    setDraftPhones(task.phoneNumbers?.length ? [...task.phoneNumbers] : [""]);
-    setDraftPriority(task.priority);
-    setEditMode(false);
-    setPriorityMenuOpen(false);
-  };
-
-  // Save — commit all drafts at once
-  const handleSaveEdit = async () => {
-    if (!user || !draftTitle.trim()) return;
-    setIsSaving(true);
-    try {
-      const updates: Partial<Task> = {};
-      if (draftTitle.trim() !== task.title) updates.title = draftTitle.trim();
-      if (draftDescription !== (task.description || ""))
-        updates.description = draftDescription.trim() || undefined;
-      if (draftLocation !== (task.location || ""))
-        updates.location = draftLocation.trim() || undefined;
-      const validPhones = draftPhones.filter((p) => p.trim());
-      const currentPhones = task.phoneNumbers || [];
-      if (JSON.stringify(validPhones) !== JSON.stringify(currentPhones))
-        updates.phoneNumbers = validPhones.length ? validPhones : undefined;
-      if (draftPriority !== task.priority) updates.priority = draftPriority;
-      if (Object.keys(updates).length > 0)
-        await updateTask(task.id, updates, user.id, user.name);
-      setEditMode(false);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // Immediate saves for options bar (due date, reminders, recurrence)
   const saveField = async (updates: Partial<Task>) => {
     if (!user) return;
     await updateTask(task.id, updates, user.id, user.name);
@@ -209,14 +167,46 @@ export default function TaskDetailPanel({
     deleteTask(task.id);
     onClose();
   };
-
   const handleArchive = () => {
     if (!user) return;
     archiveTask(task.id, user.id);
     onClose();
   };
 
-  const pc = draftPriority ? getPriorityConfig(draftPriority) : null;
+  const handleCopy = () => {
+    const pc = localPriority ? getPriorityConfig(localPriority) : null;
+    const lines: string[] = [];
+    lines.push(`📌 ${localTitle || task.title}`);
+    if (localDescription.trim()) {
+      lines.push("");
+      lines.push(`📝 Descripción:\n${localDescription.trim()}`);
+    }
+    if (localLocation.trim()) {
+      lines.push("");
+      lines.push(`📍 Ubicación:\n${localLocation.trim()}`);
+    }
+    const validPhones = localPhones.filter((p) => p.trim());
+    if (validPhones.length) {
+      lines.push("");
+      lines.push(`📞 Teléfono:\n${validPhones.join("\n")}`);
+    }
+    if (pc) {
+      lines.push("");
+      lines.push(`⭐ Prioridad:\n${pc.label}`);
+    }
+    if (task.dueDate) {
+      lines.push("");
+      const d = new Date(task.dueDate);
+      lines.push(
+        `📅 Fecha:\n${d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`,
+      );
+    }
+    navigator.clipboard
+      .writeText(lines.join("\n"))
+      .then(() => showToast("Información copiada correctamente"));
+  };
+
+  const pc = localPriority ? getPriorityConfig(localPriority) : null;
   const isCompleted = task.status === "completed";
 
   // ─── PANEL CONTENT ─────────────────────────────────────────────
@@ -230,93 +220,59 @@ export default function TaskDetailPanel({
         className="flex-shrink-0 flex items-center justify-between gap-2 px-4 py-3 border-b"
         style={{ borderColor: "var(--border-color)" }}
       >
-        {/* Left: status badge / edit-mode action buttons */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          {isCompleted && !editMode && (
+          {isCompleted && (
             <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 border border-green-500/20 flex-shrink-0">
               ✓ Completada
             </span>
           )}
-          {editMode && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleCancelEdit}
-                disabled={isSaving}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  color: "var(--text-secondary)",
-                  border: "1px solid var(--border-color)",
-                }}
-              >
-                <X size={12} /> Cancelar
-              </button>
-              <button
-                onClick={handleSaveEdit}
-                disabled={isSaving || !draftTitle.trim()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
-                style={{
-                  background:
-                    isSaving || !draftTitle.trim()
-                      ? "var(--bg-secondary)"
-                      : "linear-gradient(135deg,#2563eb,#1d4ed8)",
-                  color:
-                    isSaving || !draftTitle.trim()
-                      ? "var(--text-tertiary)"
-                      : "#fff",
-                  boxShadow:
-                    isSaving || !draftTitle.trim()
-                      ? "none"
-                      : "0 2px 8px rgba(37,99,235,0.35)",
-                }}
-              >
-                {isSaving ? (
-                  "Guardando..."
-                ) : (
-                  <>
-                    <Save size={12} /> Guardar cambios
-                  </>
-                )}
-              </button>
-            </div>
-          )}
         </div>
 
-        {/* Right: Archivar · Editar · Eliminar · Cerrar */}
+        {/* Copiar · Archivar · Eliminar · Cerrar */}
         <div className="flex items-center gap-1 flex-shrink-0">
-          {canArchive && !editMode && (
+          <button
+            onClick={handleCopy}
+            title="Copiar información"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-150"
+            style={{
+              color: "var(--text-secondary)",
+              backgroundColor: "var(--bg-secondary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+            }}
+          >
+            <Copy size={13} />
+            <span className="hidden sm:inline">Copiar</span>
+          </button>
+          {canArchive && (
             <button
               onClick={handleArchive}
               title="Archivar"
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-150"
               style={{
                 color: "var(--text-secondary)",
                 backgroundColor: "var(--bg-secondary)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
               }}
             >
               <Archive size={13} />
               <span className="hidden sm:inline">Archivar</span>
             </button>
           )}
-          {canEdit && !isCompleted && !editMode && (
-            <button
-              onClick={handleEnterEdit}
-              title="Editar"
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all"
-              style={{
-                color: "#2563eb",
-                backgroundColor: "rgba(37,99,235,0.1)",
-              }}
-            >
-              <Edit2 size={13} />
-              <span className="hidden sm:inline">Editar</span>
-            </button>
-          )}
-          {canDelete && !editMode && (
+          {canDelete && (
             <button
               onClick={() => setShowDeleteConfirm(true)}
               title="Eliminar"
-              className="p-2 rounded-xl transition-all"
+              className="p-2 rounded-xl transition-all duration-150"
               style={{ color: "var(--text-tertiary)" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = "#ef4444";
@@ -332,7 +288,7 @@ export default function TaskDetailPanel({
           )}
           <button
             onClick={onClose}
-            className="p-2 rounded-xl transition-all ml-0.5"
+            className="p-2 rounded-xl transition-all duration-150 ml-0.5"
             style={{ color: "var(--text-tertiary)" }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
@@ -356,16 +312,20 @@ export default function TaskDetailPanel({
         <div className="px-5 py-5 space-y-5">
           {/* 1. TÍTULO */}
           <div>
-            {editMode ? (
+            {canEdit && !isCompleted ? (
               <input
-                ref={titleInputRef}
-                value={draftTitle}
-                onChange={(e) => setDraftTitle(e.target.value)}
-                className="w-full text-xl font-semibold px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                value={localTitle}
+                onChange={(e) => {
+                  setLocalTitle(e.target.value);
+                  if (e.target.value.trim())
+                    debounceSave("title", { title: e.target.value.trim() });
+                }}
+                className="w-full text-xl font-semibold px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all duration-150"
                 style={{
                   backgroundColor: "var(--bg-secondary)",
                   border: "1.5px solid var(--border-color)",
                   color: "var(--text-primary)",
+                  borderRadius: "16px",
                 }}
                 placeholder="Título de la tarea"
               />
@@ -390,17 +350,23 @@ export default function TaskDetailPanel({
             >
               <FileText size={11} /> Descripción
             </p>
-            {editMode ? (
+            {canEdit && !isCompleted ? (
               <div
-                className="rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/40 transition-all"
+                className="rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/30 transition-all duration-150"
                 style={{
                   backgroundColor: "var(--bg-secondary)",
                   border: "1.5px solid var(--border-color)",
+                  borderRadius: "16px",
                 }}
               >
                 <AutoResizeTextarea
-                  value={draftDescription}
-                  onChange={setDraftDescription}
+                  value={localDescription}
+                  onChange={(v) => {
+                    setLocalDescription(v);
+                    debounceSave("description", {
+                      description: v.trim() || undefined,
+                    });
+                  }}
                   placeholder="Añade una descripción..."
                   className="text-sm px-4 py-3 w-full"
                   minRows={3}
@@ -411,6 +377,7 @@ export default function TaskDetailPanel({
                 className="text-sm rounded-2xl px-4 py-3 min-h-[44px] leading-relaxed"
                 style={{
                   backgroundColor: "var(--bg-secondary)",
+                  borderRadius: "16px",
                   color: task.description
                     ? "var(--text-primary)"
                     : "var(--text-tertiary)",
@@ -429,22 +396,31 @@ export default function TaskDetailPanel({
             >
               <MapPin size={11} /> Ubicación
             </p>
-            {editMode ? (
+            {canEdit && !isCompleted ? (
               <input
-                value={draftLocation}
-                onChange={(e) => setDraftLocation(e.target.value)}
+                value={localLocation}
+                onChange={(e) => {
+                  setLocalLocation(e.target.value);
+                  debounceSave("location", {
+                    location: e.target.value.trim() || undefined,
+                  });
+                }}
                 placeholder="Añade una dirección o lugar..."
-                className="w-full text-sm rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                className="w-full text-sm px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all duration-150"
                 style={{
                   backgroundColor: "var(--bg-secondary)",
                   border: "1.5px solid var(--border-color)",
+                  borderRadius: "16px",
                   color: "var(--text-primary)",
                 }}
               />
             ) : (
               <div
-                className="text-sm rounded-2xl px-4 py-3 min-h-[44px] flex items-center"
-                style={{ backgroundColor: "var(--bg-secondary)" }}
+                className="text-sm px-4 py-3 min-h-[44px] flex items-center"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  borderRadius: "16px",
+                }}
               >
                 {task.location ? (
                   <a
@@ -474,34 +450,42 @@ export default function TaskDetailPanel({
             >
               <Phone size={11} /> Teléfonos
             </p>
-            {editMode ? (
+            {canEdit && !isCompleted ? (
               <div className="space-y-2">
-                {draftPhones.map((phone, i) => (
+                {localPhones.map((phone, i) => (
                   <div key={i} className="flex items-center gap-2">
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => {
-                        const u = [...draftPhones];
-                        u[i] = e.target.value;
-                        setDraftPhones(u);
+                        const updated = [...localPhones];
+                        updated[i] = e.target.value;
+                        setLocalPhones(updated);
+                        const valid = updated.filter((p) => p.trim());
+                        debounceSave("phones", {
+                          phoneNumbers: valid.length ? valid : undefined,
+                        });
                       }}
                       placeholder={`Teléfono ${i + 1}`}
-                      className="flex-1 text-sm rounded-2xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                      className="flex-1 text-sm px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all duration-150"
                       style={{
                         backgroundColor: "var(--bg-secondary)",
                         border: "1.5px solid var(--border-color)",
+                        borderRadius: "16px",
                         color: "var(--text-primary)",
                       }}
                     />
-                    {draftPhones.length > 1 && (
+                    {localPhones.length > 1 && (
                       <button
-                        onClick={() =>
-                          setDraftPhones(
-                            draftPhones.filter((_, j: number) => j !== i),
-                          )
-                        }
-                        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                        onClick={() => {
+                          const updated = localPhones.filter((_, j) => j !== i);
+                          setLocalPhones(updated);
+                          const valid = updated.filter((p) => p.trim());
+                          saveField({
+                            phoneNumbers: valid.length ? valid : undefined,
+                          });
+                        }}
+                        className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
                         style={{
                           backgroundColor: "rgba(239,68,68,0.08)",
                           color: "#ef4444",
@@ -513,8 +497,8 @@ export default function TaskDetailPanel({
                   </div>
                 ))}
                 <button
-                  onClick={() => setDraftPhones([...draftPhones, ""])}
-                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-colors"
+                  onClick={() => setLocalPhones([...localPhones, ""])}
+                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all duration-150"
                   style={{
                     color: "#2563eb",
                     backgroundColor: "rgba(37,99,235,0.08)",
@@ -525,8 +509,11 @@ export default function TaskDetailPanel({
               </div>
             ) : (
               <div
-                className="text-sm rounded-2xl px-4 py-3 min-h-[44px]"
-                style={{ backgroundColor: "var(--bg-secondary)" }}
+                className="text-sm px-4 py-3 min-h-[44px]"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  borderRadius: "16px",
+                }}
               >
                 {task.phoneNumbers?.filter((p) => p.trim()).length ? (
                   <div className="space-y-1.5">
@@ -562,14 +549,15 @@ export default function TaskDetailPanel({
               >
                 Prioridad
               </p>
-              {editMode ? (
+              {canEdit && !isCompleted ? (
                 <div className="relative">
                   <button
                     onClick={() => setPriorityMenuOpen((v) => !v)}
-                    className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                    className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all duration-150"
                     style={{
                       backgroundColor: "var(--bg-secondary)",
                       border: "1.5px solid var(--border-color)",
+                      borderRadius: "16px",
                       color: "var(--text-secondary)",
                     }}
                   >
@@ -595,14 +583,15 @@ export default function TaskDetailPanel({
                   <AnimatePresence>
                     {priorityMenuOpen && (
                       <motion.div
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.12 }}
-                        className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-2xl shadow-2xl overflow-hidden"
+                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute left-0 right-0 top-full mt-1.5 z-50 shadow-2xl overflow-hidden"
                         style={{
                           backgroundColor: "var(--bg-card)",
                           border: "1px solid var(--border-color)",
+                          borderRadius: "16px",
                         }}
                       >
                         {(
@@ -619,10 +608,11 @@ export default function TaskDetailPanel({
                             <button
                               key={p ?? "none"}
                               onClick={() => {
-                                setDraftPriority(p);
+                                setLocalPriority(p);
                                 setPriorityMenuOpen(false);
+                                saveField({ priority: p });
                               }}
-                              className="w-full flex items-center justify-between px-4 py-3 text-sm transition-colors"
+                              className="w-full flex items-center justify-between px-4 py-3 text-sm transition-all duration-150"
                               style={{ color: "var(--text-secondary)" }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor =
@@ -647,7 +637,7 @@ export default function TaskDetailPanel({
                                   Sin prioridad
                                 </span>
                               )}
-                              {draftPriority === p && (
+                              {localPriority === p && (
                                 <Check size={14} className="text-blue-500" />
                               )}
                             </button>
@@ -659,8 +649,11 @@ export default function TaskDetailPanel({
                 </div>
               ) : (
                 <div
-                  className="text-sm rounded-2xl px-4 py-3"
-                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                  className="text-sm px-4 py-3"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    borderRadius: "16px",
+                  }}
                 >
                   {pc ? (
                     <span
@@ -937,6 +930,27 @@ export default function TaskDetailPanel({
           </div>
         </div>
       </div>
+
+      {/* ── Toast ── */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.15 }}
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-sm font-medium shadow-xl flex items-center gap-2"
+            style={{
+              backgroundColor: "#1e293b",
+              color: "#f8fafc",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <Check size={14} style={{ color: "#4ade80" }} />
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Delete confirm overlay ── */}
       <AnimatePresence>

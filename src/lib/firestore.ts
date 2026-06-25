@@ -56,8 +56,24 @@ import type {
   Goal,
   Achievement,
   TaskComment,
+  TaskHistoryEntry,
   Client,
+  TeamScore,
+  Background,
 } from "@/types";
+
+// ---- SubcollectionTeamMember (stored at teams/{teamId}/members/{userId}) ----
+export interface SubcollectionTeamMember {
+  userId: string;
+  name: string;
+  email: string;
+  photoURL?: string;
+  role: TeamRole;
+  joinedAt: string;
+  invitedBy?: string;
+  xp: number;
+  streak: number;
+}
 
 // ============================================
 // Helpers
@@ -576,6 +592,102 @@ export const deleteInvitation = async (invitationId: string): Promise<void> => {
   await deleteDoc(doc(db, "invitations", invitationId));
 };
 
+/**
+ * Create a team invitation with a UUID token.
+ * Stored in /invitations with type:"team".
+ */
+export const createTeamInvitation = async (params: {
+  teamId: string;
+  invitedBy: string;
+  invitedEmail?: string;
+  defaultRole: "admin" | "member";
+  token: string;
+  expiresInDays?: number;
+}): Promise<string> => {
+  const inviteRef = doc(invitationsCollection);
+  const expiresAt = new Date(
+    Date.now() + (params.expiresInDays ?? 7) * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  await setDoc(inviteRef, {
+    token: params.token,
+    type: "team",
+    targetId: params.teamId,
+    teamId: params.teamId,
+    invitedBy: params.invitedBy,
+    invitedEmail: params.invitedEmail || null,
+    defaultRole: params.defaultRole,
+    status: "pending",
+    expiresAt,
+    createdAt: serverTimestamp(),
+  });
+  return inviteRef.id;
+};
+
+/**
+ * Look up a team invitation by token.
+ * Returns null if not found or already accepted/expired.
+ */
+export const getTeamInvitationByToken = async (
+  token: string,
+): Promise<Invitation | null> => {
+  const q = query(
+    invitationsCollection,
+    where("token", "==", token),
+    where("type", "==", "team"),
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const invDoc = snap.docs[0];
+  const data = invDoc.data();
+  return {
+    ...data,
+    id: invDoc.id,
+    createdAt: toDate(data.createdAt),
+    expiresAt: toDate(data.expiresAt),
+  } as Invitation;
+};
+
+/**
+ * Mark a team invitation as accepted and add the user to the team.
+ */
+export const acceptTeamInvitation = async (
+  invitation: Invitation,
+  userId: string,
+): Promise<void> => {
+  if (!invitation.teamId) throw new Error("Invitation has no teamId");
+
+  // 1. Add user to team (subcollection + legacy arrays)
+  await addTeamMember(
+    invitation.teamId,
+    userId,
+    (invitation.defaultRole as "admin" | "member") || "member",
+    invitation.invitedBy,
+  );
+
+  // 2. Mark invitation as accepted
+  const invRef = doc(db, "invitations", invitation.id);
+  await updateDoc(invRef, {
+    status: "accepted",
+    acceptedAt: serverTimestamp(),
+    acceptedBy: userId,
+  });
+
+  // 3. Log activity
+  const userSnap = await getDoc(doc(db, "users", userId));
+  const userData = userSnap.exists() ? userSnap.data() : {};
+  await logTeamActivity(invitation.teamId, {
+    teamId: invitation.teamId,
+    userId,
+    userName: userData.name || "Usuario",
+    userPhotoURL: userData.photoURL || "",
+    action: "member_joined",
+    entityType: "member",
+    entityId: userId,
+    entityName: userData.name || "Usuario",
+    detail: `${userData.name || "Un usuario"} se unió al equipo`,
+  });
+};
+
 export const deleteInvitationsByList = async (
   listId: string,
 ): Promise<void> => {
@@ -619,7 +731,7 @@ export const createTeam = async (
     memberIds,
     settings: {
       allowInvites: true,
-      requireApproval: false,
+      allowMemberCreateLists: true,
     },
     stats: {
       totalTasks: 0,
@@ -637,6 +749,27 @@ export const createTeam = async (
     updatedAt: serverTimestamp(),
   });
 
+  // Also write owner to subcollection members/{userId}
+  const ownerProfile = await getDoc(doc(db, "users", teamData.ownerId));
+  const ownerData = ownerProfile.exists() ? ownerProfile.data() : {};
+  const memberSubRef = doc(
+    db,
+    "teams",
+    teamRef.id,
+    "members",
+    teamData.ownerId,
+  );
+  await setDoc(memberSubRef, {
+    userId: teamData.ownerId,
+    name: ownerData.name || "",
+    email: ownerData.email || "",
+    photoURL: ownerData.photoURL || "",
+    role: "owner" as TeamRole,
+    joinedAt: now,
+    xp: 0,
+    streak: 0,
+  });
+
   console.log("✅ Team created with full configuration:", teamRef.id);
   return teamRef.id;
 };
@@ -645,48 +778,58 @@ export const createTeam = async (
 // TEAM ACTIVITY
 // ============================================
 
-export interface TeamActivityEntry {
-  id: string;
-  teamId: string;
-  userId: string;
-  userName: string;
-  userPhoto?: string;
-  action: string; // e.g. "completed_task", "created_task", "joined_team"
-  detail: string; // human-readable: "completó Diseño de logo"
-  entityId?: string;
-  entityType?: "task" | "list" | "member";
-  createdAt: string;
-}
+export type { TeamActivityEntry } from "@/types";
+import type { TeamActivityEntry, TeamActivityAction } from "@/types";
 
-export const addTeamActivity = async (
+/**
+ * Log an entry to teams/{teamId}/activity.
+ * Single entry point — replaces addTeamActivity.
+ */
+export const logTeamActivity = async (
   teamId: string,
-  entry: Omit<TeamActivityEntry, "id" | "createdAt">,
+  entry: Omit<TeamActivityEntry, "id" | "timestamp">,
 ): Promise<void> => {
-  const ref = doc(collection(db, "teams", teamId, "activity"));
-  await setDoc(ref, {
-    ...entry,
-    createdAt: serverTimestamp(),
-  });
+  try {
+    const ref = doc(collection(db, "teams", teamId, "activity"));
+    await setDoc(ref, {
+      ...entry,
+      teamId,
+      timestamp: serverTimestamp(),
+    });
+  } catch (err) {
+    console.error("[logTeamActivity] Failed:", err);
+    // Non-fatal — never block the main operation
+  }
 };
+
+/** @deprecated Use logTeamActivity instead */
+export const addTeamActivity = logTeamActivity;
 
 export const subscribeToTeamActivity = (
   teamId: string,
   callback: (entries: TeamActivityEntry[]) => void,
-  limitCount = 30,
+  limitCount = 40,
 ): Unsubscribe => {
   const q = query(
     collection(db, "teams", teamId, "activity"),
-    orderBy("createdAt", "desc"),
+    orderBy("timestamp", "desc"),
     firestoreLimit(limitCount),
   );
-  return onSnapshot(q, (snap) => {
-    const entries = snap.docs.map((d) => ({
-      ...d.data(),
-      id: d.id,
-      createdAt: toDate(d.data().createdAt),
-    })) as TeamActivityEntry[];
-    callback(entries);
-  });
+  return onSnapshot(
+    q,
+    (snap) => {
+      const entries = snap.docs.map((d) => ({
+        ...d.data(),
+        id: d.id,
+        timestamp: toDate(d.data().timestamp ?? d.data().createdAt),
+      })) as TeamActivityEntry[];
+      callback(entries);
+    },
+    (err) => {
+      console.error("[subscribeToTeamActivity] Error:", err);
+      callback([]);
+    },
+  );
 };
 
 export const getTeam = async (teamId: string): Promise<Team | null> => {
@@ -809,7 +952,28 @@ export const deleteTeam = async (teamId: string): Promise<void> => {
       await commitIfNeeded();
     }
 
-    // 4. Delete all goals for this team
+    // 4. Delete all members subcollection docs
+    const membersSubQuery = collection(db, "teams", teamId, "members");
+    const membersSubSnap = await getDocs(membersSubQuery);
+    console.log(
+      `[deleteTeam] Found ${membersSubSnap.docs.length} member docs to delete`,
+    );
+    for (const memberDoc of membersSubSnap.docs) {
+      currentBatch.delete(memberDoc.ref);
+      operationCount++;
+      await commitIfNeeded();
+    }
+
+    // 5. Delete all scores subcollection docs
+    const scoresSubQuery = collection(db, "teams", teamId, "scores");
+    const scoresSubSnap = await getDocs(scoresSubQuery);
+    for (const scoreDoc of scoresSubSnap.docs) {
+      currentBatch.delete(scoreDoc.ref);
+      operationCount++;
+      await commitIfNeeded();
+    }
+
+    // 6. Delete all goals for this team
     const goalsQuery = query(goalsCollection, where("teamId", "==", teamId));
     const goalsSnap = await getDocs(goalsQuery);
     console.log(`[deleteTeam] Found ${goalsSnap.docs.length} goals to delete`);
@@ -819,7 +983,7 @@ export const deleteTeam = async (teamId: string): Promise<void> => {
       await commitIfNeeded();
     }
 
-    // 5. Delete all achievements for this team
+    // 7. Delete all achievements for this team
     const achievementsQuery = query(
       achievementsCollection,
       where("teamId", "==", teamId),
@@ -880,24 +1044,49 @@ export const addTeamMember = async (
 
   const data = teamSnap.data();
   const members: TeamMember[] = data.members || [];
+  const now = new Date().toISOString();
 
-  if (members.some((m) => m.userId === userId)) return; // Already member
+  if (members.some((m: TeamMember) => m.userId === userId)) return; // Already member
 
-  members.push({
+  const newMember: TeamMember = {
     userId,
     role,
-    joinedAt: new Date().toISOString(),
+    joinedAt: now,
     invitedBy,
-  });
+  };
 
-  const memberIds = members.map((m) => m.userId);
+  members.push(newMember);
+  const memberIds = members.map((m: TeamMember) => m.userId);
 
-  await updateDoc(teamRef, {
+  // Fetch user profile to enrich subcollection doc
+  const userProfile = await getDoc(doc(db, "users", userId));
+  const userData = userProfile.exists() ? userProfile.data() : {};
+
+  const batch = writeBatch(db);
+
+  // 1. Update legacy arrays on team doc (keep for backward compat)
+  batch.update(teamRef, {
     members,
     memberIds,
     "stats.totalMembers": members.length,
     updatedAt: serverTimestamp(),
   });
+
+  // 2. Write to subcollection
+  const memberSubRef = doc(db, "teams", teamId, "members", userId);
+  batch.set(memberSubRef, {
+    userId,
+    name: userData.name || "",
+    email: userData.email || "",
+    photoURL: userData.photoURL || "",
+    role,
+    joinedAt: now,
+    invitedBy: invitedBy || null,
+    xp: 0,
+    streak: 0,
+  });
+
+  await batch.commit();
 };
 
 export const removeTeamMember = async (
@@ -909,18 +1098,30 @@ export const removeTeamMember = async (
   if (!teamSnap.exists()) throw new Error("Team not found");
 
   const data = teamSnap.data();
+
+  // Safety: never remove the owner
+  if (data.owner === userId) throw new Error("Cannot remove the team owner");
+
   const members: TeamMember[] = (data.members || []).filter(
     (m: TeamMember) => m.userId !== userId,
   );
+  const memberIds = members.map((m: TeamMember) => m.userId);
 
-  const memberIds = members.map((m) => m.userId);
+  const batch = writeBatch(db);
 
-  await updateDoc(teamRef, {
+  // 1. Update legacy arrays
+  batch.update(teamRef, {
     members,
     memberIds,
     "stats.totalMembers": members.length,
     updatedAt: serverTimestamp(),
   });
+
+  // 2. Delete from subcollection
+  const memberSubRef = doc(db, "teams", teamId, "members", userId);
+  batch.delete(memberSubRef);
+
+  await batch.commit();
 };
 
 export const updateTeamMemberRole = async (
@@ -933,14 +1134,115 @@ export const updateTeamMemberRole = async (
   if (!teamSnap.exists()) throw new Error("Team not found");
 
   const data = teamSnap.data();
+
+  // Safety: owner role cannot be transferred via this function
+  if (data.owner === userId && role !== "owner")
+    throw new Error("Cannot change owner role");
+
+  // Update legacy members array (backward compat)
   const members: TeamMember[] = (data.members || []).map((m: TeamMember) =>
     m.userId === userId ? { ...m, role } : m,
   );
 
-  await updateDoc(teamRef, {
+  const batch = writeBatch(db);
+
+  // 1. Update legacy array
+  batch.update(teamRef, {
     members,
     updatedAt: serverTimestamp(),
   });
+
+  // 2. Update ONLY subcollection — never iterates arrays
+  const memberSubRef = doc(db, "teams", teamId, "members", userId);
+  batch.update(memberSubRef, { role });
+
+  await batch.commit();
+};
+
+// ---- Subcollection helpers ----
+
+export const subscribeToTeamMembers = (
+  teamId: string,
+  callback: (members: SubcollectionTeamMember[]) => void,
+): Unsubscribe => {
+  const q = collection(db, "teams", teamId, "members");
+  return onSnapshot(
+    q,
+    (snap) => {
+      const members = snap.docs.map((d) => ({
+        ...d.data(),
+        userId: d.id,
+        joinedAt: toDate(d.data().joinedAt),
+      })) as SubcollectionTeamMember[];
+      callback(members);
+    },
+    (error) => {
+      console.error("❌ Error in team members subscription:", error);
+      callback([]);
+    },
+  );
+};
+
+export const getTeamMembersFromSubcollection = async (
+  teamId: string,
+): Promise<SubcollectionTeamMember[]> => {
+  const snap = await getDocs(collection(db, "teams", teamId, "members"));
+  return snap.docs.map((d) => ({
+    ...d.data(),
+    userId: d.id,
+    joinedAt: toDate(d.data().joinedAt),
+  })) as SubcollectionTeamMember[];
+};
+
+/**
+ * One-time migration: copies existing members[] from the team doc
+ * into the subcollection teams/{teamId}/members/{userId}.
+ * Safe to call multiple times — uses setDoc with merge:true.
+ */
+export const migrateTeamMembersToSubcollection = async (
+  teamId: string,
+): Promise<void> => {
+  const teamRef = doc(db, "teams", teamId);
+  const teamSnap = await getDoc(teamRef);
+  if (!teamSnap.exists()) throw new Error("Team not found");
+
+  const data = teamSnap.data();
+  const members: TeamMember[] = data.members || [];
+
+  if (members.length === 0) {
+    console.log(`[migrate] Team ${teamId} has no members to migrate`);
+    return;
+  }
+
+  // Fetch all user profiles in parallel
+  const profiles = await Promise.all(
+    members.map((m) => getDoc(doc(db, "users", m.userId))),
+  );
+
+  const batch = writeBatch(db);
+
+  members.forEach((m, i) => {
+    const profileData = profiles[i].exists() ? profiles[i].data() : {};
+    const memberSubRef = doc(db, "teams", teamId, "members", m.userId);
+    batch.set(
+      memberSubRef,
+      {
+        userId: m.userId,
+        name: profileData?.name || "",
+        email: profileData?.email || "",
+        photoURL: profileData?.photoURL || "",
+        role: m.role,
+        joinedAt: m.joinedAt || new Date().toISOString(),
+        invitedBy: m.invitedBy || null,
+        xp: 0,
+        streak: 0,
+      },
+      { merge: true }, // safe: won't overwrite existing xp/streak
+    );
+  });
+
+  await batch.commit();
+  console.log(`✅ Migrated ${members.length} members for team ${teamId}`);
 };
 
 export const subscribeToUserTeams = (
@@ -957,21 +1259,28 @@ export const subscribeToUserTeams = (
     q,
     (snap) => {
       console.log("📦 Teams snapshot received:", snap.docs.length);
-      const teams = snap.docs.map((doc) => {
-        const data = doc.data();
-        return {
-          ...data,
-          id: doc.id,
-          createdAt: toDate(data.createdAt),
-          updatedAt: toDate(data.updatedAt),
-          members: data.members || [],
-        } as Team;
-      });
+      // Dedup by id — safety net against double subscriptions
+      const seen = new Set<string>();
+      const teams = snap.docs
+        .map((teamDoc) => {
+          const data = teamDoc.data();
+          return {
+            ...data,
+            id: teamDoc.id,
+            createdAt: toDate(data.createdAt),
+            updatedAt: toDate(data.updatedAt),
+            members: data.members || [],
+          } as Team;
+        })
+        .filter((t) => {
+          if (seen.has(t.id)) return false;
+          seen.add(t.id);
+          return true;
+        });
       callback(teams);
     },
     (error) => {
       console.error("❌ Error in teams subscription:", error);
-      // Return empty teams on error to prevent app crash
       callback([]);
     },
   );
@@ -983,17 +1292,23 @@ export const getUserTeams = async (userId: string): Promise<Team[]> => {
     where("memberIds", "array-contains", userId),
   );
   const snap = await getDocsFromServer(q);
-
-  return snap.docs.map((doc) => {
-    const data = doc.data();
-    return {
-      ...data,
-      id: doc.id,
-      createdAt: toDate(data.createdAt),
-      updatedAt: toDate(data.updatedAt),
-      members: data.members || [],
-    } as Team;
-  });
+  const seen = new Set<string>();
+  return snap.docs
+    .map((teamDoc) => {
+      const data = teamDoc.data();
+      return {
+        ...data,
+        id: teamDoc.id,
+        createdAt: toDate(data.createdAt),
+        updatedAt: toDate(data.updatedAt),
+        members: data.members || [],
+      } as Team;
+    })
+    .filter((t) => {
+      if (seen.has(t.id)) return false;
+      seen.add(t.id);
+      return true;
+    });
 };
 
 // ============================================
@@ -1157,7 +1472,10 @@ export const acceptInvitation = async (
   console.log(`${debugPrefix} User ID: ${userId}`);
   console.log(`${debugPrefix} Default Role: ${invitation.defaultRole}`);
 
-  const listRef = doc(db, "lists", invitation.listId);
+  const resolvedListId = invitation.listId ?? invitation.targetId;
+  if (!resolvedListId) throw new Error("Invitation has no listId");
+
+  const listRef = doc(db, "lists", resolvedListId);
   const invitationRef = doc(db, "invitations", invitation.id);
   const teamRef = invitation.teamId
     ? doc(db, "teams", invitation.teamId)
@@ -1167,7 +1485,7 @@ export const acceptInvitation = async (
   // This avoids permission-denied errors
   const newMember: ListMember = {
     userId,
-    role: invitation.defaultRole,
+    role: (invitation.defaultRole as MemberRole) || "viewer",
     joinedAt: new Date().toISOString(),
   };
 
@@ -1269,10 +1587,12 @@ export const addComment = async (
 export const updateComment = async (
   commentId: string,
   content: string,
+  editedBy?: string,
 ): Promise<void> => {
   await updateDoc(doc(db, "comments", commentId), {
     content,
     editedAt: serverTimestamp(),
+    ...(editedBy && { editedBy }),
   });
 };
 
@@ -1541,4 +1861,210 @@ export const reorderBackgroundImages = async (
     batch.update(ref, { order: img.order });
   });
   await batch.commit();
+};
+
+// ============================================
+// ÍTEM 8 — TEAM SCORES subcollection
+// teams/{teamId}/scores/{userId}
+// ============================================
+
+export const upsertTeamScore = async (
+  teamId: string,
+  userId: string,
+  delta: Partial<
+    Pick<
+      TeamScore,
+      | "xpTotal"
+      | "xpWeek"
+      | "xpMonth"
+      | "tasksCompleted"
+      | "tasksCreated"
+      | "commentsAdded"
+      | "streak"
+      | "level"
+      | "rankPosition"
+    >
+  >,
+): Promise<void> => {
+  const ref = doc(db, "teams", teamId, "scores", userId);
+  await setDoc(
+    ref,
+    {
+      userId,
+      ...delta,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+};
+
+export const subscribeToTeamScores = (
+  teamId: string,
+  callback: (scores: TeamScore[]) => void,
+): Unsubscribe => {
+  const q = query(
+    collection(db, "teams", teamId, "scores"),
+    orderBy("xpTotal", "desc"),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const scores = snap.docs.map((d) => ({
+        ...d.data(),
+        userId: d.id,
+        updatedAt: toDate(d.data().updatedAt),
+      })) as TeamScore[];
+      callback(scores);
+    },
+    () => callback([]),
+  );
+};
+
+export const getTeamScores = async (teamId: string): Promise<TeamScore[]> => {
+  const snap = await getDocs(
+    query(
+      collection(db, "teams", teamId, "scores"),
+      orderBy("xpTotal", "desc"),
+    ),
+  );
+  return snap.docs.map((d) => ({
+    ...d.data(),
+    userId: d.id,
+    updatedAt: toDate(d.data().updatedAt),
+  })) as TeamScore[];
+};
+
+// ============================================
+// ÍTEM 9 — /backgrounds collection
+// ============================================
+
+export const sharedBackgroundsCollection = collection(db, "backgrounds");
+
+export const subscribeToSharedBackgrounds = (
+  callback: (backgrounds: Background[]) => void,
+): Unsubscribe => {
+  return onSnapshot(
+    query(sharedBackgroundsCollection, orderBy("createdAt", "desc")),
+    (snap) => {
+      const bgs = snap.docs.map((d) => ({
+        ...d.data(),
+        id: d.id,
+        createdAt: toDate(d.data().createdAt),
+      })) as Background[];
+      callback(bgs);
+    },
+    () => callback([]),
+  );
+};
+
+export const createSharedBackground = async (
+  bg: Omit<Background, "id" | "createdAt">,
+): Promise<string> => {
+  const ref = doc(sharedBackgroundsCollection);
+  await setDoc(ref, { ...bg, createdAt: serverTimestamp() });
+  return ref.id;
+};
+
+export const deleteSharedBackground = async (bgId: string): Promise<void> => {
+  await deleteDoc(doc(sharedBackgroundsCollection, bgId));
+};
+
+// ============================================
+// ÍTEM 10 — tasks/{taskId}/history & comments
+// ============================================
+
+// ---- Task History subcollection ----
+
+export const addTaskHistoryEntry = async (
+  taskId: string,
+  entry: Omit<TaskHistoryEntry, "id">,
+): Promise<void> => {
+  const ref = doc(collection(db, "tasks", taskId, "history"));
+  await setDoc(ref, {
+    ...entry,
+    createdAt: serverTimestamp(),
+  });
+};
+
+export const subscribeToTaskHistory = (
+  taskId: string,
+  callback: (entries: TaskHistoryEntry[]) => void,
+): Unsubscribe => {
+  const q = query(
+    collection(db, "tasks", taskId, "history"),
+    orderBy("createdAt", "desc"),
+    firestoreLimit(50),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const entries = snap.docs.map((d) => ({
+        ...d.data(),
+        id: d.id,
+        createdAt: toDate(d.data().createdAt),
+      })) as unknown as TaskHistoryEntry[];
+      callback(entries);
+    },
+    () => callback([]),
+  );
+};
+
+// ---- Task Comments subcollection (additive alongside /comments) ----
+
+export const addTaskCommentSubcollection = async (
+  taskId: string,
+  comment: Omit<TaskComment, "id" | "createdAt" | "updatedAt">,
+): Promise<string> => {
+  const ref = doc(collection(db, "tasks", taskId, "comments"));
+  const now = serverTimestamp();
+  await setDoc(ref, {
+    ...comment,
+    taskId,
+    createdAt: now,
+    updatedAt: now,
+    isEdited: false,
+  });
+  return ref.id;
+};
+
+export const updateTaskCommentSubcollection = async (
+  taskId: string,
+  commentId: string,
+  text: string,
+): Promise<void> => {
+  await updateDoc(doc(db, "tasks", taskId, "comments", commentId), {
+    text,
+    isEdited: true,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const deleteTaskCommentSubcollection = async (
+  taskId: string,
+  commentId: string,
+): Promise<void> => {
+  await deleteDoc(doc(db, "tasks", taskId, "comments", commentId));
+};
+
+export const subscribeToTaskCommentsSubcollection = (
+  taskId: string,
+  callback: (comments: TaskComment[]) => void,
+): Unsubscribe => {
+  const q = query(
+    collection(db, "tasks", taskId, "comments"),
+    orderBy("createdAt", "asc"),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const comments = snap.docs.map((d) => ({
+        ...d.data(),
+        id: d.id,
+        createdAt: toDate(d.data().createdAt),
+        updatedAt: toDate(d.data().updatedAt),
+      })) as unknown as TaskComment[];
+      callback(comments);
+    },
+    () => callback([]),
+  );
 };

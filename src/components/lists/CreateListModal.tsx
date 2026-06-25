@@ -9,8 +9,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useTeamStore } from "@/stores/teamStore";
 import { ListType } from "@/types";
 import { canCreateMoreLists } from "@/lib/permissions";
-import { Lock, Users, ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Users, ChevronDown } from "lucide-react";
 
 interface CreateListModalProps {
   isOpen: boolean;
@@ -40,28 +39,28 @@ export default function CreateListModal({
 }: CreateListModalProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [type, setType] = useState<ListType>("personal");
+  const [type, setType] = useState<ListType>("shared");
   const [color, setColor] = useState(LIST_COLORS[0].value);
   const [icon, setIcon] = useState(LIST_ICONS[0]);
   const [showIconPicker, setShowIconPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
-  const [selectedTeamId, setSelectedTeamId] = useState<string | "personal">(
-    defaultTeamId || "personal",
+  const [selectedTeamId, setSelectedTeamId] = useState<string>(
+    defaultTeamId || "",
   );
 
   const { user } = useAuthStore();
   const { createList, getUserLists } = useListStore();
-  const { teams, getPersonalTeam } = useTeamStore();
+  const { teams } = useTeamStore();
 
   const handleClose = () => {
     setName("");
     setDescription("");
-    setType("personal");
+    setType("shared");
     setColor(LIST_COLORS[0].value);
     setIcon(LIST_ICONS[0]);
     setShowIconPicker(false);
-    setSelectedTeamId(defaultTeamId || "personal");
+    setSelectedTeamId(defaultTeamId || "");
     onClose();
   };
 
@@ -78,20 +77,14 @@ export default function CreateListModal({
 
     setIsSubmitting(true);
     try {
-      const personalTeam = getPersonalTeam(user.id);
-      const resolvedTeamId =
-        selectedTeamId === "personal"
-          ? (personalTeam?.id ?? undefined)
-          : selectedTeamId;
-      const resolvedType: ListType =
-        selectedTeamId === "personal" ? "personal" : "team";
+      const resolvedType: ListType = selectedTeamId ? "team" : "shared";
 
       await createList(
         name.trim(),
         user.id,
         resolvedType,
         description.trim() || undefined,
-        resolvedTeamId,
+        selectedTeamId || undefined,
       );
       handleClose();
     } catch {
@@ -133,7 +126,7 @@ export default function CreateListModal({
                   {name || "Nueva lista"}
                 </p>
                 <p className="text-white/70 text-xs mt-0.5">
-                  {type === "personal" ? "🔒 Personal" : "👥 Compartida"}
+                  {selectedTeamId ? "� Equipo" : "👥 Compartida"}
                   {description
                     ? ` · ${description.slice(0, 28)}${description.length > 28 ? "…" : ""}`
                     : ""}
@@ -306,81 +299,8 @@ export default function CreateListModal({
                 </div>
               </div>
 
-              {/* Visibility */}
-              <div>
-                <label
-                  className="block text-xs font-semibold uppercase tracking-wide mb-2"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  Visibilidad
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(["personal", "shared"] as const).map((t) => (
-                    <button
-                      key={t}
-                      type="button"
-                      onClick={() => setType(t)}
-                      className="flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all duration-150 text-left"
-                      style={
-                        type === t
-                          ? {
-                              borderColor: color,
-                              backgroundColor: color + "0d",
-                            }
-                          : {
-                              borderColor: "var(--border-color)",
-                              backgroundColor: "var(--bg-secondary)",
-                            }
-                      }
-                    >
-                      <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{
-                          backgroundColor:
-                            type === t ? color + "22" : "var(--bg-card)",
-                        }}
-                      >
-                        {t === "personal" ? (
-                          <Lock
-                            size={16}
-                            style={{
-                              color:
-                                type === t ? color : "var(--text-tertiary)",
-                            }}
-                          />
-                        ) : (
-                          <Users
-                            size={16}
-                            style={{
-                              color:
-                                type === t ? color : "var(--text-tertiary)",
-                            }}
-                          />
-                        )}
-                      </div>
-                      <div>
-                        <p
-                          className="text-sm font-semibold"
-                          style={{
-                            color: type === t ? color : "var(--text-primary)",
-                          }}
-                        >
-                          {t === "personal" ? "Personal" : "Compartida"}
-                        </p>
-                        <p
-                          className="text-[11px]"
-                          style={{ color: "var(--text-tertiary)" }}
-                        >
-                          {t === "personal" ? "Solo tú" : "Con colaboradores"}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Team selector */}
-              {user && teams.filter((t) => !t.isPersonal).length > 0 && (
+              {user && teams.length > 0 && (
                 <div>
                   <label
                     className="block text-xs font-semibold uppercase tracking-wide mb-1.5"
@@ -399,14 +319,12 @@ export default function CreateListModal({
                         color: "var(--text-primary)",
                       }}
                     >
-                      <option value="personal">👤 Personal (privada)</option>
-                      {teams
-                        .filter((t) => !t.isPersonal)
-                        .map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.icon || "👥"} {t.name}
-                          </option>
-                        ))}
+                      <option value="">— Sin equipo</option>
+                      {teams.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.icon || "👥"} {t.name}
+                        </option>
+                      ))}
                     </select>
                     <ChevronDown
                       size={14}

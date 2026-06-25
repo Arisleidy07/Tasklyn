@@ -1,3 +1,7 @@
+/**
+ * @deprecated teamActivity.ts is superseded by logTeamActivity in firestore.ts.
+ * This file only re-exports for backward compatibility with activityStore.
+ */
 import {
   collection,
   query,
@@ -5,8 +9,6 @@ import {
   orderBy,
   limit,
   onSnapshot,
-  addDoc,
-  serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
@@ -14,24 +16,29 @@ import type { ActivityItem } from "@/stores/activityStore";
 
 const ACTIVITY_COLLECTION = "activity";
 
+/**
+ * @deprecated reads from the old flat `activity` collection.
+ * New code should use subscribeToTeamActivity from firestore.ts
+ * which reads teams/{teamId}/activity subcollection.
+ */
 export function subscribeToTeamActivity(
   teamId: string,
-  callback: (activities: ActivityItem[]) => void
+  callback: (activities: ActivityItem[]) => void,
 ) {
   const q = query(
     collection(db, ACTIVITY_COLLECTION),
     where("teamId", "==", teamId),
     orderBy("timestamp", "desc"),
-    limit(50)
+    limit(50),
   );
 
   return onSnapshot(
     q,
     (snapshot) => {
-      const activities = snapshot.docs.map((doc) => {
-        const data = doc.data();
+      const activities = snapshot.docs.map((actDoc) => {
+        const data = actDoc.data();
         return {
-          id: doc.id,
+          id: actDoc.id,
           ...data,
           timestamp:
             data.timestamp instanceof Timestamp
@@ -44,6 +51,6 @@ export function subscribeToTeamActivity(
     (error) => {
       console.error("[TeamActivity] Subscribe error:", error);
       callback([]);
-    }
+    },
   );
 }

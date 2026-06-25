@@ -13,27 +13,9 @@ service cloud.firestore {
 
     // ── Team helpers ──────────────────────────────────────────────────────────
 
-    // Check team owner by looking up the team document (safe cross-collection)
-    function isTeamOwner(teamId) {
-      let t = get(/databases/$(database)/documents/teams/$(teamId)).data;
-      return t != null && (
-        (t.owner != null    && t.owner    == uid()) ||
-        (t.ownerId != null  && t.ownerId  == uid()) ||
-        (t.createdBy != null && t.createdBy == uid())
-      );
-    }
-
-    // Check team membership (memberIds array)
-    function isTeamMember(teamId) {
-      let t = get(/databases/$(database)/documents/teams/$(teamId)).data;
-      return t != null && t.memberIds != null && uid() in t.memberIds;
-    }
-
-    // On the team document itself (no get() needed — resource is the team)
+    // Used on the team document itself (no extra get() needed)
     function isTeamOwnerDirect() {
-      return (resource.data.owner    != null && resource.data.owner    == uid()) ||
-             (resource.data.ownerId  != null && resource.data.ownerId  == uid()) ||
-             (resource.data.createdBy != null && resource.data.createdBy == uid());
+      return resource.data.owner != null && resource.data.owner == uid();
     }
 
     function isTeamMemberDirect() {
@@ -41,17 +23,23 @@ service cloud.firestore {
     }
 
     function willBeTeamOwner() {
-      return (request.resource.data.owner    != null && request.resource.data.owner    == uid()) ||
-             (request.resource.data.ownerId  != null && request.resource.data.ownerId  == uid()) ||
-             (request.resource.data.createdBy != null && request.resource.data.createdBy == uid());
+      return request.resource.data.owner != null && request.resource.data.owner == uid();
     }
 
-    function isJoiningTeam() {
-      return isAuth() &&
-        resource.data.memberIds != null &&
-        !(uid() in resource.data.memberIds) &&
-        request.resource.data.memberIds != null &&
-        uid() in request.resource.data.memberIds;
+    // Cross-collection lookup — used only in subcollections
+    function isTeamOwnerOf(teamId) {
+      let t = get(/databases/$(database)/documents/teams/$(teamId)).data;
+      return t != null && t.owner != null && t.owner == uid();
+    }
+
+    function isTeamMemberOf(teamId) {
+      let t = get(/databases/$(database)/documents/teams/$(teamId)).data;
+      return t != null && t.memberIds != null && uid() in t.memberIds;
+    }
+
+    function isTeamAdminOrOwnerOf(teamId) {
+      let m = get(/databases/$(database)/documents/teams/$(teamId)/members/$(uid())).data;
+      return m != null && (m.role == "owner" || m.role == "admin");
     }
 
     // ── List helpers ──────────────────────────────────────────────────────────
@@ -60,28 +48,16 @@ service cloud.firestore {
       return resource.data.owner != null && resource.data.owner == uid();
     }
 
-    function willBeListOwner() {
-      return request.resource.data.owner != null && request.resource.data.owner == uid();
-    }
-
     function isListMember() {
       return resource.data.memberIds != null && uid() in resource.data.memberIds;
     }
 
-    function willBeListMember() {
-      return request.resource.data.memberIds != null && uid() in request.resource.data.memberIds;
-    }
-
-    function isJoiningList() {
+    function isAcceptingListInvitation() {
       return isAuth() &&
         !isListMember() &&
         request.resource.data.memberIds != null &&
-        uid() in request.resource.data.memberIds;
-    }
-
-    // Is the current user the team owner of the list's team?
-    function isListTeamOwner() {
-      return resource.data.teamId != null && isTeamOwner(resource.data.teamId);
+        uid() in request.resource.data.memberIds &&
+        request.resource.data.members.size() == resource.data.members.size() + 1;
     }
 
     // ── Collections ───────────────────────────────────────────────────────────
@@ -94,82 +70,146 @@ service cloud.firestore {
 
     match /lists/{listId} {
       allow read: if isAuth();
-
       allow create: if isAuth();
-
-      allow update: if isAuth();
-
-      // List owner OR team owner/member can delete (for cascade delete)
-      // Note: isListTeamOwner already checks team ownership via get()
-      allow delete: if isAuth();
-    }
-
-    match /tasks/{taskId} {
-      allow read, create, update: if isAuth();
-
-      // Task delete: creator, list owner, or team owner
-      // Simplified for cascade delete operations
+      allow update: if isAuth() && (
+        isListOwner() ||
+        isListMember() ||
+        isAcceptingListInvitation() ||
+        (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
+      );
       allow delete: if isAuth() && (
-        resource.data.createdBy == uid() ||
-        (resource.data.listId != null &&
-          get(/databases/$(database)/documents/lists/$(resource.data.listId)).data.owner == uid()) ||
-        // Team owner via direct teamId lookup
-        (resource.data.teamId != null && isTeamOwner(resource.data.teamId))
+        isListOwner() ||
+        (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
       );
     }
 
+    match /tasks/{taskId} {
+      allow read: if isAuth();
+      allow create: if isAuth();
+      allow update: if isAuth() && (
+        resource.data.createdBy == uid() ||
+        resource.data.assignedTo == uid() ||
+        (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
+      );
+      // Hard delete only allowed as part of team/list cascade deletion by owner
+      allow delete: if isAuth() && (
+        resource.data.createdBy == uid() ||
+        (resource.data.teamId != null && isTeamOwnerOf(resource.data.teamId))
+      );
+
+      // Task history subcollection
+      match /history/{entryId} {
+        allow read: if isAuth();
+        allow create: if isAuth();
+        allow update, delete: if false;
+      }
+
+      // Task comments subcollection
+      match /comments/{commentId} {
+        allow read: if isAuth();
+        allow create: if isAuth() && request.resource.data.userId == uid();
+        allow update: if isAuth() && resource.data.userId == uid();
+        allow delete: if isAuth() && resource.data.userId == uid();
+      }
+    }
+
     match /invitations/{invitationId} {
+      // Public read needed for link-based invitations (no account required)
       allow read: if true;
       allow create: if isAuth();
-      allow update, delete: if isAuth();
+      allow update: if isAuth();
+      allow delete: if isAuth();
     }
 
     match /teams/{teamId} {
       allow read: if isAuth() && (isTeamOwnerDirect() || isTeamMemberDirect());
-
       allow create: if isAuth() && willBeTeamOwner();
-
       allow update: if isAuth() && (
         isTeamOwnerDirect() ||
-        isJoiningTeam() ||
         isTeamMemberDirect()
       );
+      // ONLY the owner can delete the team
+      allow delete: if isAuth() && resource.data.owner == uid();
 
-      // Any authenticated user can delete teams
-      allow delete: if isAuth();
+      // Members subcollection
+      match /members/{memberId} {
+        allow read: if isAuth() && isTeamMemberOf(teamId);
 
-      // Activity subcollection
+        // Only owner or admin can add new members
+        allow create: if isAuth() && isTeamAdminOrOwnerOf(teamId);
+
+        // Owner can update anyone.
+        // Admin can update members/admins but NEVER the owner doc,
+        // and NEVER promote anyone to owner.
+        allow update: if isAuth() && (
+          isTeamOwnerOf(teamId) ||
+          (
+            isTeamAdminOrOwnerOf(teamId) &&
+            memberId != get(/databases/$(database)/documents/teams/$(teamId)).data.owner &&
+            request.resource.data.role != "owner"
+          )
+        );
+
+        // Owner can delete anyone (except self — enforced in app layer).
+        // Admin can remove members only (not owner, not other admins).
+        // Member can remove themselves (leave team).
+        allow delete: if isAuth() && (
+          isTeamOwnerOf(teamId) ||
+          (
+            isTeamAdminOrOwnerOf(teamId) &&
+            memberId != get(/databases/$(database)/documents/teams/$(teamId)).data.owner &&
+            resource.data.role == "member"
+          ) ||
+          uid() == memberId
+        );
+      }
+
+      // Activity subcollection — immutable log
       match /activity/{entryId} {
-        allow read: if isAuth() && isTeamMember(teamId);
+        allow read: if isAuth() && isTeamMemberOf(teamId);
         allow create: if isAuth() &&
-          isTeamMember(teamId) &&
+          isTeamMemberOf(teamId) &&
           request.resource.data.userId == uid();
         allow update: if false;
-        // Team owner can delete for cascade
-        allow delete: if isAuth() && isTeamOwner(teamId);
+        allow delete: if isAuth() && isTeamOwnerOf(teamId);
+      }
+
+      // Scores subcollection
+      match /scores/{userId} {
+        allow read: if isAuth() && isTeamMemberOf(teamId);
+        allow create, update: if isAuth() && (
+          uid() == userId ||
+          isTeamOwnerOf(teamId)
+        );
+        allow delete: if isAuth() && isTeamOwnerOf(teamId);
       }
     }
 
     match /goals/{goalId} {
       allow read: if isAuth();
       allow create: if isAuth() && (
-        request.resource.data.userId == uid() ||
-        (request.resource.data.teamId != null && isTeamOwner(request.resource.data.teamId))
+        request.resource.data.createdBy == uid() ||
+        (request.resource.data.teamId != null && isTeamAdminOrOwnerOf(request.resource.data.teamId))
       );
       allow update: if isAuth() && (
-        resource.data.userId == uid() ||
-        (resource.data.teamId != null && isTeamOwner(resource.data.teamId))
+        resource.data.createdBy == uid() ||
+        (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
       );
       allow delete: if isAuth() && (
-        resource.data.userId == uid() ||
-        (resource.data.teamId != null && isTeamOwner(resource.data.teamId))
+        resource.data.createdBy == uid() ||
+        (resource.data.teamId != null && isTeamOwnerOf(resource.data.teamId))
       );
     }
 
     match /achievements/{achievementId} {
       allow read: if isAuth();
-      allow create, update, delete: if isAuth() && (
-        resource.data.teamId != null && isTeamOwner(resource.data.teamId)
+      allow create: if isAuth() && (
+        request.resource.data.userId == uid() ||
+        (request.resource.data.teamId != null && isTeamAdminOrOwnerOf(request.resource.data.teamId))
+      );
+      allow update, delete: if isAuth() && (
+        resource.data.userId == uid() ||
+        (resource.data.teamId != null && isTeamOwnerOf(resource.data.teamId))
       );
     }
 
@@ -194,67 +234,48 @@ service cloud.firestore {
     }
 
     match /notifications/{notificationId} {
-      allow read: if isAuth() && (
-        resource.data.userId == uid() ||
-        request.resource.data.userId == uid()
-      );
+      allow read: if isAuth() && resource.data.userId == uid();
       allow create: if isAuth();
-      allow update: if isAuth() && (
-        resource.data.userId == uid() ||
-        request.resource.data.userId == uid()
-      );
-      // User can delete own, team owner can delete team notifications (cascade)
-      allow delete: if isAuth() && (
-        resource.data.userId == uid() ||
-        (resource.data.teamId != null && isTeamOwner(resource.data.teamId))
-      );
+      allow update: if isAuth() && resource.data.userId == uid();
+      allow delete: if isAuth() && resource.data.userId == uid();
     }
 
+    // Legacy root comments collection (new comments go to tasks/{taskId}/comments)
     match /comments/{commentId} {
       allow read: if isAuth();
       allow create: if isAuth() && request.resource.data.authorId == uid();
       allow update: if isAuth() && resource.data.authorId == uid();
-      // Author OR team owner can delete
-      // Simplified for cascade delete - check teamId directly if available
-      allow delete: if isAuth() && (
-        resource.data.authorId == uid() ||
-        (resource.data.teamId != null && isTeamOwner(resource.data.teamId)) ||
-        // Fallback: check via list lookup (only if teamId not on comment)
-        (resource.data.teamId == null && resource.data.listId != null &&
-          get(/databases/$(database)/documents/lists/$(resource.data.listId)).data.teamId != null &&
-          isTeamOwner(
-            get(/databases/$(database)/documents/lists/$(resource.data.listId)).data.teamId
-          )
-        )
-      );
+      allow delete: if isAuth() && resource.data.authorId == uid();
     }
 
     // Background images library
     match /backgroundImages/{imageId} {
       allow read: if isAuth();
       allow create: if isAuth() && request.resource.data.uploadedBy == uid();
-      allow delete: if isAuth() && resource.data.uploadedBy == uid();
-      // Allow update for category changes (drag and drop between categories)
-      // and order changes (reordering within categories)
-      // Any authenticated user can update category and order for drag-and-drop
       allow update: if isAuth() && (
         resource.data.uploadedBy == uid() ||
-        (request.resource.data.uploadedBy == resource.data.uploadedBy)
+        request.resource.data.uploadedBy == resource.data.uploadedBy
       );
+      allow delete: if isAuth() && resource.data.uploadedBy == uid();
     }
 
-    // Background image categories (user-defined dynamic categories)
     match /bgCategories/{categoryId} {
       allow read: if isAuth();
-      allow create: if isAuth();
-      allow update: if isAuth();
-      allow delete: if isAuth();
+      allow create, update, delete: if isAuth();
+    }
+
+    // Shared backgrounds library (Ítem 9)
+    match /backgrounds/{bgId} {
+      allow read: if isAuth();
+      allow create: if isAuth() && request.resource.data.uploadedBy == uid();
+      allow update: if isAuth() && resource.data.uploadedBy == uid();
+      allow delete: if isAuth() && resource.data.uploadedBy == uid();
     }
 
     match /clients/{clientId} {
       allow read: if isAuth() && (
         resource.data.ownerId == uid() ||
-        (resource.data.teamId != null && isTeamMember(resource.data.teamId))
+        (resource.data.teamId != null && isTeamMemberOf(resource.data.teamId))
       );
       allow create: if isAuth() && request.resource.data.ownerId == uid();
       allow update: if isAuth() && resource.data.ownerId == uid();

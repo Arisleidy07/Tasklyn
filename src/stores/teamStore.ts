@@ -7,6 +7,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import type { Team, TeamMember, Goal, Achievement } from "@/types";
 import {
+  type SubcollectionTeamMember,
   createTeam,
   getTeam,
   updateTeam,
@@ -15,6 +16,8 @@ import {
   removeTeamMember,
   updateTeamMemberRole,
   subscribeToUserTeams,
+  subscribeToTeamMembers,
+  migrateTeamMembersToSubcollection,
   getUserTeams,
   createGoal,
   updateGoal,
@@ -31,6 +34,10 @@ interface TeamState {
   loading: boolean;
   error: string | null;
 
+  // Subcollection members: teamId -> SubcollectionTeamMember[]
+  teamMembers: Record<string, SubcollectionTeamMember[]>;
+  teamMembersLoading: Record<string, boolean>;
+
   // Goals
   goals: Goal[];
   goalsLoading: boolean;
@@ -43,6 +50,9 @@ interface TeamState {
   subscribeToTeams: (userId: string) => void;
   unsubscribeFromTeams: () => void;
   refreshTeams: (userId: string) => Promise<void>;
+  subscribeToMembersForTeam: (teamId: string) => void;
+  unsubscribeFromMembersForTeam: (teamId: string) => void;
+  migrateMembers: (teamId: string) => Promise<void>;
   createTeam: (
     team: Omit<
       Team,
@@ -82,18 +92,20 @@ interface TeamState {
 
   // Utility
   getTeamById: (teamId: string) => Team | null;
-  getPersonalTeam: (userId: string) => Team | null;
+  getTeamMembers: (teamId: string) => SubcollectionTeamMember[];
   getUserRoleInTeam: (
     teamId: string,
     userId: string,
   ) => "owner" | "admin" | "member" | null;
   isTeamOwner: (teamId: string, userId: string) => boolean;
   isTeamAdmin: (teamId: string, userId: string) => boolean;
+  isTeamMember: (teamId: string, userId: string) => boolean;
 }
 
 let teamsUnsubscribe: (() => void) | null = null;
 let goalsUnsubscribe: (() => void) | null = null;
 let achievementsUnsubscribe: (() => void) | null = null;
+const membersUnsubscribes: Record<string, () => void> = {};
 
 export const useTeamStore = create<TeamState>()(
   devtools(
@@ -103,6 +115,8 @@ export const useTeamStore = create<TeamState>()(
       currentTeam: null,
       loading: false,
       error: null,
+      teamMembers: {},
+      teamMembersLoading: {},
       goals: [],
       goalsLoading: false,
       achievements: [],
@@ -115,8 +129,15 @@ export const useTeamStore = create<TeamState>()(
 
         teamsUnsubscribe?.(); // Cleanup previous subscription
 
-        teamsUnsubscribe = subscribeToUserTeams(userId, (teams) => {
-          console.log("📦 Teams received:", teams.length);
+        teamsUnsubscribe = subscribeToUserTeams(userId, (rawTeams) => {
+          console.log("📦 Teams received:", rawTeams.length);
+          // Final dedup safety net in the store
+          const seen = new Set<string>();
+          const teams = rawTeams.filter((t) => {
+            if (seen.has(t.id)) return false;
+            seen.add(t.id);
+            return true;
+          });
           set({ teams, loading: false });
         });
       },
@@ -124,7 +145,51 @@ export const useTeamStore = create<TeamState>()(
       unsubscribeFromTeams: () => {
         teamsUnsubscribe?.();
         teamsUnsubscribe = null;
-        set({ teams: [], currentTeam: null, loading: false });
+        // Also unsubscribe from all member subscriptions
+        Object.values(membersUnsubscribes).forEach((unsub) => unsub());
+        Object.keys(membersUnsubscribes).forEach(
+          (k) => delete membersUnsubscribes[k],
+        );
+        set({ teams: [], currentTeam: null, loading: false, teamMembers: {} });
+      },
+
+      subscribeToMembersForTeam: (teamId: string) => {
+        if (membersUnsubscribes[teamId]) return; // Already subscribed
+        set((state) => ({
+          teamMembersLoading: { ...state.teamMembersLoading, [teamId]: true },
+        }));
+        membersUnsubscribes[teamId] = subscribeToTeamMembers(
+          teamId,
+          (members) => {
+            set((state) => ({
+              teamMembers: { ...state.teamMembers, [teamId]: members },
+              teamMembersLoading: {
+                ...state.teamMembersLoading,
+                [teamId]: false,
+              },
+            }));
+          },
+        );
+      },
+
+      unsubscribeFromMembersForTeam: (teamId: string) => {
+        membersUnsubscribes[teamId]?.();
+        delete membersUnsubscribes[teamId];
+        set((state) => {
+          const next = { ...state.teamMembers };
+          delete next[teamId];
+          return { teamMembers: next };
+        });
+      },
+
+      migrateMembers: async (teamId: string) => {
+        try {
+          await migrateTeamMembersToSubcollection(teamId);
+          console.log("✅ Migration complete for team:", teamId);
+        } catch (error) {
+          console.error("Migration failed:", error);
+          throw error;
+        }
       },
 
       refreshTeams: async (userId: string) => {
@@ -326,12 +391,18 @@ export const useTeamStore = create<TeamState>()(
         return teams.find((team) => team.id === teamId) || null;
       },
 
-      getPersonalTeam: (userId: string) => {
-        const { teams } = get();
-        return teams.find((t) => t.isPersonal && t.owner === userId) || null;
+      getTeamMembers: (teamId: string) => {
+        return get().teamMembers[teamId] || [];
       },
 
       getUserRoleInTeam: (teamId: string, userId: string) => {
+        // Primary: subcollection (real-time, authoritative)
+        const subcollectionMembers = get().teamMembers[teamId];
+        if (subcollectionMembers) {
+          const m = subcollectionMembers.find((m) => m.userId === userId);
+          if (m) return m.role;
+        }
+        // Fallback: legacy members array (during migration)
         const team = get().getTeamById(teamId);
         if (!team) return null;
         const member = team.members.find((m) => m.userId === userId);
@@ -339,12 +410,19 @@ export const useTeamStore = create<TeamState>()(
       },
 
       isTeamOwner: (teamId: string, userId: string) => {
+        // Also check the team.owner field directly (most reliable)
+        const team = get().getTeamById(teamId);
+        if (team && team.owner === userId) return true;
         return get().getUserRoleInTeam(teamId, userId) === "owner";
       },
 
       isTeamAdmin: (teamId: string, userId: string) => {
         const role = get().getUserRoleInTeam(teamId, userId);
         return role === "owner" || role === "admin";
+      },
+
+      isTeamMember: (teamId: string, userId: string) => {
+        return get().getUserRoleInTeam(teamId, userId) !== null;
       },
     }),
     { name: "team-store" },

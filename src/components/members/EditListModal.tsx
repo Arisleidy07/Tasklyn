@@ -477,6 +477,23 @@ export default function EditListModal({
   }, [isOpen, list, defaultTab]);
 
   // Handlers
+  const handleSelectBackground = async (url: string) => {
+    const newUrl = backgroundImage === url ? "" : url;
+    setBackgroundImage(newUrl);
+    try {
+      await updateList(list.id, {
+        backgroundImage: newUrl || undefined,
+      });
+      setSaved(true);
+      setActiveTab("details");
+      setTimeout(() => {
+        if (isMountedRef.current) setSaved(false);
+      }, 2000);
+    } catch (e) {
+      console.error("Error applying background:", e);
+    }
+  };
+
   const handleSave = async () => {
     if (!name.trim()) return;
     setIsSaving(true);
@@ -498,6 +515,10 @@ export default function EditListModal({
       }
       await updateList(list.id, updates);
       setSaved(true);
+      // If saving from backgrounds tab, go back to details — keep modal open
+      if (activeTab === "backgrounds") {
+        setActiveTab("details");
+      }
       setTimeout(() => {
         if (isMountedRef.current) {
           setSaved(false);
@@ -1166,11 +1187,7 @@ export default function EditListModal({
                                             }
                                             category={category.name}
                                             onSelect={(url) =>
-                                              setBackgroundImage(
-                                                backgroundImage === img.url
-                                                  ? ""
-                                                  : url,
-                                              )
+                                              handleSelectBackground(url)
                                             }
                                             onDownload={handleDownloadImage}
                                             onDelete={setDeleteTarget}
@@ -1236,7 +1253,9 @@ export default function EditListModal({
                   ? "Guardando..."
                   : saved
                     ? "Guardado ✓"
-                    : "Guardar cambios"}
+                    : activeTab === "backgrounds"
+                      ? "Aplicar fondo"
+                      : "Guardar cambios"}
               </button>
             </div>
 
@@ -1247,7 +1266,7 @@ export default function EditListModal({
               defaultCategory={uploadModalCategory}
               availableCategories={categories.map((c) => c.name)}
               user={user!}
-              onUploaded={(url) => setBackgroundImage(url)}
+              onUploaded={(url) => handleSelectBackground(url)}
             />
 
             {/* Delete Image Confirmation */}

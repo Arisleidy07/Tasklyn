@@ -44,7 +44,6 @@ import {
   Medal,
   Zap,
   Target,
-  Lock,
   Copy,
   Mail,
   Calendar,
@@ -55,9 +54,11 @@ import {
   getUser,
   getUserByEmail,
   subscribeToTeamActivity,
+  createTeamInvitation,
   type TeamActivityEntry,
 } from "@/lib/firestore";
 import type { User as UserType } from "@/types";
+import type { SubcollectionTeamMember } from "@/lib/firestore";
 
 interface MemberProfile extends UserType {
   role: "owner" | "admin" | "member";
@@ -101,6 +102,10 @@ export default function TeamDetailPage() {
   const { user } = useAuthStore();
   const {
     getTeamById,
+    getTeamMembers,
+    subscribeToMembersForTeam,
+    unsubscribeFromMembersForTeam,
+    migrateMembers,
     removeTeamMember,
     updateTeamMemberRole,
     updateTeam,
@@ -130,14 +135,38 @@ export default function TeamDetailPage() {
   const [showEditModal, setShowEditModal] = useState(false);
 
   const team = getTeamById(teamId);
+  const subcollectionMembers = getTeamMembers(teamId);
 
-  // Load member profiles
+  // Subscribe to subcollection members + trigger migration for existing teams
+  useEffect(() => {
+    if (!teamId) return;
+    subscribeToMembersForTeam(teamId);
+    // Migrate legacy members[] to subcollection (idempotent, safe)
+    migrateMembers(teamId).catch(() => {
+      // Migration failure is non-fatal — legacy fallback still works
+    });
+    return () => unsubscribeFromMembersForTeam(teamId);
+  }, [teamId]);
+
+  // Derive member list: prefer subcollection, fall back to legacy array
+  const activeMembers: Array<{
+    userId: string;
+    role: "owner" | "admin" | "member";
+    joinedAt: string;
+    name?: string;
+    photoURL?: string;
+  }> =
+    subcollectionMembers.length > 0
+      ? subcollectionMembers
+      : team?.members || [];
+
+  // Load member profiles (enriched from user docs + task stats)
   useEffect(() => {
     if (!team) return;
     setNewTeamName(team.name);
     setLoadingProfiles(true);
     Promise.all(
-      team.members.map(async (member) => {
+      activeMembers.map(async (member) => {
         const profile = await getUser(member.userId);
         const memberTasks = tasks.filter(
           (t) =>
@@ -145,9 +174,16 @@ export default function TeamDetailPage() {
         );
         return {
           id: member.userId,
-          name: profile?.name || "Usuario",
-          email: profile?.email || "",
-          photoURL: profile?.photoURL || "",
+          name:
+            (member as SubcollectionTeamMember).name ||
+            profile?.name ||
+            "Usuario",
+          email:
+            (member as SubcollectionTeamMember).email || profile?.email || "",
+          photoURL:
+            (member as SubcollectionTeamMember).photoURL ||
+            profile?.photoURL ||
+            "",
           plan: profile?.plan || "free",
           createdAt: profile?.createdAt || "",
           role: member.role,
@@ -161,7 +197,7 @@ export default function TeamDetailPage() {
       setMemberProfiles(profiles);
       setLoadingProfiles(false);
     });
-  }, [team?.id, tasks.length]);
+  }, [team?.id, subcollectionMembers.length, tasks.length]);
 
   // Subscribe to team activity
   useEffect(() => {
@@ -188,8 +224,11 @@ export default function TeamDetailPage() {
     );
   }
 
-  const userRole = (team.members.find((m) => m.userId === user.id)?.role ||
-    "member") as "owner" | "admin" | "member";
+  const userRole = (activeMembers.find((m) => m.userId === user.id)?.role ||
+    (team.owner === user.id ? "owner" : "member")) as
+    | "owner"
+    | "admin"
+    | "member";
   const isOwnerOrAdmin = userRole === "owner" || userRole === "admin";
   const teamLists = [...lists.filter((l) => l.teamId === teamId)].sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0),
@@ -247,42 +286,38 @@ export default function TeamDetailPage() {
   };
 
   const handleCopyInviteLink = async () => {
-    const link = `${window.location.origin}/invite/${teamId}`;
-
+    if (!user) return;
     try {
-      // Try modern clipboard API first
+      // Create a real invitation with a token
+      const { v4: uuidv4 } = await import("uuid");
+      const token = uuidv4();
+      await createTeamInvitation({
+        teamId,
+        invitedBy: user.id,
+        defaultRole: "member",
+        token,
+        expiresInDays: 7,
+      });
+      const link = `${window.location.origin}/invite/team/${token}`;
+
       if (navigator.clipboard && navigator.clipboard.writeText) {
         await navigator.clipboard.writeText(link);
-        setCopiedLink(true);
-        setTimeout(() => setCopiedLink(false), 2000);
-        return;
-      }
-
-      // Fallback: use execCommand for older browsers
-      const textArea = document.createElement("textarea");
-      textArea.value = link;
-      textArea.style.position = "fixed";
-      textArea.style.left = "-999999px";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-
-      const successful = document.execCommand("copy");
-      document.body.removeChild(textArea);
-
-      if (successful) {
-        setCopiedLink(true);
-        setTimeout(() => setCopiedLink(false), 2000);
       } else {
-        console.error("Copy failed");
-        alert(
-          "No se pudo copiar el enlace. Por favor cópialo manualmente: " + link,
-        );
+        const ta = document.createElement("textarea");
+        ta.value = link;
+        ta.style.position = "fixed";
+        ta.style.left = "-999999px";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
       }
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
     } catch (err) {
-      console.error("Error copying to clipboard:", err);
-      // Show the link to user so they can copy it manually
-      alert("No se pudo copiar automáticamente. Enlace: " + link);
+      console.error("Error creating invite link:", err);
+      alert("No se pudo generar el enlace de invitación.");
     }
   };
 
@@ -293,16 +328,34 @@ export default function TeamDetailPage() {
     setInviteError(null);
     try {
       const foundUser = await getUserByEmail(inviteEmail.trim().toLowerCase());
-      if (!foundUser) {
-        setInviteError("No encontramos ningún usuario con ese correo.");
-        return;
-      }
-      const alreadyMember = team.members.some((m) => m.userId === foundUser.id);
+      const alreadyMember = activeMembers.some(
+        (m) => m.userId === foundUser?.id,
+      );
       if (alreadyMember) {
         setInviteError("Este usuario ya es miembro del equipo.");
         return;
       }
-      await addTeamMember(teamId, foundUser.id, inviteRole);
+      // Create invitation document — user must accept, no direct add
+      const { v4: uuidv4 } = await import("uuid");
+      const token = uuidv4();
+      const expiresAt = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000,
+      ).toISOString();
+      const { doc, setDoc, collection } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase");
+      const invRef = doc(collection(db, "invitations"));
+      await setDoc(invRef, {
+        token,
+        type: "team",
+        targetId: teamId,
+        teamId,
+        invitedBy: user.id,
+        invitedEmail: inviteEmail.trim().toLowerCase(),
+        defaultRole: inviteRole,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+        expiresAt,
+      });
       setInviteSuccess(true);
       setInviteEmail("");
       setTimeout(() => {
@@ -388,7 +441,7 @@ export default function TeamDetailPage() {
             </div>
           </div>
         }
-        description={`${team.members.length} miembro${team.members.length !== 1 ? "s" : ""} · ${completionRate}% completado`}
+        description={`${activeMembers.length} miembro${activeMembers.length !== 1 ? "s" : ""} · ${completionRate}% completado`}
         showMenuButton={true}
         actions={
           <div className="flex items-center gap-2">
@@ -399,7 +452,7 @@ export default function TeamDetailPage() {
             >
               <ArrowLeft size={14} className="mr-1.5" /> Equipos
             </Button>
-            {isOwnerOrAdmin && !team.isPersonal && (
+            {isOwnerOrAdmin && (
               <Button
                 size="sm"
                 onClick={() => setShowInviteModal(true)}
@@ -415,10 +468,7 @@ export default function TeamDetailPage() {
       <div className="p-3 sm:p-4 md:p-8 max-w-[1200px] mx-auto pb-24 md:pb-8">
         {/* ── Tab bar ── */}
         <div className="flex items-center gap-0.5 p-1 bg-[var(--bg-secondary)]/80 rounded-xl w-full overflow-x-auto mb-8 scrollbar-none">
-          {TABS.filter(
-            (t) =>
-              !(team.isPersonal && (t.id === "ranking" || t.id === "activity")),
-          ).map((tab) => (
+          {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -625,9 +675,9 @@ export default function TeamDetailPage() {
                     {activityLog.slice(0, 5).map((entry) => (
                       <div key={entry.id} className="flex items-start gap-3">
                         <div className="w-7 h-7 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          {entry.userPhoto ? (
+                          {entry.userPhotoURL ? (
                             <img
-                              src={entry.userPhoto}
+                              src={entry.userPhotoURL}
                               alt={entry.userName}
                               className="w-7 h-7 rounded-full object-cover"
                             />
@@ -645,7 +695,7 @@ export default function TeamDetailPage() {
                             {entry.detail}
                           </p>
                           <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">
-                            {new Date(entry.createdAt).toLocaleString("es-ES", {
+                            {new Date(entry.timestamp).toLocaleString("es-ES", {
                               day: "numeric",
                               month: "short",
                               hour: "2-digit",
@@ -800,7 +850,7 @@ export default function TeamDetailPage() {
           >
             {loadingProfiles ? (
               <div className="space-y-3">
-                {team.members.map((_, i) => (
+                {activeMembers.map((_, i) => (
                   <div
                     key={i}
                     className="h-20 bg-[var(--bg-secondary)] rounded-xl animate-pulse"
@@ -907,7 +957,7 @@ export default function TeamDetailPage() {
               ))
             )}
 
-            {isOwnerOrAdmin && !team.isPersonal && (
+            {isOwnerOrAdmin && (
               <button
                 onClick={() => setShowInviteModal(true)}
                 className="w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed transition-all"
@@ -981,9 +1031,9 @@ export default function TeamDetailPage() {
                           borderColor: "var(--bg-card)",
                         }}
                       />
-                      {entry.userPhoto ? (
+                      {entry.userPhotoURL ? (
                         <img
-                          src={entry.userPhoto}
+                          src={entry.userPhotoURL}
                           alt={entry.userName}
                           className="w-8 h-8 rounded-full object-cover flex-shrink-0"
                         />
@@ -1003,7 +1053,7 @@ export default function TeamDetailPage() {
                           {entry.detail}
                         </p>
                         <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">
-                          {new Date(entry.createdAt).toLocaleString("es-ES", {
+                          {new Date(entry.timestamp).toLocaleString("es-ES", {
                             weekday: "short",
                             day: "numeric",
                             month: "short",
@@ -1054,7 +1104,7 @@ export default function TeamDetailPage() {
             </div>
             {loadingProfiles ? (
               <div className="space-y-3">
-                {team.members.map((_, i) => (
+                {activeMembers.map((_, i) => (
                   <div
                     key={i}
                     className="h-20 bg-[var(--bg-secondary)] rounded-xl animate-pulse"
@@ -1158,12 +1208,7 @@ export default function TeamDetailPage() {
                 <Edit3 size={15} style={{ color: "var(--text-tertiary)" }} />{" "}
                 Nombre del equipo
               </h3>
-              {team.isPersonal ? (
-                <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
-                  <Lock size={13} />
-                  El equipo Personal no puede ser renombrado.
-                </div>
-              ) : isOwnerOrAdmin ? (
+              {isOwnerOrAdmin ? (
                 <div className="flex items-center gap-2">
                   {editingName ? (
                     <>
@@ -1243,7 +1288,7 @@ export default function TeamDetailPage() {
             </div>
 
             {/* Invite link */}
-            {isOwnerOrAdmin && !team.isPersonal && (
+            {isOwnerOrAdmin && (
               <div
                 className="p-5 rounded-2xl border"
                 style={{
@@ -1333,14 +1378,22 @@ export default function TeamDetailPage() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-2">
-                  <span>Aprobación requerida</span>
-                  <span>{team.settings.requireApproval ? "Sí" : "No"}</span>
+                  <span>Members pueden crear listas</span>
+                  <span
+                    style={{
+                      color: team.settings.allowMemberCreateLists
+                        ? "#10b981"
+                        : "var(--text-tertiary)",
+                    }}
+                  >
+                    {team.settings.allowMemberCreateLists ? "Sí" : "No"}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Danger zone */}
-            {userRole === "owner" && !team.isPersonal && (
+            {userRole === "owner" && (
               <div
                 className="p-5 rounded-2xl border"
                 style={{
@@ -1529,7 +1582,7 @@ export default function TeamDetailPage() {
         onConfirm={handleDeleteTeam}
         team={team}
         listCount={teamLists.length}
-        memberCount={team.members.length}
+        memberCount={activeMembers.length}
       />
 
       {/* Edit Team Modal */}

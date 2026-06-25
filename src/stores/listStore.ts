@@ -120,6 +120,10 @@ export const useListStore = create<ListState>((set, get) => ({
   },
 
   updateList: async (id, updates) => {
+    // Optimistic update — reflect immediately, Firestore snapshot will confirm
+    set((state) => ({
+      lists: state.lists.map((l) => (l.id === id ? { ...l, ...updates } : l)),
+    }));
     await updateListInDb(id, updates);
   },
 

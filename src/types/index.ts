@@ -11,7 +11,7 @@ export type MemberRole = "owner" | "admin" | "editor" | "viewer";
 
 export type TaskStatus = "pending" | "completed" | "archived";
 
-export type ListType = "personal" | "shared" | "team";
+export type ListType = "shared" | "team";
 
 // ---- Team Types ----
 export type TeamRole = "owner" | "admin" | "member";
@@ -23,29 +23,101 @@ export interface TeamMember {
   invitedBy?: string;
 }
 
+export interface TeamFolder {
+  id: string;
+  name: string;
+  order: number;
+  color?: string;
+}
+
 export interface Team {
   id: string;
   name: string;
   description?: string;
   owner: string;
-  members: TeamMember[];
+  members: TeamMember[]; // kept for backward compat during migration
+  memberIds?: string[]; // kept for backward compat during migration
   createdAt: string;
   updatedAt: string;
-  isPersonal?: boolean; // true = equipo Personal (no eliminable, privado)
-  color?: string; // hex color for team avatar
-  icon?: string; // emoji icon
-  photoURL?: string; // team photo/image URL
+  color?: string;
+  icon?: string;
+  photoURL?: string;
+  folders?: TeamFolder[];
   settings: {
     allowInvites: boolean;
-    requireApproval: boolean;
+    allowMemberCreateLists: boolean;
   };
-  // Statistics
   stats: {
     totalTasks: number;
     completedTasks: number;
     totalMembers: number;
     totalLists: number;
   };
+}
+
+export type TeamActivityAction =
+  | "task_created"
+  | "task_completed"
+  | "task_updated"
+  | "task_deleted"
+  | "task_assigned"
+  | "task_restored"
+  | "comment_added"
+  | "list_created"
+  | "list_deleted"
+  | "list_moved"
+  | "member_invited"
+  | "member_joined"
+  | "member_removed"
+  | "member_role_changed"
+  | "team_created"
+  | "team_renamed";
+
+export interface TeamActivityEntry {
+  id: string;
+  teamId: string;
+  userId: string;
+  userName: string;
+  userPhotoURL?: string;
+  action: TeamActivityAction;
+  entityType: "task" | "list" | "member" | "team";
+  entityId: string;
+  entityName: string;
+  detail: string;
+  metadata?: Record<string, unknown>;
+  timestamp: string;
+}
+
+export interface TeamScore {
+  userId: string;
+  userName: string;
+  userPhotoURL?: string;
+  xpTotal: number;
+  xpWeek: number;
+  xpMonth: number;
+  level: number;
+  rankPosition: number;
+  tasksCompleted: number;
+  tasksCreated: number;
+  commentsAdded: number;
+  tasksAssigned: number;
+  streak: number;
+  longestStreak: number;
+  lastStreakDate: string;
+  achievementsCount: number;
+  updatedAt: string;
+}
+
+export interface Background {
+  id: string;
+  name: string;
+  category: string;
+  imageUrl: string;
+  uploadedBy: string;
+  width?: number;
+  height?: number;
+  order?: number;
+  createdAt: string;
 }
 
 // ---- Goal Types ----
@@ -107,59 +179,65 @@ export interface TaskHistoryEntry {
   completedByName?: string; // nombre de quien marcó como completada
   performedByTaskName?: string; // nombre de quien realizó físicamente la tarea
   assignedTo?: string; // who was assigned
+  previousValue?: string; // valor anterior al cambio
+  newValue?: string; // valor nuevo tras el cambio
 }
 
-// ---- Enhanced Task ----
+// ---- Task ----
 export interface Task {
   id: string;
   listId: string;
-  teamId?: string; // new field for team tasks
+  teamId?: string;
   title: string;
   description: string;
   status: TaskStatus;
   assignedTo: string | null;
   createdBy: string;
   completedBy: string | null;
-  performedBy?: string | null; // who actually did the work
+  performedBy?: string | null;
   createdAt: string;
   completedAt: string | null;
   history: TaskHistoryEntry[];
+  isDeleted?: boolean;
+  deletedAt?: string | null;
+  deletedBy?: string | null;
   phoneNumbers?: string[];
   location?: string;
   archivedAt?: string | null;
   archivedBy?: string | null;
-  // ---- NEW: Due Date & Reminder & Recurrence ----
-  dueDate?: string | null; // ISO date string (YYYY-MM-DD)
-  dueTime?: string | null; // HH:mm
+  dueDate?: string | null;
+  dueTime?: string | null;
   reminders?: TaskReminder[];
   recurrence?: RecurrenceConfig | null;
-  parentTaskId?: string | null; // for generated recurring tasks
-  completedCount?: number; // how many times this recurring task has been completed
-  // ---- NEW: Team fields ----
+  parentTaskId?: string | null;
+  completedCount?: number;
   priority?: "low" | "normal" | "medium" | "high" | "urgent";
   tags?: string[];
-  estimatedTime?: number; // in minutes
-  actualTime?: number; // in minutes
-  order?: number; // for drag & drop reordering
+  estimatedTime?: number;
+  actualTime?: number;
+  order?: number;
 }
 
-// ---- Enhanced TaskList ----
+// ---- TaskList ----
 export interface TaskList {
   id: string;
   name: string;
-  owner: string; // userId
+  owner: string;
   type: ListType;
-  teamId?: string; // new field for team lists
+  teamId?: string;
+  folderId?: string;
   members: ListMember[];
-  customNames: Record<string, string>; // userId -> custom display name (set by owner, scoped to this list)
+  memberIds?: string[];
+  customNames: Record<string, string>;
   createdAt: string;
   description?: string;
-  // ---- NEW: List settings ----
   color?: string;
   icon?: string;
-  backgroundImage?: string; // URL de imagen de fondo (Unsplash, etc.)
+  backgroundImage?: string;
   isArchived?: boolean;
   archivedAt?: string;
+  isDeleted?: boolean;
+  deletedAt?: string | null;
   order?: number;
 }
 
@@ -219,54 +297,23 @@ export interface ListMember {
   joinedAt: string;
 }
 
-// ---- Task ----
-export interface Task {
-  id: string;
-  listId: string;
-  title: string;
-  description: string;
-  status: TaskStatus;
-  assignedTo: string | null;
-  createdBy: string;
-  completedBy: string | null;
-  createdAt: string;
-  completedAt: string | null;
-  history: TaskHistoryEntry[];
-  phoneNumbers?: string[];
-  location?: string;
-  archivedAt?: string | null;
-  archivedBy?: string | null;
-  // ---- NEW: Due Date & Reminder & Recurrence ----
-  dueDate?: string | null; // ISO date string (YYYY-MM-DD)
-  dueTime?: string | null; // HH:mm
-  reminders?: TaskReminder[];
-  recurrence?: RecurrenceConfig | null;
-  parentTaskId?: string | null; // for generated recurring tasks
-  completedCount?: number; // how many times this recurring task has been completed
-}
-
-// ---- TaskList ----
-export interface TaskList {
-  id: string;
-  name: string;
-  owner: string; // userId
-  type: ListType;
-  members: ListMember[];
-  customNames: Record<string, string>; // userId -> custom display name (set by owner, scoped to this list)
-  createdAt: string;
-  description?: string;
-}
-
 // ---- Notification ----
 export type NotificationType =
+  | "team_invitation"
+  | "list_invitation"
   | "invitation"
   | "task_assigned"
   | "task_completed"
   | "task_edited"
+  | "comment_added"
   | "member_joined"
+  | "role_changed"
+  | "removed_from_team"
   | "list_shared"
   | "reminder"
-  | "due_soon";
+  | "due_soon"
+  | "due_24h"
+  | "due_2h";
 
 export interface Notification {
   id: string;
@@ -290,13 +337,16 @@ export interface Notification {
 export interface Invitation {
   id: string;
   token: string;
-  listId: string;
-  teamId?: string; // optional teamId if list belongs to a team
-  invitedBy: string; // userId
-  invitedEmail?: string; // email of invited user (for email-based invitations)
+  type: "team" | "list";
+  targetId: string; // teamId or listId
+  listId?: string; // kept for backward compat
+  teamId?: string; // kept for backward compat
+  invitedBy: string;
+  invitedEmail?: string;
+  defaultRole: string; // TeamRole for teams, MemberRole for lists
+  status: "pending" | "accepted" | "declined" | "expired";
   createdAt: string;
   expiresAt: string;
-  defaultRole: MemberRole;
 }
 
 // ---- Plan Features ----
@@ -416,6 +466,7 @@ export interface TaskComment {
   mentions: string[]; // userIds mentioned via @
   createdAt: string;
   editedAt?: string;
+  editedBy?: string;
 }
 
 // ---- Clients ----

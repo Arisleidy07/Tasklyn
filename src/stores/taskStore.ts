@@ -28,6 +28,7 @@ import {
   logTaskDeleted,
   logTaskAssigned,
 } from "@/lib/activity";
+import { logTeamActivity } from "@/lib/firestore";
 import { useAuthStore } from "./authStore";
 import { useListStore } from "./listStore";
 
@@ -199,7 +200,10 @@ function createHistoryEntry(
   action: TaskHistoryEntry["action"],
   performedBy: string,
   details?: string,
-  extraFields?: Partial<TaskHistoryEntry>,
+  extraFields?: Partial<TaskHistoryEntry> & {
+    previousValue?: string;
+    newValue?: string;
+  },
 ): TaskHistoryEntry {
   return {
     id: Math.random().toString(36).slice(2),
@@ -208,6 +212,12 @@ function createHistoryEntry(
     performedByName: useAuthStore.getState().user?.name,
     performedAt: new Date().toISOString(),
     details,
+    ...(extraFields?.previousValue !== undefined && {
+      previousValue: extraFields.previousValue,
+    }),
+    ...(extraFields?.newValue !== undefined && {
+      newValue: extraFields.newValue,
+    }),
     ...extraFields,
   };
 }
@@ -271,6 +281,20 @@ export const useTaskStore = create<TaskState>((set, get) => ({
           photoURL: currentUser.photoURL,
         },
       );
+      // Team activity subcollection
+      if (list?.teamId) {
+        logTeamActivity(list.teamId, {
+          teamId: list.teamId,
+          userId: currentUser.id,
+          userName: currentUser.name,
+          userPhotoURL: currentUser.photoURL,
+          action: "task_created",
+          entityType: "task",
+          entityId: id,
+          entityName: title,
+          detail: `${currentUser.name} creó la tarea "${title}"`,
+        });
+      }
     }
 
     return {
@@ -290,7 +314,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         createHistoryEntry(
           "title_changed",
           performedBy,
-          `Título cambiado a "${updates.title}"`,
+          `Título: "${task.title}" → "${updates.title}"`,
+          { previousValue: task.title, newValue: updates.title },
         ),
       );
     }
@@ -303,6 +328,10 @@ export const useTaskStore = create<TaskState>((set, get) => ({
           "description_changed",
           performedBy,
           "Descripción actualizada",
+          {
+            previousValue: task.description || "",
+            newValue: updates.description || "",
+          },
         ),
       );
     }
@@ -314,7 +343,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         createHistoryEntry(
           "assigned",
           performedBy,
-          `Asignado a ${updates.assignedTo || "nadie"}`,
+          `Asignado: ${task.assignedTo || "nadie"} → ${updates.assignedTo || "nadie"}`,
+          {
+            previousValue: task.assignedTo || "",
+            newValue: updates.assignedTo || "",
+          },
         ),
       );
     }
@@ -345,8 +378,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
           "due_date_changed",
           performedBy,
           updates.dueDate
-            ? `Vencimiento: ${formatDate(updates.dueDate)}`
+            ? `Vencimiento: ${task.dueDate ? formatDate(task.dueDate) : "—"} → ${formatDate(updates.dueDate)}`
             : "Vencimiento eliminado",
+          {
+            previousValue: task.dueDate || "",
+            newValue: updates.dueDate || "",
+          },
         ),
       );
     }
@@ -375,6 +412,30 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       ...updates,
       history: [...task.history, ...entries],
     });
+
+    // Log team activity for assignment
+    const currentUser = useAuthStore.getState().user;
+    const list = useListStore
+      .getState()
+      .lists.find((l) => l.id === task.listId);
+    if (
+      currentUser &&
+      list?.teamId &&
+      updates.assignedTo !== undefined &&
+      updates.assignedTo !== task.assignedTo
+    ) {
+      logTeamActivity(list.teamId, {
+        teamId: list.teamId,
+        userId: currentUser.id,
+        userName: currentUser.name,
+        userPhotoURL: currentUser.photoURL,
+        action: "task_assigned",
+        entityType: "task",
+        entityId: task.id,
+        entityName: task.title,
+        detail: `${currentUser.name} asignó "${task.title}" a ${updates.assignedTo || "nadie"}`,
+      });
+    }
 
     // Notify assigned user
     if (
@@ -508,6 +569,20 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         },
         actualPerformer.id !== currentUser.id ? actualPerformer : undefined,
       );
+      // Team activity subcollection
+      if (list?.teamId) {
+        logTeamActivity(list.teamId, {
+          teamId: list.teamId,
+          userId: currentUser.id,
+          userName: currentUser.name,
+          userPhotoURL: currentUser.photoURL,
+          action: "task_completed",
+          entityType: "task",
+          entityId: task.id,
+          entityName: task.title,
+          detail: `${currentUser.name} completó "${task.title}"`,
+        });
+      }
     }
 
     // Notify relevant members (owner and editors, excluding the completer)
@@ -609,7 +684,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   deleteTask: async (id: string) => {
     const task = get().tasks.find((t) => t.id === id);
 
-    // Log activity before deleting
+    // Log activity before soft-deleting
     if (task) {
       const currentUser = useAuthStore.getState().user;
       const list = useListStore
@@ -629,6 +704,20 @@ export const useTaskStore = create<TaskState>((set, get) => ({
             photoURL: currentUser.photoURL,
           },
         );
+        // Team activity subcollection
+        if (list?.teamId) {
+          logTeamActivity(list.teamId, {
+            teamId: list.teamId,
+            userId: currentUser.id,
+            userName: currentUser.name,
+            userPhotoURL: currentUser.photoURL,
+            action: "task_deleted",
+            entityType: "task",
+            entityId: task.id,
+            entityName: task.title,
+            detail: `${currentUser.name} eliminó "${task.title}"`,
+          });
+        }
       }
     }
 

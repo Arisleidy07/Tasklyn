@@ -20,7 +20,6 @@ import {
   FolderOpen,
   CheckCircle2,
   ClipboardList,
-  Lock,
 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { UpgradeModal } from "@/components/shared/UpgradeModal";
@@ -109,13 +108,6 @@ function TeamCard({
               >
                 {team.name}
               </h3>
-              {team.isPersonal && (
-                <Lock
-                  size={11}
-                  className="flex-shrink-0"
-                  style={{ color: "var(--text-tertiary)" }}
-                />
-              )}
             </div>
             {team.description && (
               <p
@@ -390,10 +382,7 @@ export default function TeamsPage() {
 
   if (!user) return null;
 
-  const workTeams = teams.filter((t) => !t.isPersonal);
-  const personalTeam = teams.find((t) => t.isPersonal && t.owner === user.id);
-
-  const filtered = workTeams.filter(
+  const filtered = teams.filter(
     (t) =>
       t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t.description?.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -428,7 +417,7 @@ export default function TeamsPage() {
   };
 
   const handleNewTeamClick = () => {
-    if (!canCreateMoreTeams(workTeams.length, user.plan)) {
+    if (!canCreateMoreTeams(teams.length, user.plan)) {
       setShowUpgradeModal(true);
     } else {
       setShowCreateModal(true);
@@ -439,7 +428,7 @@ export default function TeamsPage() {
     <>
       <Header
         title="Equipos"
-        description={`${workTeams.length} equipo${workTeams.length !== 1 ? "s" : ""} de trabajo`}
+        description={`${teams.length} equipo${teams.length !== 1 ? "s" : ""}`}
         showMenuButton={true}
         actions={
           <Button onClick={handleNewTeamClick} icon={<Plus size={16} />}>
@@ -449,88 +438,17 @@ export default function TeamsPage() {
       />
 
       <div className="p-3 sm:p-4 md:p-8 max-w-[1400px] mx-auto space-y-8 pb-24 md:pb-8">
-        {/* Personal workspace card */}
-        {personalTeam && (
-          <div>
-            <p
-              className="text-[11px] font-semibold uppercase tracking-widest mb-3"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              Espacio personal
-            </p>
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="group relative rounded-2xl overflow-hidden transition-all duration-300"
-              style={{
-                backgroundColor: "var(--bg-card)",
-                border: "1px solid var(--border-color)",
-                boxShadow: "var(--shadow-card)",
-              }}
-            >
-              <div className="p-5 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                  <TeamImage
-                    teamId={personalTeam.id}
-                    name="Personal"
-                    photoURL={personalTeam.photoURL}
-                    size="lg"
-                    color="#6366f1"
-                  />
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <h3
-                        className="text-sm font-semibold"
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        Personal
-                      </h3>
-                      <Lock
-                        size={11}
-                        style={{ color: "var(--text-tertiary)" }}
-                      />
-                    </div>
-                    <p
-                      className="text-xs mt-0.5"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      Tu espacio privado ·{" "}
-                      {getTeamStats(personalTeam.id).listCount} listas ·{" "}
-                      {getTeamStats(personalTeam.id).taskCount} tareas
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  href={`/teams/${personalTeam.id}`}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors flex-shrink-0"
-                  style={{ color: "var(--text-link)" }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLElement).style.backgroundColor =
-                      "rgba(37,99,235,0.08)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLElement).style.backgroundColor =
-                      "transparent";
-                  }}
-                >
-                  Ver <ChevronRight size={13} />
-                </Link>
-              </div>
-            </motion.div>
-          </div>
-        )}
-
-        {/* Work teams */}
+        {/* Teams */}
         <div>
-          {workTeams.length > 0 && (
+          {teams.length > 0 && (
             <div className="flex items-center justify-between mb-4">
               <p
                 className="text-[11px] font-semibold uppercase tracking-widest"
                 style={{ color: "var(--text-tertiary)" }}
               >
-                Equipos de trabajo
+                Mis equipos
               </p>
-              {workTeams.length > 3 && (
+              {teams.length > 3 && (
                 <div className="relative">
                   <Search
                     size={14}
@@ -554,7 +472,7 @@ export default function TeamsPage() {
             </div>
           )}
 
-          {workTeams.length === 0 ? (
+          {teams.length === 0 ? (
             <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}

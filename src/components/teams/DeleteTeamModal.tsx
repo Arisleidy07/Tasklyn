@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertTriangle,
@@ -10,7 +11,6 @@ import {
   FolderOpen,
   Trash2,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import type { Team } from "@/types";
 
@@ -33,6 +33,13 @@ export default function DeleteTeamModal({
 }: DeleteTeamModalProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   const handleConfirm = async () => {
     setIsDeleting(true);
     setError(null);
@@ -57,19 +64,19 @@ export default function DeleteTeamModal({
     onClose();
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — full screen, above sidebar (z-30) and everything */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9980]"
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9998]"
           />
 
           {/* Modal */}
@@ -78,7 +85,7 @@ export default function DeleteTeamModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ type: "spring", damping: 25, stiffness: 400 }}
-            className="fixed inset-0 z-[9981] flex items-center justify-center p-4 pointer-events-none"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none"
           >
             <div
               className="w-full max-w-md rounded-2xl shadow-2xl pointer-events-auto"
@@ -244,6 +251,7 @@ export default function DeleteTeamModal({
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
