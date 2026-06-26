@@ -631,7 +631,7 @@ export default function DashboardPage() {
     view === "shared" ? "shared" : view === "personal" ? "personal" : "todas";
 
   const { user } = useAuthStore();
-  const { getPersonalLists, getSharedLists, getUserLists, lists } =
+  const { getListsWithoutTeam, getSharedLists, getUserLists, lists } =
     useListStore();
   const { tasks } = useTaskStore();
   const {
@@ -669,7 +669,7 @@ export default function DashboardPage() {
   // All data calculations BEFORE any conditional returns
   const { reorderLists } = useListStore();
   const personalLists = user
-    ? [...getPersonalLists(user.id)].sort(
+    ? [...getListsWithoutTeam(user.id)].sort(
         (a, b) => (a.order ?? 0) - (b.order ?? 0),
       )
     : [];

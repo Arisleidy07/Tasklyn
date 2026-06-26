@@ -131,9 +131,13 @@ export const useTeamStore = create<TeamState>()(
 
         teamsUnsubscribe = subscribeToUserTeams(userId, (rawTeams) => {
           console.log("📦 Teams received:", rawTeams.length);
-          // Final dedup safety net in the store
+          // Filter out any legacy auto-created personal/default teams
+          const noPersonal = rawTeams.filter(
+            (t) => !(t as Team & { isPersonal?: boolean }).isPersonal,
+          );
+          // Final dedup safety net
           const seen = new Set<string>();
-          const teams = rawTeams.filter((t) => {
+          const teams = noPersonal.filter((t) => {
             if (seen.has(t.id)) return false;
             seen.add(t.id);
             return true;

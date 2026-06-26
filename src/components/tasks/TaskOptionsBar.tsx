@@ -73,7 +73,7 @@ export default function TaskOptionsBar({
             e.stopPropagation();
             setOpenDropdown(openDropdown === "reminder" ? null : "reminder");
           }}
-          className="flex items-center justify-center w-8 h-8 rounded-lg transition-all"
+          className="flex items-center justify-center w-7 h-7 rounded-md transition-all"
           style={
             hasReminder
               ? { color: "#2563eb", backgroundColor: "rgba(37,99,235,0.08)" }
@@ -97,7 +97,7 @@ export default function TaskOptionsBar({
           }}
           title="Recordatorio"
         >
-          <Bell size={16} />
+          <Bell size={14} />
           {hasReminder && (
             <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-blue-500 rounded-full" />
           )}
@@ -127,7 +127,7 @@ export default function TaskOptionsBar({
             e.stopPropagation();
             setOpenDropdown(openDropdown === "due" ? null : "due");
           }}
-          className="flex items-center justify-center w-8 h-8 rounded-lg transition-all"
+          className="flex items-center justify-center w-7 h-7 rounded-md transition-all"
           style={
             hasDueDate
               ? { color: "#d97706", backgroundColor: "rgba(245,158,11,0.08)" }
@@ -151,7 +151,7 @@ export default function TaskOptionsBar({
           }}
           title="Vencimiento"
         >
-          <CalendarDays size={16} />
+          <CalendarDays size={14} />
           {hasDueDate && (
             <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-amber-500 rounded-full" />
           )}
@@ -176,7 +176,7 @@ export default function TaskOptionsBar({
               openDropdown === "recurrence" ? null : "recurrence",
             );
           }}
-          className="flex items-center justify-center w-8 h-8 rounded-lg transition-all"
+          className="flex items-center justify-center w-7 h-7 rounded-md transition-all"
           style={
             hasRecurrence
               ? { color: "#16a34a", backgroundColor: "rgba(22,163,74,0.08)" }
@@ -200,7 +200,7 @@ export default function TaskOptionsBar({
           }}
           title="Repetir"
         >
-          <Repeat size={16} />
+          <Repeat size={14} />
           {hasRecurrence && (
             <span className="absolute top-0.5 right-0.5 w-1.5 h-1.5 bg-green-500 rounded-full" />
           )}

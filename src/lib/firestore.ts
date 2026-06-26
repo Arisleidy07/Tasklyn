@@ -1259,7 +1259,6 @@ export const subscribeToUserTeams = (
     q,
     (snap) => {
       console.log("📦 Teams snapshot received:", snap.docs.length);
-      // Dedup by id — safety net against double subscriptions
       const seen = new Set<string>();
       const teams = snap.docs
         .map((teamDoc) => {
@@ -1272,11 +1271,14 @@ export const subscribeToUserTeams = (
             members: data.members || [],
           } as Team;
         })
+        // Filter out legacy auto-created personal teams
+        .filter((t) => !(t as Team & { isPersonal?: boolean }).isPersonal)
         .filter((t) => {
           if (seen.has(t.id)) return false;
           seen.add(t.id);
           return true;
         });
+      console.log("📦 Teams after filtering personal:", teams.length);
       callback(teams);
     },
     (error) => {
@@ -1294,6 +1296,7 @@ export const getUserTeams = async (userId: string): Promise<Team[]> => {
   const snap = await getDocsFromServer(q);
   const seen = new Set<string>();
   return snap.docs
+    .filter((teamDoc) => !teamDoc.data().isPersonal)
     .map((teamDoc) => {
       const data = teamDoc.data();
       return {
@@ -1861,6 +1864,58 @@ export const reorderBackgroundImages = async (
     batch.update(ref, { order: img.order });
   });
   await batch.commit();
+};
+
+/** Rename category field on all images that belong to oldName → newName */
+export const renameCategoryOnImages = async (
+  oldName: string,
+  newName: string,
+): Promise<void> => {
+  const q = query(backgroundImagesCollection, where("category", "==", oldName));
+  const snap = await getDocsFromServer(q);
+  if (snap.empty) return;
+  const now = new Date().toISOString();
+  // Firestore batch limit is 500 ops
+  const chunks: (typeof snap.docs)[] = [];
+  for (let i = 0; i < snap.docs.length; i += 499) {
+    chunks.push(snap.docs.slice(i, i + 499));
+  }
+  for (const chunk of chunks) {
+    const b = writeBatch(db);
+    chunk.forEach((d) => {
+      b.update(d.ref, { category: newName, updatedAt: now });
+    });
+    await b.commit();
+  }
+};
+
+/** Move all images of a given category to another category */
+export const moveImagesToCategoryBatch = async (
+  fromCategory: string,
+  toCategory: string,
+): Promise<void> => {
+  await renameCategoryOnImages(fromCategory, toCategory);
+};
+
+/** Delete all images in a category */
+export const deleteImagesByCategory = async (
+  categoryName: string,
+): Promise<void> => {
+  const q = query(
+    backgroundImagesCollection,
+    where("category", "==", categoryName),
+  );
+  const snap = await getDocsFromServer(q);
+  if (snap.empty) return;
+  const chunks: (typeof snap.docs)[] = [];
+  for (let i = 0; i < snap.docs.length; i += 499) {
+    chunks.push(snap.docs.slice(i, i + 499));
+  }
+  for (const chunk of chunks) {
+    const b = writeBatch(db);
+    chunk.forEach((d) => b.delete(d.ref));
+    await b.commit();
+  }
 };
 
 // ============================================

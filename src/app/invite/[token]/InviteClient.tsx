@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useInvitationStore } from "@/stores/invitationStore";
 import { useListStore } from "@/stores/listStore";
-import type { Invitation, TaskList } from "@/types";
+import type { Invitation, TaskList, MemberRole } from "@/types";
 import Logo from "@/components/shared/Logo";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
@@ -82,7 +82,7 @@ export default function InviteClient() {
         return;
       }
 
-      const listData = await getList(inv.listId);
+      const listData = await getList(inv.targetId);
       if (!listData) {
         setLoading(false);
         return;
@@ -94,7 +94,7 @@ export default function InviteClient() {
 
       // Check if already a member when authenticated
       if (user) {
-        const isMem = isMember(inv.listId, user.id);
+        const isMem = isMember(inv.targetId, user.id);
         setAlreadyMember(isMem);
       }
 
@@ -106,8 +106,12 @@ export default function InviteClient() {
 
   const handleAccept = () => {
     if (!user || !invitation || !list) return;
-    addMember(invitation.listId, user.id, invitation.defaultRole);
-    router.push(`/lists/${invitation.listId}`);
+    addMember(
+      invitation.targetId,
+      user.id,
+      invitation.defaultRole as MemberRole,
+    );
+    router.push(`/lists/${invitation.targetId}`);
   };
 
   const handleDecline = () => {

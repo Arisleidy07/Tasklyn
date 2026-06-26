@@ -122,44 +122,44 @@ service cloud.firestore {
     }
 
     match /teams/{teamId} {
-      allow read: if isAuth() && (isTeamOwnerDirect() || isTeamMemberDirect());
+      // Read: owner OR member. Also allow if doc is corrupt/legacy (uid in memberIds OR owner match)
+      allow read: if isAuth() && (
+        resource.data.owner == uid() ||
+        (resource.data.memberIds != null && uid() in resource.data.memberIds) ||
+        isTeamAdminOrOwnerOf(teamId)
+      );
       allow create: if isAuth() && willBeTeamOwner();
       allow update: if isAuth() && (
         isTeamOwnerDirect() ||
-        isTeamMemberDirect()
+        isTeamAdminOrOwnerOf(teamId)
       );
-      // ONLY the owner can delete the team
-      allow delete: if isAuth() && resource.data.owner == uid();
+      // Owner can delete. Also allow delete if doc owner field matches uid (covers legacy docs)
+      allow delete: if isAuth() && (
+        resource.data.owner == uid() ||
+        isTeamOwnerDirect()
+      );
 
       // Members subcollection
       match /members/{memberId} {
-        allow read: if isAuth() && isTeamMemberOf(teamId);
-
-        // Only owner or admin can add new members
-        allow create: if isAuth() && isTeamAdminOrOwnerOf(teamId);
-
-        // Owner can update anyone.
-        // Admin can update members/admins but NEVER the owner doc,
-        // and NEVER promote anyone to owner.
-        allow update: if isAuth() && (
-          isTeamOwnerOf(teamId) ||
-          (
-            isTeamAdminOrOwnerOf(teamId) &&
-            memberId != get(/databases/$(database)/documents/teams/$(teamId)).data.owner &&
-            request.resource.data.role != "owner"
-          )
+        allow read: if isAuth() && (
+          isTeamMemberOf(teamId) ||
+          isTeamOwnerOf(teamId)
         );
 
-        // Owner can delete anyone (except self — enforced in app layer).
-        // Admin can remove members only (not owner, not other admins).
-        // Member can remove themselves (leave team).
+        allow create: if isAuth() && (
+          isTeamAdminOrOwnerOf(teamId) ||
+          isTeamOwnerOf(teamId)
+        );
+
+        allow update: if isAuth() && (
+          isTeamOwnerOf(teamId) ||
+          isTeamAdminOrOwnerOf(teamId)
+        );
+
+        // Owner can delete anyone. Admin can remove members. Member can leave. 
         allow delete: if isAuth() && (
           isTeamOwnerOf(teamId) ||
-          (
-            isTeamAdminOrOwnerOf(teamId) &&
-            memberId != get(/databases/$(database)/documents/teams/$(teamId)).data.owner &&
-            resource.data.role == "member"
-          ) ||
+          isTeamAdminOrOwnerOf(teamId) ||
           uid() == memberId
         );
       }
@@ -252,10 +252,8 @@ service cloud.firestore {
     match /backgroundImages/{imageId} {
       allow read: if isAuth();
       allow create: if isAuth() && request.resource.data.uploadedBy == uid();
-      allow update: if isAuth() && (
-        resource.data.uploadedBy == uid() ||
-        request.resource.data.uploadedBy == resource.data.uploadedBy
-      );
+      // Allow any auth user to update (reorder, move category) — only uploader can delete
+      allow update: if isAuth();
       allow delete: if isAuth() && resource.data.uploadedBy == uid();
     }
 

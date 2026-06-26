@@ -20,6 +20,7 @@ import {
   FolderOpen,
   CheckCircle2,
   ClipboardList,
+  Trash2,
 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { UpgradeModal } from "@/components/shared/UpgradeModal";
@@ -51,6 +52,7 @@ interface TeamCardProps {
   taskCount: number;
   completedCount: number;
   index: number;
+  onDelete?: (team: Team) => void;
 }
 
 function TeamCard({
@@ -60,6 +62,7 @@ function TeamCard({
   taskCount,
   completedCount,
   index,
+  onDelete,
 }: TeamCardProps) {
   const progress =
     taskCount > 0 ? Math.round((completedCount / taskCount) * 100) : 0;
@@ -225,23 +228,39 @@ function TeamCard({
           )}
         </div>
 
-        <Link
-          href={`/teams/${team.id}`}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200"
-          style={{
-            backgroundColor: "var(--bg-secondary)",
-            color: "var(--text-primary)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-          }}
-        >
-          Ver
-          <ChevronRight size={11} />
-        </Link>
+        <div className="flex items-center gap-2">
+          {userRole === "owner" && onDelete && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDelete(team);
+              }}
+              className="p-1.5 rounded-lg hover:bg-red-500/15 hover:text-red-500 transition-colors"
+              style={{ color: "var(--text-tertiary)" }}
+              title="Eliminar equipo"
+            >
+              <Trash2 size={13} />
+            </button>
+          )}
+          <Link
+            href={`/teams/${team.id}`}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200"
+            style={{
+              backgroundColor: "var(--bg-secondary)",
+              color: "var(--text-primary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+            }}
+          >
+            Ver
+            <ChevronRight size={11} />
+          </Link>
+        </div>
       </div>
     </motion.div>
   );
@@ -372,13 +391,15 @@ function CreateTeamModal({
 // ── Page ─────────────────────────────────────────────────────────────────────
 export default function TeamsPage() {
   const { user } = useAuthStore();
-  const { teams, createTeam } = useTeamStore();
+  const { teams, createTeam, deleteTeam } = useTeamStore();
   const { lists } = useListStore();
   const { tasks } = useTaskStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Team | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (!user) return null;
 
@@ -413,6 +434,27 @@ export default function TeamsPage() {
     } catch {
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteTeam = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    try {
+      await deleteTeam(deleteTarget.id);
+      setDeleteTarget(null);
+    } catch (e: unknown) {
+      const err = e as { code?: string; message?: string };
+      console.error("[deleteTeam] Error:", err.code, err.message, e);
+      if (err.code === "permission-denied") {
+        alert(
+          `Sin permiso para eliminar "${deleteTarget.name}".\n\nEsto puede ocurrir si el equipo fue creado automáticamente con otro usuario. ID del equipo: ${deleteTarget.id}\n\nContacta al soporte con este ID para eliminarlo manualmente.`,
+        );
+      } else {
+        alert(`Error al eliminar: ${err.message || "desconocido"}`);
+      }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -513,11 +555,12 @@ export default function TeamsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filtered.map((team, index) => {
-                const userRole =
-                  (team.members.find((m) => m.userId === user.id)?.role as
-                    | "owner"
-                    | "admin"
-                    | "member") || "member";
+                const userRole: "owner" | "admin" | "member" =
+                  team.owner === user.id
+                    ? "owner"
+                    : (team.members?.find((m) => m.userId === user.id)?.role as
+                        | "admin"
+                        | "member") || "member";
                 const stats = getTeamStats(team.id);
                 return (
                   <TeamCard
@@ -528,6 +571,7 @@ export default function TeamsPage() {
                     taskCount={stats.taskCount}
                     completedCount={stats.completedCount}
                     index={index}
+                    onDelete={setDeleteTarget}
                   />
                 );
               })}
@@ -535,6 +579,64 @@ export default function TeamsPage() {
           )}
         </div>
       </div>
+
+      {/* Delete confirmation */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => !isDeleting && setDeleteTarget(null)}
+          />
+          <div
+            className="relative w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4"
+            style={{
+              backgroundColor: "var(--bg-card)",
+              border: "1px solid rgba(239,68,68,0.3)",
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                <Trash2 size={18} className="text-red-500" />
+              </div>
+              <div>
+                <p
+                  className="font-bold"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  Eliminar "{deleteTarget.name}"
+                </p>
+                <p
+                  className="text-sm mt-1"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Esta acción no se puede deshacer. Se eliminarán el equipo y
+                  todos sus datos.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteTeam}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+              >
+                {isDeleting ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <CreateTeamModal
         isOpen={showCreateModal}

@@ -149,25 +149,25 @@ export function SortableTaskContainer({
         {activeTask ? (
           <div
             style={{
-              opacity: 0.9,
-              boxShadow: "0 16px 40px rgba(0,0,0,0.25)",
-              borderRadius: "14px",
-              transform: "rotate(1.5deg) scale(1.02)",
+              opacity: 0.92,
+              boxShadow: "var(--shadow-modal)",
+              borderRadius: "var(--radius-md)",
+              transform: "rotate(1deg) scale(1.01)",
               pointerEvents: "none",
             }}
           >
             <div
               style={{
-                borderRadius: "14px",
+                borderRadius: "var(--radius-md)",
                 backgroundColor: "var(--bg-card)",
                 border: "1px solid var(--border-color)",
-                padding: "11px 14px",
+                padding: "10px 12px",
               }}
             >
               <p
                 style={{
                   color: "var(--text-primary)",
-                  fontSize: "14px",
+                  fontSize: "var(--text-base)",
                   fontWeight: 500,
                 }}
               >

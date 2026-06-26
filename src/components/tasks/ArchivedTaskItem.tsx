@@ -8,16 +8,8 @@ import { canDeleteTask, canEditTask } from "@/lib/permissions";
 import { motion } from "framer-motion";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
-import {
-  Trash2,
-  Clock,
-  Phone,
-  MapPin,
-  FileText,
-  RotateCcw,
-  AlertTriangle,
-} from "lucide-react";
-import { cn, timeAgo, linkifyPhoneNumbers, linkifyLocation } from "@/lib/utils";
+import { Trash2, Clock, RotateCcw, AlertTriangle } from "lucide-react";
+import { timeAgo } from "@/lib/utils";
 
 interface ArchivedTaskItemProps {
   task: Task;
@@ -37,7 +29,7 @@ export default function ArchivedTaskItem({
   const canEdit = canEditTask(role);
   const canDelete = canDeleteTask(role);
 
-  const getUserName = (userId: string) => memberNames[userId] || "Cargando...";
+  const getUserName = (userId: string) => memberNames[userId] || "—";
 
   const handleRestore = () => {
     if (!user) return;
@@ -49,180 +41,102 @@ export default function ArchivedTaskItem({
     setShowDeleteConfirm(false);
   };
 
+  const hasMeta = task.archivedAt || task.archivedBy;
+  const chips: string[] = [];
+  if (task.phoneNumbers?.length)
+    chips.push(`${task.phoneNumbers.length} teléf.`);
+  if (task.location) chips.push("ubicación");
+  if (task.description) chips.push("nota");
+
   return (
     <>
       <motion.div
         layout
-        initial={{ opacity: 0, y: 6 }}
+        initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -6 }}
-        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-        className="group/archived rounded-2xl overflow-hidden transition-all duration-200"
+        exit={{ opacity: 0, y: -4 }}
+        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+        className="group/archived flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] transition-colors"
         style={{
           border: "1px solid var(--border-color)",
           backgroundColor: "var(--bg-card)",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.06), 0 0 0 0 transparent",
         }}
-        whileHover={{ boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}
       >
-        {/* Archived accent stripe */}
         <div
-          className="h-0.5 w-full"
-          style={{
-            background:
-              "linear-gradient(90deg, rgba(156,163,175,0.4) 0%, rgba(156,163,175,0.1) 100%)",
-          }}
-        />
+          className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-[var(--radius-md)]"
+          style={{ backgroundColor: "var(--bg-secondary)" }}
+        >
+          <Clock size={11} style={{ color: "var(--text-tertiary)" }} />
+        </div>
 
-        <div className="flex items-start gap-3 p-4">
-          {/* Archive icon badge */}
-          <div
-            className="flex-shrink-0 mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{
-              backgroundColor: "var(--bg-secondary)",
-              border: "1px solid var(--border-color)",
-            }}
+        <div className="flex-1 min-w-0">
+          <p
+            className="text-[var(--text-base)] font-medium leading-snug truncate line-through"
+            style={{ color: "var(--text-secondary)" }}
           >
-            <Clock size={13} style={{ color: "var(--text-tertiary)" }} />
-          </div>
-
-          <div className="flex-1 min-w-0 space-y-2.5">
-            {/* Title */}
-            <p
-              className="text-sm font-medium leading-snug break-words whitespace-normal line-through"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {task.title}
-            </p>
-
-            {/* Details row */}
-            {task.phoneNumbers?.length || task.location || task.description ? (
-              <div
-                className="rounded-xl px-3 py-2.5 space-y-2"
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  border: "1px solid var(--border-color)",
-                }}
-              >
-                {task.phoneNumbers && task.phoneNumbers.length > 0 && (
-                  <div className="flex items-start gap-2">
-                    <Phone
-                      size={11}
-                      className="flex-shrink-0 mt-0.5 text-blue-500"
-                    />
-                    <span
-                      className="text-[12px] leading-relaxed flex-1"
-                      style={{ color: "var(--text-secondary)" }}
-                      dangerouslySetInnerHTML={{
-                        __html: task.phoneNumbers
-                          .map((phone) => linkifyPhoneNumbers(phone))
-                          .join(
-                            ' <span style="color:var(--text-muted);margin:0 4px">·</span> ',
-                          ),
-                      }}
-                    />
-                  </div>
-                )}
-                {task.location && (
-                  <div className="flex items-start gap-2">
-                    <MapPin
-                      size={11}
-                      className="flex-shrink-0 mt-0.5 text-blue-500"
-                    />
-                    <span
-                      className="text-[12px] leading-relaxed flex-1"
-                      style={{ color: "var(--text-secondary)" }}
-                      dangerouslySetInnerHTML={{
-                        __html: linkifyLocation(task.location),
-                      }}
-                    />
-                  </div>
-                )}
-                {task.description && (
-                  <div className="flex items-start gap-2">
-                    <FileText
-                      size={11}
-                      className="flex-shrink-0 mt-0.5"
-                      style={{ color: "var(--text-tertiary)" }}
-                    />
-                    <p
-                      className="text-[12px] leading-relaxed flex-1"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      {task.description}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ) : null}
-
-            {/* Meta */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span
-                className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full"
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  color: "var(--text-tertiary)",
-                  border: "1px solid var(--border-color)",
-                }}
-              >
-                <Clock size={9} />
-                {timeAgo(task.archivedAt || task.createdAt)}
-              </span>
-              {task.archivedBy && (
+            {task.title}
+          </p>
+          {(chips.length > 0 || hasMeta) && (
+            <div className="flex items-center gap-2 flex-wrap mt-0.5">
+              {chips.length > 0 && (
                 <span
-                  className="text-[11px]"
+                  className="text-[var(--text-2xs)]"
                   style={{ color: "var(--text-tertiary)" }}
                 >
-                  · por {getUserName(task.archivedBy)}
+                  {chips.join(" · ")}
+                </span>
+              )}
+              {hasMeta && (
+                <span
+                  className="text-[var(--text-2xs)]"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  {timeAgo(task.archivedAt || task.createdAt)}
+                  {task.archivedBy && <> · {getUserName(task.archivedBy)}</>}
                 </span>
               )}
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {canEdit && (
-              <button
-                onClick={handleRestore}
-                className="p-2 rounded-xl transition-all duration-150 cursor-pointer min-w-[34px] min-h-[34px] flex items-center justify-center active:scale-90"
-                style={{ color: "var(--text-tertiary)" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#2563eb";
-                  e.currentTarget.style.backgroundColor =
-                    "rgba(37,99,235,0.08)";
-                  e.currentTarget.style.borderColor = "rgba(37,99,235,0.2)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "var(--text-tertiary)";
-                  e.currentTarget.style.backgroundColor = "transparent";
-                  e.currentTarget.style.borderColor = "transparent";
-                }}
-                title="Restaurar tarea"
-              >
-                <RotateCcw size={14} />
-              </button>
-            )}
-            {canDelete && (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="p-2 rounded-xl transition-all duration-150 cursor-pointer min-w-[34px] min-h-[34px] flex items-center justify-center active:scale-90"
-                style={{ color: "var(--text-tertiary)" }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#ef4444";
-                  e.currentTarget.style.backgroundColor =
-                    "rgba(239,68,68,0.08)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "var(--text-tertiary)";
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-                title="Eliminar permanentemente"
-              >
-                <Trash2 size={14} />
-              </button>
-            )}
-          </div>
+        {/* Actions */}
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          {canEdit && (
+            <button
+              onClick={handleRestore}
+              className="p-1.5 rounded-md transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+              style={{ color: "var(--text-tertiary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#2563eb";
+                e.currentTarget.style.backgroundColor = "rgba(37,99,235,0.08)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-tertiary)";
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+              title="Restaurar"
+            >
+              <RotateCcw size={14} />
+            </button>
+          )}
+          {canDelete && (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="p-1.5 rounded-md transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+              style={{ color: "var(--text-tertiary)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#ef4444";
+                e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.08)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-tertiary)";
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+              title="Eliminar"
+            >
+              <Trash2 size={14} />
+            </button>
+          )}
         </div>
       </motion.div>
 
@@ -232,39 +146,20 @@ export default function ArchivedTaskItem({
         onClose={() => setShowDeleteConfirm(false)}
         title="Eliminar tarea archivada"
       >
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div
-            className="flex items-start gap-3 p-4 rounded-xl border"
+            className="flex items-start gap-3 p-3 rounded-[var(--radius-lg)] text-[var(--text-sm)]"
             style={{
-              backgroundColor: "rgba(239,68,68,0.06)",
-              borderColor: "rgba(239,68,68,0.2)",
+              backgroundColor: "var(--bg-error)",
+              color: "var(--text-error)",
             }}
           >
-            <AlertTriangle
-              size={18}
-              className="flex-shrink-0 mt-0.5"
-              style={{ color: "#ef4444" }}
-            />
-            <div>
-              <p className="text-sm font-semibold" style={{ color: "#dc2626" }}>
-                Esta acción es permanente
-              </p>
-              <p
-                className="text-sm mt-0.5 leading-relaxed"
-                style={{ color: "#ef4444" }}
-              >
-                ¿Deseas eliminar esta nota permanentemente? No podrás
-                recuperarla.
-              </p>
-            </div>
+            <AlertTriangle size={15} className="flex-shrink-0 mt-0.5" />
+            <p>
+              ¿Eliminar "<strong>{task.title}</strong>"? No se puede deshacer.
+            </p>
           </div>
-          <p
-            className="text-sm font-medium line-clamp-2 px-1"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            &quot;{task.title}&quot;
-          </p>
-          <div className="flex gap-3 pt-1">
+          <div className="flex gap-3">
             <Button
               variant="ghost"
               onClick={() => setShowDeleteConfirm(false)}
@@ -277,7 +172,7 @@ export default function ArchivedTaskItem({
               onClick={handleConfirmDelete}
               className="flex-1"
             >
-              Eliminar definitivamente
+              Eliminar
             </Button>
           </div>
         </div>

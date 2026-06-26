@@ -248,9 +248,9 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
       );
       await notifyInvitationAccepted(
         invitation.invitedBy,
-        invitation.listId,
+        invitation.targetId,
         accepterName,
-        invitation.listId,
+        invitation.targetId,
       );
       console.log("[invitationStore] Step 4: Notification sent to owner");
     } else {
@@ -269,9 +269,9 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
     if (rejecterName) {
       await notifyInvitationRejected(
         invitation.invitedBy,
-        invitation.listId,
+        invitation.targetId,
         rejecterName,
-        invitation.listId,
+        invitation.targetId,
       );
     }
   },

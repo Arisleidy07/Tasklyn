@@ -55,7 +55,7 @@ export default function InvitePage() {
         return;
       }
 
-      const list = await getList(inv.listId);
+      const list = await getList(inv.targetId);
       if (list) {
         setListName(list.name);
       }
@@ -90,7 +90,7 @@ export default function InvitePage() {
       // Después de iniciar sesión, volver a verificar el estado de la invitación
       const inv = await getInvitation(token);
       if (inv) {
-        const list = await getList(inv.listId);
+        const list = await getList(inv.targetId);
         if (list?.members.some((m) => m.userId === user?.id)) {
           setStatus("already-member");
         } else {

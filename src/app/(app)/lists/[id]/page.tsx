@@ -297,7 +297,7 @@ export default function ListDetailPage() {
         <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto pb-6">
           {/* Filtros - Segmented Control (Pendientes, Completadas, Todas) */}
           <div
-            className="flex rounded-2xl p-1.5 mb-6 gap-1 shadow-sm"
+            className="flex rounded-[var(--radius-lg)] p-1 mb-5 gap-1"
             style={{
               backgroundColor: "var(--bg-secondary)",
               border: "1px solid var(--border-color)",
@@ -327,7 +327,7 @@ export default function ListDetailPage() {
                 key={key}
                 onClick={() => setFilter(key)}
                 className={cn(
-                  "relative flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-xs sm:text-sm font-semibold tracking-tight transition-all duration-200 min-h-[40px] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1",
+                  "relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-[var(--radius-md)] text-[var(--text-xs)] sm:text-[var(--text-sm)] font-semibold tracking-tight transition-all duration-200 min-h-[36px] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1",
                   filter === key ? "shadow-sm" : "border border-transparent",
                 )}
                 style={
@@ -366,10 +366,10 @@ export default function ListDetailPage() {
 
           {/* Botón añadir tarea */}
           {canEdit && (
-            <div className="mb-6">
+            <div className="mb-5">
               <Button
                 onClick={() => setShowAddTask(true)}
-                icon={<Plus size={16} />}
+                icon={<Plus size={14} />}
                 className="w-full sm:w-auto"
               >
                 Añadir tarea
@@ -378,7 +378,7 @@ export default function ListDetailPage() {
           )}
 
           {/* Tareas */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {filter === "all" ? (
               activeTasks.length === 0 ? (
                 <EmptyState
@@ -398,10 +398,10 @@ export default function ListDetailPage() {
                   }
                 />
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* Bloque de pendientes */}
                   <section>
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-1.5">
                       <span
                         className="text-[11px] font-semibold uppercase tracking-widest"
                         style={{ color: "var(--text-tertiary)" }}
@@ -419,7 +419,7 @@ export default function ListDetailPage() {
                       </span>
                     </div>
                     {pendingTasks.length > 0 ? (
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <SortableTaskContainer
                           tasks={pendingTasks}
                           onReorder={(newOrder) =>
@@ -453,7 +453,7 @@ export default function ListDetailPage() {
                     <section>
                       <button
                         onClick={() => setShowCompleted((v) => !v)}
-                        className="flex items-center justify-between w-full mb-2 group"
+                        className="flex items-center justify-between w-full mb-1.5 group"
                       >
                         <div className="flex items-center gap-2">
                           <CheckCircle2
@@ -502,7 +502,7 @@ export default function ListDetailPage() {
                             transition={{ duration: 0.2, ease: "easeInOut" }}
                             className="overflow-hidden"
                           >
-                            <div className="space-y-1.5 pt-0.5">
+                            <div className="space-y-1 pt-0.5">
                               <SortableTaskContainer
                                 tasks={completedTasks}
                                 onReorder={(newOrder) =>
@@ -580,67 +580,52 @@ export default function ListDetailPage() {
 
           {/* Área de archivados dentro de la lista */}
           {archivedCount > 0 && (
-            <div className="mt-10">
+            <div className="mt-8">
               {/* Section divider */}
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-3">
                 <div
                   className="flex-1 h-px"
-                  style={{
-                    background:
-                      "linear-gradient(90deg, var(--border-color) 0%, transparent 100%)",
-                  }}
+                  style={{ backgroundColor: "var(--border-color)" }}
                 />
                 <span
-                  className="text-[10px] font-semibold uppercase tracking-widest px-2"
+                  className="text-[var(--text-2xs)] font-semibold uppercase tracking-widest px-2"
                   style={{ color: "var(--text-tertiary)" }}
                 >
                   Archivados
                 </span>
                 <div
                   className="flex-1 h-px"
-                  style={{
-                    background:
-                      "linear-gradient(90deg, transparent 0%, var(--border-color) 100%)",
-                  }}
+                  style={{ backgroundColor: "var(--border-color)" }}
                 />
               </div>
 
               {/* Toggle button */}
               <button
                 onClick={() => setShowArchived(!showArchived)}
-                className="flex items-center gap-3 w-full text-left px-4 py-3 rounded-2xl transition-all duration-200"
+                className="flex items-center gap-2 w-full text-left px-3 py-2.5 rounded-[var(--radius-md)] transition-colors"
                 style={{
                   backgroundColor: "var(--bg-card)",
                   border: "1px solid var(--border-color)",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-                  e.currentTarget.style.boxShadow =
-                    "0 2px 8px rgba(0,0,0,0.08)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = "var(--bg-card)";
-                  e.currentTarget.style.boxShadow =
-                    "0 1px 3px rgba(0,0,0,0.06)";
                 }}
               >
                 <div
-                  className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, rgba(156,163,175,0.2) 0%, rgba(156,163,175,0.08) 100%)",
-                    border: "1px solid var(--border-color)",
-                  }}
+                  className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: "var(--bg-secondary)" }}
                 >
                   <Archive
-                    size={14}
+                    size={12}
                     style={{ color: "var(--text-secondary)" }}
                   />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p
-                    className="text-sm font-semibold leading-snug"
+                    className="text-[var(--text-sm)] font-semibold leading-snug"
                     style={{ color: "var(--text-primary)" }}
                   >
                     {showArchived
@@ -648,26 +633,24 @@ export default function ListDetailPage() {
                       : "Ver tareas archivadas"}
                   </p>
                   <p
-                    className="text-[11px] mt-0.5"
+                    className="text-[var(--text-2xs)] mt-0.5"
                     style={{ color: "var(--text-tertiary)" }}
                   >
-                    {archivedCount} tarea{archivedCount !== 1 ? "s" : ""} ·
-                    Restaurar o eliminar
+                    {archivedCount} tarea{archivedCount !== 1 ? "s" : ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1.5 flex-shrink-0">
                   <span
-                    className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                    className="text-[var(--text-xs)] font-semibold px-1.5 py-0.5 rounded-md"
                     style={{
                       backgroundColor: "var(--bg-secondary)",
                       color: "var(--text-tertiary)",
-                      border: "1px solid var(--border-color)",
                     }}
                   >
                     {archivedCount}
                   </span>
                   <ChevronDown
-                    size={14}
+                    size={13}
                     className={cn(
                       "transition-transform duration-200",
                       showArchived && "rotate-180",
@@ -683,10 +666,10 @@ export default function ListDetailPage() {
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.22, ease: "easeInOut" }}
+                    transition={{ duration: 0.2, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <div className="space-y-2 pt-3">
+                    <div className="space-y-1 pt-2">
                       <AnimatePresence mode="popLayout">
                         {archivedTasks.map((task) => (
                           <ArchivedTaskItem

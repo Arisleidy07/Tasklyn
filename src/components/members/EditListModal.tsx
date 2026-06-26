@@ -38,12 +38,14 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragStartEvent,
   DragEndEvent,
   DragOverlay,
+  useDroppable,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -53,7 +55,7 @@ import {
   horizontalListSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
-import { CSS, Transform } from "@dnd-kit/utilities";
+import { CSS } from "@dnd-kit/utilities";
 import {
   subscribeToBackgrounds,
   deleteBackgroundImageDoc,
@@ -64,6 +66,9 @@ import {
   reorderBgCategories,
   updateBackgroundImage,
   reorderBackgroundImages,
+  renameCategoryOnImages,
+  moveImagesToCategoryBatch,
+  deleteImagesByCategory,
   type BackgroundImage,
 } from "@/lib/firestore";
 import { deleteBackgroundImage } from "@/lib/storage";
@@ -157,66 +162,155 @@ function SortableImageItem({
     isDragging,
   } = useSortable({ id: image.id });
 
-  const style = {
+  const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    transition: transition || "transform 200ms ease",
+    opacity: isDragging ? 0 : 1,
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="relative group">
+    <div ref={setNodeRef} style={style} className="relative group select-none">
       <div
-        onClick={() => onSelect(isSelected ? "" : image.url)}
-        className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer border-2 transition-all ${isSelected ? "border-blue-500 ring-2 ring-blue-500/30" : "border-[var(--border-color)] hover:border-blue-500/50"}`}
+        onClick={() => !isDragging && onSelect(image.url)}
+        className="relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer transition-all duration-200"
+        style={
+          isSelected
+            ? {
+                boxShadow:
+                  "0 0 0 3px #3b82f6, 0 0 0 7px rgba(59,130,246,0.2), 0 12px 40px rgba(59,130,246,0.35)",
+                transform: "scale(1.01)",
+              }
+            : undefined
+        }
       >
+        {/* Image */}
         <img
           src={image.url}
           alt={image.displayName || category}
-          className="w-full h-full object-contain bg-[var(--bg-secondary)]"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          loading="lazy"
         />
+
+        {/* Always-on bottom gradient for legibility */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+
+        {/* Selected state */}
         {isSelected && (
-          <div className="absolute inset-0 bg-blue-500/20 flex items-center justify-center">
-            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center shadow-lg">
-              <Check size={20} className="text-white" />
+          <>
+            <div className="absolute inset-0 bg-blue-500/10 backdrop-blur-[0.5px] pointer-events-none" />
+            <div className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center shadow-xl ring-2 ring-white/60">
+              <Check size={15} className="text-white" strokeWidth={3} />
+            </div>
+            <div className="absolute bottom-2.5 left-2.5">
+              <span
+                className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full bg-blue-500 text-white"
+                style={{ boxShadow: "0 4px 12px rgba(37,99,235,0.6)" }}
+              >
+                Activo
+              </span>
+            </div>
+          </>
+        )}
+
+        {/* Hover overlay — name + actions */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10 opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col justify-between p-3">
+          {/* Drag handle top-left */}
+          <div className="flex justify-between items-start">
+            <div
+              {...attributes}
+              {...listeners}
+              onClick={(e) => e.stopPropagation()}
+              className="p-1.5 rounded-lg cursor-grab active:cursor-grabbing touch-none"
+              style={{
+                backgroundColor: "rgba(255,255,255,0.15)",
+                backdropFilter: "blur(8px)",
+                color: "#fff",
+              }}
+            >
+              <GripVertical size={14} />
             </div>
           </div>
+
+          {/* Bottom: name + actions */}
+          <div className="space-y-1.5">
+            {image.displayName && (
+              <p className="text-xs font-semibold text-white truncate leading-none">
+                {image.displayName}
+              </p>
+            )}
+            <div className="flex gap-1.5">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDownload(image.url, image.displayName);
+                }}
+                className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] font-semibold text-white transition-all hover:bg-white/25 active:scale-95"
+                style={{
+                  backgroundColor: "rgba(255,255,255,0.15)",
+                  backdropFilter: "blur(8px)",
+                }}
+              >
+                <Download size={11} /> Descargar
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(image);
+                }}
+                className="flex items-center justify-center w-8 h-8 rounded-lg transition-all active:scale-95"
+                style={{
+                  backgroundColor: "rgba(239,68,68,0.85)",
+                  backdropFilter: "blur(8px)",
+                  color: "#fff",
+                  boxShadow: "0 2px 8px rgba(239,68,68,0.5)",
+                }}
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Non-selected hover ring */}
+        {!isSelected && (
+          <div className="absolute inset-0 rounded-2xl ring-2 ring-transparent group-hover:ring-white/40 transition-all duration-200 pointer-events-none" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-3 gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDownload(image.url, image.displayName);
-            }}
-            className="p-2 rounded-lg bg-white/90 text-blue-600 hover:bg-white transition-colors"
-          >
-            <Download size={16} />
-          </button>
-          {image.uploadedBy === userId && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(image);
-              }}
-              className="p-2 rounded-lg bg-red-500/90 text-white hover:bg-red-500 transition-colors"
-            >
-              <Trash2 size={16} />
-            </button>
-          )}
-        </div>
-        {/* Drag handle */}
-        <div
-          {...attributes}
-          {...listeners}
-          className="absolute top-2 right-2 p-2 rounded-lg bg-black/50 text-white opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing transition-opacity"
-        >
-          <GripVertical size={16} />
-        </div>
       </div>
-      {image.displayName && (
-        <p className="mt-1 text-xs text-center text-[var(--text-tertiary)] truncate">
-          {image.displayName}
-        </p>
-      )}
+    </div>
+  );
+}
+
+// =====================================================
+// CATEGORY DROP ZONE — accepts images dragged into empty categories
+// =====================================================
+
+function CategoryDropZone({
+  categoryId,
+  categoryName,
+  onUpload,
+}: {
+  categoryId: string;
+  categoryName: string;
+  onUpload: () => void;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: `cat-drop-${categoryId}` });
+  return (
+    <div ref={setNodeRef} className="col-span-full">
+      <button
+        onClick={onUpload}
+        className="w-full py-10 flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed transition-all duration-200"
+        style={{
+          borderColor: isOver ? "#3b82f6" : "var(--border-color)",
+          backgroundColor: isOver ? "rgba(59,130,246,0.08)" : "transparent",
+          color: isOver ? "#3b82f6" : "var(--text-tertiary)",
+          transform: isOver ? "scale(1.01)" : "scale(1)",
+        }}
+      >
+        <ImageIcon size={28} />
+        <span className="text-sm font-medium">
+          {isOver ? `Soltar aquí` : `Subir imágenes a ${categoryName}`}
+        </span>
+      </button>
     </div>
   );
 }
@@ -410,6 +504,16 @@ export default function EditListModal({
   >({});
   const [activeImageId, setActiveImageId] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState<BackgroundImage | null>(null);
+  const [deleteCategoryTarget, setDeleteCategoryTarget] = useState<{
+    id: string;
+    name: string;
+    imageCount: number;
+  } | null>(null);
+  const [deleteCategoryAction, setDeleteCategoryAction] = useState<
+    "move" | "delete"
+  >("move");
+  const [deleteCategoryMoveTo, setDeleteCategoryMoveTo] = useState<string>("");
+  const [isDeletingCategory, setIsDeletingCategory] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isMountedRef = useRef(true);
@@ -421,22 +525,41 @@ export default function EditListModal({
   const isOwner = list.owner === user?.id;
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 6 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
 
-  // Subscribe to categories
+  // Subscribe to categories — if empty, seed defaults into Firestore (real IDs)
+  const seedingRef = useRef(false);
   useEffect(() => {
     if (!isOpen) return;
     setLoadingCategories(true);
-    const unsubscribe = subscribeToBgCategories((cats) => {
-      setCategories(
-        cats.length === 0
-          ? DEFAULT_CATEGORIES
-          : cats.sort((a, b) => a.order - b.order),
-      );
+    const unsubscribe = subscribeToBgCategories(async (cats) => {
+      if (cats.length === 0 && !seedingRef.current) {
+        seedingRef.current = true;
+        try {
+          for (const cat of DEFAULT_CATEGORIES) {
+            await addBgCategory({
+              name: cat.name,
+              emoji: cat.emoji,
+              order: cat.order,
+              createdBy: "system",
+            });
+          }
+        } catch (e) {
+          console.error("Error seeding default categories:", e);
+          seedingRef.current = false;
+        }
+        // snapshot will fire again with real docs
+        return;
+      }
+      if (cats.length > 0) seedingRef.current = false;
+      setCategories(cats.sort((a, b) => a.order - b.order));
       setLoadingCategories(false);
     });
     return () => unsubscribe();
@@ -569,44 +692,75 @@ export default function EditListModal({
 
   const handleUpdateCategory = async (id: string) => {
     if (!editDraft.name.trim()) return;
+    const cat = categories.find((c) => c.id === id);
+    const oldName = cat?.name || "";
+    const newName = editDraft.name.trim();
     try {
-      await updateBgCategory(id, {
-        name: editDraft.name.trim(),
-        emoji: editDraft.emoji,
-      });
+      await updateBgCategory(id, { name: newName, emoji: editDraft.emoji });
+      // Propagate rename to all images in this category
+      if (oldName && oldName !== newName) {
+        await renameCategoryOnImages(oldName, newName);
+      }
       setEditingCategoryId(null);
     } catch (e) {
       console.error("Error updating category:", e);
     }
   };
 
-  const handleDeleteCategory = async (id: string) => {
-    if (
-      !confirm(
-        "¿Eliminar esta categoría? Las imágenes quedarán sin categorizar.",
-      )
-    )
-      return;
+  const handleDeleteCategory = (id: string) => {
+    const cat = categories.find((c) => c.id === id);
+    if (!cat) return;
+    // Count images directly from bgImages state (not groupedImages useMemo which may be stale)
+    const imageCount = bgImages.filter(
+      (img) => (img.category || "Personalizadas") === cat.name,
+    ).length;
+    const otherCats = categories.filter((c) => c.id !== id);
+    setDeleteCategoryTarget({ id, name: cat.name, imageCount });
+    setDeleteCategoryAction(imageCount > 0 ? "move" : "delete");
+    setDeleteCategoryMoveTo(otherCats[0]?.name || "");
+  };
+
+  const handleConfirmDeleteCategory = async () => {
+    if (!deleteCategoryTarget) return;
+    setIsDeletingCategory(true);
     try {
+      const { id, name, imageCount } = deleteCategoryTarget;
+      if (imageCount > 0) {
+        if (deleteCategoryAction === "move" && deleteCategoryMoveTo) {
+          await moveImagesToCategoryBatch(name, deleteCategoryMoveTo);
+        } else {
+          await deleteImagesByCategory(name);
+        }
+      }
       await deleteBgCategory(id);
+      // Optimistic: remove from local state immediately
+      setCategories((prev) => prev.filter((c) => c.id !== id));
+      setDeleteCategoryTarget(null);
     } catch (e) {
       console.error("Error deleting category:", e);
+      alert("Error al eliminar la categoría. Revisa la consola.");
+    } finally {
+      setIsDeletingCategory(false);
     }
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    if (over && active.id !== over.id) {
-      setCategories((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-        const newItems = arrayMove(items, oldIndex, newIndex);
-        reorderBgCategories(newItems.map((item) => item.id)).catch(
-          console.error,
-        );
-        return newItems;
-      });
-    }
+    if (!over || active.id === over.id) return;
+    setCategories((items) => {
+      const oldIndex = items.findIndex((item) => item.id === active.id);
+      const newIndex = items.findIndex((item) => item.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return items;
+      const newItems = arrayMove(items, oldIndex, newIndex);
+      // Only persist if all IDs are real Firestore IDs (not default-*)
+      const allReal = newItems.every((c) => !c.id.startsWith("default-"));
+      if (allReal) {
+        reorderBgCategories(newItems.map((item) => item.id)).catch((e) => {
+          console.error("Error reordering categories:", e);
+        });
+      }
+      return newItems;
+    });
   };
 
   // Image handlers
@@ -678,28 +832,63 @@ export default function EditListModal({
     const activeId = active.id as string;
     const overId = over.id as string;
 
-    const activeImage = bgImages.find((img) => img.id === activeId);
+    if (activeId === overId) return;
+
+    const draggedImage = bgImages.find((img) => img.id === activeId);
+    if (!draggedImage) return;
+
+    // Check if dropping onto a category droppable zone (not an image)
+    const overCategory = categories.find(
+      (cat) => `cat-drop-${cat.id}` === overId,
+    );
+    if (overCategory) {
+      if (draggedImage.category !== overCategory.name) {
+        // Optimistic update
+        setBgImages((prev) =>
+          prev.map((img) =>
+            img.id === activeId ? { ...img, category: overCategory.name } : img,
+          ),
+        );
+        await handleMoveImageToCategory(activeId, overCategory.name);
+      }
+      return;
+    }
+
+    // Dropping onto another image
     const overImage = bgImages.find((img) => img.id === overId);
+    if (!overImage) return;
 
-    if (!activeImage || !overImage) return;
-
-    // Check if dropping on a different category
-    if (activeImage.category !== overImage.category) {
-      // Move to new category
+    if (draggedImage.category !== overImage.category) {
+      // Cross-category move: optimistic update
+      setBgImages((prev) =>
+        prev.map((img) =>
+          img.id === activeId ? { ...img, category: overImage.category } : img,
+        ),
+      );
       await handleMoveImageToCategory(activeId, overImage.category);
     } else {
       // Reorder within same category
-      const categoryImages = groupedImages[activeImage.category] || [];
+      const categoryImages = bgImages
+        .filter((img) => img.category === draggedImage.category)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
       const oldIndex = categoryImages.findIndex((img) => img.id === activeId);
       const newIndex = categoryImages.findIndex((img) => img.id === overId);
 
       if (oldIndex !== newIndex) {
         const reordered = arrayMove(categoryImages, oldIndex, newIndex);
-        const updates = reordered.map((img, index) => ({
-          id: img.id,
-          order: index,
-        }));
-        await reorderBackgroundImages(updates);
+        // Optimistic update
+        setBgImages((prev) => {
+          const others = prev.filter(
+            (img) => img.category !== draggedImage.category,
+          );
+          return [
+            ...others,
+            ...reordered.map((img, i) => ({ ...img, order: i })),
+          ];
+        });
+        await reorderBackgroundImages(
+          reordered.map((img, index) => ({ id: img.id, order: index })),
+        );
       }
     }
   };
@@ -768,11 +957,14 @@ export default function EditListModal({
             style={{
               width: isFullscreen ? "100vw" : "100%",
               height: isFullscreen ? "100vh" : "100%",
-              maxWidth: isFullscreen ? "none" : "min(95vw, 1400px)",
-              maxHeight: isFullscreen ? "none" : "min(95vh, 900px)",
+              maxWidth: isFullscreen ? "none" : "min(96vw, 1440px)",
+              maxHeight: isFullscreen ? "none" : "min(96vh, 960px)",
               backgroundColor: "var(--bg-card)",
-              borderRadius: isFullscreen ? 0 : "24px",
+              borderRadius: isFullscreen ? 0 : "28px",
               border: isFullscreen ? "none" : "1px solid var(--border-color)",
+              boxShadow: isFullscreen
+                ? "none"
+                : "0 32px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)",
             }}
           >
             {/* Header */}
@@ -820,7 +1012,7 @@ export default function EditListModal({
 
             {/* Content */}
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-              <div className="p-6">
+              <div className="p-6 md:p-8">
                 {/* DETAILS TAB */}
                 {activeTab === "details" && (
                   <div className="max-w-2xl mx-auto space-y-6">
@@ -995,237 +1187,536 @@ export default function EditListModal({
                   </div>
                 )}
 
-                {/* BACKGROUNDS TAB */}
+                {/* BACKGROUNDS TAB — PREMIUM */}
                 {activeTab === "backgrounds" && (
-                  <div className="space-y-6">
-                    {/* Category Management */}
-                    <div className="flex items-center justify-between p-4 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)]">
-                      <div>
-                        <h3 className="text-lg font-bold text-[var(--text-primary)]">
-                          Gestionar Categorías
-                        </h3>
-                        <p className="text-sm text-[var(--text-secondary)]">
-                          Crear, editar y reordenar
-                        </p>
-                      </div>
-                      <button
-                        onClick={() =>
-                          setIsManagingCategories(!isManagingCategories)
-                        }
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${isManagingCategories ? "bg-blue-500 text-white" : "bg-[var(--bg-primary)] text-[var(--text-primary)] hover:bg-blue-500/10"}`}
+                  <div className="space-y-8 pb-4">
+                    {/* ── ACTIVE BACKGROUND HERO ── */}
+                    {backgroundImage ? (
+                      <motion.div
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="relative rounded-3xl overflow-hidden"
+                        style={{
+                          minHeight: 280,
+                          boxShadow:
+                            "0 12px 48px rgba(0,0,0,0.4), 0 0 0 2px rgba(59,130,246,0.5)",
+                        }}
                       >
-                        {isManagingCategories ? "Listo" : "Gestionar"}
-                      </button>
-                    </div>
-
-                    {isManagingCategories && (
-                      <div className="space-y-4 p-4 bg-[var(--bg-secondary)]/50 rounded-xl border border-[var(--border-color)]">
-                        <DndContext
-                          sensors={sensors}
-                          collisionDetection={closestCenter}
-                          onDragEnd={handleDragEnd}
-                        >
-                          <SortableContext
-                            items={categories.map((c) => c.id)}
-                            strategy={verticalListSortingStrategy}
+                        <img
+                          src={backgroundImage}
+                          alt="Fondo activo"
+                          className="w-full object-cover"
+                          style={{ maxHeight: 360, minHeight: 280 }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                        <div className="absolute top-4 left-4">
+                          <span
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest text-white"
+                            style={{
+                              backgroundColor: "rgba(37,99,235,0.9)",
+                              backdropFilter: "blur(12px)",
+                              boxShadow: "0 4px 16px rgba(37,99,235,0.5)",
+                            }}
                           >
-                            <div className="space-y-2">
-                              {categories.map((cat, index) => (
-                                <SortableCategoryItem
-                                  key={cat.id}
-                                  category={cat}
-                                  index={index}
-                                  isEditing={editingCategoryId === cat.id}
-                                  editDraft={editDraft}
-                                  onEditChange={(field, value) =>
-                                    setEditDraft((prev) => ({
-                                      ...prev,
-                                      [field]: value,
-                                    }))
-                                  }
-                                  onSave={() => handleUpdateCategory(cat.id)}
-                                  onCancel={() => setEditingCategoryId(null)}
-                                  onStartEdit={() => {
-                                    setEditingCategoryId(cat.id);
-                                    setEditDraft({
-                                      name: cat.name,
-                                      emoji: cat.emoji || "📁",
-                                    });
-                                  }}
-                                  onDelete={() => handleDeleteCategory(cat.id)}
-                                />
-                              ))}
-                            </div>
-                          </SortableContext>
-                        </DndContext>
-
-                        {showAddCategory ? (
-                          <div className="flex items-center gap-2 p-3 bg-[var(--bg-primary)] rounded-xl border-2 border-blue-500/30">
-                            <input
-                              type="text"
-                              value={newCategoryEmoji}
-                              onChange={(e) =>
-                                setNewCategoryEmoji(e.target.value)
-                              }
-                              className="w-12 h-12 text-center text-2xl bg-[var(--bg-secondary)] border-2 border-[var(--border-color)] rounded-xl focus:outline-none focus:border-blue-500"
-                              placeholder="📁"
-                            />
-                            <input
-                              type="text"
-                              value={newCategoryName}
-                              onChange={(e) =>
-                                setNewCategoryName(e.target.value)
-                              }
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") handleAddCategory();
-                                if (e.key === "Escape")
-                                  setShowAddCategory(false);
+                            <Check size={10} strokeWidth={3} /> Fondo activo
+                          </span>
+                        </div>
+                        <div className="absolute bottom-0 left-0 right-0 px-6 py-6 flex items-end justify-between gap-4">
+                          <div className="min-w-0">
+                            <p className="text-white/60 text-[11px] font-semibold uppercase tracking-wider mb-1">
+                              {bgImages.find((i) => i.url === backgroundImage)
+                                ?.category || "Personalizado"}
+                            </p>
+                            <p
+                              className="text-white font-bold text-2xl leading-tight truncate"
+                              style={{
+                                textShadow: "0 2px 8px rgba(0,0,0,0.6)",
                               }}
-                              className="flex-1 px-4 py-3 bg-[var(--bg-secondary)] border-2 border-[var(--border-color)] rounded-xl text-sm font-medium text-[var(--text-primary)] focus:outline-none focus:border-blue-500"
-                              placeholder="Nueva categoría..."
-                              autoFocus
-                            />
-                            <button
-                              onClick={handleAddCategory}
-                              className="p-2 rounded-lg bg-green-500/10 text-green-600 hover:bg-green-500/20"
                             >
-                              <Check size={20} />
-                            </button>
-                            <button
-                              onClick={() => setShowAddCategory(false)}
-                              className="p-2 rounded-lg bg-gray-500/10 text-gray-600 hover:bg-gray-500/20"
-                            >
-                              <X size={20} />
-                            </button>
+                              {bgImages.find((i) => i.url === backgroundImage)
+                                ?.displayName || "Imagen personalizada"}
+                            </p>
                           </div>
-                        ) : (
                           <button
-                            onClick={() => setShowAddCategory(true)}
-                            className="w-full py-3 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--border-color)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-blue-500/50 hover:bg-blue-500/5 transition-all"
+                            onClick={() =>
+                              handleSelectBackground(backgroundImage)
+                            }
+                            className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold text-white transition-all hover:scale-105 active:scale-95"
+                            style={{
+                              backgroundColor: "rgba(239,68,68,0.8)",
+                              backdropFilter: "blur(12px)",
+                              boxShadow: "0 4px 20px rgba(239,68,68,0.45)",
+                            }}
                           >
-                            <Plus size={20} /> Añadir Categoría
+                            <X size={13} /> Quitar fondo
                           </button>
-                        )}
+                        </div>
+                      </motion.div>
+                    ) : (
+                      <div
+                        className="relative rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-5 py-20 overflow-hidden"
+                        style={{
+                          borderColor: "var(--border-color)",
+                          backgroundColor: "var(--bg-secondary)",
+                        }}
+                      >
+                        <div
+                          className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-xl"
+                          style={{
+                            background:
+                              "linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0.15) 100%)",
+                          }}
+                        >
+                          <ImageIcon size={34} className="text-blue-400" />
+                        </div>
+                        <div className="text-center space-y-1.5">
+                          <p
+                            className="font-bold text-lg"
+                            style={{ color: "var(--text-primary)" }}
+                          >
+                            Sin fondo seleccionado
+                          </p>
+                          <p
+                            className="text-sm"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
+                            Elige una imagen de la galería o sube la tuya
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => openUploadModal("Personalizadas")}
+                          className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                        >
+                          <Plus size={16} /> Subir imagen
+                        </button>
                       </div>
                     )}
 
-                    {/* Images by Category */}
-                    <div className="space-y-6">
-                      {categories.map((category) => {
-                        const images = groupedImages[category.name] || [];
-                        const isExpanded =
-                          expandedCategories[category.name] ?? true;
-                        return (
-                          <div key={category.id} className="space-y-3">
-                            <div className="w-full flex items-center justify-between p-4 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)] hover:border-blue-500/30 transition-all">
-                              <button
-                                onClick={() => toggleCategory(category.name)}
-                                className="flex-1 flex items-center gap-3 text-left"
+                    {/* ── TOOLBAR ── */}
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                      <p
+                        className="text-[11px] font-bold uppercase tracking-widest"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        Galería · {bgImages.length}{" "}
+                        {bgImages.length === 1 ? "imagen" : "imágenes"}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => openUploadModal("Personalizadas")}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95"
+                        >
+                          <Plus size={14} /> Subir
+                        </button>
+                        <button
+                          onClick={() => setIsManagingCategories((v) => !v)}
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border-2"
+                          style={{
+                            borderColor: isManagingCategories
+                              ? "#3b82f6"
+                              : "var(--border-color)",
+                            backgroundColor: isManagingCategories
+                              ? "rgba(59,130,246,0.08)"
+                              : "transparent",
+                            color: isManagingCategories
+                              ? "#3b82f6"
+                              : "var(--text-secondary)",
+                          }}
+                        >
+                          <Settings2 size={14} />
+                          <span className="hidden sm:inline">Categorías</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* ── CATEGORY MANAGER (collapsible) ── */}
+                    <AnimatePresence>
+                      {isManagingCategories && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.22 }}
+                          className="overflow-hidden"
+                        >
+                          <div
+                            className="rounded-3xl border-2 p-5 space-y-3"
+                            style={{
+                              borderColor: "rgba(59,130,246,0.3)",
+                              backgroundColor: "rgba(59,130,246,0.04)",
+                            }}
+                          >
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-blue-500">
+                              Gestión de categorías
+                            </p>
+                            <DndContext
+                              sensors={sensors}
+                              collisionDetection={closestCenter}
+                              onDragEnd={handleDragEnd}
+                            >
+                              <SortableContext
+                                items={categories.map((c) => c.id)}
+                                strategy={verticalListSortingStrategy}
                               >
-                                <span className="text-2xl">
-                                  {category.emoji}
-                                </span>
-                                <span className="font-semibold text-[var(--text-primary)]">
-                                  {category.name}
-                                </span>
-                                <span className="px-2 py-0.5 text-xs font-bold bg-[var(--bg-tertiary)] text-[var(--text-tertiary)] rounded-full">
-                                  {images.length}
-                                </span>
-                              </button>
-                              <div className="flex items-center gap-2">
+                                <div className="space-y-2">
+                                  {categories.map((cat, index) => (
+                                    <SortableCategoryItem
+                                      key={cat.id}
+                                      category={cat}
+                                      index={index}
+                                      isEditing={editingCategoryId === cat.id}
+                                      editDraft={editDraft}
+                                      onEditChange={(field, value) =>
+                                        setEditDraft((prev) => ({
+                                          ...prev,
+                                          [field]: value,
+                                        }))
+                                      }
+                                      onSave={() =>
+                                        handleUpdateCategory(cat.id)
+                                      }
+                                      onCancel={() =>
+                                        setEditingCategoryId(null)
+                                      }
+                                      onStartEdit={() => {
+                                        setEditingCategoryId(cat.id);
+                                        setEditDraft({
+                                          name: cat.name,
+                                          emoji: cat.emoji || "📁",
+                                        });
+                                      }}
+                                      onDelete={() =>
+                                        handleDeleteCategory(cat.id)
+                                      }
+                                    />
+                                  ))}
+                                </div>
+                              </SortableContext>
+                            </DndContext>
+                            {showAddCategory ? (
+                              <div
+                                className="flex items-center gap-2 p-3 rounded-2xl border-2 border-blue-500/30"
+                                style={{ backgroundColor: "var(--bg-card)" }}
+                              >
+                                <input
+                                  type="text"
+                                  value={newCategoryEmoji}
+                                  onChange={(e) =>
+                                    setNewCategoryEmoji(e.target.value)
+                                  }
+                                  className="w-12 h-12 text-center text-2xl rounded-xl focus:outline-none border-2 focus:border-blue-500 transition-colors"
+                                  style={{
+                                    backgroundColor: "var(--bg-secondary)",
+                                    borderColor: "var(--border-color)",
+                                  }}
+                                  placeholder="📁"
+                                />
+                                <input
+                                  type="text"
+                                  value={newCategoryName}
+                                  onChange={(e) =>
+                                    setNewCategoryName(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") handleAddCategory();
+                                    if (e.key === "Escape")
+                                      setShowAddCategory(false);
+                                  }}
+                                  className="flex-1 px-4 py-3 rounded-xl text-sm font-medium focus:outline-none border-2 focus:border-blue-500 transition-colors"
+                                  style={{
+                                    backgroundColor: "var(--bg-secondary)",
+                                    borderColor: "var(--border-color)",
+                                    color: "var(--text-primary)",
+                                  }}
+                                  placeholder="Nombre de categoría..."
+                                  autoFocus
+                                />
                                 <button
-                                  onClick={() => openUploadModal(category.name)}
-                                  className="p-2 rounded-lg bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 transition-colors"
+                                  onClick={handleAddCategory}
+                                  className="p-2.5 rounded-xl bg-green-500 text-white hover:bg-green-600 transition-colors"
                                 >
-                                  <Plus size={18} />
+                                  <Check size={16} />
                                 </button>
                                 <button
-                                  onClick={() => toggleCategory(category.name)}
-                                  className="p-2 rounded-lg hover:bg-[var(--bg-tertiary)] text-[var(--text-tertiary)] transition-colors"
+                                  onClick={() => setShowAddCategory(false)}
+                                  className="p-2.5 rounded-xl hover:bg-[var(--bg-secondary)] transition-colors"
+                                  style={{ color: "var(--text-secondary)" }}
                                 >
-                                  {isExpanded ? (
-                                    <ChevronUp size={20} />
-                                  ) : (
-                                    <ChevronDown size={20} />
-                                  )}
+                                  <X size={16} />
                                 </button>
                               </div>
-                            </div>
-
-                            {isExpanded && (
-                              <DndContext
-                                sensors={sensors}
-                                collisionDetection={closestCenter}
-                                onDragStart={handleImageDragStart}
-                                onDragEnd={handleImageDragEnd}
+                            ) : (
+                              <button
+                                onClick={() => setShowAddCategory(true)}
+                                className="w-full py-3 flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed text-sm font-semibold transition-all hover:border-blue-500 hover:text-blue-500 hover:bg-blue-500/5"
+                                style={{
+                                  borderColor: "var(--border-color)",
+                                  color: "var(--text-tertiary)",
+                                }}
                               >
-                                <SortableContext
-                                  items={images.map((img) => img.id)}
-                                  strategy={horizontalListSortingStrategy}
-                                >
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                                    {images.length === 0 ? (
-                                      <button
-                                        onClick={() =>
-                                          openUploadModal(category.name)
-                                        }
-                                        className="col-span-full py-8 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-blue-500/50 hover:bg-blue-500/5 transition-all"
-                                      >
-                                        <ImageIcon size={32} />
-                                        <span className="text-sm font-medium">
-                                          Añadir imágenes a {category.name}
-                                        </span>
-                                      </button>
-                                    ) : (
-                                      <>
-                                        {images.map((img) => (
-                                          <SortableImageItem
-                                            key={img.id}
-                                            image={img}
-                                            isSelected={
-                                              backgroundImage === img.url
-                                            }
-                                            category={category.name}
-                                            onSelect={(url) =>
-                                              handleSelectBackground(url)
-                                            }
-                                            onDownload={handleDownloadImage}
-                                            onDelete={setDeleteTarget}
-                                            userId={user!.id}
-                                          />
-                                        ))}
-                                        <button
-                                          onClick={() =>
-                                            openUploadModal(category.name)
-                                          }
-                                          className="aspect-square flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--border-color)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:border-blue-500/50 hover:bg-blue-500/5 transition-all"
-                                        >
-                                          <Plus size={24} />
-                                          <span className="text-xs font-medium">
-                                            Agregar
-                                          </span>
-                                        </button>
-                                      </>
-                                    )}
-                                  </div>
-                                </SortableContext>
-                                <DragOverlay>
-                                  {activeImage && (
-                                    <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-blue-500 bg-[var(--bg-secondary)] opacity-90">
-                                      <img
-                                        src={activeImage.url}
-                                        alt={activeImage.displayName || ""}
-                                        className="w-full h-full object-contain"
-                                      />
-                                    </div>
-                                  )}
-                                </DragOverlay>
-                              </DndContext>
+                                <Plus size={15} /> Nueva categoría
+                              </button>
                             )}
                           </div>
-                        );
-                      })}
-                    </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* ── IMAGE GALLERY — single global DndContext ── */}
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragStart={handleImageDragStart}
+                      onDragEnd={handleImageDragEnd}
+                    >
+                      <div className="space-y-10">
+                        {/* Skeleton while loading */}
+                        {loadingImages ? (
+                          <div className="space-y-8">
+                            {[1, 2].map((s) => (
+                              <div key={s} className="space-y-4">
+                                <div
+                                  className="h-6 w-36 rounded-xl animate-pulse"
+                                  style={{
+                                    backgroundColor: "var(--bg-tertiary)",
+                                  }}
+                                />
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                  {[1, 2, 3, 4].map((i) => (
+                                    <div
+                                      key={i}
+                                      className="aspect-[4/3] rounded-2xl animate-pulse"
+                                      style={{
+                                        backgroundColor: "var(--bg-tertiary)",
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : categories.length === 0 ? (
+                          <div
+                            className="flex flex-col items-center justify-center gap-5 py-24 rounded-3xl border-2 border-dashed"
+                            style={{
+                              borderColor: "var(--border-color)",
+                              backgroundColor: "var(--bg-secondary)",
+                            }}
+                          >
+                            <div
+                              className="w-18 h-18 rounded-3xl flex items-center justify-center p-5"
+                              style={{
+                                background:
+                                  "linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12))",
+                              }}
+                            >
+                              <FolderOpen size={32} className="text-blue-400" />
+                            </div>
+                            <div className="text-center">
+                              <p
+                                className="font-bold text-lg"
+                                style={{ color: "var(--text-primary)" }}
+                              >
+                                Sin categorías
+                              </p>
+                              <p
+                                className="text-sm mt-1"
+                                style={{ color: "var(--text-tertiary)" }}
+                              >
+                                Crea categorías para organizar tus fondos
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setIsManagingCategories(true);
+                                setShowAddCategory(true);
+                              }}
+                              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold text-blue-600 bg-blue-500/10 hover:bg-blue-500/20 transition-all"
+                            >
+                              <Plus size={15} /> Crear categoría
+                            </button>
+                          </div>
+                        ) : (
+                          categories.map((category) => {
+                            const images = (groupedImages[category.name] || [])
+                              .slice()
+                              .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+                            const isExpanded =
+                              expandedCategories[category.name] ?? true;
+                            const hasActive = images.some(
+                              (img) => img.url === backgroundImage,
+                            );
+                            return (
+                              <div key={category.id}>
+                                {/* Category header */}
+                                <div className="flex items-center justify-between mb-5">
+                                  <button
+                                    onClick={() =>
+                                      toggleCategory(category.name)
+                                    }
+                                    className="flex items-center gap-3 min-w-0 group"
+                                  >
+                                    <span className="text-2xl leading-none flex-shrink-0">
+                                      {category.emoji}
+                                    </span>
+                                    <span
+                                      className="font-bold text-base truncate"
+                                      style={{ color: "var(--text-primary)" }}
+                                    >
+                                      {category.name}
+                                    </span>
+                                    {images.length > 0 && (
+                                      <span
+                                        className="flex-shrink-0 px-2.5 py-0.5 rounded-full text-xs font-bold"
+                                        style={{
+                                          backgroundColor: "var(--bg-tertiary)",
+                                          color: "var(--text-tertiary)",
+                                        }}
+                                      >
+                                        {images.length}
+                                      </span>
+                                    )}
+                                    {hasActive && (
+                                      <span className="flex-shrink-0 px-2.5 py-0.5 rounded-full text-xs font-bold text-blue-600 bg-blue-500/10">
+                                        ✓ activo
+                                      </span>
+                                    )}
+                                    <span className="flex-shrink-0 text-[var(--text-tertiary)] group-hover:text-[var(--text-secondary)] transition-colors">
+                                      {isExpanded ? (
+                                        <ChevronUp size={15} />
+                                      ) : (
+                                        <ChevronDown size={15} />
+                                      )}
+                                    </span>
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      openUploadModal(category.name)
+                                    }
+                                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95"
+                                    style={{
+                                      backgroundColor: "rgba(37,99,235,0.1)",
+                                      color: "#2563eb",
+                                    }}
+                                  >
+                                    <Plus size={13} /> Subir
+                                  </button>
+                                </div>
+
+                                {/* Image grid */}
+                                <AnimatePresence>
+                                  {isExpanded && (
+                                    <motion.div
+                                      initial={{ opacity: 0, height: 0 }}
+                                      animate={{ opacity: 1, height: "auto" }}
+                                      exit={{ opacity: 0, height: 0 }}
+                                      transition={{ duration: 0.18 }}
+                                      className="overflow-hidden"
+                                    >
+                                      <SortableContext
+                                        items={images.map((img) => img.id)}
+                                        strategy={horizontalListSortingStrategy}
+                                      >
+                                        {images.length === 0 ? (
+                                          <CategoryDropZone
+                                            categoryId={category.id}
+                                            categoryName={category.name}
+                                            onUpload={() =>
+                                              openUploadModal(category.name)
+                                            }
+                                          />
+                                        ) : (
+                                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-4">
+                                            {images.map((img) => (
+                                              <SortableImageItem
+                                                key={img.id}
+                                                image={img}
+                                                isSelected={
+                                                  backgroundImage === img.url
+                                                }
+                                                category={category.name}
+                                                onSelect={
+                                                  handleSelectBackground
+                                                }
+                                                onDownload={handleDownloadImage}
+                                                onDelete={setDeleteTarget}
+                                                userId={user!.id}
+                                              />
+                                            ))}
+                                            <button
+                                              onClick={() =>
+                                                openUploadModal(category.name)
+                                              }
+                                              className="aspect-[4/3] flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed transition-all group"
+                                              style={{
+                                                borderColor:
+                                                  "var(--border-color)",
+                                              }}
+                                              onMouseEnter={(e) => {
+                                                e.currentTarget.style.borderColor =
+                                                  "#3b82f6";
+                                                e.currentTarget.style.backgroundColor =
+                                                  "rgba(59,130,246,0.05)";
+                                              }}
+                                              onMouseLeave={(e) => {
+                                                e.currentTarget.style.borderColor =
+                                                  "var(--border-color)";
+                                                e.currentTarget.style.backgroundColor =
+                                                  "transparent";
+                                              }}
+                                            >
+                                              <Plus
+                                                size={22}
+                                                className="text-[var(--text-tertiary)] group-hover:text-blue-500 transition-colors"
+                                              />
+                                              <span className="text-xs font-medium text-[var(--text-tertiary)] group-hover:text-blue-500 transition-colors">
+                                                Agregar
+                                              </span>
+                                            </button>
+                                          </div>
+                                        )}
+                                      </SortableContext>
+                                      <div
+                                        className="mt-8 border-t"
+                                        style={{
+                                          borderColor: "var(--border-color)",
+                                        }}
+                                      />
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* Global DragOverlay */}
+                      <DragOverlay
+                        dropAnimation={{
+                          duration: 180,
+                          easing: "cubic-bezier(0.18,0.67,0.6,1.22)",
+                        }}
+                      >
+                        {activeImage && (
+                          <div
+                            className="rounded-2xl overflow-hidden ring-4 ring-blue-500"
+                            style={{
+                              width: 180,
+                              aspectRatio: "4/3",
+                              transform: "rotate(2.5deg) scale(1.06)",
+                              boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+                            }}
+                          >
+                            <img
+                              src={activeImage.url}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                      </DragOverlay>
+                    </DndContext>
                   </div>
                 )}
               </div>
@@ -1268,6 +1759,203 @@ export default function EditListModal({
               user={user!}
               onUploaded={(url) => handleSelectBackground(url)}
             />
+
+            {/* Delete Category Confirmation Modal */}
+            <AnimatePresence>
+              {deleteCategoryTarget && (
+                <>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 z-[99998] bg-black/70 backdrop-blur-sm"
+                    onClick={() =>
+                      !isDeletingCategory && setDeleteCategoryTarget(null)
+                    }
+                  />
+                  <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                      className="w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+                      style={{
+                        backgroundColor: "var(--bg-card)",
+                        border: "1px solid rgba(239,68,68,0.25)",
+                      }}
+                    >
+                      <div className="p-6">
+                        <div className="flex items-start gap-4 mb-5">
+                          <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-red-500/10 flex-shrink-0">
+                            <AlertTriangle size={22} className="text-red-500" />
+                          </div>
+                          <div>
+                            <p
+                              className="font-bold text-base"
+                              style={{ color: "var(--text-primary)" }}
+                            >
+                              Eliminar categoría "{deleteCategoryTarget.name}"
+                            </p>
+                            {deleteCategoryTarget.imageCount > 0 ? (
+                              <p
+                                className="text-sm mt-1"
+                                style={{ color: "var(--text-secondary)" }}
+                              >
+                                Esta categoría contiene{" "}
+                                <strong>
+                                  {deleteCategoryTarget.imageCount}
+                                </strong>{" "}
+                                imagen
+                                {deleteCategoryTarget.imageCount !== 1
+                                  ? "es"
+                                  : ""}
+                                . ¿Qué deseas hacer con ellas?
+                              </p>
+                            ) : (
+                              <p
+                                className="text-sm mt-1"
+                                style={{ color: "var(--text-secondary)" }}
+                              >
+                                La categoría está vacía. Se eliminará sin
+                                afectar imágenes.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {deleteCategoryTarget.imageCount > 0 && (
+                          <div className="space-y-2 mb-5">
+                            {/* Option: Move */}
+                            <label
+                              className={`flex items-start gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${deleteCategoryAction === "move" ? "border-blue-500 bg-blue-500/5" : "border-transparent"}`}
+                              style={{
+                                backgroundColor:
+                                  deleteCategoryAction === "move"
+                                    ? undefined
+                                    : "var(--bg-secondary)",
+                              }}
+                              onClick={() => setDeleteCategoryAction("move")}
+                            >
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${deleteCategoryAction === "move" ? "border-blue-500 bg-blue-500" : "border-[var(--border-color)]"}`}
+                              >
+                                {deleteCategoryAction === "move" && (
+                                  <Check
+                                    size={11}
+                                    className="text-white"
+                                    strokeWidth={3}
+                                  />
+                                )}
+                              </div>
+                              <div>
+                                <p
+                                  className="font-semibold text-sm"
+                                  style={{ color: "var(--text-primary)" }}
+                                >
+                                  Mover imágenes a otra categoría
+                                </p>
+                                {deleteCategoryAction === "move" && (
+                                  <select
+                                    value={deleteCategoryMoveTo}
+                                    onChange={(e) =>
+                                      setDeleteCategoryMoveTo(e.target.value)
+                                    }
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="mt-2 w-full px-3 py-2 rounded-xl text-sm border-2 focus:outline-none focus:border-blue-500"
+                                    style={{
+                                      backgroundColor: "var(--bg-secondary)",
+                                      borderColor: "var(--border-color)",
+                                      color: "var(--text-primary)",
+                                    }}
+                                  >
+                                    {categories
+                                      .filter(
+                                        (c) => c.id !== deleteCategoryTarget.id,
+                                      )
+                                      .map((c) => (
+                                        <option key={c.id} value={c.name}>
+                                          {c.emoji} {c.name}
+                                        </option>
+                                      ))}
+                                  </select>
+                                )}
+                              </div>
+                            </label>
+                            {/* Option: Delete */}
+                            <label
+                              className={`flex items-start gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${deleteCategoryAction === "delete" ? "border-red-500 bg-red-500/5" : "border-transparent"}`}
+                              style={{
+                                backgroundColor:
+                                  deleteCategoryAction === "delete"
+                                    ? undefined
+                                    : "var(--bg-secondary)",
+                              }}
+                              onClick={() => setDeleteCategoryAction("delete")}
+                            >
+                              <div
+                                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${deleteCategoryAction === "delete" ? "border-red-500 bg-red-500" : "border-[var(--border-color)]"}`}
+                              >
+                                {deleteCategoryAction === "delete" && (
+                                  <Check
+                                    size={11}
+                                    className="text-white"
+                                    strokeWidth={3}
+                                  />
+                                )}
+                              </div>
+                              <div>
+                                <p
+                                  className="font-semibold text-sm"
+                                  style={{ color: "var(--text-primary)" }}
+                                >
+                                  Eliminar imágenes también
+                                </p>
+                                <p className="text-xs mt-0.5 text-red-500">
+                                  Esta acción no se puede deshacer
+                                </p>
+                              </div>
+                            </label>
+                          </div>
+                        )}
+
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => setDeleteCategoryTarget(null)}
+                            disabled={isDeletingCategory}
+                            className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                            style={{
+                              backgroundColor: "var(--bg-secondary)",
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={handleConfirmDeleteCategory}
+                            disabled={
+                              isDeletingCategory ||
+                              (deleteCategoryTarget.imageCount > 0 &&
+                                deleteCategoryAction === "move" &&
+                                !deleteCategoryMoveTo)
+                            }
+                            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-500 text-white flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            {isDeletingCategory ? (
+                              <span className="animate-spin">⟳</span>
+                            ) : (
+                              <Trash2 size={14} />
+                            )}
+                            {isDeletingCategory
+                              ? "Eliminando..."
+                              : "Eliminar categoría"}
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  </div>
+                </>
+              )}
+            </AnimatePresence>
 
             {/* Delete Image Confirmation */}
             <AnimatePresence>

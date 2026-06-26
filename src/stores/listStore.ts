@@ -24,7 +24,7 @@ interface ListState {
   setActiveList: (id: string | null) => void;
   getList: (id: string) => TaskList | undefined;
   getUserLists: (userId: string) => TaskList[];
-  getPersonalLists: (userId: string) => TaskList[];
+  getListsWithoutTeam: (userId: string) => TaskList[];
   getSharedLists: (userId: string) => TaskList[];
   createList: (
     name: string,
@@ -80,10 +80,9 @@ export const useListStore = create<ListState>((set, get) => ({
   getUserLists: (userId) =>
     get().lists.filter((l) => l.members.some((m) => m.userId === userId)),
 
-  getPersonalLists: (userId) =>
+  getListsWithoutTeam: (userId) =>
     get().lists.filter(
-      (l) =>
-        l.type === "personal" && l.members.some((m) => m.userId === userId),
+      (l) => !l.teamId && l.members.some((m) => m.userId === userId),
     ),
 
   getSharedLists: (userId) =>

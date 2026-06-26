@@ -84,6 +84,48 @@ const TYPE_STYLES: Record<
     bgColor: "rgba(239,68,68,0.1)",
     borderColor: "rgba(239,68,68,0.25)",
   },
+  team_invitation: {
+    icon: Users,
+    iconColor: "#2563eb",
+    bgColor: "rgba(37,99,235,0.1)",
+    borderColor: "rgba(37,99,235,0.25)",
+  },
+  list_invitation: {
+    icon: UserPlus,
+    iconColor: "#2563eb",
+    bgColor: "rgba(37,99,235,0.1)",
+    borderColor: "rgba(37,99,235,0.25)",
+  },
+  comment_added: {
+    icon: Bell,
+    iconColor: "#f59e0b",
+    bgColor: "rgba(245,158,11,0.1)",
+    borderColor: "rgba(245,158,11,0.25)",
+  },
+  role_changed: {
+    icon: Users,
+    iconColor: "#8b5cf6",
+    bgColor: "rgba(139,92,246,0.1)",
+    borderColor: "rgba(139,92,246,0.25)",
+  },
+  removed_from_team: {
+    icon: X,
+    iconColor: "#ef4444",
+    bgColor: "rgba(239,68,68,0.1)",
+    borderColor: "rgba(239,68,68,0.25)",
+  },
+  due_24h: {
+    icon: Clock,
+    iconColor: "#ef4444",
+    bgColor: "rgba(239,68,68,0.1)",
+    borderColor: "rgba(239,68,68,0.25)",
+  },
+  due_2h: {
+    icon: Clock,
+    iconColor: "#ef4444",
+    bgColor: "rgba(239,68,68,0.1)",
+    borderColor: "rgba(239,68,68,0.25)",
+  },
 };
 
 function timeAgo(dateStr: string): string {
@@ -167,7 +209,7 @@ export default function NotificationsPage() {
         return;
       }
       await acceptInvitation(invitation, user.id, user.name);
-      const list = await getList(invitation.listId);
+      const list = await getList(invitation.targetId);
       const isNowMember = list?.members?.some((m) => m.userId === user.id);
       if (!isNowMember) {
         throw new Error("No se pudo verificar la membresía en la lista");

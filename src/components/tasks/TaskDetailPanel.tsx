@@ -17,6 +17,7 @@ import {
   canDeleteTask,
   canArchiveTask,
   canManageTaskOptions,
+  canCompleteTask,
 } from "@/lib/permissions";
 import TaskOptionsBar from "./TaskOptionsBar";
 import TaskComments from "./TaskComments";
@@ -31,8 +32,9 @@ import {
   Archive,
   Phone,
   MapPin,
-  FileText,
   Check,
+  CheckCircle2,
+  Circle,
   Tag,
   User,
   Clock,
@@ -60,7 +62,8 @@ export default function TaskDetailPanel({
   listMembers,
 }: TaskDetailPanelProps) {
   const { user } = useAuthStore();
-  const { updateTask, deleteTask, archiveTask } = useTaskStore();
+  const { updateTask, deleteTask, archiveTask, uncompleteTask } =
+    useTaskStore();
 
   // ── Inline editable state ──
   const [localTitle, setLocalTitle] = useState("");
@@ -79,6 +82,7 @@ export default function TaskDetailPanel({
   const canEdit = canEditTask(role);
   const canDelete = canDeleteTask(role);
   const canArchive = canArchiveTask(role);
+  const canComplete = canCompleteTask(role);
   const canManageOptions = canManageTaskOptions(role);
 
   const showToast = useCallback((msg: string) => {
@@ -217,62 +221,98 @@ export default function TaskDetailPanel({
     >
       {/* ── Header ── */}
       <div
-        className="flex-shrink-0 flex items-center justify-between gap-2 px-4 py-3 border-b"
+        className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b"
         style={{ borderColor: "var(--border-color)" }}
       >
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {isCompleted && (
-            <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-green-500/10 text-green-600 border border-green-500/20 flex-shrink-0">
-              ✓ Completada
-            </span>
+        {/* Checkbox + title */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!user || !canComplete) return;
+              if (isCompleted) {
+                uncompleteTask(task.id, user.id);
+              } else {
+                archiveTask(task.id, user.id);
+              }
+            }}
+            disabled={!canComplete}
+            className={cn(
+              "flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full transition-transform",
+              canComplete
+                ? "cursor-pointer active:scale-90"
+                : "cursor-not-allowed opacity-40",
+              isCompleted ? "text-blue-500" : "text-[var(--text-muted)]",
+            )}
+          >
+            {isCompleted ? (
+              <CheckCircle2 size={26} strokeWidth={1.8} />
+            ) : (
+              <Circle size={26} strokeWidth={1.8} />
+            )}
+          </button>
+          {canEdit && !isCompleted ? (
+            <input
+              value={localTitle}
+              onChange={(e) => {
+                setLocalTitle(e.target.value);
+                if (e.target.value.trim())
+                  debounceSave("title", { title: e.target.value.trim() });
+              }}
+              className="flex-1 min-w-0 text-[var(--text-lg)] font-semibold leading-tight bg-transparent focus:outline-none"
+              style={{ color: "var(--text-primary)" }}
+              placeholder="Título de la tarea"
+            />
+          ) : (
+            <h2
+              className={cn(
+                "text-[var(--text-lg)] font-semibold leading-tight truncate",
+                isCompleted && "line-through opacity-55",
+              )}
+              style={{ color: "var(--text-primary)" }}
+            >
+              {task.title}
+            </h2>
           )}
         </div>
 
-        {/* Copiar · Archivar · Eliminar · Cerrar */}
-        <div className="flex items-center gap-1 flex-shrink-0">
+        {/* Actions: Copiar · Archivar · Eliminar · Cerrar */}
+        <div className="flex items-center gap-0.5 flex-shrink-0">
           <button
             onClick={handleCopy}
             title="Copiar información"
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-150"
-            style={{
-              color: "var(--text-secondary)",
-              backgroundColor: "var(--bg-secondary)",
-            }}
+            className="p-2 rounded-lg transition-colors duration-150"
+            style={{ color: "var(--text-secondary)" }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
-            }}
-            onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
             }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
           >
-            <Copy size={13} />
-            <span className="hidden sm:inline">Copiar</span>
+            <Copy size={16} />
           </button>
           {canArchive && (
             <button
               onClick={handleArchive}
               title="Archivar"
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all duration-150"
-              style={{
-                color: "var(--text-secondary)",
-                backgroundColor: "var(--bg-secondary)",
-              }}
+              className="p-2 rounded-lg transition-colors duration-150"
+              style={{ color: "var(--text-secondary)" }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
-              }}
-              onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
               }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
             >
-              <Archive size={13} />
-              <span className="hidden sm:inline">Archivar</span>
+              <Archive size={16} />
             </button>
           )}
           {canDelete && (
             <button
               onClick={() => setShowDeleteConfirm(true)}
               title="Eliminar"
-              className="p-2 rounded-xl transition-all duration-150"
+              className="p-2 rounded-lg transition-colors duration-150"
               style={{ color: "var(--text-tertiary)" }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = "#ef4444";
@@ -283,12 +323,12 @@ export default function TaskDetailPanel({
                 e.currentTarget.style.backgroundColor = "transparent";
               }}
             >
-              <Trash2 size={15} />
+              <Trash2 size={16} />
             </button>
           )}
           <button
             onClick={onClose}
-            className="p-2 rounded-xl transition-all duration-150 ml-0.5"
+            className="p-2 rounded-lg transition-colors duration-150 ml-0.5"
             style={{ color: "var(--text-tertiary)" }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
@@ -297,7 +337,7 @@ export default function TaskDetailPanel({
               e.currentTarget.style.backgroundColor = "transparent";
             }}
           >
-            <X size={17} />
+            <X size={18} />
           </button>
         </div>
       </div>
@@ -309,55 +349,14 @@ export default function TaskDetailPanel({
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
         }}
       >
-        <div className="px-5 py-5 space-y-5">
-          {/* 1. TÍTULO */}
-          <div>
-            {canEdit && !isCompleted ? (
-              <input
-                value={localTitle}
-                onChange={(e) => {
-                  setLocalTitle(e.target.value);
-                  if (e.target.value.trim())
-                    debounceSave("title", { title: e.target.value.trim() });
-                }}
-                className="w-full text-xl font-semibold px-4 py-3 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all duration-150"
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  border: "1.5px solid var(--border-color)",
-                  color: "var(--text-primary)",
-                  borderRadius: "16px",
-                }}
-                placeholder="Título de la tarea"
-              />
-            ) : (
-              <h2
-                className={cn(
-                  "text-xl font-semibold leading-snug",
-                  isCompleted && "line-through opacity-60",
-                )}
-                style={{ color: "var(--text-primary)" }}
-              >
-                {task.title}
-              </h2>
-            )}
-          </div>
-
-          {/* 2. DESCRIPCIÓN */}
-          <div>
-            <p
-              className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 flex items-center gap-1"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              <FileText size={11} /> Descripción
-            </p>
+        <div className="px-4 py-4 space-y-4">
+          {/* Properties group */}
+          <div className="space-y-2.5">
+            {/* Description */}
             {canEdit && !isCompleted ? (
               <div
-                className="rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/30 transition-all duration-150"
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  border: "1.5px solid var(--border-color)",
-                  borderRadius: "16px",
-                }}
+                className="rounded-[var(--radius-lg)] overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/15 transition-all duration-150"
+                style={{ backgroundColor: "var(--bg-secondary)" }}
               >
                 <AutoResizeTextarea
                   value={localDescription}
@@ -368,162 +367,127 @@ export default function TaskDetailPanel({
                     });
                   }}
                   placeholder="Añade una descripción..."
-                  className="text-sm px-4 py-3 w-full"
-                  minRows={3}
+                  className="text-[var(--text-base)] px-3 py-2.5 w-full leading-relaxed"
+                  minRows={2}
                 />
               </div>
-            ) : (
-              <div
-                className="text-sm rounded-2xl px-4 py-3 min-h-[44px] leading-relaxed"
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  borderRadius: "16px",
-                  color: task.description
-                    ? "var(--text-primary)"
-                    : "var(--text-tertiary)",
-                }}
+            ) : task.description ? (
+              <p
+                className="text-[var(--text-base)] leading-relaxed"
+                style={{ color: "var(--text-secondary)" }}
               >
-                {task.description || "Sin descripción"}
-              </div>
-            )}
-          </div>
+                {task.description}
+              </p>
+            ) : null}
 
-          {/* 3. UBICACIÓN */}
-          <div>
-            <p
-              className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 flex items-center gap-1"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              <MapPin size={11} /> Ubicación
-            </p>
-            {canEdit && !isCompleted ? (
-              <input
-                value={localLocation}
-                onChange={(e) => {
-                  setLocalLocation(e.target.value);
-                  debounceSave("location", {
-                    location: e.target.value.trim() || undefined,
-                  });
-                }}
-                placeholder="Añade una dirección o lugar..."
-                className="w-full text-sm px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all duration-150"
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  border: "1.5px solid var(--border-color)",
-                  borderRadius: "16px",
-                  color: "var(--text-primary)",
-                }}
-              />
-            ) : (
+            {/* Location */}
+            {(canEdit || task.location) && (
               <div
-                className="text-sm px-4 py-3 min-h-[44px] flex items-center"
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  borderRadius: "16px",
-                }}
+                className="flex items-center gap-2 rounded-[var(--radius-lg)] px-3 py-2"
+                style={{ backgroundColor: "var(--bg-secondary)" }}
               >
-                {task.location ? (
+                <MapPin size={14} style={{ color: "#3b82f6" }} />
+                {canEdit && !isCompleted ? (
+                  <input
+                    value={localLocation}
+                    onChange={(e) => {
+                      setLocalLocation(e.target.value);
+                      debounceSave("location", {
+                        location: e.target.value.trim() || undefined,
+                      });
+                    }}
+                    placeholder="Ubicación..."
+                    className="flex-1 min-w-0 text-[var(--text-base)] bg-transparent focus:outline-none"
+                    style={{ color: "var(--text-primary)" }}
+                  />
+                ) : task.location ? (
                   <a
                     href={`https://maps.google.com/?q=${encodeURIComponent(task.location)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 hover:underline"
+                    className="flex-1 min-w-0 text-[var(--text-base)] hover:underline truncate"
                     style={{ color: "#3b82f6" }}
                   >
-                    <MapPin size={13} style={{ color: "#3b82f6" }} />
                     {task.location}
                   </a>
-                ) : (
-                  <span style={{ color: "var(--text-tertiary)" }}>
-                    Sin ubicación
-                  </span>
-                )}
+                ) : null}
               </div>
             )}
-          </div>
 
-          {/* 4. TELÉFONOS */}
-          <div>
-            <p
-              className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 flex items-center gap-1"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              <Phone size={11} /> Teléfonos
-            </p>
-            {canEdit && !isCompleted ? (
-              <div className="space-y-2">
-                {localPhones.map((phone, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => {
-                        const updated = [...localPhones];
-                        updated[i] = e.target.value;
-                        setLocalPhones(updated);
-                        const valid = updated.filter((p) => p.trim());
-                        debounceSave("phones", {
-                          phoneNumbers: valid.length ? valid : undefined,
-                        });
-                      }}
-                      placeholder={`Teléfono ${i + 1}`}
-                      className="flex-1 text-sm px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all duration-150"
-                      style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        border: "1.5px solid var(--border-color)",
-                        borderRadius: "16px",
-                        color: "var(--text-primary)",
-                      }}
-                    />
-                    {localPhones.length > 1 && (
-                      <button
-                        onClick={() => {
-                          const updated = localPhones.filter((_, j) => j !== i);
-                          setLocalPhones(updated);
-                          const valid = updated.filter((p) => p.trim());
-                          saveField({
-                            phoneNumbers: valid.length ? valid : undefined,
-                          });
-                        }}
-                        className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
-                        style={{
-                          backgroundColor: "rgba(239,68,68,0.08)",
-                          color: "#ef4444",
-                        }}
-                      >
-                        <X size={14} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  onClick={() => setLocalPhones([...localPhones, ""])}
-                  className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all duration-150"
-                  style={{
-                    color: "#2563eb",
-                    backgroundColor: "rgba(37,99,235,0.08)",
-                  }}
-                >
-                  <Plus size={12} /> Añadir teléfono
-                </button>
-              </div>
-            ) : (
-              <div
-                className="text-sm px-4 py-3 min-h-[44px]"
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  borderRadius: "16px",
-                }}
-              >
-                {task.phoneNumbers?.filter((p) => p.trim()).length ? (
-                  <div className="space-y-1.5">
+            {/* Phones */}
+            {(canEdit || task.phoneNumbers?.some((p) => p.trim())) && (
+              <div className="space-y-1.5">
+                {canEdit && !isCompleted ? (
+                  <>
+                    {localPhones.map((phone, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <div
+                          className="flex items-center gap-2 flex-1 rounded-[var(--radius-lg)] px-3 py-2"
+                          style={{ backgroundColor: "var(--bg-secondary)" }}
+                        >
+                          <Phone size={14} style={{ color: "#16a34a" }} />
+                          <input
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => {
+                              const updated = [...localPhones];
+                              updated[i] = e.target.value;
+                              setLocalPhones(updated);
+                              const valid = updated.filter((p) => p.trim());
+                              debounceSave("phones", {
+                                phoneNumbers: valid.length ? valid : undefined,
+                              });
+                            }}
+                            placeholder="Teléfono"
+                            className="flex-1 min-w-0 text-[var(--text-base)] bg-transparent focus:outline-none"
+                            style={{ color: "var(--text-primary)" }}
+                          />
+                        </div>
+                        {localPhones.length > 1 && (
+                          <button
+                            onClick={() => {
+                              const updated = localPhones.filter(
+                                (_, j) => j !== i,
+                              );
+                              setLocalPhones(updated);
+                              const valid = updated.filter((p) => p.trim());
+                              saveField({
+                                phoneNumbers: valid.length ? valid : undefined,
+                              });
+                            }}
+                            className="p-1.5 rounded-md transition-colors"
+                            style={{ color: "#ef4444" }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor =
+                                "rgba(239,68,68,0.08)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor =
+                                "transparent";
+                            }}
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => setLocalPhones([...localPhones, ""])}
+                      className="flex items-center gap-1 text-[var(--text-xs)] font-medium px-3 py-1.5 rounded-md transition-colors"
+                      style={{ color: "#2563eb" }}
+                    >
+                      <Plus size={12} /> Añadir teléfono
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
                     {task.phoneNumbers
-                      .filter((p) => p.trim())
+                      ?.filter((p) => p.trim())
                       .map((p, i) => (
                         <a
                           key={i}
                           href={`tel:${p.replace(/\s/g, "")}`}
-                          className="flex items-center gap-2 hover:underline"
+                          className="inline-flex items-center gap-1 text-[var(--text-base)] hover:underline"
                           style={{ color: "#16a34a" }}
                         >
                           <Phone size={13} style={{ color: "#16a34a" }} />
@@ -531,158 +495,144 @@ export default function TaskDetailPanel({
                         </a>
                       ))}
                   </div>
-                ) : (
-                  <span style={{ color: "var(--text-tertiary)" }}>
-                    Sin teléfonos
-                  </span>
                 )}
+              </div>
+            )}
+
+            {/* Priority */}
+            {(canEdit || task.priority) && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className="text-[var(--text-xs)]"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Prioridad
+                </span>
+                {canEdit && !isCompleted ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => setPriorityMenuOpen((v) => !v)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[var(--text-xs)] font-medium transition-colors border"
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        borderColor: "var(--border-color)",
+                        color: "var(--text-secondary)",
+                      }}
+                    >
+                      {pc ? (
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1",
+                            pc.text,
+                          )}
+                        >
+                          <span>{pc.emoji}</span> {pc.label}
+                        </span>
+                      ) : (
+                        <span>Sin prioridad</span>
+                      )}
+                      <ChevronDown
+                        size={12}
+                        style={{ color: "var(--text-tertiary)" }}
+                      />
+                    </button>
+                    <AnimatePresence>
+                      {priorityMenuOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -4, scale: 0.97 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -4, scale: 0.97 }}
+                          transition={{ duration: 0.12 }}
+                          className="absolute left-0 top-full mt-1 z-50 rounded-[var(--radius-lg)] shadow-[var(--shadow-dropdown)] overflow-hidden min-w-[160px]"
+                          style={{
+                            backgroundColor: "var(--bg-card)",
+                            border: "1px solid var(--border-color)",
+                          }}
+                        >
+                          {(
+                            [
+                              undefined,
+                              "low",
+                              "medium",
+                              "high",
+                              "urgent",
+                            ] as const
+                          ).map((p) => {
+                            const cfg = p ? getPriorityConfig(p) : null;
+                            return (
+                              <button
+                                key={p ?? "none"}
+                                onClick={() => {
+                                  setLocalPriority(p);
+                                  setPriorityMenuOpen(false);
+                                  saveField({ priority: p });
+                                }}
+                                className="w-full flex items-center justify-between px-3 py-2 text-[var(--text-sm)] transition-colors"
+                                style={{ color: "var(--text-secondary)" }}
+                                onMouseEnter={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "var(--bg-secondary)";
+                                }}
+                                onMouseLeave={(e) => {
+                                  e.currentTarget.style.backgroundColor =
+                                    "transparent";
+                                }}
+                              >
+                                {cfg ? (
+                                  <span
+                                    className={cn(
+                                      "inline-flex items-center gap-1.5 font-medium",
+                                      cfg.text,
+                                    )}
+                                  >
+                                    <span>{cfg.emoji}</span> {cfg.label}
+                                  </span>
+                                ) : (
+                                  <span
+                                    style={{ color: "var(--text-tertiary)" }}
+                                  >
+                                    Sin prioridad
+                                  </span>
+                                )}
+                                {localPriority === p && (
+                                  <Check size={12} className="text-blue-500" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : pc ? (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 text-[var(--text-xs)] font-medium",
+                      pc.text,
+                    )}
+                  >
+                    <span>{pc.emoji}</span> {pc.label}
+                  </span>
+                ) : null}
               </div>
             )}
           </div>
 
-          {/* 5. PRIORIDAD */}
-          {(canEdit || task.priority) && (
-            <div className="relative">
-              <p
-                className="text-[11px] font-bold uppercase tracking-widest mb-2"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                Prioridad
-              </p>
-              {canEdit && !isCompleted ? (
-                <div className="relative">
-                  <button
-                    onClick={() => setPriorityMenuOpen((v) => !v)}
-                    className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all duration-150"
-                    style={{
-                      backgroundColor: "var(--bg-secondary)",
-                      border: "1.5px solid var(--border-color)",
-                      borderRadius: "16px",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    {pc ? (
-                      <span
-                        className={cn(
-                          "flex items-center gap-2 font-semibold",
-                          pc.text,
-                        )}
-                      >
-                        <span>{pc.emoji}</span> {pc.label}
-                      </span>
-                    ) : (
-                      <span style={{ color: "var(--text-tertiary)" }}>
-                        Sin prioridad
-                      </span>
-                    )}
-                    <ChevronDown
-                      size={15}
-                      style={{ color: "var(--text-tertiary)" }}
-                    />
-                  </button>
-                  <AnimatePresence>
-                    {priorityMenuOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute left-0 right-0 top-full mt-1.5 z-50 shadow-2xl overflow-hidden"
-                        style={{
-                          backgroundColor: "var(--bg-card)",
-                          border: "1px solid var(--border-color)",
-                          borderRadius: "16px",
-                        }}
-                      >
-                        {(
-                          [
-                            undefined,
-                            "low",
-                            "medium",
-                            "high",
-                            "urgent",
-                          ] as const
-                        ).map((p) => {
-                          const cfg = p ? getPriorityConfig(p) : null;
-                          return (
-                            <button
-                              key={p ?? "none"}
-                              onClick={() => {
-                                setLocalPriority(p);
-                                setPriorityMenuOpen(false);
-                                saveField({ priority: p });
-                              }}
-                              className="w-full flex items-center justify-between px-4 py-3 text-sm transition-all duration-150"
-                              style={{ color: "var(--text-secondary)" }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "var(--bg-secondary)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "transparent";
-                              }}
-                            >
-                              {cfg ? (
-                                <span
-                                  className={cn(
-                                    "flex items-center gap-2 font-semibold",
-                                    cfg.text,
-                                  )}
-                                >
-                                  <span>{cfg.emoji}</span> {cfg.label}
-                                </span>
-                              ) : (
-                                <span style={{ color: "var(--text-tertiary)" }}>
-                                  Sin prioridad
-                                </span>
-                              )}
-                              {localPriority === p && (
-                                <Check size={14} className="text-blue-500" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ) : (
-                <div
-                  className="text-sm px-4 py-3"
-                  style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    borderRadius: "16px",
-                  }}
-                >
-                  {pc ? (
-                    <span
-                      className={cn(
-                        "flex items-center gap-2 font-semibold",
-                        pc.text,
-                      )}
-                    >
-                      <span>{pc.emoji}</span> {pc.label}
-                    </span>
-                  ) : (
-                    <span style={{ color: "var(--text-tertiary)" }}>
-                      Sin prioridad
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
+          {/* Divider */}
+          <div
+            className="h-px"
+            style={{ backgroundColor: "var(--border-color)" }}
+          />
 
-          {/* 6. RECORDATORIO / FECHA / RECURRENCIA */}
+          {/* Options row */}
           {canManageOptions && (
-            <div>
-              <p
-                className="text-[11px] font-semibold uppercase tracking-wide mb-2"
+            <div className="flex items-center gap-3">
+              <span
+                className="text-[var(--text-xs)]"
                 style={{ color: "var(--text-tertiary)" }}
               >
-                Recordatorio · Fecha · Repetir
-              </p>
+                Opciones
+              </span>
               <TaskOptionsBar
                 dueDate={task.dueDate}
                 dueTime={task.dueTime}
@@ -701,208 +651,185 @@ export default function TaskDetailPanel({
             </div>
           )}
 
-          {/* 7. ASIGNADO A */}
-          {task.assignedTo && (
-            <div>
-              <p
-                className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 flex items-center gap-1"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                <User size={11} /> Asignado a
-              </p>
-              <div
-                className="text-sm rounded-xl px-3 py-2.5"
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  color: "var(--text-secondary)",
-                }}
-              >
-                {resolveName(task.assignedTo)}
-              </div>
+          {/* Assigned + Tags row */}
+          {(task.assignedTo || (task.tags && task.tags.length > 0)) && (
+            <div className="flex flex-wrap items-center gap-2">
+              {task.assignedTo && (
+                <span
+                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[var(--text-xs)] font-medium border"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    borderColor: "var(--border-color)",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  <User size={11} />
+                  {resolveName(task.assignedTo)}
+                </span>
+              )}
+              {task.tags?.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-1 rounded-full text-[var(--text-xs)] font-medium border"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    borderColor: "var(--border-color)",
+                    color: "var(--text-secondary)",
+                  }}
+                >
+                  {tag}
+                </span>
+              ))}
             </div>
           )}
 
-          {/* 8. ETIQUETAS */}
-          {task.tags && task.tags.length > 0 && (
-            <div>
-              <p
-                className="text-[11px] font-semibold uppercase tracking-wide mb-1.5 flex items-center gap-1"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                <Tag size={11} /> Etiquetas
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {task.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-2 py-0.5 rounded-full text-xs font-medium border"
-                    style={{
-                      backgroundColor: "var(--bg-secondary)",
-                      color: "var(--text-secondary)",
-                      borderColor: "var(--border-color)",
-                    }}
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 9. INFORMACIÓN DE COMPLETADO */}
+          {/* Completion info */}
           {isCompleted && task.completedAt && (
             <div
-              className="rounded-xl p-4 space-y-2.5"
+              className="rounded-[var(--radius-lg)] p-3 space-y-1.5"
               style={{
                 backgroundColor: "rgba(22,163,74,0.06)",
-                border: "1px solid rgba(22,163,74,0.2)",
+                border: "1px solid rgba(22,163,74,0.15)",
               }}
             >
-              <p
-                className="text-[11px] font-semibold uppercase tracking-wide flex items-center gap-1.5"
+              <div
+                className="flex items-center gap-1.5 text-[var(--text-xs)] font-medium"
                 style={{ color: "#16a34a" }}
               >
-                <Check size={11} /> Información de completado
-              </p>
-              <div className="space-y-2">
-                <div className="flex items-start gap-3">
+                <Check size={11} /> Completada
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 text-[var(--text-sm)]">
+                  <span style={{ color: "var(--text-tertiary)" }}>Por</span>
                   <span
-                    className="text-[11px] w-28 font-medium flex-shrink-0 pt-0.5"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    Completada por
-                  </span>
-                  <span
-                    className="text-[13px] font-semibold"
+                    className="font-medium"
                     style={{ color: "var(--text-primary)" }}
                   >
                     {resolveName(task.completedBy)}
                   </span>
                 </div>
                 {task.performedBy && task.performedBy !== task.completedBy && (
-                  <div className="flex items-start gap-3">
-                    <span
-                      className="text-[11px] w-28 font-medium flex-shrink-0 pt-0.5"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
+                  <div className="flex items-center gap-2 text-[var(--text-sm)]">
+                    <span style={{ color: "var(--text-tertiary)" }}>
                       Realizada por
                     </span>
                     <span
-                      className="text-[13px] font-semibold"
+                      className="font-medium"
                       style={{ color: "var(--text-primary)" }}
                     >
                       {resolveName(task.performedBy)}
                     </span>
                   </div>
                 )}
-                <div className="flex items-start gap-3">
-                  <span
-                    className="text-[11px] w-28 font-medium flex-shrink-0 pt-0.5"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    Fecha y hora
-                  </span>
-                  <span
-                    className="text-[12px]"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    {new Date(task.completedAt).toLocaleDateString("es-ES", {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
-                    {" a las "}
-                    {new Date(task.completedAt).toLocaleTimeString("es-ES", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </span>
+                <div
+                  className="text-[var(--text-xs)]"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  {new Date(task.completedAt).toLocaleDateString("es-ES", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  })}
+                  {" · "}
+                  {new Date(task.completedAt).toLocaleTimeString("es-ES", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </div>
               </div>
             </div>
           )}
 
-          {/* 10. HISTORIAL DE ACTIVIDAD */}
+          {/* History */}
           {task.history && task.history.length > 0 && (
-            <div>
+            <div
+              className="h-px"
+              style={{ backgroundColor: "var(--border-color)" }}
+            />
+          )}
+          {task.history && task.history.length > 0 && (
+            <div className="space-y-2">
               <p
-                className="text-[11px] font-semibold uppercase tracking-wide mb-2 flex items-center gap-1.5"
+                className="text-[var(--text-xs)] font-medium"
                 style={{ color: "var(--text-tertiary)" }}
               >
-                <Clock size={11} /> Historial de actividad
+                Historial
               </p>
               <div>
-                {[...task.history].reverse().map((entry, i) => {
-                  const name =
-                    entry.performedByName || resolveName(entry.performedBy);
-                  const date = new Date(entry.performedAt);
-                  const isCompletion = entry.action === "completed";
-                  return (
-                    <div
-                      key={entry.id || i}
-                      className="flex gap-3 py-2.5 border-b last:border-0"
-                      style={{ borderColor: "var(--border-color)" }}
-                    >
+                {[...task.history]
+                  .reverse()
+                  .slice(0, 20)
+                  .map((entry, i) => {
+                    const name =
+                      entry.performedByName || resolveName(entry.performedBy);
+                    const date = new Date(entry.performedAt);
+                    const isCompletion = entry.action === "completed";
+                    return (
                       <div
-                        className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5"
-                        style={{
-                          backgroundColor: isCompletion
-                            ? "rgba(22,163,74,0.12)"
-                            : "var(--bg-secondary)",
-                        }}
+                        key={entry.id || i}
+                        className="flex gap-2 py-2 border-b last:border-0"
+                        style={{ borderColor: "var(--border-color)" }}
                       >
-                        {isCompletion ? (
-                          <Check size={10} style={{ color: "#16a34a" }} />
-                        ) : (
-                          <Clock
-                            size={9}
+                        <div
+                          className="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center mt-0.5"
+                          style={{
+                            backgroundColor: isCompletion
+                              ? "rgba(22,163,74,0.12)"
+                              : "var(--bg-secondary)",
+                          }}
+                        >
+                          {isCompletion ? (
+                            <Check size={8} style={{ color: "#16a34a" }} />
+                          ) : (
+                            <Clock
+                              size={8}
+                              style={{ color: "var(--text-tertiary)" }}
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className="text-[var(--text-sm)] leading-snug"
+                            style={{ color: "var(--text-primary)" }}
+                          >
+                            <span className="font-medium">{name}</span>{" "}
+                            {entry.details ||
+                              (entry.action === "created"
+                                ? "creó"
+                                : entry.action === "reopened"
+                                  ? "reabrió"
+                                  : entry.action === "archived"
+                                    ? "archivó"
+                                    : entry.action)}
+                          </p>
+                          <p
+                            className="text-[var(--text-2xs)] mt-0.5"
                             style={{ color: "var(--text-tertiary)" }}
-                          />
-                        )}
+                          >
+                            {date.toLocaleDateString("es-ES", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}{" "}
+                            ·{" "}
+                            {date.toLocaleTimeString("es-ES", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className="text-[12px] leading-snug"
-                          style={{ color: "var(--text-primary)" }}
-                        >
-                          <span className="font-semibold">{name}</span>{" "}
-                          {entry.details ||
-                            (entry.action === "created"
-                              ? "creó la tarea"
-                              : entry.action === "reopened"
-                                ? "reabrió la tarea"
-                                : entry.action === "archived"
-                                  ? "archivó la tarea"
-                                  : entry.action)}
-                        </p>
-                        <p
-                          className="text-[10px] mt-0.5"
-                          style={{ color: "var(--text-tertiary)" }}
-                        >
-                          {date.toLocaleDateString("es-ES", {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          })}{" "}
-                          ·{" "}
-                          {date.toLocaleTimeString("es-ES", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             </div>
           )}
 
-          {/* 11. COMENTARIOS */}
-          <div>
+          {/* Comments */}
+          <div className="space-y-2">
             <p
-              className="text-[11px] font-semibold uppercase tracking-wide mb-2"
+              className="text-[var(--text-xs)] font-medium"
               style={{ color: "var(--text-tertiary)" }}
             >
               Comentarios
@@ -914,18 +841,23 @@ export default function TaskDetailPanel({
             />
           </div>
 
-          {/* Meta — creación */}
+          {/* Meta — creation */}
           <div
             className="pt-2 border-t"
             style={{ borderColor: "var(--border-color)" }}
           >
             <span
-              className="text-[11px] flex items-center gap-1"
+              className="text-[var(--text-2xs)] flex items-center gap-1"
               style={{ color: "var(--text-tertiary)" }}
             >
               <Clock size={10} />
               Creada {timeAgo(task.createdAt)} por{" "}
-              <strong className="ml-0.5">{resolveName(task.createdBy)}</strong>
+              <strong
+                className="font-medium"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                {resolveName(task.createdBy)}
+              </strong>
             </span>
           </div>
         </div>
@@ -935,18 +867,18 @@ export default function TaskDetailPanel({
       <AnimatePresence>
         {toast && (
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 16 }}
-            transition={{ duration: 0.15 }}
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-2xl text-sm font-medium shadow-xl flex items-center gap-2"
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.12 }}
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 px-3 py-2 rounded-lg text-[var(--text-sm)] font-medium shadow-[var(--shadow-toast)] flex items-center gap-2"
             style={{
               backgroundColor: "#1e293b",
               color: "#f8fafc",
               whiteSpace: "nowrap",
             }}
           >
-            <Check size={14} style={{ color: "#4ade80" }} />
+            <Check size={13} style={{ color: "#4ade80" }} />
             {toast}
           </motion.div>
         )}
@@ -961,31 +893,31 @@ export default function TaskDetailPanel({
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-50 flex items-end sm:items-center justify-center p-4"
             style={{
-              backgroundColor: "rgba(0,0,0,0.45)",
-              backdropFilter: "blur(4px)",
+              backgroundColor: "rgba(0,0,0,0.35)",
+              backdropFilter: "blur(3px)",
             }}
           >
             <motion.div
-              initial={{ y: 20, opacity: 0 }}
+              initial={{ y: 16, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 20, opacity: 0 }}
-              className="w-full max-w-sm rounded-2xl p-5 space-y-4 shadow-2xl"
+              exit={{ y: 16, opacity: 0 }}
+              className="w-full max-w-sm rounded-[var(--radius-lg)] p-4 space-y-3 shadow-[var(--shadow-modal)]"
               style={{
                 backgroundColor: "var(--bg-card)",
                 border: "1px solid var(--border-color)",
               }}
             >
               <div
-                className="flex items-start gap-3 p-3 rounded-xl text-sm"
+                className="flex items-start gap-3 p-3 rounded-[var(--radius-lg)] text-[var(--text-sm)]"
                 style={{
                   backgroundColor: "var(--bg-error)",
                   color: "var(--text-error)",
                 }}
               >
-                <Trash2 size={16} className="flex-shrink-0 mt-0.5" />
+                <Trash2 size={15} className="flex-shrink-0 mt-0.5" />
                 <p>
-                  ¿Eliminar "<strong>{task.title}</strong>"? Esta acción no se
-                  puede deshacer.
+                  ¿Eliminar "<strong>{task.title}</strong>"? No se puede
+                  deshacer.
                 </p>
               </div>
               <div className="flex gap-3">
@@ -1041,9 +973,9 @@ export default function TaskDetailPanel({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 32, stiffness: 320 }}
-              className="absolute inset-x-0 bottom-0 rounded-t-2xl overflow-hidden shadow-2xl flex flex-col"
+              className="absolute inset-x-0 bottom-0 rounded-t-[var(--radius-lg)] overflow-hidden shadow-[var(--shadow-modal)] flex flex-col"
               style={{
-                top: "48px",
+                top: "40px",
                 backgroundColor: "var(--bg-card)",
               }}
             >
@@ -1065,7 +997,7 @@ export default function TaskDetailPanel({
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: "100%", opacity: 0 }}
               transition={{ type: "spring", damping: 32, stiffness: 300 }}
-              className="h-full shadow-2xl"
+              className="h-full shadow-[var(--shadow-panel)]"
               style={{
                 backgroundColor: "var(--bg-card)",
                 borderLeft: "1px solid var(--border-color)",
