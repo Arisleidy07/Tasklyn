@@ -62,7 +62,7 @@ export default function TaskDetailPanel({
   listMembers,
 }: TaskDetailPanelProps) {
   const { user } = useAuthStore();
-  const { updateTask, deleteTask, archiveTask, uncompleteTask } =
+  const { updateTask, deleteTask, archiveTask, completeTask, uncompleteTask } =
     useTaskStore();
 
   // ── Inline editable state ──
@@ -177,37 +177,35 @@ export default function TaskDetailPanel({
     onClose();
   };
 
-  const handleCopy = () => {
-    const pc = localPriority ? getPriorityConfig(localPriority) : null;
+  const handleCopyWhatsApp = () => {
     const lines: string[] = [];
-    lines.push(`📌 ${localTitle || task.title}`);
-    if (localDescription.trim()) {
+    lines.push(`*${task.title}*`);
+    if (task.description?.trim()) {
       lines.push("");
-      lines.push(`📝 Descripción:\n${localDescription.trim()}`);
+      lines.push(task.description.trim());
     }
-    if (localLocation.trim()) {
-      lines.push("");
-      lines.push(`📍 Ubicación:\n${localLocation.trim()}`);
-    }
-    const validPhones = localPhones.filter((p) => p.trim());
+    const validPhones = (task.phoneNumbers || []).filter((p) => p.trim());
     if (validPhones.length) {
       lines.push("");
-      lines.push(`📞 Teléfono:\n${validPhones.join("\n")}`);
+      lines.push(`📞 ${validPhones.join(" / ")}`);
     }
-    if (pc) {
+    if (task.location) {
       lines.push("");
-      lines.push(`⭐ Prioridad:\n${pc.label}`);
+      lines.push(`📍 ${task.location}`);
+      lines.push(
+        `https://maps.google.com/?q=${encodeURIComponent(task.location)}`,
+      );
     }
     if (task.dueDate) {
       lines.push("");
       const d = new Date(task.dueDate);
       lines.push(
-        `📅 Fecha:\n${d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`,
+        `📅 ${d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`,
       );
     }
     navigator.clipboard
       .writeText(lines.join("\n"))
-      .then(() => showToast("Información copiada correctamente"));
+      .then(() => showToast("Copiado para compartir"));
   };
 
   const pc = localPriority ? getPriorityConfig(localPriority) : null;
@@ -233,7 +231,7 @@ export default function TaskDetailPanel({
               if (isCompleted) {
                 uncompleteTask(task.id, user.id);
               } else {
-                archiveTask(task.id, user.id);
+                completeTask(task.id, user.id, user.name, listMembers, user);
               }
             }}
             disabled={!canComplete}
@@ -251,7 +249,7 @@ export default function TaskDetailPanel({
               <Circle size={26} strokeWidth={1.8} />
             )}
           </button>
-          {canEdit && !isCompleted ? (
+          {canEdit ? (
             <input
               value={localTitle}
               onChange={(e) => {
@@ -259,7 +257,10 @@ export default function TaskDetailPanel({
                 if (e.target.value.trim())
                   debounceSave("title", { title: e.target.value.trim() });
               }}
-              className="flex-1 min-w-0 text-[var(--text-lg)] font-semibold leading-tight bg-transparent focus:outline-none"
+              className={cn(
+                "flex-1 min-w-0 text-[var(--text-lg)] font-semibold leading-tight bg-transparent focus:outline-none",
+                isCompleted && "line-through opacity-70",
+              )}
               style={{ color: "var(--text-primary)" }}
               placeholder="Título de la tarea"
             />
@@ -267,7 +268,7 @@ export default function TaskDetailPanel({
             <h2
               className={cn(
                 "text-[var(--text-lg)] font-semibold leading-tight truncate",
-                isCompleted && "line-through opacity-55",
+                isCompleted && "line-through opacity-70",
               )}
               style={{ color: "var(--text-primary)" }}
             >
@@ -276,22 +277,8 @@ export default function TaskDetailPanel({
           )}
         </div>
 
-        {/* Actions: Copiar · Archivar · Eliminar · Cerrar */}
+        {/* Actions: Archivar · Eliminar · Cerrar */}
         <div className="flex items-center gap-0.5 flex-shrink-0">
-          <button
-            onClick={handleCopy}
-            title="Copiar información"
-            className="p-2 rounded-lg transition-colors duration-150"
-            style={{ color: "var(--text-secondary)" }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
-          >
-            <Copy size={16} />
-          </button>
           {canArchive && (
             <button
               onClick={handleArchive}
@@ -350,10 +337,10 @@ export default function TaskDetailPanel({
         }}
       >
         <div className="px-4 py-4 space-y-4">
-          {/* Properties group */}
+          {/* Properties group: description, location, phone */}
           <div className="space-y-2.5">
             {/* Description */}
-            {canEdit && !isCompleted ? (
+            {canEdit ? (
               <div
                 className="rounded-[var(--radius-lg)] overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/15 transition-all duration-150"
                 style={{ backgroundColor: "var(--bg-secondary)" }}
@@ -380,14 +367,14 @@ export default function TaskDetailPanel({
               </p>
             ) : null}
 
-            {/* Location */}
+            {/* Location + copy */}
             {(canEdit || task.location) && (
               <div
                 className="flex items-center gap-2 rounded-[var(--radius-lg)] px-3 py-2"
                 style={{ backgroundColor: "var(--bg-secondary)" }}
               >
                 <MapPin size={14} style={{ color: "#3b82f6" }} />
-                {canEdit && !isCompleted ? (
+                {canEdit ? (
                   <input
                     value={localLocation}
                     onChange={(e) => {
@@ -411,13 +398,30 @@ export default function TaskDetailPanel({
                     {task.location}
                   </a>
                 ) : null}
+                {task.location && (
+                  <button
+                    onClick={handleCopyWhatsApp}
+                    title="Copiar para compartir"
+                    className="p-1.5 rounded-md transition-colors"
+                    style={{ color: "var(--text-secondary)" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "var(--bg-active)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                  >
+                    <Copy size={14} />
+                  </button>
+                )}
               </div>
             )}
 
             {/* Phones */}
             {(canEdit || task.phoneNumbers?.some((p) => p.trim())) && (
               <div className="space-y-1.5">
-                {canEdit && !isCompleted ? (
+                {canEdit ? (
                   <>
                     {localPhones.map((phone, i) => (
                       <div key={i} className="flex items-center gap-2">
@@ -498,124 +502,6 @@ export default function TaskDetailPanel({
                 )}
               </div>
             )}
-
-            {/* Priority */}
-            {(canEdit || task.priority) && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span
-                  className="text-[var(--text-xs)]"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  Prioridad
-                </span>
-                {canEdit && !isCompleted ? (
-                  <div className="relative">
-                    <button
-                      onClick={() => setPriorityMenuOpen((v) => !v)}
-                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[var(--text-xs)] font-medium transition-colors border"
-                      style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        borderColor: "var(--border-color)",
-                        color: "var(--text-secondary)",
-                      }}
-                    >
-                      {pc ? (
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1",
-                            pc.text,
-                          )}
-                        >
-                          <span>{pc.emoji}</span> {pc.label}
-                        </span>
-                      ) : (
-                        <span>Sin prioridad</span>
-                      )}
-                      <ChevronDown
-                        size={12}
-                        style={{ color: "var(--text-tertiary)" }}
-                      />
-                    </button>
-                    <AnimatePresence>
-                      {priorityMenuOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: -4, scale: 0.97 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -4, scale: 0.97 }}
-                          transition={{ duration: 0.12 }}
-                          className="absolute left-0 top-full mt-1 z-50 rounded-[var(--radius-lg)] shadow-[var(--shadow-dropdown)] overflow-hidden min-w-[160px]"
-                          style={{
-                            backgroundColor: "var(--bg-card)",
-                            border: "1px solid var(--border-color)",
-                          }}
-                        >
-                          {(
-                            [
-                              undefined,
-                              "low",
-                              "medium",
-                              "high",
-                              "urgent",
-                            ] as const
-                          ).map((p) => {
-                            const cfg = p ? getPriorityConfig(p) : null;
-                            return (
-                              <button
-                                key={p ?? "none"}
-                                onClick={() => {
-                                  setLocalPriority(p);
-                                  setPriorityMenuOpen(false);
-                                  saveField({ priority: p });
-                                }}
-                                className="w-full flex items-center justify-between px-3 py-2 text-[var(--text-sm)] transition-colors"
-                                style={{ color: "var(--text-secondary)" }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    "var(--bg-secondary)";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.backgroundColor =
-                                    "transparent";
-                                }}
-                              >
-                                {cfg ? (
-                                  <span
-                                    className={cn(
-                                      "inline-flex items-center gap-1.5 font-medium",
-                                      cfg.text,
-                                    )}
-                                  >
-                                    <span>{cfg.emoji}</span> {cfg.label}
-                                  </span>
-                                ) : (
-                                  <span
-                                    style={{ color: "var(--text-tertiary)" }}
-                                  >
-                                    Sin prioridad
-                                  </span>
-                                )}
-                                {localPriority === p && (
-                                  <Check size={12} className="text-blue-500" />
-                                )}
-                              </button>
-                            );
-                          })}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                ) : pc ? (
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 text-[var(--text-xs)] font-medium",
-                      pc.text,
-                    )}
-                  >
-                    <span>{pc.emoji}</span> {pc.label}
-                  </span>
-                ) : null}
-              </div>
-            )}
           </div>
 
           {/* Divider */}
@@ -624,14 +510,14 @@ export default function TaskDetailPanel({
             style={{ backgroundColor: "var(--border-color)" }}
           />
 
-          {/* Options row */}
+          {/* Date + options */}
           {canManageOptions && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <span
                 className="text-[var(--text-xs)]"
                 style={{ color: "var(--text-tertiary)" }}
               >
-                Opciones
+                Fecha
               </span>
               <TaskOptionsBar
                 dueDate={task.dueDate}
@@ -651,7 +537,123 @@ export default function TaskDetailPanel({
             </div>
           )}
 
-          {/* Assigned + Tags row */}
+          {/* Priority */}
+          {(canEdit || task.priority) && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className="text-[var(--text-xs)]"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                Prioridad
+              </span>
+              {canEdit ? (
+                <div className="relative">
+                  <button
+                    onClick={() => setPriorityMenuOpen((v) => !v)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[var(--text-xs)] font-medium transition-colors border"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      borderColor: "var(--border-color)",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    {pc ? (
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1",
+                          pc.text,
+                        )}
+                      >
+                        <span>{pc.emoji}</span> {pc.label}
+                      </span>
+                    ) : (
+                      <span>Sin prioridad</span>
+                    )}
+                    <ChevronDown
+                      size={12}
+                      style={{ color: "var(--text-tertiary)" }}
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {priorityMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -4, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -4, scale: 0.97 }}
+                        transition={{ duration: 0.12 }}
+                        className="absolute left-0 top-full mt-1 z-50 rounded-[var(--radius-lg)] shadow-[var(--shadow-dropdown)] overflow-hidden min-w-[160px]"
+                        style={{
+                          backgroundColor: "var(--bg-card)",
+                          border: "1px solid var(--border-color)",
+                        }}
+                      >
+                        {(
+                          [
+                            undefined,
+                            "low",
+                            "medium",
+                            "high",
+                            "urgent",
+                          ] as const
+                        ).map((p) => {
+                          const cfg = p ? getPriorityConfig(p) : null;
+                          return (
+                            <button
+                              key={p ?? "none"}
+                              onClick={() => {
+                                setLocalPriority(p);
+                                setPriorityMenuOpen(false);
+                                saveField({ priority: p });
+                              }}
+                              className="w-full flex items-center justify-between px-3 py-2 text-[var(--text-sm)] transition-colors"
+                              style={{ color: "var(--text-secondary)" }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "var(--bg-secondary)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor =
+                                  "transparent";
+                              }}
+                            >
+                              {cfg ? (
+                                <span
+                                  className={cn(
+                                    "inline-flex items-center gap-1.5 font-medium",
+                                    cfg.text,
+                                  )}
+                                >
+                                  <span>{cfg.emoji}</span> {cfg.label}
+                                </span>
+                              ) : (
+                                <span style={{ color: "var(--text-tertiary)" }}>
+                                  Sin prioridad
+                                </span>
+                              )}
+                              {localPriority === p && (
+                                <Check size={12} className="text-blue-500" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              ) : pc ? (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 text-[var(--text-xs)] font-medium",
+                    pc.text,
+                  )}
+                >
+                  <span>{pc.emoji}</span> {pc.label}
+                </span>
+              ) : null}
+            </div>
+          )}
+
+          {/* Assigned + Tags */}
           {(task.assignedTo || (task.tags && task.tags.length > 0)) && (
             <div className="flex flex-wrap items-center gap-2">
               {task.assignedTo && (
@@ -741,13 +743,22 @@ export default function TaskDetailPanel({
             </div>
           )}
 
-          {/* History */}
-          {task.history && task.history.length > 0 && (
-            <div
-              className="h-px"
-              style={{ backgroundColor: "var(--border-color)" }}
+          {/* Comments */}
+          <div className="space-y-2">
+            <p
+              className="text-[var(--text-xs)] font-medium"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              Comentarios
+            </p>
+            <TaskComments
+              taskId={task.id}
+              listId={task.listId}
+              memberNames={memberNames}
             />
-          )}
+          </div>
+
+          {/* History */}
           {task.history && task.history.length > 0 && (
             <div className="space-y-2">
               <p
@@ -825,21 +836,6 @@ export default function TaskDetailPanel({
               </div>
             </div>
           )}
-
-          {/* Comments */}
-          <div className="space-y-2">
-            <p
-              className="text-[var(--text-xs)] font-medium"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              Comentarios
-            </p>
-            <TaskComments
-              taskId={task.id}
-              listId={task.listId}
-              memberNames={memberNames}
-            />
-          </div>
 
           {/* Meta — creation */}
           <div

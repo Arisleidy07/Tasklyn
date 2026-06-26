@@ -398,21 +398,21 @@ export default function ListDetailPage() {
                   }
                 />
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-6">
                   {/* Bloque de pendientes */}
-                  <section>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span
-                        className="text-[11px] font-semibold uppercase tracking-widest"
-                        style={{ color: "var(--text-tertiary)" }}
+                  <section className="mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h2
+                        className="text-[var(--text-md)] font-semibold"
+                        style={{ color: "var(--text-primary)" }}
                       >
                         Pendientes
-                      </span>
+                      </h2>
                       <span
-                        className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
+                        className="text-[var(--text-sm)] font-semibold px-2 py-0.5 rounded-md"
                         style={{
                           backgroundColor: "var(--bg-tertiary)",
-                          color: "var(--text-tertiary)",
+                          color: "var(--text-secondary)",
                         }}
                       >
                         {pendingTasks.length}
@@ -450,27 +450,30 @@ export default function ListDetailPage() {
 
                   {/* Bloque de completadas — expandido por defecto, colapsable */}
                   {completedTasks.length > 0 && (
-                    <section>
+                    <section
+                      className="pt-4"
+                      style={{ borderTop: "1px solid var(--border-color)" }}
+                    >
                       <button
                         onClick={() => setShowCompleted((v) => !v)}
-                        className="flex items-center justify-between w-full mb-1.5 group"
+                        className="flex items-center justify-between w-full mb-3 group"
                       >
                         <div className="flex items-center gap-2">
                           <CheckCircle2
-                            size={12}
-                            style={{ color: "var(--text-tertiary)" }}
+                            size={16}
+                            style={{ color: "var(--text-secondary)" }}
                           />
-                          <span
-                            className="text-[11px] font-semibold uppercase tracking-widest"
-                            style={{ color: "var(--text-tertiary)" }}
+                          <h2
+                            className="text-[var(--text-md)] font-semibold"
+                            style={{ color: "var(--text-primary)" }}
                           >
                             Completadas
-                          </span>
+                          </h2>
                           <span
-                            className="text-[10px] font-medium px-1.5 py-0.5 rounded-md"
+                            className="text-[var(--text-sm)] font-semibold px-2 py-0.5 rounded-md"
                             style={{
                               backgroundColor: "var(--bg-tertiary)",
-                              color: "var(--text-tertiary)",
+                              color: "var(--text-secondary)",
                             }}
                           >
                             {completedTasks.length}
@@ -580,77 +583,44 @@ export default function ListDetailPage() {
 
           {/* Área de archivados dentro de la lista */}
           {archivedCount > 0 && (
-            <div className="mt-8">
-              {/* Section divider */}
-              <div className="flex items-center gap-3 mb-3">
-                <div
-                  className="flex-1 h-px"
-                  style={{ backgroundColor: "var(--border-color)" }}
-                />
-                <span
-                  className="text-[var(--text-2xs)] font-semibold uppercase tracking-widest px-2"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  Archivados
-                </span>
-                <div
-                  className="flex-1 h-px"
-                  style={{ backgroundColor: "var(--border-color)" }}
-                />
-              </div>
-
-              {/* Toggle button */}
+            <section
+              className="mt-8 pt-4"
+              style={{ borderTop: "1px solid var(--border-color)" }}
+            >
               <button
                 onClick={() => setShowArchived(!showArchived)}
-                className="flex items-center gap-2 w-full text-left px-3 py-2.5 rounded-[var(--radius-md)] transition-colors"
-                style={{
-                  backgroundColor: "var(--bg-card)",
-                  border: "1px solid var(--border-color)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "var(--bg-card)";
-                }}
+                className="flex items-center justify-between w-full mb-3 group"
               >
-                <div
-                  className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: "var(--bg-secondary)" }}
-                >
+                <div className="flex items-center gap-2">
                   <Archive
-                    size={12}
+                    size={16}
                     style={{ color: "var(--text-secondary)" }}
                   />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p
-                    className="text-[var(--text-sm)] font-semibold leading-snug"
+                  <h2
+                    className="text-[var(--text-md)] font-semibold"
                     style={{ color: "var(--text-primary)" }}
                   >
-                    {showArchived
-                      ? "Ocultar archivadas"
-                      : "Ver tareas archivadas"}
-                  </p>
-                  <p
-                    className="text-[var(--text-2xs)] mt-0.5"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    {archivedCount} tarea{archivedCount !== 1 ? "s" : ""}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 flex-shrink-0">
+                    Archivados
+                  </h2>
                   <span
-                    className="text-[var(--text-xs)] font-semibold px-1.5 py-0.5 rounded-md"
+                    className="text-[var(--text-sm)] font-semibold px-2 py-0.5 rounded-md"
                     style={{
-                      backgroundColor: "var(--bg-secondary)",
-                      color: "var(--text-tertiary)",
+                      backgroundColor: "var(--bg-tertiary)",
+                      color: "var(--text-secondary)",
                     }}
                   >
                     {archivedCount}
                   </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span
+                    className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    {showArchived ? "Colapsar" : "Expandir"}
+                  </span>
                   <ChevronDown
-                    size={13}
+                    size={16}
                     className={cn(
                       "transition-transform duration-200",
                       showArchived && "rotate-180",
@@ -684,7 +654,7 @@ export default function ListDetailPage() {
                   </motion.div>
                 )}
               </AnimatePresence>
-            </div>
+            </section>
           )}
         </div>
 

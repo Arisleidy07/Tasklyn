@@ -14,12 +14,13 @@ import {
   Circle,
   CalendarDays,
   User,
-  Tag,
   MapPin,
   Phone,
   GripVertical,
   UserCheck,
   UserCog,
+  FileText,
+  Tag,
 } from "lucide-react";
 import type { DragHandleProps } from "./SortableTaskContainer";
 import { cn } from "@/lib/utils";
@@ -107,6 +108,7 @@ function TaskItem({
     ? memberNames[task.performedBy] || "Usuario"
     : null;
   const showCompletionInfo = isCompleted && completedByName;
+  const firstPhone = task.phoneNumbers?.find((p) => p.trim());
 
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -140,17 +142,24 @@ function TaskItem({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.12, ease: "easeOut" }}
           className={cn(
-            "relative flex items-stretch gap-1 min-h-[48px] rounded-[var(--radius-md)] border border-transparent transition-colors duration-150",
-            isCompleted
-              ? "bg-transparent"
-              : "bg-[var(--bg-card)] hover:bg-[var(--bg-secondary)]",
-            isDragging && "shadow-[var(--shadow-card-hover)] z-10",
+            "relative flex items-stretch min-h-[44px] transition-colors duration-150",
+            isDragging && "z-10",
           )}
           style={{
-            borderColor: isDragging ? "var(--border-color)" : "transparent",
+            backgroundColor: isDragging ? "var(--bg-secondary)" : "transparent",
+          }}
+          onMouseEnter={(e) => {
+            if (!isDragging) {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isDragging) {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }
           }}
         >
-          {/* Drag handle — visible on mobile, subtle on desktop */}
+          {/* Drag handle */}
           {dragHandleProps && (
             <div
               {...(dragHandleProps.listeners as Record<
@@ -175,17 +184,21 @@ function TaskItem({
             </div>
           )}
 
-          {/* Main row */}
+          {/* Main row — only empty space opens detail */}
           <div
             className="flex-1 flex items-center gap-3 py-2 pr-3 min-w-0"
             onClick={(e) => {
-              if ((e.target as HTMLElement).closest("button,a,input,textarea"))
+              if (
+                (e.target as HTMLElement).closest(
+                  "button,a,input,textarea,select",
+                )
+              )
                 return;
               setShowDetailPanel(true);
             }}
             style={{ cursor: "pointer" }}
           >
-            {/* Checkbox — 24px, centered with title */}
+            {/* Checkbox */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -207,116 +220,152 @@ function TaskItem({
               )}
             </button>
 
-            {/* Title + secondary line */}
+            {/* Title + metadata */}
             <div className="flex-1 min-w-0 flex flex-col justify-center">
               <p
                 className={cn(
-                  "text-[var(--text-md)] font-medium leading-[1.35]",
-                  isCompleted && "line-through opacity-55",
+                  "text-[var(--text-base)] font-medium leading-snug",
+                  isCompleted && "line-through opacity-70",
                 )}
                 style={{
-                  color: "var(--text-primary)",
+                  color: isCompleted
+                    ? "var(--text-secondary)"
+                    : "var(--text-primary)",
                   wordBreak: "break-word",
                 }}
               >
                 {task.title}
               </p>
 
-              {hasSecondary && !isCompleted && (
-                <div className="flex items-center gap-2 mt-0.5 line-clamp-2">
-                  {pc && (
+              <div
+                className={cn(
+                  "flex items-center gap-2 mt-0.5 line-clamp-1",
+                  isCompleted && "opacity-60",
+                )}
+              >
+                {task.description && (
+                  <span className="inline-flex items-center gap-1 text-[var(--text-xs)] max-w-[160px] sm:max-w-[220px]">
+                    <FileText
+                      size={11}
+                      strokeWidth={1.8}
+                      style={{ color: "var(--text-tertiary)" }}
+                    />
                     <span
-                      className={cn(
-                        "inline-flex items-center gap-1 text-[var(--text-xs)] font-medium",
-                        pc.text,
-                      )}
-                    >
-                      <span>{pc.emoji}</span>
-                      <span>{pc.label}</span>
-                    </span>
-                  )}
-                  {dueText && (
-                    <span
-                      className="inline-flex items-center gap-1 text-[var(--text-xs)]"
+                      className="truncate"
                       style={{ color: "var(--text-tertiary)" }}
                     >
-                      <CalendarDays size={11} strokeWidth={1.8} />
+                      {task.description}
+                    </span>
+                  </span>
+                )}
+
+                {dueText && (
+                  <span className="inline-flex items-center gap-1 text-[var(--text-xs)]">
+                    <CalendarDays
+                      size={11}
+                      strokeWidth={1.8}
+                      style={{ color: "var(--text-tertiary)" }}
+                    />
+                    <span style={{ color: "var(--text-tertiary)" }}>
                       {dueText}
                     </span>
-                  )}
-                  {assignedName && (
-                    <span
-                      className="inline-flex items-center gap-1 text-[var(--text-xs)]"
+                  </span>
+                )}
+
+                {assignedName && (
+                  <span className="inline-flex items-center gap-1 text-[var(--text-xs)]">
+                    <User
+                      size={11}
+                      strokeWidth={1.8}
                       style={{ color: "var(--text-tertiary)" }}
-                    >
-                      <User size={11} strokeWidth={1.8} />
+                    />
+                    <span style={{ color: "var(--text-tertiary)" }}>
                       {assignedName}
                     </span>
-                  )}
-                  {task.location && (
-                    <span
-                      className="inline-flex items-center gap-1 text-[var(--text-xs)]"
+                  </span>
+                )}
+
+                {task.location && (
+                  <a
+                    href={`https://maps.google.com/?q=${encodeURIComponent(task.location)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 text-[var(--text-xs)] hover:underline"
+                  >
+                    <MapPin
+                      size={11}
+                      strokeWidth={1.8}
                       style={{ color: "var(--text-tertiary)" }}
+                    />
+                    <span
+                      className="truncate max-w-[100px] sm:max-w-[140px]"
+                      style={{ color: "var(--text-link)" }}
                     >
-                      <MapPin size={11} strokeWidth={1.8} />
-                      <span className="truncate max-w-[120px] sm:max-w-[160px]">
-                        {task.location}
-                      </span>
+                      {task.location}
                     </span>
-                  )}
-                  {task.phoneNumbers?.some((p) => p.trim()) && (
-                    <span
-                      className="inline-flex items-center gap-1 text-[var(--text-xs)]"
+                  </a>
+                )}
+
+                {firstPhone && (
+                  <a
+                    href={`tel:${firstPhone.replace(/\s/g, "")}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 text-[var(--text-xs)] hover:underline"
+                  >
+                    <Phone
+                      size={11}
+                      strokeWidth={1.8}
                       style={{ color: "var(--text-tertiary)" }}
-                    >
-                      <Phone size={11} strokeWidth={1.8} />
-                      <span>{task.phoneNumbers.find((p) => p.trim())}</span>
+                    />
+                    <span style={{ color: "var(--text-success)" }}>
+                      {firstPhone}
                     </span>
-                  )}
-                  {task.tags && task.tags.length > 0 && (
-                    <span
-                      className="inline-flex items-center gap-1 text-[var(--text-xs)]"
+                  </a>
+                )}
+
+                {task.tags && task.tags.length > 0 && (
+                  <span className="inline-flex items-center gap-1 text-[var(--text-xs)]">
+                    <Tag
+                      size={11}
+                      strokeWidth={1.8}
                       style={{ color: "var(--text-tertiary)" }}
-                    >
-                      <Tag size={11} strokeWidth={1.8} />
+                    />
+                    <span style={{ color: "var(--text-tertiary)" }}>
                       {task.tags[0]}
                       {task.tags.length > 1 && ` +${task.tags.length - 1}`}
                     </span>
-                  )}
-                </div>
-              )}
+                  </span>
+                )}
 
-              {showCompletionInfo && (
-                <div className="flex items-center gap-2 mt-0.5 line-clamp-2">
+                {pc && !isCompleted && (
                   <span
-                    className="inline-flex items-center gap-1 text-[var(--text-xs)]"
-                    style={{ color: "var(--text-tertiary)" }}
+                    className={cn(
+                      "inline-flex items-center gap-1 text-[var(--text-xs)] font-medium",
+                      pc.text,
+                    )}
                   >
+                    <span>{pc.emoji}</span>
+                    <span>{pc.label}</span>
+                  </span>
+                )}
+
+                {isCompleted && showCompletionInfo && (
+                  <span className="inline-flex items-center gap-1 text-[var(--text-xs)]">
                     <UserCheck
                       size={11}
                       strokeWidth={1.8}
                       style={{ color: "#16a34a" }}
                     />
-                    {completedByName}
-                  </span>
-                  {performedByName && performedByName !== completedByName && (
-                    <span
-                      className="inline-flex items-center gap-1 text-[var(--text-xs)]"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
-                      <UserCog
-                        size={11}
-                        strokeWidth={1.8}
-                        style={{ color: "#8b5cf6" }}
-                      />
-                      {performedByName}
+                    <span style={{ color: "var(--text-tertiary)" }}>
+                      {completedByName}
                     </span>
-                  )}
-                </div>
-              )}
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Task options — compact, inline, on the right */}
+            {/* Task options */}
             {!isCompleted && canManageOptions && (
               <div
                 className="hidden sm:flex items-center self-center"

@@ -52,91 +52,100 @@ export default function ArchivedTaskItem({
     <>
       <motion.div
         layout
-        initial={{ opacity: 0, y: 4 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -4 }}
-        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-        className="group/archived flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] transition-colors"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.12, ease: "easeOut" }}
+        className="group/archived relative flex items-stretch min-h-[44px] transition-colors duration-150"
         style={{
-          border: "1px solid var(--border-color)",
-          backgroundColor: "var(--bg-card)",
+          backgroundColor: "transparent",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "transparent";
         }}
       >
-        <div
-          className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-[var(--radius-md)]"
-          style={{ backgroundColor: "var(--bg-secondary)" }}
-        >
-          <Clock size={11} style={{ color: "var(--text-tertiary)" }} />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <p
-            className="text-[var(--text-base)] font-medium leading-snug truncate line-through"
-            style={{ color: "var(--text-secondary)" }}
+        <div className="flex-1 flex items-center gap-3 py-2 pr-3 min-w-0">
+          <div
+            className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full"
+            style={{ backgroundColor: "var(--bg-secondary)" }}
           >
-            {task.title}
-          </p>
-          {(chips.length > 0 || hasMeta) && (
-            <div className="flex items-center gap-2 flex-wrap mt-0.5">
-              {chips.length > 0 && (
-                <span
-                  className="text-[var(--text-2xs)]"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  {chips.join(" · ")}
-                </span>
-              )}
-              {hasMeta && (
-                <span
-                  className="text-[var(--text-2xs)]"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  {timeAgo(task.archivedAt || task.createdAt)}
-                  {task.archivedBy && <> · {getUserName(task.archivedBy)}</>}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
+            <Clock size={12} style={{ color: "var(--text-tertiary)" }} />
+          </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-0.5 flex-shrink-0">
-          {canEdit && (
-            <button
-              onClick={handleRestore}
-              className="p-1.5 rounded-md transition-colors cursor-pointer flex items-center justify-center active:scale-90"
-              style={{ color: "var(--text-tertiary)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#2563eb";
-                e.currentTarget.style.backgroundColor = "rgba(37,99,235,0.08)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--text-tertiary)";
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
-              title="Restaurar"
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-[var(--text-base)] font-medium leading-snug truncate line-through opacity-70"
+              style={{ color: "var(--text-primary)" }}
             >
-              <RotateCcw size={14} />
-            </button>
-          )}
-          {canDelete && (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="p-1.5 rounded-md transition-colors cursor-pointer flex items-center justify-center active:scale-90"
-              style={{ color: "var(--text-tertiary)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#ef4444";
-                e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.08)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--text-tertiary)";
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
-              title="Eliminar"
-            >
-              <Trash2 size={14} />
-            </button>
-          )}
+              {task.title}
+            </p>
+            {(chips.length > 0 || hasMeta) && (
+              <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                {chips.length > 0 && (
+                  <span
+                    className="text-[var(--text-2xs)]"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    {chips.join(" · ")}
+                  </span>
+                )}
+                {hasMeta && (
+                  <span
+                    className="text-[var(--text-2xs)]"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    {timeAgo(task.archivedAt || task.createdAt)}
+                    {task.archivedBy && <> · {getUserName(task.archivedBy)}</>}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center self-center gap-0.5 flex-shrink-0 pr-3">
+            {canEdit && (
+              <button
+                onClick={handleRestore}
+                className="p-1.5 rounded-md transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                style={{ color: "var(--text-tertiary)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#2563eb";
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(37,99,235,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--text-tertiary)";
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+                title="Restaurar"
+              >
+                <RotateCcw size={14} />
+              </button>
+            )}
+            {canDelete && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="p-1.5 rounded-md transition-colors cursor-pointer flex items-center justify-center active:scale-90"
+                style={{ color: "var(--text-tertiary)" }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#ef4444";
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(239,68,68,0.08)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "var(--text-tertiary)";
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+                title="Eliminar"
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </motion.div>
 

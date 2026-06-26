@@ -530,6 +530,22 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         ? `Marcada como completada por ${resolvedCompleterName} · Realizada por ${resolvedPerformerName}`
         : `Completada por ${resolvedCompleterName}`;
 
+    // Optimistic update: move task to completed immediately
+    set((state) => ({
+      tasks: state.tasks.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              status: "completed" as TaskStatus,
+              completedBy,
+              completedAt,
+              completedCount: newCount,
+              performedBy: performedByUser?.id || null,
+            }
+          : t,
+      ),
+    }));
+
     await updateTaskInDb(id, {
       status: "completed",
       completedBy,
@@ -669,6 +685,20 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   uncompleteTask: async (id, performedBy) => {
     const task = get().tasks.find((t) => t.id === id);
     if (!task) return;
+
+    // Optimistic update: move task back to pending immediately
+    set((state) => ({
+      tasks: state.tasks.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              status: "pending" as TaskStatus,
+              completedBy: null,
+              completedAt: null,
+            }
+          : t,
+      ),
+    }));
 
     await updateTaskInDb(id, {
       status: "pending",
