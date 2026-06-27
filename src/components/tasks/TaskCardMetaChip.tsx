@@ -34,14 +34,14 @@ export default function TaskCardMetaChip({
   );
 
   const baseClass = cn(
-    "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[var(--text-xs)] font-medium transition-colors",
+    "inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[var(--text-xs)] font-medium transition-colors",
     className,
   );
 
   const style = {
-    backgroundColor: "var(--bg-secondary)",
-    borderColor: "var(--border-color)",
-    color: "var(--text-secondary)",
+    backgroundColor: "var(--bg-chip)",
+    borderColor: "var(--border-chip)",
+    color: "var(--text-chip)",
   };
 
   if (href) {
@@ -54,7 +54,7 @@ export default function TaskCardMetaChip({
           e.stopPropagation();
           onClick?.(e);
         }}
-        className={cn(baseClass, "hover:bg-[var(--bg-tertiary)]")}
+        className={cn(baseClass, "hover:bg-[var(--bg-chip-hover)]")}
         style={style}
         title={title}
       >
@@ -70,7 +70,7 @@ export default function TaskCardMetaChip({
           e.stopPropagation();
           onClick(e);
         }}
-        className={cn(baseClass, "hover:bg-[var(--bg-tertiary)]")}
+        className={cn(baseClass, "hover:bg-[var(--bg-chip-hover)]")}
         style={style}
         title={title}
       >

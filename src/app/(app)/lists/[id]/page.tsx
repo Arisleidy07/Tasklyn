@@ -444,7 +444,12 @@ export default function ListDetailPage() {
                             reorderTasks(newOrder.map((t) => t.id))
                           }
                         >
-                          {(task, dragHandleProps, isDragging) => (
+                          {(
+                            task,
+                            dragHandleProps,
+                            isDragging,
+                            justDraggedRef,
+                          ) => (
                             <TaskItem
                               task={task}
                               role={userMember?.role || null}
@@ -452,6 +457,7 @@ export default function ListDetailPage() {
                               listMembers={list?.members}
                               dragHandleProps={dragHandleProps}
                               isDragging={isDragging}
+                              justDraggedRef={justDraggedRef}
                             />
                           )}
                         </SortableTaskContainer>
@@ -541,7 +547,12 @@ export default function ListDetailPage() {
                                   reorderTasks(newOrder.map((t) => t.id))
                                 }
                               >
-                                {(task, dragHandleProps, isDragging) => (
+                                {(
+                                  task,
+                                  dragHandleProps,
+                                  isDragging,
+                                  justDraggedRef,
+                                ) => (
                                   <TaskItem
                                     task={task}
                                     role={userMember?.role || null}
@@ -549,6 +560,7 @@ export default function ListDetailPage() {
                                     listMembers={list?.members}
                                     dragHandleProps={dragHandleProps}
                                     isDragging={isDragging}
+                                    justDraggedRef={justDraggedRef}
                                   />
                                 )}
                               </SortableTaskContainer>
@@ -568,7 +580,7 @@ export default function ListDetailPage() {
                     reorderTasks(newOrder.map((t) => t.id))
                   }
                 >
-                  {(task, dragHandleProps, isDragging) => (
+                  {(task, dragHandleProps, isDragging, justDraggedRef) => (
                     <TaskItem
                       task={task}
                       role={userMember?.role || null}
@@ -576,6 +588,7 @@ export default function ListDetailPage() {
                       listMembers={list?.members}
                       dragHandleProps={dragHandleProps}
                       isDragging={isDragging}
+                      justDraggedRef={justDraggedRef}
                     />
                   )}
                 </SortableTaskContainer>

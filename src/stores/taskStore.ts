@@ -314,6 +314,11 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const task = get().tasks.find((t) => t.id === id);
     if (!task) return;
 
+    // Optimistic update for immediate UI feedback
+    set((state) => ({
+      tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...updates } : t)),
+    }));
+
     const entries: TaskHistoryEntry[] = [];
     if (updates.title && updates.title !== task.title) {
       entries.push(

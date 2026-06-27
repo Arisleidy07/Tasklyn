@@ -5,7 +5,6 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
-  TouchSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
@@ -13,6 +12,11 @@ import {
   DragOverlay,
   DragStartEvent,
 } from "@dnd-kit/core";
+import {
+  LongPressSensor,
+  LONG_PRESS_CONSTRAINT,
+  LONG_PRESS_DELAY,
+} from "@/lib/LongPressSensor";
 import {
   SortableContext,
   sortableKeyboardCoordinates,
@@ -36,10 +40,12 @@ export interface DragHandleProps {
 // ── SortableTaskItem ──────────────────────────────────────────────────────────
 interface SortableTaskItemProps {
   task: Task;
-  /** Render prop: receives drag handle props to place inside the card */
+  /** Render prop: receives task, drag handle props, dragging state and a drag-click guard ref */
   children: (
+    task: Task,
     dragHandleProps: DragHandleProps,
     isDragging: boolean,
+    justDraggedRef: React.RefObject<boolean>,
   ) => React.ReactNode;
 }
 
@@ -66,7 +72,48 @@ export function SortableTaskItem({ task, children }: SortableTaskItemProps) {
     listeners: listeners as unknown as Record<string, unknown> | undefined,
   };
 
-  return <div style={style}>{children(dragHandleProps, isDragging)}</div>;
+  // Track long-press so the inevitable click after a drag does not open detail.
+  const justDraggedRef = React.useRef(false);
+  const longPressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const isLongPress = React.useRef(false);
+
+  const handlePointerDown = React.useCallback(() => {
+    isLongPress.current = false;
+    longPressTimer.current = setTimeout(() => {
+      isLongPress.current = true;
+    }, LONG_PRESS_DELAY);
+  }, []);
+
+  const handlePointerUp = React.useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    if (isLongPress.current && !isDragging) {
+      justDraggedRef.current = true;
+      setTimeout(() => {
+        justDraggedRef.current = false;
+      }, 150);
+    }
+  }, [isDragging]);
+
+  React.useEffect(() => {
+    return () => {
+      if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    };
+  }, []);
+
+  return (
+    <div
+      style={style}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+    >
+      {children(task, dragHandleProps, isDragging, justDraggedRef)}
+    </div>
+  );
 }
 
 // ── SortableTaskContainer ─────────────────────────────────────────────────────
@@ -77,6 +124,7 @@ interface SortableTaskContainerProps {
     task: Task,
     dragHandleProps: DragHandleProps,
     isDragging: boolean,
+    justDraggedRef: React.RefObject<boolean>,
   ) => React.ReactNode;
 }
 
@@ -88,14 +136,13 @@ export function SortableTaskContainer({
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const sensors = useSensors(
-    // Desktop: 8px movement to activate drag (no accidental drag on click)
+    // Long-press anywhere on the card to drag; quick tap opens detail.
+    useSensor(LongPressSensor, {
+      activationConstraint: LONG_PRESS_CONSTRAINT,
+    }),
+    // Fallback for mouse users who prefer a small drag movement.
     useSensor(PointerSensor, {
       activationConstraint: { distance: 8 },
-    }),
-    // Mobile: listeners are on the grip handle (touchAction:none scoped there).
-    // Hold grip 500ms to activate drag. tolerance:8 = cancel if finger drifts.
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 500, tolerance: 8 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
@@ -137,8 +184,8 @@ export function SortableTaskContainer({
       >
         {tasks.map((task) => (
           <SortableTaskItem key={task.id} task={task}>
-            {(dragHandleProps, isDragging) =>
-              children(task, dragHandleProps, isDragging)
+            {(task, dragHandleProps, isDragging, justDraggedRef) =>
+              children(task, dragHandleProps, isDragging, justDraggedRef)
             }
           </SortableTaskItem>
         ))}

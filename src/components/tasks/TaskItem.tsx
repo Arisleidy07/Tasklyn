@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import { Task, MemberRole, RecurrenceConfig } from "@/types";
+import React, { useMemo, useState, useRef, useEffect } from "react";
+import { Task, MemberRole } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import { canCompleteTask } from "@/lib/permissions";
@@ -17,7 +17,6 @@ import {
   Phone,
   CalendarDays,
   Bell,
-  Repeat,
 } from "lucide-react";
 import type { DragHandleProps } from "./SortableTaskContainer";
 import { cn } from "@/lib/utils";
@@ -29,6 +28,7 @@ interface TaskItemProps {
   listMembers?: Array<{ userId: string; role: string }>;
   dragHandleProps?: DragHandleProps;
   isDragging?: boolean;
+  justDraggedRef?: React.RefObject<boolean>;
 }
 
 const WEEKDAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -46,15 +46,6 @@ const MONTHS = [
   "nov",
   "dic",
 ];
-
-const RECURRENCE_LABELS: Record<string, string> = {
-  daily: "Diaria",
-  weekdays: "Días laborales",
-  weekly: "Semanal",
-  monthly: "Mensual",
-  yearly: "Anual",
-  custom: "Personalizada",
-};
 
 function formatTaskDate(dateStr?: string | null): string | null {
   if (!dateStr) return null;
@@ -122,20 +113,6 @@ function isDueUrgent(dateStr?: string | null): boolean {
   return target.getTime() <= today.getTime();
 }
 
-function getRecurrenceLabel(rec?: RecurrenceConfig | null): string {
-  if (!rec) return "";
-  return RECURRENCE_LABELS[rec.type] || rec.type;
-}
-
-function getInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
-
 function TaskItem({
   task,
   role,
@@ -143,9 +120,11 @@ function TaskItem({
   listMembers,
   dragHandleProps,
   isDragging,
+  justDraggedRef,
 }: TaskItemProps) {
   const [showDetailPanel, setShowDetailPanel] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const skipClickRef = useRef(false);
 
   const { user } = useAuthStore();
   const { uncompleteTask } = useTaskStore();
@@ -156,12 +135,23 @@ function TaskItem({
   const dueText = useMemo(() => formatTaskDate(task.dueDate), [task.dueDate]);
   const dueUrgent = useMemo(() => isDueUrgent(task.dueDate), [task.dueDate]);
   const hasDescription = !!task.description?.trim();
-  const assignedName = task.assignedTo ? memberNames[task.assignedTo] : null;
   const firstPhone = task.phoneNumbers?.find((p) => p.trim()) || null;
   const reminderText = useMemo(() => {
     const r = task.reminders?.[0];
     return r ? formatReminder(r.at) : null;
   }, [task.reminders]);
+
+  // Suppress the click event that sometimes fires after a drag ends.
+  useEffect(() => {
+    if (isDragging) {
+      skipClickRef.current = true;
+    } else {
+      const t = setTimeout(() => {
+        skipClickRef.current = false;
+      }, 80);
+      return () => clearTimeout(t);
+    }
+  }, [isDragging]);
 
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -173,48 +163,48 @@ function TaskItem({
     }
   };
 
-  const openDetail = (e: React.MouseEvent) => {
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (skipClickRef.current) return;
+    if (justDraggedRef?.current) return;
     if ((e.target as HTMLElement).closest("button,a,input,textarea,select"))
       return;
     setShowDetailPanel(true);
   };
 
+  const hasMeta = firstPhone || task.location || reminderText || dueText;
+
   return (
     <>
+      {/* Whole-card drag handle: setNodeRef + listeners + attributes */}
       <div
         ref={dragHandleProps?.setNodeRef as React.Ref<HTMLDivElement>}
         {...(dragHandleProps?.attributes as Record<
           string,
           unknown
         > as React.HTMLAttributes<HTMLDivElement>)}
-        className="group/task select-none"
+        {...(dragHandleProps?.listeners as Record<
+          string,
+          unknown
+        > as React.HTMLAttributes<HTMLDivElement>)}
+        className="group/task select-none mb-3"
+        style={{ touchAction: "pan-y" }}
       >
         <motion.div
           layout
-          initial={{ opacity: 0, y: 6 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: isDragging ? 0.45 : 1, y: 0 }}
-          exit={{ opacity: 0, y: 6 }}
+          exit={{ opacity: 0, y: 8 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
           className={cn(
-            "glass-card relative flex flex-col gap-1.5 sm:gap-2 p-3 sm:p-3.5 rounded-[var(--radius-card)] cursor-pointer",
-            isDragging && "z-10",
+            "glass-card relative flex flex-col gap-2 sm:gap-3 p-3.5 sm:p-4 rounded-[var(--radius-card)] cursor-pointer select-none",
+            isDragging && "z-10 shadow-2xl",
           )}
-          onClick={openDetail}
+          onClick={handleCardClick}
         >
-          {/* Drag handle — subtle, only on hover/desktop */}
+          {/* Drag handle indicator (desktop only, visual cue) */}
           {dragHandleProps && (
             <div
-              {...(dragHandleProps.listeners as Record<
-                string,
-                unknown
-              > as React.HTMLAttributes<HTMLDivElement>)}
-              onClick={(e) => e.stopPropagation()}
-              className="absolute left-1 top-1/2 -translate-y-1/2 hidden sm:flex items-center justify-center w-5 h-8 opacity-0 group-hover/task:opacity-100 transition-opacity cursor-grab"
-              style={{
-                touchAction: "none",
-                WebkitUserSelect: "none",
-                userSelect: "none",
-              }}
+              className="absolute left-2 sm:left-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center justify-center w-5 h-8 opacity-0 group-hover/task:opacity-100 transition-opacity cursor-grab"
               aria-label="Mantén presionado para mover"
             >
               <GripVertical
@@ -224,20 +214,19 @@ function TaskItem({
             </div>
           )}
 
-          {/* First line: checkbox + title */}
-          <div className="flex items-start gap-3">
+          {/* Title row */}
+          <div className="flex items-start gap-3 sm:pl-6">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleToggleComplete(e);
-              }}
+              onClick={handleToggleComplete}
               disabled={!canComplete}
               className={cn(
-                "flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full transition-transform duration-200",
+                "flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full transition-transform duration-200 mt-0.5",
                 canComplete
                   ? "cursor-pointer"
                   : "cursor-not-allowed opacity-40",
-                isCompleted ? "text-blue-500" : "text-[var(--text-muted)]",
+                isCompleted
+                  ? "text-[var(--text-info)]"
+                  : "text-[var(--text-tertiary)]",
               )}
               aria-label={
                 isCompleted ? "Marcar como pendiente" : "Completar tarea"
@@ -251,8 +240,8 @@ function TaskItem({
             </button>
             <p
               className={cn(
-                "flex-1 min-w-0 text-[var(--text-lg)] font-bold leading-tight line-clamp-2",
-                isCompleted && "line-through opacity-75",
+                "flex-1 min-w-0 text-[var(--text-base)] sm:text-[var(--text-lg)] font-semibold leading-snug",
+                isCompleted && "line-through opacity-70",
               )}
               style={{ color: "var(--text-primary)" }}
             >
@@ -260,11 +249,11 @@ function TaskItem({
             </p>
           </div>
 
-          {/* Second line: description */}
+          {/* Description */}
           {hasDescription && (
             <p
               className={cn(
-                "text-[var(--text-base)] leading-snug line-clamp-2",
+                "text-[var(--text-base)] leading-relaxed sm:pl-9 line-clamp-2 sm:line-clamp-none",
                 isCompleted && "opacity-70",
               )}
               style={{ color: "var(--text-secondary)" }}
@@ -273,36 +262,37 @@ function TaskItem({
             </p>
           )}
 
-          {/* Third line: metadata chips */}
-          {(task.location ||
-            firstPhone ||
-            dueText ||
-            reminderText ||
-            task.recurrence ||
-            assignedName) && (
-            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+          {/* Metadata chips: Teléfono · Ubicación · Recordatorio · Fecha */}
+          {hasMeta && (
+            <div className="flex flex-wrap items-center gap-2 sm:pl-9">
+              {firstPhone && (
+                <TaskCardMetaChip
+                  icon={<Phone size={12} />}
+                  text={firstPhone}
+                  href={`tel:${firstPhone.replace(/\s/g, "")}`}
+                  color="var(--text-success)"
+                />
+              )}
               {task.location && (
                 <TaskCardMetaChip
-                  icon={<MapPin size={11} />}
+                  icon={<MapPin size={12} />}
                   text={task.location}
                   href={`https://maps.google.com/?q=${encodeURIComponent(
                     task.location,
                   )}`}
-                  color="#3b82f6"
-                  className="max-w-[160px] sm:max-w-[220px]"
+                  color="var(--text-info)"
                 />
               )}
-              {firstPhone && (
+              {reminderText && (
                 <TaskCardMetaChip
-                  icon={<Phone size={11} />}
-                  text={firstPhone}
-                  href={`tel:${firstPhone.replace(/\s/g, "")}`}
-                  color="#16a34a"
+                  icon={<Bell size={12} />}
+                  text={reminderText}
+                  color="var(--text-warning)"
                 />
               )}
               {dueText && (
                 <TaskCardMetaChip
-                  icon={<CalendarDays size={11} />}
+                  icon={<CalendarDays size={12} />}
                   text={
                     task.dueTime
                       ? `${dueText} · ${formatTaskTime(task.dueTime)}`
@@ -314,41 +304,6 @@ function TaskItem({
                       : "var(--text-tertiary)"
                   }
                 />
-              )}
-              {task.recurrence && (
-                <TaskCardMetaChip
-                  icon={<Repeat size={11} />}
-                  text={getRecurrenceLabel(task.recurrence)}
-                  color="var(--text-tertiary)"
-                />
-              )}
-              {reminderText && (
-                <TaskCardMetaChip
-                  icon={<Bell size={11} />}
-                  text={reminderText}
-                  color="var(--text-warning)"
-                />
-              )}
-              {assignedName && (
-                <span
-                  className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-md border text-[var(--text-xs)] font-medium"
-                  style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    borderColor: "var(--border-color)",
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  <span
-                    className="flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold"
-                    style={{
-                      backgroundColor: "var(--text-link)",
-                      color: "#ffffff",
-                    }}
-                  >
-                    {getInitials(assignedName)}
-                  </span>
-                  {assignedName}
-                </span>
               )}
             </div>
           )}

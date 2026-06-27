@@ -86,9 +86,8 @@ export default function ArchivedTaskItem({
                 className="p-1.5 rounded-md transition-colors cursor-pointer flex items-center justify-center active:scale-90"
                 style={{ color: "var(--text-tertiary)" }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#2563eb";
-                  e.currentTarget.style.backgroundColor =
-                    "rgba(37,99,235,0.08)";
+                  e.currentTarget.style.color = "var(--text-link)";
+                  e.currentTarget.style.backgroundColor = "var(--bg-info)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.color = "var(--text-tertiary)";
@@ -105,9 +104,8 @@ export default function ArchivedTaskItem({
                 className="p-1.5 rounded-md transition-colors cursor-pointer flex items-center justify-center active:scale-90"
                 style={{ color: "var(--text-tertiary)" }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#ef4444";
-                  e.currentTarget.style.backgroundColor =
-                    "rgba(239,68,68,0.08)";
+                  e.currentTarget.style.color = "var(--text-error)";
+                  e.currentTarget.style.backgroundColor = "var(--bg-error)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.color = "var(--text-tertiary)";

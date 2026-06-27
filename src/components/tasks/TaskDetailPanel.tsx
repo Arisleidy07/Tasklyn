@@ -613,33 +613,31 @@ export default function TaskDetailPanel({
         <div className="px-4 py-5 space-y-5">
           {/* Title */}
           <div className="flex items-start gap-3">
-            <div className="flex-1 min-w-0">
-              {canEdit ? (
+            {canEdit ? (
+              <div
+                className="flex-1 rounded-[var(--radius-lg)] border focus-within:border-[var(--border-input-focus)] focus-within:ring-2 focus-within:ring-[var(--border-input-focus)]/15 transition-all overflow-hidden"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  borderColor: "var(--border-input)",
+                }}
+              >
                 <input
                   value={localTitle}
                   onChange={(e) => handleTitleChange(e.target.value)}
                   onBlur={flushPending}
-                  className="w-full bg-transparent focus:outline-none text-[var(--text-xl)] font-bold leading-tight placeholder:text-[var(--text-muted)]"
+                  className="w-full bg-transparent px-3 py-2.5 focus:outline-none text-[var(--text-xl)] font-bold leading-tight placeholder:text-[var(--text-muted)]"
                   style={{ color: "var(--text-primary)" }}
                   placeholder="Título de la tarea"
                 />
-              ) : (
-                <h2
-                  className="text-[var(--text-xl)] font-bold leading-tight"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {task.title}
-                </h2>
-              )}
-              {isCompleted && (
-                <span
-                  className="inline-flex items-center gap-1 mt-1.5 text-[var(--text-xs)] font-medium"
-                  style={{ color: "#16a34a" }}
-                >
-                  <Check size={11} /> Completada
-                </span>
-              )}
-            </div>
+              </div>
+            ) : (
+              <h2
+                className="flex-1 text-[var(--text-xl)] font-bold leading-tight"
+                style={{ color: "var(--text-primary)" }}
+              >
+                {task.title}
+              </h2>
+            )}
           </div>
 
           {/* Description */}
@@ -652,15 +650,18 @@ export default function TaskDetailPanel({
             >
               {canEdit ? (
                 <div
-                  className="rounded-[var(--radius-lg)] overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/15 transition-all"
-                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                  className="rounded-[var(--radius-lg)] border overflow-hidden focus-within:border-[var(--border-input-focus)] focus-within:ring-2 focus-within:ring-[var(--border-input-focus)]/15 transition-all"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    borderColor: "var(--border-input)",
+                  }}
                 >
                   <AutoResizeTextarea
                     value={localDescription}
                     onChange={handleDescriptionChange}
                     onBlur={flushPending}
                     placeholder="Añade una descripción..."
-                    className="text-[var(--text-base)] px-3 py-2.5 w-full leading-relaxed"
+                    className="text-[var(--text-base)] px-3 py-2.5 w-full leading-relaxed bg-transparent"
                     minRows={2}
                   />
                 </div>
@@ -678,7 +679,9 @@ export default function TaskDetailPanel({
           {/* Phones */}
           {(canEdit || task.phoneNumbers?.some((p) => p.trim())) && (
             <Section
-              icon={<Phone size={16} style={{ color: "#16a34a" }} />}
+              icon={
+                <Phone size={16} style={{ color: "var(--text-success)" }} />
+              }
               label="Teléfono"
             >
               <div className="space-y-2">
@@ -687,8 +690,11 @@ export default function TaskDetailPanel({
                     {localPhones.map((phone, i) => (
                       <div key={i} className="flex items-center gap-2">
                         <div
-                          className="flex items-center gap-2 flex-1 rounded-[var(--radius-lg)] px-3 py-2"
-                          style={{ backgroundColor: "var(--bg-secondary)" }}
+                          className="flex items-center gap-2 flex-1 rounded-[var(--radius-lg)] border px-3 py-2 focus-within:border-[var(--border-input-focus)] focus-within:ring-2 focus-within:ring-[var(--border-input-focus)]/15 transition-all"
+                          style={{
+                            backgroundColor: "var(--bg-secondary)",
+                            borderColor: "var(--border-input)",
+                          }}
                         >
                           <input
                             type="tel"
@@ -728,14 +734,14 @@ export default function TaskDetailPanel({
                                 ? `https://wa.me/${formatPhoneForWhatsApp(phone.trim())}`
                                 : undefined
                             }
-                            color="#16a34a"
+                            color="var(--text-success)"
                           />
                           {localPhones.length > 1 && (
                             <IconButton
                               icon={<X size={14} />}
                               title="Eliminar"
                               onClick={() => handleRemovePhone(i)}
-                              color="#ef4444"
+                              color="var(--text-error)"
                             />
                           )}
                         </div>
@@ -756,8 +762,11 @@ export default function TaskDetailPanel({
                       .map((p, i) => (
                         <div
                           key={i}
-                          className="flex items-center gap-1 rounded-[var(--radius-lg)] px-3 py-2"
-                          style={{ backgroundColor: "var(--bg-secondary)" }}
+                          className="flex items-center gap-1 rounded-[var(--radius-lg)] border px-3 py-2"
+                          style={{
+                            backgroundColor: "var(--bg-secondary)",
+                            borderColor: "var(--border-input)",
+                          }}
                         >
                           <span style={{ color: "var(--text-primary)" }}>
                             {p}
@@ -779,7 +788,7 @@ export default function TaskDetailPanel({
                               icon={<MessageCircle size={14} />}
                               title="WhatsApp"
                               href={`https://wa.me/${formatPhoneForWhatsApp(p.trim())}`}
-                              color="#16a34a"
+                              color="var(--text-success)"
                             />
                           </div>
                         </div>
@@ -793,7 +802,7 @@ export default function TaskDetailPanel({
           {/* Location */}
           {(canEdit || task.location) && (
             <Section
-              icon={<MapPin size={16} style={{ color: "#3b82f6" }} />}
+              icon={<MapPin size={16} style={{ color: "var(--text-info)" }} />}
               label="Ubicación"
               action={
                 task.location && (
@@ -809,7 +818,7 @@ export default function TaskDetailPanel({
                       icon={<ExternalLink size={14} />}
                       title="Abrir en Google Maps"
                       href={`https://maps.google.com/?q=${encodeURIComponent(task.location || "")}`}
-                      color="#3b82f6"
+                      color="var(--text-info)"
                     />
                   </div>
                 )
@@ -817,8 +826,11 @@ export default function TaskDetailPanel({
             >
               {canEdit ? (
                 <div
-                  className="flex items-center gap-2 rounded-[var(--radius-lg)] px-3 py-2"
-                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                  className="flex items-center gap-2 rounded-[var(--radius-lg)] border px-3 py-2 focus-within:border-[var(--border-input-focus)] focus-within:ring-2 focus-within:ring-[var(--border-input-focus)]/15 transition-all"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    borderColor: "var(--border-input)",
+                  }}
                 >
                   <input
                     value={localLocation}
@@ -835,12 +847,91 @@ export default function TaskDetailPanel({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-[var(--text-base)] hover:underline"
-                  style={{ color: "#3b82f6" }}
+                  style={{ color: "var(--text-info)" }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   {task.location}
                 </a>
               ) : null}
+            </Section>
+          )}
+
+          {/* Reminder */}
+          {(canEdit || (task.reminders && task.reminders.length > 0)) && (
+            <Section
+              icon={<Bell size={16} style={{ color: "var(--text-warning)" }} />}
+              label="Recordatorio"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="flex-1 rounded-[var(--radius-lg)] border px-3 py-2"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      borderColor: "var(--border-input)",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: task.reminders?.[0]
+                          ? "var(--text-primary)"
+                          : "var(--text-tertiary)",
+                      }}
+                    >
+                      {task.reminders?.[0]
+                        ? formatReminderLabel(task.reminders[0].at)
+                        : "Sin recordatorio"}
+                    </span>
+                  </div>
+                  {canEdit && task.reminders?.[0] && (
+                    <IconButton
+                      icon={<X size={14} />}
+                      title="Eliminar recordatorio"
+                      onClick={handleClearReminder}
+                      color="var(--text-error)"
+                    />
+                  )}
+                </div>
+                {canEdit && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {reminderQuickOptions().map((opt) => (
+                      <button
+                        key={opt.label}
+                        onClick={() => handleQuickReminder(opt.value)}
+                        className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
+                        style={{
+                          backgroundColor: "var(--bg-secondary)",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                    <div className="relative">
+                      <button
+                        onClick={() => reminderInputRef.current?.showPicker?.()}
+                        className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
+                        style={{
+                          backgroundColor: "var(--bg-secondary)",
+                          color: "var(--text-link)",
+                        }}
+                      >
+                        Personalizado
+                      </button>
+                      <input
+                        ref={reminderInputRef}
+                        type="datetime-local"
+                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                        onChange={(e) => {
+                          if (e.target.value)
+                            handleCustomReminder(e.target.value);
+                        }}
+                        onBlur={flushPending}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
             </Section>
           )}
 
@@ -857,8 +948,11 @@ export default function TaskDetailPanel({
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <div
-                  className="flex-1 flex items-center gap-2 rounded-[var(--radius-lg)] px-3 py-2"
-                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                  className="flex-1 flex items-center gap-2 rounded-[var(--radius-lg)] border px-3 py-2"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    borderColor: "var(--border-input)",
+                  }}
                 >
                   <span style={{ color: "var(--text-primary)" }}>
                     {formatDateLabel(task.dueDate)}
@@ -869,7 +963,7 @@ export default function TaskDetailPanel({
                       value={task.dueTime || ""}
                       onChange={(e) => handleTimeChange(e.target.value)}
                       onBlur={flushPending}
-                      className="text-[var(--text-sm)] bg-transparent border-l focus:outline-none"
+                      className="text-[var(--text-sm)] bg-transparent border-l focus:outline-none px-2"
                       style={{
                         borderColor: "var(--border-color)",
                         color: "var(--text-secondary)",
@@ -882,7 +976,7 @@ export default function TaskDetailPanel({
                     icon={<X size={14} />}
                     title="Eliminar fecha"
                     onClick={() => handleQuickDate(null)}
-                    color="#ef4444"
+                    color="var(--text-error)"
                   />
                 )}
               </div>
@@ -951,82 +1045,6 @@ export default function TaskDetailPanel({
             </div>
           </Section>
 
-          {/* Reminder */}
-          {(canEdit || (task.reminders && task.reminders.length > 0)) && (
-            <Section
-              icon={<Bell size={16} style={{ color: "var(--text-warning)" }} />}
-              label="Recordatorio"
-            >
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="flex-1 rounded-[var(--radius-lg)] px-3 py-2"
-                    style={{ backgroundColor: "var(--bg-secondary)" }}
-                  >
-                    <span
-                      style={{
-                        color: task.reminders?.[0]
-                          ? "var(--text-primary)"
-                          : "var(--text-tertiary)",
-                      }}
-                    >
-                      {task.reminders?.[0]
-                        ? formatReminderLabel(task.reminders[0].at)
-                        : "Sin recordatorio"}
-                    </span>
-                  </div>
-                  {canEdit && task.reminders?.[0] && (
-                    <IconButton
-                      icon={<X size={14} />}
-                      title="Eliminar recordatorio"
-                      onClick={handleClearReminder}
-                      color="#ef4444"
-                    />
-                  )}
-                </div>
-                {canEdit && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    {reminderQuickOptions().map((opt) => (
-                      <button
-                        key={opt.label}
-                        onClick={() => handleQuickReminder(opt.value)}
-                        className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
-                        style={{
-                          backgroundColor: "var(--bg-secondary)",
-                          color: "var(--text-secondary)",
-                        }}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                    <div className="relative">
-                      <button
-                        onClick={() => reminderInputRef.current?.showPicker?.()}
-                        className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
-                        style={{
-                          backgroundColor: "var(--bg-secondary)",
-                          color: "var(--text-link)",
-                        }}
-                      >
-                        Personalizado
-                      </button>
-                      <input
-                        ref={reminderInputRef}
-                        type="datetime-local"
-                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                        onChange={(e) => {
-                          if (e.target.value)
-                            handleCustomReminder(e.target.value);
-                        }}
-                        onBlur={flushPending}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Section>
-          )}
-
           {/* Assigned */}
           <Section
             icon={<User size={16} style={{ color: "var(--text-tertiary)" }} />}
@@ -1039,7 +1057,7 @@ export default function TaskDetailPanel({
                   className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-lg)] border text-[var(--text-base)] transition-colors hover:bg-[var(--bg-secondary)]"
                   style={{
                     backgroundColor: "var(--bg-secondary)",
-                    borderColor: "var(--border-color)",
+                    borderColor: "var(--border-input)",
                     color: "var(--text-primary)",
                   }}
                 >
@@ -1049,7 +1067,7 @@ export default function TaskDetailPanel({
                         className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
                         style={{
                           backgroundColor: "var(--text-link)",
-                          color: "#ffffff",
+                          color: "var(--text-inverse)",
                         }}
                       >
                         {assignedName
@@ -1077,7 +1095,7 @@ export default function TaskDetailPanel({
                     className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
                     style={{
                       backgroundColor: "var(--text-link)",
-                      color: "#ffffff",
+                      color: "var(--text-inverse)",
                     }}
                   >
                     {assignedName
@@ -1119,7 +1137,7 @@ export default function TaskDetailPanel({
                             className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
                             style={{
                               backgroundColor: "var(--text-link)",
-                              color: "#ffffff",
+                              color: "var(--text-inverse)",
                             }}
                           >
                             {opt.name
@@ -1242,14 +1260,14 @@ export default function TaskDetailPanel({
                           <div
                             className="rounded-[var(--radius-md)] px-3 py-2 text-[var(--text-xs)]"
                             style={{
-                              backgroundColor: "rgba(59,130,246,0.08)",
-                              border: "1px solid rgba(59,130,246,0.15)",
+                              backgroundColor: "var(--bg-info)",
+                              border: "1px solid var(--border-color)",
                               color: "var(--text-primary)",
                             }}
                           >
                             <span
                               className="font-medium uppercase tracking-wider text-[10px]"
-                              style={{ color: "#3b82f6" }}
+                              style={{ color: "var(--text-info)" }}
                             >
                               Ahora
                             </span>
@@ -1298,12 +1316,12 @@ export default function TaskDetailPanel({
             transition={{ duration: 0.12 }}
             className="absolute bottom-4 left-1/2 -translate-x-1/2 z-50 px-3 py-2 rounded-lg text-[var(--text-sm)] font-medium shadow-[var(--shadow-toast)] flex items-center gap-2"
             style={{
-              backgroundColor: "#1e293b",
-              color: "#f8fafc",
+              backgroundColor: "var(--bg-secondary)",
+              color: "var(--text-primary)",
               whiteSpace: "nowrap",
             }}
           >
-            <Check size={13} style={{ color: "#4ade80" }} />
+            <Check size={13} style={{ color: "var(--text-success)" }} />
             {toast}
           </motion.div>
         )}
@@ -1318,7 +1336,7 @@ export default function TaskDetailPanel({
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-50 flex items-end sm:items-center justify-center p-4"
             style={{
-              backgroundColor: "rgba(0,0,0,0.35)",
+              backgroundColor: "var(--bg-modal-overlay)",
               backdropFilter: "blur(3px)",
             }}
           >
@@ -1381,7 +1399,7 @@ export default function TaskDetailPanel({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[9000]"
             style={{
-              backgroundColor: "rgba(0,0,0,0.45)",
+              backgroundColor: "var(--bg-modal-overlay)",
               backdropFilter: "blur(2px)",
             }}
             onClick={onClose}
@@ -1397,8 +1415,8 @@ export default function TaskDetailPanel({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 32, stiffness: 320 }}
-              className="absolute inset-x-0 bottom-0 rounded-t-[var(--radius-lg)] overflow-hidden shadow-[var(--shadow-modal)] flex flex-col"
-              style={{ top: "40px", backgroundColor: "var(--bg-card)" }}
+              className="absolute inset-x-0 bottom-0 overflow-hidden shadow-[var(--shadow-modal)] flex flex-col"
+              style={{ top: 0, backgroundColor: "var(--bg-card)" }}
             >
               <div className="flex justify-center pt-2.5 pb-0 flex-shrink-0">
                 <div

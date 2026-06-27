@@ -16,7 +16,9 @@ import type { PointerActivationConstraint } from "@dnd-kit/core";
 
 export class LongPressSensor extends PointerSensor {}
 
+export const LONG_PRESS_DELAY = 500;
+
 export const LONG_PRESS_CONSTRAINT: PointerActivationConstraint = {
-  delay: 500,
+  delay: LONG_PRESS_DELAY,
   tolerance: 10,
 };
