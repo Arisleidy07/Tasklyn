@@ -217,106 +217,31 @@ export default function TaskDetailPanel({
       className="flex flex-col h-full"
       style={{ backgroundColor: "var(--bg-card)" }}
     >
-      {/* ── Header ── */}
+      {/* ── Header actions ── */}
       <div
-        className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b"
+        className="flex-shrink-0 flex items-center justify-end gap-0.5 px-4 py-3 border-b"
         style={{ borderColor: "var(--border-color)" }}
       >
-        {/* Checkbox + title */}
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+        <button
+          onClick={handleCopyWhatsApp}
+          title="Copiar para compartir"
+          className="p-2 rounded-lg transition-colors duration-150"
+          style={{ color: "var(--text-secondary)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
+        >
+          <Copy size={16} />
+        </button>
+        {canArchive && (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!user || !canComplete) return;
-              if (isCompleted) {
-                uncompleteTask(task.id, user.id);
-              } else {
-                completeTask(task.id, user.id, user.name, listMembers, user);
-              }
-            }}
-            disabled={!canComplete}
-            className={cn(
-              "flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full transition-transform",
-              canComplete
-                ? "cursor-pointer active:scale-90"
-                : "cursor-not-allowed opacity-40",
-              isCompleted ? "text-blue-500" : "text-[var(--text-muted)]",
-            )}
-          >
-            {isCompleted ? (
-              <CheckCircle2 size={26} strokeWidth={1.8} />
-            ) : (
-              <Circle size={26} strokeWidth={1.8} />
-            )}
-          </button>
-          {canEdit ? (
-            <input
-              value={localTitle}
-              onChange={(e) => {
-                setLocalTitle(e.target.value);
-                if (e.target.value.trim())
-                  debounceSave("title", { title: e.target.value.trim() });
-              }}
-              className={cn(
-                "flex-1 min-w-0 text-[var(--text-lg)] font-semibold leading-tight bg-transparent focus:outline-none",
-                isCompleted && "line-through opacity-70",
-              )}
-              style={{ color: "var(--text-primary)" }}
-              placeholder="Título de la tarea"
-            />
-          ) : (
-            <h2
-              className={cn(
-                "text-[var(--text-lg)] font-semibold leading-tight truncate",
-                isCompleted && "line-through opacity-70",
-              )}
-              style={{ color: "var(--text-primary)" }}
-            >
-              {task.title}
-            </h2>
-          )}
-        </div>
-
-        {/* Actions: Archivar · Eliminar · Cerrar */}
-        <div className="flex items-center gap-0.5 flex-shrink-0">
-          {canArchive && (
-            <button
-              onClick={handleArchive}
-              title="Archivar"
-              className="p-2 rounded-lg transition-colors duration-150"
-              style={{ color: "var(--text-secondary)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
-            >
-              <Archive size={16} />
-            </button>
-          )}
-          {canDelete && (
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              title="Eliminar"
-              className="p-2 rounded-lg transition-colors duration-150"
-              style={{ color: "var(--text-tertiary)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#ef4444";
-                e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.08)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--text-tertiary)";
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
-            >
-              <Trash2 size={16} />
-            </button>
-          )}
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg transition-colors duration-150 ml-0.5"
-            style={{ color: "var(--text-tertiary)" }}
+            onClick={handleArchive}
+            title="Archivar"
+            className="p-2 rounded-lg transition-colors duration-150"
+            style={{ color: "var(--text-secondary)" }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
             }}
@@ -324,9 +249,40 @@ export default function TaskDetailPanel({
               e.currentTarget.style.backgroundColor = "transparent";
             }}
           >
-            <X size={18} />
+            <Archive size={16} />
           </button>
-        </div>
+        )}
+        {canDelete && (
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            title="Eliminar"
+            className="p-2 rounded-lg transition-colors duration-150"
+            style={{ color: "var(--text-tertiary)" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = "#ef4444";
+              e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.08)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = "var(--text-tertiary)";
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
+        <button
+          onClick={onClose}
+          className="p-2 rounded-lg transition-colors duration-150 ml-0.5"
+          style={{ color: "var(--text-tertiary)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = "transparent";
+          }}
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* ── Scrollable body ── */}
@@ -337,6 +293,61 @@ export default function TaskDetailPanel({
         }}
       >
         <div className="px-4 py-4 space-y-4">
+          {/* Title + checkbox */}
+          <div className="flex items-start gap-3">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!user || !canComplete) return;
+                if (isCompleted) {
+                  uncompleteTask(task.id, user.id);
+                } else {
+                  completeTask(task.id, user.id, user.name, listMembers, user);
+                }
+              }}
+              disabled={!canComplete}
+              className={cn(
+                "flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full transition-transform mt-0.5",
+                canComplete
+                  ? "cursor-pointer active:scale-90"
+                  : "cursor-not-allowed opacity-40",
+                isCompleted ? "text-blue-500" : "text-[var(--text-muted)]",
+              )}
+            >
+              {isCompleted ? (
+                <CheckCircle2 size={26} strokeWidth={1.8} />
+              ) : (
+                <Circle size={26} strokeWidth={1.8} />
+              )}
+            </button>
+            {canEdit ? (
+              <input
+                value={localTitle}
+                onChange={(e) => {
+                  setLocalTitle(e.target.value);
+                  if (e.target.value.trim())
+                    debounceSave("title", { title: e.target.value.trim() });
+                }}
+                className={cn(
+                  "flex-1 min-w-0 text-[var(--text-lg)] font-semibold leading-tight bg-transparent focus:outline-none",
+                  isCompleted && "line-through opacity-70",
+                )}
+                style={{ color: "var(--text-primary)" }}
+                placeholder="Título de la tarea"
+              />
+            ) : (
+              <h2
+                className={cn(
+                  "text-[var(--text-lg)] font-semibold leading-tight truncate",
+                  isCompleted && "line-through opacity-70",
+                )}
+                style={{ color: "var(--text-primary)" }}
+              >
+                {task.title}
+              </h2>
+            )}
+          </div>
+
           {/* Properties group: description, location, phone */}
           <div className="space-y-2.5">
             {/* Description */}
@@ -398,23 +409,6 @@ export default function TaskDetailPanel({
                     {task.location}
                   </a>
                 ) : null}
-                {task.location && (
-                  <button
-                    onClick={handleCopyWhatsApp}
-                    title="Copiar para compartir"
-                    className="p-1.5 rounded-md transition-colors"
-                    style={{ color: "var(--text-secondary)" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "var(--bg-active)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
-                  >
-                    <Copy size={14} />
-                  </button>
-                )}
               </div>
             )}
 

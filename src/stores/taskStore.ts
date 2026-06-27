@@ -601,14 +601,18 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       }
     }
 
-    // Notify relevant members (owner and editors, excluding the completer)
+    // Notify relevant members (owner, admin, or editor), excluding the completer
     if (completerName && listMembers) {
+      const notified = new Set<string>();
       listMembers.forEach((member: { userId: string; role: string }) => {
-        // Notify owner and editors, but not the person who completed it
         if (
-          (member.role === "owner" || member.role === "editor") &&
-          member.userId !== completedBy
+          (member.role === "owner" ||
+            member.role === "editor" ||
+            member.role === "admin") &&
+          member.userId !== completedBy &&
+          !notified.has(member.userId)
         ) {
+          notified.add(member.userId);
           notifyTaskCompleted(
             member.userId,
             task.title,
