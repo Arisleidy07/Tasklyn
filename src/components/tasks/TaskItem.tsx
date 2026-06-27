@@ -1,14 +1,24 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Task, MemberRole } from "@/types";
+import React, { useMemo, useState } from "react";
+import { Task, MemberRole, RecurrenceConfig } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import { canCompleteTask } from "@/lib/permissions";
 import { motion } from "framer-motion";
 import TaskCompletionModal from "./TaskCompletionModal";
 import TaskDetailPanel from "./TaskDetailPanel";
-import { CheckCircle2, Circle, GripVertical, CalendarDays } from "lucide-react";
+import TaskCardMetaChip from "./TaskCardMetaChip";
+import {
+  CheckCircle2,
+  Circle,
+  GripVertical,
+  MapPin,
+  Phone,
+  CalendarDays,
+  Bell,
+  Repeat,
+} from "lucide-react";
 import type { DragHandleProps } from "./SortableTaskContainer";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +47,15 @@ const MONTHS = [
   "dic",
 ];
 
+const RECURRENCE_LABELS: Record<string, string> = {
+  daily: "Diaria",
+  weekdays: "Días laborales",
+  weekly: "Semanal",
+  monthly: "Mensual",
+  yearly: "Anual",
+  custom: "Personalizada",
+};
+
 function formatTaskDate(dateStr?: string | null): string | null {
   if (!dateStr) return null;
   const d = new Date(dateStr + "T00:00:00");
@@ -58,6 +77,41 @@ function formatTaskDate(dateStr?: string | null): string | null {
   return year === currentYear ? `${day} ${month}` : `${day} ${month} ${year}`;
 }
 
+function formatTaskTime(timeStr?: string | null): string | null {
+  if (!timeStr) return null;
+  const [h, m] = timeStr.split(":");
+  if (!h || !m) return timeStr;
+  const hour = parseInt(h, 10);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${m} ${ampm}`;
+}
+
+function formatReminder(at?: string): string | null {
+  if (!at) return null;
+  const d = new Date(at);
+  if (isNaN(d.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(d);
+  target.setHours(0, 0, 0, 0);
+  const diffDays = Math.round(
+    (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
+  const dayLabel =
+    diffDays === 0
+      ? "Hoy"
+      : diffDays === 1
+        ? "Mañana"
+        : d.toLocaleDateString("es-ES", { weekday: "short" });
+  const time = d.toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return `${dayLabel} ${time}`;
+}
+
 function isDueUrgent(dateStr?: string | null): boolean {
   if (!dateStr) return false;
   const d = new Date(dateStr + "T00:00:00");
@@ -66,6 +120,20 @@ function isDueUrgent(dateStr?: string | null): boolean {
   const target = new Date(d);
   target.setHours(0, 0, 0, 0);
   return target.getTime() <= today.getTime();
+}
+
+function getRecurrenceLabel(rec?: RecurrenceConfig | null): string {
+  if (!rec) return "";
+  return RECURRENCE_LABELS[rec.type] || rec.type;
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 function TaskItem({
@@ -87,8 +155,13 @@ function TaskItem({
 
   const dueText = useMemo(() => formatTaskDate(task.dueDate), [task.dueDate]);
   const dueUrgent = useMemo(() => isDueUrgent(task.dueDate), [task.dueDate]);
-  const hasNote = !!task.description?.trim();
-  const hasRecurrence = !!task.recurrence;
+  const hasDescription = !!task.description?.trim();
+  const assignedName = task.assignedTo ? memberNames[task.assignedTo] : null;
+  const firstPhone = task.phoneNumbers?.find((p) => p.trim()) || null;
+  const reminderText = useMemo(() => {
+    const r = task.reminders?.[0];
+    return r ? formatReminder(r.at) : null;
+  }, [task.reminders]);
 
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -98,6 +171,12 @@ function TaskItem({
     } else {
       setShowCompletionModal(true);
     }
+  };
+
+  const openDetail = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest("button,a,input,textarea,select"))
+      return;
+    setShowDetailPanel(true);
   };
 
   return (
@@ -112,28 +191,15 @@ function TaskItem({
       >
         <motion.div
           layout
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isDragging ? 0.45 : 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.12, ease: "easeOut" }}
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: isDragging ? 0.45 : 1, y: 0 }}
+          exit={{ opacity: 0, y: 6 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
           className={cn(
-            "relative flex items-center min-h-[48px] px-4 border-b transition-colors duration-150",
+            "glass-card relative flex flex-col gap-1.5 sm:gap-2 p-3 sm:p-3.5 rounded-[var(--radius-card)] cursor-pointer",
             isDragging && "z-10",
           )}
-          style={{
-            backgroundColor: "var(--bg-card)",
-            borderColor: "var(--border-color)",
-          }}
-          onMouseEnter={(e) => {
-            if (!isDragging) {
-              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isDragging) {
-              e.currentTarget.style.backgroundColor = "var(--bg-card)";
-            }
-          }}
+          onClick={openDetail}
         >
           {/* Drag handle — subtle, only on hover/desktop */}
           {dragHandleProps && (
@@ -143,7 +209,7 @@ function TaskItem({
                 unknown
               > as React.HTMLAttributes<HTMLDivElement>)}
               onClick={(e) => e.stopPropagation()}
-              className="absolute left-0 top-0 bottom-0 hidden sm:flex items-center justify-center w-6 opacity-0 group-hover/task:opacity-100 transition-opacity cursor-grab"
+              className="absolute left-1 top-1/2 -translate-y-1/2 hidden sm:flex items-center justify-center w-5 h-8 opacity-0 group-hover/task:opacity-100 transition-opacity cursor-grab"
               style={{
                 touchAction: "none",
                 WebkitUserSelect: "none",
@@ -158,21 +224,8 @@ function TaskItem({
             </div>
           )}
 
-          {/* Main row — opens detail panel on empty space */}
-          <div
-            className="flex-1 flex items-center gap-3 py-2 min-w-0"
-            onClick={(e) => {
-              if (
-                (e.target as HTMLElement).closest(
-                  "button,a,input,textarea,select",
-                )
-              )
-                return;
-              setShowDetailPanel(true);
-            }}
-            style={{ cursor: "pointer" }}
-          >
-            {/* Checkbox */}
+          {/* First line: checkbox + title */}
+          <div className="flex items-start gap-3">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -180,12 +233,15 @@ function TaskItem({
               }}
               disabled={!canComplete}
               className={cn(
-                "flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full transition-transform duration-150",
+                "flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full transition-transform duration-200",
                 canComplete
-                  ? "cursor-pointer active:scale-90"
+                  ? "cursor-pointer"
                   : "cursor-not-allowed opacity-40",
                 isCompleted ? "text-blue-500" : "text-[var(--text-muted)]",
               )}
+              aria-label={
+                isCompleted ? "Marcar como pendiente" : "Completar tarea"
+              }
             >
               {isCompleted ? (
                 <CheckCircle2 size={24} strokeWidth={1.8} />
@@ -193,48 +249,109 @@ function TaskItem({
                 <Circle size={24} strokeWidth={1.8} />
               )}
             </button>
+            <p
+              className={cn(
+                "flex-1 min-w-0 text-[var(--text-lg)] font-bold leading-tight line-clamp-2",
+                isCompleted && "line-through opacity-75",
+              )}
+              style={{ color: "var(--text-primary)" }}
+            >
+              {task.title}
+            </p>
+          </div>
 
-            {/* Title + compact metadata */}
-            <div className="flex-1 min-w-0 flex flex-col justify-center">
-              <p
-                className={cn(
-                  "text-[var(--text-base)] font-medium leading-snug line-clamp-2",
-                  isCompleted && "line-through opacity-70",
-                )}
-                style={{
-                  color: isCompleted
-                    ? "var(--text-secondary)"
-                    : "var(--text-primary)",
-                }}
-              >
-                {task.title}
-              </p>
+          {/* Second line: description */}
+          {hasDescription && (
+            <p
+              className={cn(
+                "text-[var(--text-base)] leading-snug line-clamp-2",
+                isCompleted && "opacity-70",
+              )}
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {task.description}
+            </p>
+          )}
 
-              {(dueText || hasNote || hasRecurrence) && (
-                <div
-                  className={cn(
-                    "flex items-center gap-2 mt-0.5 text-[var(--text-xs)] line-clamp-1",
-                    isCompleted && "opacity-60",
-                  )}
-                  style={{ color: "var(--text-tertiary)" }}
+          {/* Third line: metadata chips */}
+          {(task.location ||
+            firstPhone ||
+            dueText ||
+            reminderText ||
+            task.recurrence ||
+            assignedName) && (
+            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+              {task.location && (
+                <TaskCardMetaChip
+                  icon={<MapPin size={11} />}
+                  text={task.location}
+                  href={`https://maps.google.com/?q=${encodeURIComponent(
+                    task.location,
+                  )}`}
+                  color="#3b82f6"
+                  className="max-w-[160px] sm:max-w-[220px]"
+                />
+              )}
+              {firstPhone && (
+                <TaskCardMetaChip
+                  icon={<Phone size={11} />}
+                  text={firstPhone}
+                  href={`tel:${firstPhone.replace(/\s/g, "")}`}
+                  color="#16a34a"
+                />
+              )}
+              {dueText && (
+                <TaskCardMetaChip
+                  icon={<CalendarDays size={11} />}
+                  text={
+                    task.dueTime
+                      ? `${dueText} · ${formatTaskTime(task.dueTime)}`
+                      : dueText
+                  }
+                  color={
+                    dueUrgent && !isCompleted
+                      ? "var(--text-error)"
+                      : "var(--text-tertiary)"
+                  }
+                />
+              )}
+              {task.recurrence && (
+                <TaskCardMetaChip
+                  icon={<Repeat size={11} />}
+                  text={getRecurrenceLabel(task.recurrence)}
+                  color="var(--text-tertiary)"
+                />
+              )}
+              {reminderText && (
+                <TaskCardMetaChip
+                  icon={<Bell size={11} />}
+                  text={reminderText}
+                  color="var(--text-warning)"
+                />
+              )}
+              {assignedName && (
+                <span
+                  className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-md border text-[var(--text-xs)] font-medium"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    borderColor: "var(--border-color)",
+                    color: "var(--text-secondary)",
+                  }}
                 >
-                  {dueText && (
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1",
-                        dueUrgent && !isCompleted && "text-[var(--text-error)]",
-                      )}
-                    >
-                      <CalendarDays size={11} strokeWidth={1.8} />
-                      <span>{dueText}</span>
-                    </span>
-                  )}
-                  {hasRecurrence && !isCompleted && <span>↻</span>}
-                  {hasNote && <span>📝</span>}
-                </div>
+                  <span
+                    className="flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-bold"
+                    style={{
+                      backgroundColor: "var(--text-link)",
+                      color: "#ffffff",
+                    }}
+                  >
+                    {getInitials(assignedName)}
+                  </span>
+                  {assignedName}
+                </span>
               )}
             </div>
-          </div>
+          )}
         </motion.div>
       </div>
 
@@ -266,11 +383,14 @@ export default React.memo(TaskItem, (prev, next) => {
     prev.task.title === next.task.title &&
     prev.task.priority === next.task.priority &&
     prev.task.dueDate === next.task.dueDate &&
+    prev.task.dueTime === next.task.dueTime &&
     prev.task.assignedTo === next.task.assignedTo &&
     prev.task.location === next.task.location &&
     prev.task.phoneNumbers?.join(",") === next.task.phoneNumbers?.join(",") &&
     prev.task.tags?.join(",") === next.task.tags?.join(",") &&
     prev.task.description === next.task.description &&
+    prev.task.recurrence?.type === next.task.recurrence?.type &&
+    prev.task.reminders?.length === next.task.reminders?.length &&
     prev.task.completedBy === next.task.completedBy &&
     prev.task.performedBy === next.task.performedBy &&
     prev.role === next.role &&

@@ -82,7 +82,54 @@
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius-xl: 20px;
+  --radius-card: 16px;
   --radius-full: 9999px;
+
+  /* Glass / premium translucent surfaces */
+  --bg-glass: rgba(255, 255, 255, 0.72);
+  --border-glass: rgba(255, 255, 255, 0.42);
+  --shadow-glass:
+    0 4px 16px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.glass-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--border-glass);
+  box-shadow: var(--shadow-glass);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.glass-card:hover {
+  transform: scale(1.01);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.glass-card:active {
+  transform: scale(0.99);
+}
+
+[data-theme="dark"] {
+  --bg-glass: rgba(30, 41, 59, 0.72);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --shadow-glass:
+    0 4px 16px rgba(0, 0, 0, 0.22), 0 1px 2px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .glass-card:hover {
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 [data-theme="dark"] {

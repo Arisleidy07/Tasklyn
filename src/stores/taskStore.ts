@@ -6,6 +6,7 @@ import {
   updateTask as updateTaskInDb,
   deleteTask as deleteTaskInDb,
   subscribeToListTasks,
+  addTaskHistoryEntry,
 } from "@/lib/firestore";
 import type {
   Task,
@@ -262,12 +263,17 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       recurrence: recurrence || undefined,
       parentTaskId: null,
       completedCount: 0,
-      history: [
-        createHistoryEntry("created", createdBy, `Tarea "${title}" creada`),
-      ],
     };
 
     const id = await createTaskInDb(newTaskData);
+
+    const createdEntry = createHistoryEntry(
+      "created",
+      createdBy,
+      `Tarea "${title}" creada`,
+    );
+    const { id: _entryId, ...entryData } = createdEntry;
+    await addTaskHistoryEntry(id, entryData);
 
     // Log activity
     const currentUser = useAuthStore.getState().user;
@@ -357,6 +363,10 @@ export const useTaskStore = create<TaskState>((set, get) => ({
           "location_changed",
           performedBy,
           "Ubicación actualizada",
+          {
+            previousValue: task.location || "",
+            newValue: updates.location || "",
+          },
         ),
       );
     }
@@ -364,11 +374,17 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       updates.phoneNumbers !== undefined &&
       JSON.stringify(updates.phoneNumbers) !== JSON.stringify(task.phoneNumbers)
     ) {
+      const prev = task.phoneNumbers?.join(", ") || "";
+      const next = updates.phoneNumbers?.join(", ") || "";
       entries.push(
         createHistoryEntry(
           "phones_changed",
           performedBy,
-          "Teléfonos actualizados",
+          `Teléfonos: ${prev || "—"} → ${next || "—"}`,
+          {
+            previousValue: prev,
+            newValue: next,
+          },
         ),
       );
     }
@@ -408,10 +424,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       );
     }
 
-    await updateTaskInDb(id, {
-      ...updates,
-      history: [...task.history, ...entries],
-    });
+    await updateTaskInDb(id, updates);
+
+    for (const entry of entries) {
+      const { id: _entryId, ...entryData } = entry;
+      await addTaskHistoryEntry(id, entryData);
+    }
 
     // Log team activity for assignment
     const currentUser = useAuthStore.getState().user;
@@ -479,11 +497,15 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       status: "archived",
       archivedAt: new Date().toISOString(),
       archivedBy,
-      history: [
-        ...task.history,
-        createHistoryEntry("archived", archivedBy, "Tarea archivada"),
-      ],
     });
+
+    const archivedEntry = createHistoryEntry(
+      "archived",
+      archivedBy,
+      "Tarea archivada",
+    );
+    const { id: _archivedEntryId, ...archivedEntryData } = archivedEntry;
+    await addTaskHistoryEntry(id, archivedEntryData);
   },
 
   unarchiveTask: async (id, performedBy) => {
@@ -493,15 +515,15 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       status: "pending",
       archivedAt: null,
       archivedBy: null,
-      history: [
-        ...task.history,
-        createHistoryEntry(
-          "restored",
-          performedBy,
-          "Tarea restaurada del archivo",
-        ),
-      ],
     });
+
+    const restoredEntry = createHistoryEntry(
+      "restored",
+      performedBy,
+      "Tarea restaurada del archivo",
+    );
+    const { id: _restoredEntryId, ...restoredEntryData } = restoredEntry;
+    await addTaskHistoryEntry(id, restoredEntryData);
   },
 
   completeTask: async (
@@ -552,14 +574,19 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       completedAt,
       completedCount: newCount,
       performedBy: performedByUser?.id || null,
-      history: [
-        ...task.history,
-        createHistoryEntry("completed", completedBy, completionDetails, {
-          completedByName: resolvedCompleterName,
-          performedByTaskName: resolvedPerformerName,
-        }),
-      ],
     });
+
+    const completedEntry = createHistoryEntry(
+      "completed",
+      completedBy,
+      completionDetails,
+      {
+        completedByName: resolvedCompleterName,
+        performedByTaskName: resolvedPerformerName,
+      },
+    );
+    const { id: _completedEntryId, ...completedEntryData } = completedEntry;
+    await addTaskHistoryEntry(id, completedEntryData);
 
     // Log activity
     const currentUser = useAuthStore.getState().user;
@@ -668,16 +695,18 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       dueTime: nextDate.dueTime,
       completedCount: 0,
       parentTaskId: task.id,
-      history: [
-        createHistoryEntry(
-          "auto_created",
-          task.completedBy || task.createdBy,
-          `Tarea recurrente generada desde "${task.title}"`,
-        ),
-      ],
     };
 
     const id = await createTaskInDb(nextTaskData);
+
+    const autoCreatedEntry = createHistoryEntry(
+      "auto_created",
+      task.completedBy || task.createdBy,
+      `Tarea recurrente generada desde "${task.title}"`,
+    );
+    const { id: _autoCreatedEntryId, ...autoCreatedEntryData } =
+      autoCreatedEntry;
+    await addTaskHistoryEntry(id, autoCreatedEntryData);
 
     return {
       id,

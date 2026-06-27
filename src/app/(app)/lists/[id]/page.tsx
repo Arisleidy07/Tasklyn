@@ -400,24 +400,42 @@ export default function ListDetailPage() {
               ) : (
                 <div className="space-y-6">
                   {/* Bloque de pendientes */}
-                  <section className="mb-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <h2
-                        className="text-[var(--text-md)] font-semibold"
-                        style={{ color: "var(--text-primary)" }}
+                  <section className="mb-8">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div
+                        className="flex items-center justify-center w-8 h-8 rounded-lg"
+                        style={{ backgroundColor: "var(--bg-secondary)" }}
                       >
-                        Pendientes
-                      </h2>
-                      <span
-                        className="text-[var(--text-sm)] font-semibold px-2 py-0.5 rounded-md"
-                        style={{
-                          backgroundColor: "var(--bg-tertiary)",
-                          color: "var(--text-secondary)",
-                        }}
-                      >
-                        {pendingTasks.length}
-                      </span>
+                        <Clock
+                          size={16}
+                          style={{ color: "var(--text-link)" }}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <h2
+                          className="text-lg font-bold tracking-tight"
+                          style={{ color: "var(--text-primary)" }}
+                        >
+                          Pendientes
+                        </h2>
+                        <span
+                          className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                          style={{
+                            backgroundColor: "var(--bg-secondary)",
+                            color: "var(--text-secondary)",
+                          }}
+                        >
+                          {pendingTasks.length}
+                        </span>
+                      </div>
                     </div>
+                    <div
+                      className="h-px mb-4"
+                      style={{
+                        background:
+                          "linear-gradient(90deg, var(--border-color) 0%, transparent 100%)",
+                      }}
+                    />
                     {pendingTasks.length > 0 ? (
                       <div className="space-y-0">
                         <SortableTaskContainer
@@ -450,34 +468,38 @@ export default function ListDetailPage() {
 
                   {/* Bloque de completadas — expandido por defecto, colapsable */}
                   {completedTasks.length > 0 && (
-                    <section
-                      className="pt-4"
-                      style={{ borderTop: "1px solid var(--border-color)" }}
-                    >
+                    <section className="pt-2">
                       <button
                         onClick={() => setShowCompleted((v) => !v)}
-                        className="flex items-center justify-between w-full mb-3 group"
+                        className="flex items-center justify-between w-full group mb-3"
                       >
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2
-                            size={16}
-                            style={{ color: "var(--text-secondary)" }}
-                          />
-                          <h2
-                            className="text-[var(--text-md)] font-semibold"
-                            style={{ color: "var(--text-primary)" }}
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="flex items-center justify-center w-8 h-8 rounded-lg"
+                            style={{ backgroundColor: "var(--bg-secondary)" }}
                           >
-                            Completadas
-                          </h2>
-                          <span
-                            className="text-[var(--text-sm)] font-semibold px-2 py-0.5 rounded-md"
-                            style={{
-                              backgroundColor: "var(--bg-tertiary)",
-                              color: "var(--text-secondary)",
-                            }}
-                          >
-                            {completedTasks.length}
-                          </span>
+                            <CheckCircle2
+                              size={16}
+                              style={{ color: "var(--text-success)" }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <h2
+                              className="text-lg font-bold tracking-tight"
+                              style={{ color: "var(--text-primary)" }}
+                            >
+                              Completadas
+                            </h2>
+                            <span
+                              className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                              style={{
+                                backgroundColor: "var(--bg-secondary)",
+                                color: "var(--text-secondary)",
+                              }}
+                            >
+                              {completedTasks.length}
+                            </span>
+                          </div>
                         </div>
                         <div className="flex items-center gap-1">
                           <span
@@ -496,6 +518,13 @@ export default function ListDetailPage() {
                           />
                         </div>
                       </button>
+                      <div
+                        className="h-px mb-4"
+                        style={{
+                          background:
+                            "linear-gradient(90deg, var(--border-color) 0%, transparent 100%)",
+                        }}
+                      />
                       <AnimatePresence initial={false}>
                         {showCompleted && (
                           <motion.div

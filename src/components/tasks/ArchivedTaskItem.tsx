@@ -8,8 +8,18 @@ import { canDeleteTask, canEditTask } from "@/lib/permissions";
 import { motion } from "framer-motion";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
-import { Trash2, Clock, RotateCcw, AlertTriangle } from "lucide-react";
+import {
+  Trash2,
+  Clock,
+  RotateCcw,
+  AlertTriangle,
+  MapPin,
+  Phone,
+  FileText,
+  Archive,
+} from "lucide-react";
 import { timeAgo } from "@/lib/utils";
+import TaskCardMetaChip from "./TaskCardMetaChip";
 
 interface ArchivedTaskItemProps {
   task: Task;
@@ -42,72 +52,34 @@ export default function ArchivedTaskItem({
   };
 
   const hasMeta = task.archivedAt || task.archivedBy;
-  const chips: string[] = [];
-  if (task.phoneNumbers?.length)
-    chips.push(`${task.phoneNumbers.length} teléf.`);
-  if (task.location) chips.push("ubicación");
-  if (task.description) chips.push("nota");
 
   return (
     <>
       <motion.div
         layout
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -6 }}
         transition={{ duration: 0.12, ease: "easeOut" }}
-        className="group/archived relative flex items-stretch min-h-[48px] px-4 border-b transition-colors duration-150"
-        style={{
-          backgroundColor: "var(--bg-card)",
-          borderColor: "var(--border-color)",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "var(--bg-card)";
-        }}
+        className="glass-card relative flex flex-col gap-1.5 p-3 rounded-[var(--radius-card)] mb-2 transition-all duration-150 hover:shadow-[var(--shadow-card-hover)]"
       >
-        <div className="flex-1 flex items-center gap-3 py-2 min-w-0">
+        <div className="flex items-center gap-3 min-w-0">
           <div
-            className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full"
+            className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full"
             style={{ backgroundColor: "var(--bg-secondary)" }}
           >
-            <Clock size={12} style={{ color: "var(--text-tertiary)" }} />
+            <Archive size={12} style={{ color: "var(--text-tertiary)" }} />
           </div>
 
-          <div className="flex-1 min-w-0">
-            <p
-              className="text-[var(--text-base)] font-medium leading-snug truncate line-through opacity-70"
-              style={{ color: "var(--text-primary)" }}
-            >
-              {task.title}
-            </p>
-            {(chips.length > 0 || hasMeta) && (
-              <div className="flex items-center gap-2 flex-wrap mt-0.5">
-                {chips.length > 0 && (
-                  <span
-                    className="text-[var(--text-2xs)]"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    {chips.join(" · ")}
-                  </span>
-                )}
-                {hasMeta && (
-                  <span
-                    className="text-[var(--text-2xs)]"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    {timeAgo(task.archivedAt || task.createdAt)}
-                    {task.archivedBy && <> · {getUserName(task.archivedBy)}</>}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+          <p
+            className="flex-1 min-w-0 text-[var(--text-base)] font-medium leading-snug line-through opacity-60"
+            style={{ color: "var(--text-primary)" }}
+          >
+            {task.title}
+          </p>
 
           {/* Actions */}
-          <div className="flex items-center self-center gap-0.5 flex-shrink-0">
+          <div className="flex items-center gap-0.5 flex-shrink-0">
             {canEdit && (
               <button
                 onClick={handleRestore}
@@ -148,6 +120,44 @@ export default function ArchivedTaskItem({
             )}
           </div>
         </div>
+
+        {(task.location ||
+          task.phoneNumbers?.length ||
+          task.description ||
+          hasMeta) && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {task.location && (
+              <TaskCardMetaChip
+                icon={<MapPin size={11} />}
+                text={task.location}
+                href={`https://maps.google.com/?q=${encodeURIComponent(task.location)}`}
+                color="var(--text-tertiary)"
+              />
+            )}
+            {task.phoneNumbers?.[0] && (
+              <TaskCardMetaChip
+                icon={<Phone size={11} />}
+                text={task.phoneNumbers[0]}
+                href={`tel:${task.phoneNumbers[0]}`}
+                color="var(--text-tertiary)"
+              />
+            )}
+            {task.description && (
+              <TaskCardMetaChip
+                icon={<FileText size={11} />}
+                text="Nota"
+                color="var(--text-tertiary)"
+              />
+            )}
+            {hasMeta && (
+              <TaskCardMetaChip
+                icon={<Clock size={11} />}
+                text={`${timeAgo(task.archivedAt || task.createdAt)}${task.archivedBy ? ` · ${getUserName(task.archivedBy)}` : ""}`}
+                color="var(--text-tertiary)"
+              />
+            )}
+          </div>
+        )}
       </motion.div>
 
       {/* Delete Confirmation */}

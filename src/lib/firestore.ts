@@ -457,14 +457,15 @@ export const subscribeToUserLists = (
 export const tasksCollection = collection(db, "tasks");
 
 export const createTask = async (
-  task: Omit<Task, "id" | "createdAt">,
+  task: Omit<Task, "id" | "createdAt" | "history"> & {
+    history?: TaskHistoryEntry[];
+  },
 ): Promise<string> => {
   const taskRef = doc(tasksCollection);
   const cleanTask = stripUndefined(task);
   await setDoc(taskRef, {
     ...cleanTask,
     createdAt: serverTimestamp(),
-    history: task.history || [],
   });
   return taskRef.id;
 };

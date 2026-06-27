@@ -9,23 +9,16 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Task, MemberRole } from "@/types";
+import { Task, MemberRole, TaskHistoryEntry } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
-import {
-  canEditTask,
-  canDeleteTask,
-  canArchiveTask,
-  canManageTaskOptions,
-  canCompleteTask,
-} from "@/lib/permissions";
-import TaskOptionsBar from "./TaskOptionsBar";
+import { canEditTask, canDeleteTask, canArchiveTask } from "@/lib/permissions";
 import TaskComments from "./TaskComments";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import Button from "@/components/ui/Button";
-import { getPriorityConfig } from "@/lib/priority";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { timeAgo } from "@/lib/utils";
+import { subscribeToTaskHistory } from "@/lib/firestore";
 import {
   X,
   Trash2,
@@ -33,14 +26,18 @@ import {
   Phone,
   MapPin,
   Check,
-  CheckCircle2,
-  Circle,
-  Tag,
-  User,
+  FileText,
+  CalendarDays,
   Clock,
+  Bell,
+  User,
+  MessageSquare,
+  History,
+  Copy,
+  ExternalLink,
+  MessageCircle,
   ChevronDown,
   Plus,
-  Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +50,233 @@ interface TaskDetailPanelProps {
   listMembers?: Array<{ userId: string; role: string }>;
 }
 
+function formatPhoneForWhatsApp(phone: string): string {
+  return phone.replace(/\D/g, "");
+}
+
+function copyToClipboard(text: string, showToast: (msg: string) => void) {
+  navigator.clipboard.writeText(text).then(() => showToast("Copiado"));
+}
+
+function formatHistoryAction(action: TaskHistoryEntry["action"]): {
+  label: string;
+  showDiff: boolean;
+} {
+  switch (action) {
+    case "title_changed":
+      return { label: "cambió el título", showDiff: true };
+    case "description_changed":
+      return { label: "cambió la descripción", showDiff: true };
+    case "location_changed":
+      return { label: "cambió la ubicación", showDiff: true };
+    case "phones_changed":
+      return { label: "cambió el teléfono", showDiff: true };
+    case "due_date_changed":
+      return { label: "cambió la fecha", showDiff: true };
+    case "reminder_set":
+      return { label: "cambió el recordatorio", showDiff: true };
+    case "assigned":
+      return { label: "cambió la asignación", showDiff: true };
+    case "completed":
+      return { label: "completó la tarea", showDiff: false };
+    case "reopened":
+      return { label: "reabrió la tarea", showDiff: false };
+    case "archived":
+      return { label: "archivó la tarea", showDiff: false };
+    case "restored":
+      return { label: "restauró la tarea", showDiff: false };
+    case "created":
+      return { label: "creó la tarea", showDiff: false };
+    default:
+      return { label: "actualizó la tarea", showDiff: false };
+  }
+}
+
+function formatHistoryValue(
+  action: TaskHistoryEntry["action"],
+  value?: string,
+): string {
+  if (value === undefined || value === null) return "—";
+  if (value === "") return "—";
+  return value;
+}
+
+function formatDateTime(iso?: string): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return (
+    d.toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }) +
+    " · " +
+    d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
+  );
+}
+
+function formatDateLabel(dateStr?: string | null): string {
+  if (!dateStr) return "Sin fecha";
+  const d = new Date(dateStr + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(d);
+  target.setHours(0, 0, 0, 0);
+  const diff = Math.round(
+    (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
+  if (diff === 0) return "Hoy";
+  if (diff === 1) return "Mañana";
+  if (diff > 1 && diff < 7)
+    return d.toLocaleDateString("es-ES", { weekday: "long" });
+  return d.toLocaleDateString("es-ES", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function formatTimeLabel(timeStr?: string | null): string | null {
+  if (!timeStr) return null;
+  const [h, m] = timeStr.split(":");
+  if (!h || !m) return timeStr;
+  const hour = parseInt(h, 10);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${m} ${ampm}`;
+}
+
+function formatReminderLabel(at?: string): string | null {
+  if (!at) return null;
+  const d = new Date(at);
+  if (isNaN(d.getTime())) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(d);
+  target.setHours(0, 0, 0, 0);
+  const diff = Math.round(
+    (target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
+  const dayLabel =
+    diff === 0
+      ? "Hoy"
+      : diff === 1
+        ? "Mañana"
+        : d.toLocaleDateString("es-ES", {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+          });
+  const time = d.toLocaleTimeString("es-ES", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return `${dayLabel} ${time}`;
+}
+
+function toISODate(d: Date): string {
+  return d.toISOString().split("T")[0];
+}
+
+function genReminderId(): string {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+function reminderQuickOptions() {
+  const now = new Date();
+  const later = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+  const tonight = new Date(now);
+  tonight.setHours(20, 0, 0, 0);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(9, 0, 0, 0);
+  const nextWeek = new Date(now);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  nextWeek.setHours(9, 0, 0, 0);
+  return [
+    { label: "Más tarde", value: later.toISOString() },
+    { label: "Esta noche", value: tonight.toISOString() },
+    { label: "Mañana", value: tomorrow.toISOString() },
+    { label: "Próxima semana", value: nextWeek.toISOString() },
+  ];
+}
+
+function Section({
+  icon,
+  label,
+  children,
+  action,
+  dense,
+}: {
+  icon: React.ReactNode;
+  label?: string;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+  dense?: boolean;
+}) {
+  return (
+    <div className={cn("flex items-start", dense ? "gap-2" : "gap-3")}>
+      <div
+        className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+        style={{ backgroundColor: "var(--bg-secondary)" }}
+      >
+        {icon}
+      </div>
+      <div className="flex-1 min-w-0">
+        {label && (
+          <p
+            className="text-[var(--text-xs)] font-medium mb-1"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            {label}
+          </p>
+        )}
+        {children}
+      </div>
+      {action && <div className="flex-shrink-0">{action}</div>}
+    </div>
+  );
+}
+
+function IconButton({
+  onClick,
+  icon,
+  title,
+  href,
+  color = "var(--text-tertiary)",
+}: {
+  onClick?: () => void;
+  icon: React.ReactNode;
+  title: string;
+  href?: string;
+  color?: string;
+}) {
+  const className =
+    "p-1.5 rounded-md transition-colors hover:bg-[var(--bg-secondary)]";
+  const style = { color };
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+        style={style}
+        title={title}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {icon}
+      </a>
+    );
+  }
+  return (
+    <button onClick={onClick} className={className} style={style} title={title}>
+      {icon}
+    </button>
+  );
+}
+
 export default function TaskDetailPanel({
   task,
   isOpen,
@@ -62,46 +286,62 @@ export default function TaskDetailPanel({
   listMembers,
 }: TaskDetailPanelProps) {
   const { user } = useAuthStore();
-  const { updateTask, deleteTask, archiveTask, completeTask, uncompleteTask } =
-    useTaskStore();
+  const { updateTask, deleteTask, archiveTask } = useTaskStore();
 
-  // ── Inline editable state ──
   const [localTitle, setLocalTitle] = useState("");
   const [localDescription, setLocalDescription] = useState("");
   const [localLocation, setLocalLocation] = useState("");
   const [localPhones, setLocalPhones] = useState<string[]>([""]);
-  const [localPriority, setLocalPriority] =
-    useState<Task["priority"]>(undefined);
-
-  const [priorityMenuOpen, setPriorityMenuOpen] = useState(false);
+  const [localAssignedTo, setLocalAssignedTo] = useState<string | null>(null);
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [history, setHistory] = useState<TaskHistoryEntry[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  const debounceRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const pendingSaveRef = useRef<{
+    field: string;
+    timer: ReturnType<typeof setTimeout>;
+    updates: Partial<Task>;
+  } | null>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const reminderInputRef = useRef<HTMLInputElement>(null);
 
   const canEdit = canEditTask(role);
   const canDelete = canDeleteTask(role);
   const canArchive = canArchiveTask(role);
-  const canComplete = canCompleteTask(role);
-  const canManageOptions = canManageTaskOptions(role);
+  const isCompleted = task?.status === "completed";
 
   const showToast = useCallback((msg: string) => {
     setToast(msg);
-    setTimeout(() => setToast(null), 2500);
+    setTimeout(() => setToast(null), 2200);
   }, []);
 
-  const debounceSave = useCallback(
+  const queueSave = useCallback(
     (field: string, updates: Partial<Task>, delay = 700) => {
-      if (!user) return;
-      if (debounceRef.current[field]) clearTimeout(debounceRef.current[field]);
-      debounceRef.current[field] = setTimeout(() => {
-        updateTask(task!.id, updates, user.id, user.name);
-      }, delay);
+      if (!user || !task) return;
+      if (pendingSaveRef.current) clearTimeout(pendingSaveRef.current.timer);
+      pendingSaveRef.current = {
+        field,
+        timer: setTimeout(() => {
+          updateTask(task.id, updates, user.id, user.name);
+          pendingSaveRef.current = null;
+        }, delay),
+        updates,
+      };
     },
-    [user, task],
+    [user, task, updateTask],
   );
 
-  // Resolve all userIds in task to real names
+  const flushPending = useCallback(() => {
+    if (pendingSaveRef.current) {
+      clearTimeout(pendingSaveRef.current.timer);
+      const { updates } = pendingSaveRef.current;
+      pendingSaveRef.current = null;
+      if (user && task) updateTask(task.id, updates, user.id, user.name);
+    }
+  }, [user, task, updateTask]);
+
+  // Resolve user names
   const userIdsToResolve = useMemo(() => {
     if (!task) return [];
     const ids = new Set<string>();
@@ -109,24 +349,44 @@ export default function TaskDetailPanel({
     if (task.completedBy) ids.add(task.completedBy);
     if (task.performedBy) ids.add(task.performedBy);
     if (task.assignedTo) ids.add(task.assignedTo);
-    task.history?.forEach((h) => {
+    history.forEach((h) => {
       if (h.performedBy) ids.add(h.performedBy);
     });
     return Array.from(ids);
-  }, [task?.id, task?.history?.length, task?.completedBy]);
+  }, [task?.id, history, task?.completedBy]);
 
   const { getProfile } = useUserProfiles(userIdsToResolve);
 
-  const resolveName = (
-    uid: string | null | undefined,
-    fallback?: string,
-  ): string => {
-    if (!uid) return fallback || "—";
-    if (user && uid === user.id) return user.name;
-    return memberNames[uid] || getProfile(uid).name || fallback || uid;
-  };
+  const resolveName = useCallback(
+    (uid: string | null | undefined, fallback?: string): string => {
+      if (!uid) return fallback || "—";
+      if (user && uid === user.id) return user.name;
+      return memberNames[uid] || getProfile(uid).name || fallback || uid;
+    },
+    [user, memberNames, getProfile],
+  );
 
-  // Lock body scroll when open
+  // Sync local state when task or panel opens
+  useEffect(() => {
+    if (task && isOpen) {
+      setLocalTitle(task.title);
+      setLocalDescription(task.description || "");
+      setLocalLocation(task.location || "");
+      setLocalPhones(task.phoneNumbers?.length ? [...task.phoneNumbers] : [""]);
+      setLocalAssignedTo(task.assignedTo || null);
+      setShowDeleteConfirm(false);
+      setAssignOpen(false);
+    }
+  }, [task?.id, isOpen]);
+
+  // Flush pending saves when closing
+  useEffect(() => {
+    if (!isOpen) {
+      flushPending();
+    }
+  }, [isOpen, flushPending]);
+
+  // Lock body scroll
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -138,20 +398,7 @@ export default function TaskDetailPanel({
     };
   }, [isOpen]);
 
-  // Sync local state when task changes or panel opens
-  useEffect(() => {
-    if (task && isOpen) {
-      setLocalTitle(task.title);
-      setLocalDescription(task.description || "");
-      setLocalLocation(task.location || "");
-      setLocalPhones(task.phoneNumbers?.length ? [...task.phoneNumbers] : [""]);
-      setLocalPriority(task.priority);
-      setPriorityMenuOpen(false);
-      setShowDeleteConfirm(false);
-    }
-  }, [task?.id, isOpen]);
-
-  // Escape closes panel
+  // Escape closes
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -160,56 +407,153 @@ export default function TaskDetailPanel({
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  if (!task) return null;
+  // Subscribe to history subcollection
+  useEffect(() => {
+    if (!task?.id || !isOpen) return;
+    const unsubscribe = subscribeToTaskHistory(task.id, (entries) => {
+      setHistory(entries);
+    });
+    return () => unsubscribe();
+  }, [task?.id, isOpen]);
 
-  const saveField = async (updates: Partial<Task>) => {
-    if (!user) return;
-    await updateTask(task.id, updates, user.id, user.name);
-  };
+  if (!task) return null;
 
   const handleDelete = () => {
     deleteTask(task.id);
     onClose();
   };
+
   const handleArchive = () => {
     if (!user) return;
     archiveTask(task.id, user.id);
     onClose();
   };
 
-  const handleCopyWhatsApp = () => {
+  const handleCopyTask = () => {
     const lines: string[] = [];
     lines.push(`*${task.title}*`);
     if (task.description?.trim()) {
-      lines.push("");
-      lines.push(task.description.trim());
+      lines.push("", task.description.trim());
     }
     const validPhones = (task.phoneNumbers || []).filter((p) => p.trim());
     if (validPhones.length) {
-      lines.push("");
-      lines.push(`📞 ${validPhones.join(" / ")}`);
+      lines.push("", `📞 ${validPhones.join(" / ")}`);
     }
     if (task.location) {
-      lines.push("");
-      lines.push(`📍 ${task.location}`);
-      lines.push(
-        `https://maps.google.com/?q=${encodeURIComponent(task.location)}`,
-      );
+      lines.push("", `📍 ${task.location}`);
     }
     if (task.dueDate) {
-      lines.push("");
-      const d = new Date(task.dueDate);
       lines.push(
-        `📅 ${d.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}`,
+        "",
+        `📅 ${new Date(task.dueDate).toLocaleDateString("es-ES", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })}`,
       );
     }
-    navigator.clipboard
-      .writeText(lines.join("\n"))
-      .then(() => showToast("Copiado para compartir"));
+    copyToClipboard(lines.join("\n"), showToast);
   };
 
-  const pc = localPriority ? getPriorityConfig(localPriority) : null;
-  const isCompleted = task.status === "completed";
+  const handleTitleChange = (value: string) => {
+    setLocalTitle(value);
+    if (value.trim()) {
+      queueSave("title", { title: value.trim() });
+    }
+  };
+
+  const handleDescriptionChange = (value: string) => {
+    setLocalDescription(value);
+    queueSave("description", {
+      description: value.trim() || undefined,
+    });
+  };
+
+  const handleLocationChange = (value: string) => {
+    setLocalLocation(value);
+    queueSave("location", {
+      location: value.trim() || undefined,
+    });
+  };
+
+  const handlePhoneChange = (index: number, value: string) => {
+    const updated = [...localPhones];
+    updated[index] = value;
+    setLocalPhones(updated);
+    const valid = updated.filter((p) => p.trim());
+    queueSave("phones", {
+      phoneNumbers: valid.length ? valid : undefined,
+    });
+  };
+
+  const handleAddPhone = () => {
+    setLocalPhones([...localPhones, ""]);
+  };
+
+  const handleRemovePhone = (index: number) => {
+    const updated = localPhones.filter((_, i) => i !== index);
+    setLocalPhones(updated.length ? updated : [""]);
+    const valid = updated.filter((p) => p.trim());
+    queueSave("phones", {
+      phoneNumbers: valid.length ? valid : undefined,
+    });
+  };
+
+  const handleAssignedChange = (userId: string | null) => {
+    setLocalAssignedTo(userId);
+    setAssignOpen(false);
+    queueSave("assignedTo", {
+      assignedTo: userId || null,
+    });
+  };
+
+  const handleQuickDate = (date: string | null) => {
+    queueSave("dueDate", {
+      dueDate: date || null,
+      dueTime: date ? task.dueTime || null : null,
+    });
+  };
+
+  const handleTimeChange = (time: string) => {
+    queueSave("dueTime", {
+      dueTime: time || null,
+    });
+  };
+
+  const handleQuickReminder = (at: string) => {
+    const reminder: import("@/types").TaskReminder = {
+      id: genReminderId(),
+      at,
+      sent: false,
+      recipientType: "me",
+    };
+    queueSave("reminders", { reminders: [reminder] });
+  };
+
+  const handleCustomReminder = (value: string) => {
+    if (!value) return;
+    const reminder: import("@/types").TaskReminder = {
+      id: genReminderId(),
+      at: new Date(value).toISOString(),
+      sent: false,
+      recipientType: "me",
+    };
+    queueSave("reminders", { reminders: [reminder] });
+  };
+
+  const handleClearReminder = () => {
+    queueSave("reminders", { reminders: undefined });
+  };
+
+  const assignedName = localAssignedTo ? resolveName(localAssignedTo) : null;
+  const assignOptions = useMemo(() => {
+    const options = [{ userId: "", name: "Sin asignar" }];
+    (listMembers || []).forEach((m) => {
+      options.push({ userId: m.userId, name: resolveName(m.userId) });
+    });
+    return options;
+  }, [listMembers, resolveName]);
 
   // ─── PANEL CONTENT ─────────────────────────────────────────────
   const panelContent = (
@@ -217,22 +561,16 @@ export default function TaskDetailPanel({
       className="flex flex-col h-full"
       style={{ backgroundColor: "var(--bg-card)" }}
     >
-      {/* ── Header actions ── */}
+      {/* Header actions */}
       <div
         className="flex-shrink-0 flex items-center justify-end gap-0.5 px-4 py-3 border-b"
         style={{ borderColor: "var(--border-color)" }}
       >
         <button
-          onClick={handleCopyWhatsApp}
+          onClick={handleCopyTask}
           title="Copiar para compartir"
-          className="p-2 rounded-lg transition-colors duration-150"
+          className="p-2 rounded-lg transition-colors duration-150 hover:bg-[var(--bg-secondary)]"
           style={{ color: "var(--text-secondary)" }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "transparent";
-          }}
         >
           <Copy size={16} />
         </button>
@@ -240,14 +578,8 @@ export default function TaskDetailPanel({
           <button
             onClick={handleArchive}
             title="Archivar"
-            className="p-2 rounded-lg transition-colors duration-150"
+            className="p-2 rounded-lg transition-colors duration-150 hover:bg-[var(--bg-secondary)]"
             style={{ color: "var(--text-secondary)" }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
           >
             <Archive size={16} />
           </button>
@@ -256,165 +588,100 @@ export default function TaskDetailPanel({
           <button
             onClick={() => setShowDeleteConfirm(true)}
             title="Eliminar"
-            className="p-2 rounded-lg transition-colors duration-150"
+            className="p-2 rounded-lg transition-colors duration-150 hover:bg-red-50 hover:text-red-500"
             style={{ color: "var(--text-tertiary)" }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "#ef4444";
-              e.currentTarget.style.backgroundColor = "rgba(239,68,68,0.08)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--text-tertiary)";
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
           >
             <Trash2 size={16} />
           </button>
         )}
         <button
           onClick={onClose}
-          className="p-2 rounded-lg transition-colors duration-150 ml-0.5"
+          className="p-2 rounded-lg transition-colors duration-150 ml-0.5 hover:bg-[var(--bg-secondary)]"
           style={{ color: "var(--text-tertiary)" }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = "transparent";
-          }}
         >
           <X size={18} />
         </button>
       </div>
 
-      {/* ── Scrollable body ── */}
+      {/* Scrollable body */}
       <div
         className="flex-1 overflow-y-auto overscroll-contain"
         style={{
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
         }}
       >
-        <div className="px-4 py-4 space-y-4">
-          {/* Title + checkbox */}
+        <div className="px-4 py-5 space-y-5">
+          {/* Title */}
           <div className="flex items-start gap-3">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (!user || !canComplete) return;
-                if (isCompleted) {
-                  uncompleteTask(task.id, user.id);
-                } else {
-                  completeTask(task.id, user.id, user.name, listMembers, user);
-                }
-              }}
-              disabled={!canComplete}
-              className={cn(
-                "flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full transition-transform mt-0.5",
-                canComplete
-                  ? "cursor-pointer active:scale-90"
-                  : "cursor-not-allowed opacity-40",
-                isCompleted ? "text-blue-500" : "text-[var(--text-muted)]",
-              )}
-            >
-              {isCompleted ? (
-                <CheckCircle2 size={26} strokeWidth={1.8} />
+            <div className="flex-1 min-w-0">
+              {canEdit ? (
+                <input
+                  value={localTitle}
+                  onChange={(e) => handleTitleChange(e.target.value)}
+                  onBlur={flushPending}
+                  className="w-full bg-transparent focus:outline-none text-[var(--text-xl)] font-bold leading-tight placeholder:text-[var(--text-muted)]"
+                  style={{ color: "var(--text-primary)" }}
+                  placeholder="Título de la tarea"
+                />
               ) : (
-                <Circle size={26} strokeWidth={1.8} />
+                <h2
+                  className="text-[var(--text-xl)] font-bold leading-tight"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {task.title}
+                </h2>
               )}
-            </button>
-            {canEdit ? (
-              <input
-                value={localTitle}
-                onChange={(e) => {
-                  setLocalTitle(e.target.value);
-                  if (e.target.value.trim())
-                    debounceSave("title", { title: e.target.value.trim() });
-                }}
-                className={cn(
-                  "flex-1 min-w-0 text-[var(--text-lg)] font-semibold leading-tight bg-transparent focus:outline-none",
-                  isCompleted && "line-through opacity-70",
-                )}
-                style={{ color: "var(--text-primary)" }}
-                placeholder="Título de la tarea"
-              />
-            ) : (
-              <h2
-                className={cn(
-                  "text-[var(--text-lg)] font-semibold leading-tight truncate",
-                  isCompleted && "line-through opacity-70",
-                )}
-                style={{ color: "var(--text-primary)" }}
-              >
-                {task.title}
-              </h2>
-            )}
+              {isCompleted && (
+                <span
+                  className="inline-flex items-center gap-1 mt-1.5 text-[var(--text-xs)] font-medium"
+                  style={{ color: "#16a34a" }}
+                >
+                  <Check size={11} /> Completada
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* Properties group: description, location, phone */}
-          <div className="space-y-2.5">
-            {/* Description */}
-            {canEdit ? (
-              <div
-                className="rounded-[var(--radius-lg)] overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/15 transition-all duration-150"
-                style={{ backgroundColor: "var(--bg-secondary)" }}
-              >
-                <AutoResizeTextarea
-                  value={localDescription}
-                  onChange={(v) => {
-                    setLocalDescription(v);
-                    debounceSave("description", {
-                      description: v.trim() || undefined,
-                    });
-                  }}
-                  placeholder="Añade una descripción..."
-                  className="text-[var(--text-base)] px-3 py-2.5 w-full leading-relaxed"
-                  minRows={2}
-                />
-              </div>
-            ) : task.description ? (
-              <p
-                className="text-[var(--text-base)] leading-relaxed"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                {task.description}
-              </p>
-            ) : null}
-
-            {/* Location + copy */}
-            {(canEdit || task.location) && (
-              <div
-                className="flex items-center gap-2 rounded-[var(--radius-lg)] px-3 py-2"
-                style={{ backgroundColor: "var(--bg-secondary)" }}
-              >
-                <MapPin size={14} style={{ color: "#3b82f6" }} />
-                {canEdit ? (
-                  <input
-                    value={localLocation}
-                    onChange={(e) => {
-                      setLocalLocation(e.target.value);
-                      debounceSave("location", {
-                        location: e.target.value.trim() || undefined,
-                      });
-                    }}
-                    placeholder="Ubicación..."
-                    className="flex-1 min-w-0 text-[var(--text-base)] bg-transparent focus:outline-none"
-                    style={{ color: "var(--text-primary)" }}
+          {/* Description */}
+          {(canEdit || task.description) && (
+            <Section
+              icon={
+                <FileText size={16} style={{ color: "var(--text-tertiary)" }} />
+              }
+              label="Descripción"
+            >
+              {canEdit ? (
+                <div
+                  className="rounded-[var(--radius-lg)] overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/15 transition-all"
+                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                >
+                  <AutoResizeTextarea
+                    value={localDescription}
+                    onChange={handleDescriptionChange}
+                    onBlur={flushPending}
+                    placeholder="Añade una descripción..."
+                    className="text-[var(--text-base)] px-3 py-2.5 w-full leading-relaxed"
+                    minRows={2}
                   />
-                ) : task.location ? (
-                  <a
-                    href={`https://maps.google.com/?q=${encodeURIComponent(task.location)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 min-w-0 text-[var(--text-base)] hover:underline truncate"
-                    style={{ color: "#3b82f6" }}
-                  >
-                    {task.location}
-                  </a>
-                ) : null}
-              </div>
-            )}
+                </div>
+              ) : (
+                <p
+                  className="text-[var(--text-base)] leading-relaxed"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {task.description}
+                </p>
+              )}
+            </Section>
+          )}
 
-            {/* Phones */}
-            {(canEdit || task.phoneNumbers?.some((p) => p.trim())) && (
-              <div className="space-y-1.5">
+          {/* Phones */}
+          {(canEdit || task.phoneNumbers?.some((p) => p.trim())) && (
+            <Section
+              icon={<Phone size={16} style={{ color: "#16a34a" }} />}
+              label="Teléfono"
+            >
+              <div className="space-y-2">
                 {canEdit ? (
                   <>
                     {localPhones.map((phone, i) => (
@@ -423,56 +690,61 @@ export default function TaskDetailPanel({
                           className="flex items-center gap-2 flex-1 rounded-[var(--radius-lg)] px-3 py-2"
                           style={{ backgroundColor: "var(--bg-secondary)" }}
                         >
-                          <Phone size={14} style={{ color: "#16a34a" }} />
                           <input
                             type="tel"
                             value={phone}
-                            onChange={(e) => {
-                              const updated = [...localPhones];
-                              updated[i] = e.target.value;
-                              setLocalPhones(updated);
-                              const valid = updated.filter((p) => p.trim());
-                              debounceSave("phones", {
-                                phoneNumbers: valid.length ? valid : undefined,
-                              });
-                            }}
-                            placeholder="Teléfono"
+                            onChange={(e) =>
+                              handlePhoneChange(i, e.target.value)
+                            }
+                            onBlur={flushPending}
+                            placeholder="809-555-5555"
                             className="flex-1 min-w-0 text-[var(--text-base)] bg-transparent focus:outline-none"
                             style={{ color: "var(--text-primary)" }}
                           />
                         </div>
-                        {localPhones.length > 1 && (
-                          <button
+                        <div className="flex items-center gap-0.5">
+                          <IconButton
+                            icon={<Copy size={14} />}
+                            title="Copiar"
                             onClick={() => {
-                              const updated = localPhones.filter(
-                                (_, j) => j !== i,
-                              );
-                              setLocalPhones(updated);
-                              const valid = updated.filter((p) => p.trim());
-                              saveField({
-                                phoneNumbers: valid.length ? valid : undefined,
-                              });
+                              if (phone.trim())
+                                copyToClipboard(phone.trim(), showToast);
                             }}
-                            className="p-1.5 rounded-md transition-colors"
-                            style={{ color: "#ef4444" }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor =
-                                "rgba(239,68,68,0.08)";
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor =
-                                "transparent";
-                            }}
-                          >
-                            <X size={14} />
-                          </button>
-                        )}
+                          />
+                          <IconButton
+                            icon={<Phone size={14} />}
+                            title="Llamar"
+                            href={
+                              phone.trim()
+                                ? `tel:${phone.trim().replace(/\s/g, "")}`
+                                : undefined
+                            }
+                          />
+                          <IconButton
+                            icon={<MessageCircle size={14} />}
+                            title="WhatsApp"
+                            href={
+                              phone.trim()
+                                ? `https://wa.me/${formatPhoneForWhatsApp(phone.trim())}`
+                                : undefined
+                            }
+                            color="#16a34a"
+                          />
+                          {localPhones.length > 1 && (
+                            <IconButton
+                              icon={<X size={14} />}
+                              title="Eliminar"
+                              onClick={() => handleRemovePhone(i)}
+                              color="#ef4444"
+                            />
+                          )}
+                        </div>
                       </div>
                     ))}
                     <button
-                      onClick={() => setLocalPhones([...localPhones, ""])}
-                      className="flex items-center gap-1 text-[var(--text-xs)] font-medium px-3 py-1.5 rounded-md transition-colors"
-                      style={{ color: "#2563eb" }}
+                      onClick={handleAddPhone}
+                      className="flex items-center gap-1 text-[var(--text-xs)] font-medium px-2 py-1 rounded-md transition-colors hover:bg-[var(--bg-secondary)]"
+                      style={{ color: "var(--text-link)" }}
                     >
                       <Plus size={12} /> Añadir teléfono
                     </button>
@@ -482,21 +754,393 @@ export default function TaskDetailPanel({
                     {task.phoneNumbers
                       ?.filter((p) => p.trim())
                       .map((p, i) => (
-                        <a
+                        <div
                           key={i}
-                          href={`tel:${p.replace(/\s/g, "")}`}
-                          className="inline-flex items-center gap-1 text-[var(--text-base)] hover:underline"
-                          style={{ color: "#16a34a" }}
+                          className="flex items-center gap-1 rounded-[var(--radius-lg)] px-3 py-2"
+                          style={{ backgroundColor: "var(--bg-secondary)" }}
                         >
-                          <Phone size={13} style={{ color: "#16a34a" }} />
-                          {p}
-                        </a>
+                          <span style={{ color: "var(--text-primary)" }}>
+                            {p}
+                          </span>
+                          <div className="flex items-center gap-0.5 ml-1">
+                            <IconButton
+                              icon={<Copy size={14} />}
+                              title="Copiar"
+                              onClick={() =>
+                                copyToClipboard(p.trim(), showToast)
+                              }
+                            />
+                            <IconButton
+                              icon={<Phone size={14} />}
+                              title="Llamar"
+                              href={`tel:${p.trim().replace(/\s/g, "")}`}
+                            />
+                            <IconButton
+                              icon={<MessageCircle size={14} />}
+                              title="WhatsApp"
+                              href={`https://wa.me/${formatPhoneForWhatsApp(p.trim())}`}
+                              color="#16a34a"
+                            />
+                          </div>
+                        </div>
                       ))}
                   </div>
                 )}
               </div>
-            )}
-          </div>
+            </Section>
+          )}
+
+          {/* Location */}
+          {(canEdit || task.location) && (
+            <Section
+              icon={<MapPin size={16} style={{ color: "#3b82f6" }} />}
+              label="Ubicación"
+              action={
+                task.location && (
+                  <div className="flex items-center gap-0.5">
+                    <IconButton
+                      icon={<Copy size={14} />}
+                      title="Copiar dirección"
+                      onClick={() =>
+                        copyToClipboard(task.location || "", showToast)
+                      }
+                    />
+                    <IconButton
+                      icon={<ExternalLink size={14} />}
+                      title="Abrir en Google Maps"
+                      href={`https://maps.google.com/?q=${encodeURIComponent(task.location || "")}`}
+                      color="#3b82f6"
+                    />
+                  </div>
+                )
+              }
+            >
+              {canEdit ? (
+                <div
+                  className="flex items-center gap-2 rounded-[var(--radius-lg)] px-3 py-2"
+                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                >
+                  <input
+                    value={localLocation}
+                    onChange={(e) => handleLocationChange(e.target.value)}
+                    onBlur={flushPending}
+                    placeholder="Añade una ubicación..."
+                    className="flex-1 min-w-0 text-[var(--text-base)] bg-transparent focus:outline-none"
+                    style={{ color: "var(--text-primary)" }}
+                  />
+                </div>
+              ) : task.location ? (
+                <a
+                  href={`https://maps.google.com/?q=${encodeURIComponent(task.location)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[var(--text-base)] hover:underline"
+                  style={{ color: "#3b82f6" }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {task.location}
+                </a>
+              ) : null}
+            </Section>
+          )}
+
+          {/* Date */}
+          <Section
+            icon={
+              <CalendarDays
+                size={16}
+                style={{ color: "var(--text-tertiary)" }}
+              />
+            }
+            label="Fecha"
+          >
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex-1 flex items-center gap-2 rounded-[var(--radius-lg)] px-3 py-2"
+                  style={{ backgroundColor: "var(--bg-secondary)" }}
+                >
+                  <span style={{ color: "var(--text-primary)" }}>
+                    {formatDateLabel(task.dueDate)}
+                  </span>
+                  {task.dueDate && (
+                    <input
+                      type="time"
+                      value={task.dueTime || ""}
+                      onChange={(e) => handleTimeChange(e.target.value)}
+                      onBlur={flushPending}
+                      className="text-[var(--text-sm)] bg-transparent border-l focus:outline-none"
+                      style={{
+                        borderColor: "var(--border-color)",
+                        color: "var(--text-secondary)",
+                      }}
+                    />
+                  )}
+                </div>
+                {canEdit && task.dueDate && (
+                  <IconButton
+                    icon={<X size={14} />}
+                    title="Eliminar fecha"
+                    onClick={() => handleQuickDate(null)}
+                    color="#ef4444"
+                  />
+                )}
+              </div>
+              {canEdit && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => handleQuickDate(toISODate(new Date()))}
+                    className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    Hoy
+                  </button>
+                  <button
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 1);
+                      handleQuickDate(toISODate(d));
+                    }}
+                    className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    Mañana
+                  </button>
+                  <button
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 7);
+                      handleQuickDate(toISODate(d));
+                    }}
+                    className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    Próxima semana
+                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => dateInputRef.current?.showPicker?.()}
+                      className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        color: "var(--text-link)",
+                      }}
+                    >
+                      Personalizado
+                    </button>
+                    <input
+                      ref={dateInputRef}
+                      type="date"
+                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                      value={task.dueDate || ""}
+                      onChange={(e) => handleQuickDate(e.target.value || null)}
+                      onBlur={flushPending}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </Section>
+
+          {/* Reminder */}
+          {(canEdit || (task.reminders && task.reminders.length > 0)) && (
+            <Section
+              icon={<Bell size={16} style={{ color: "var(--text-warning)" }} />}
+              label="Recordatorio"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="flex-1 rounded-[var(--radius-lg)] px-3 py-2"
+                    style={{ backgroundColor: "var(--bg-secondary)" }}
+                  >
+                    <span
+                      style={{
+                        color: task.reminders?.[0]
+                          ? "var(--text-primary)"
+                          : "var(--text-tertiary)",
+                      }}
+                    >
+                      {task.reminders?.[0]
+                        ? formatReminderLabel(task.reminders[0].at)
+                        : "Sin recordatorio"}
+                    </span>
+                  </div>
+                  {canEdit && task.reminders?.[0] && (
+                    <IconButton
+                      icon={<X size={14} />}
+                      title="Eliminar recordatorio"
+                      onClick={handleClearReminder}
+                      color="#ef4444"
+                    />
+                  )}
+                </div>
+                {canEdit && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {reminderQuickOptions().map((opt) => (
+                      <button
+                        key={opt.label}
+                        onClick={() => handleQuickReminder(opt.value)}
+                        className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
+                        style={{
+                          backgroundColor: "var(--bg-secondary)",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                    <div className="relative">
+                      <button
+                        onClick={() => reminderInputRef.current?.showPicker?.()}
+                        className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
+                        style={{
+                          backgroundColor: "var(--bg-secondary)",
+                          color: "var(--text-link)",
+                        }}
+                      >
+                        Personalizado
+                      </button>
+                      <input
+                        ref={reminderInputRef}
+                        type="datetime-local"
+                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                        onChange={(e) => {
+                          if (e.target.value)
+                            handleCustomReminder(e.target.value);
+                        }}
+                        onBlur={flushPending}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Section>
+          )}
+
+          {/* Assigned */}
+          <Section
+            icon={<User size={16} style={{ color: "var(--text-tertiary)" }} />}
+            label="Asignado"
+          >
+            <div className="relative">
+              {canEdit ? (
+                <button
+                  onClick={() => setAssignOpen((v) => !v)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-lg)] border text-[var(--text-base)] transition-colors hover:bg-[var(--bg-secondary)]"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    borderColor: "var(--border-color)",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  {assignedName ? (
+                    <>
+                      <span
+                        className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                        style={{
+                          backgroundColor: "var(--text-link)",
+                          color: "#ffffff",
+                        }}
+                      >
+                        {assignedName
+                          .split(" ")
+                          .map((n) => n[0])
+                          .slice(0, 2)
+                          .join("")
+                          .toUpperCase()}
+                      </span>
+                      {assignedName}
+                    </>
+                  ) : (
+                    <span style={{ color: "var(--text-tertiary)" }}>
+                      Sin asignar
+                    </span>
+                  )}
+                  <ChevronDown
+                    size={14}
+                    style={{ color: "var(--text-tertiary)" }}
+                  />
+                </button>
+              ) : assignedName ? (
+                <div className="flex items-center gap-2 text-[var(--text-base)]">
+                  <span
+                    className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                    style={{
+                      backgroundColor: "var(--text-link)",
+                      color: "#ffffff",
+                    }}
+                  >
+                    {assignedName
+                      .split(" ")
+                      .map((n) => n[0])
+                      .slice(0, 2)
+                      .join("")
+                      .toUpperCase()}
+                  </span>
+                  {assignedName}
+                </div>
+              ) : (
+                <span style={{ color: "var(--text-tertiary)" }}>
+                  Sin asignar
+                </span>
+              )}
+              <AnimatePresence>
+                {assignOpen && canEdit && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -4, scale: 0.97 }}
+                    transition={{ duration: 0.12 }}
+                    className="absolute left-0 top-full mt-1 z-50 rounded-[var(--radius-lg)] shadow-[var(--shadow-dropdown)] overflow-hidden min-w-[180px]"
+                    style={{
+                      backgroundColor: "var(--bg-card)",
+                      border: "1px solid var(--border-color)",
+                    }}
+                  >
+                    {assignOptions.map((opt) => (
+                      <button
+                        key={opt.userId || "none"}
+                        onClick={() => handleAssignedChange(opt.userId || null)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-[var(--text-sm)] transition-colors hover:bg-[var(--bg-secondary)]"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        {opt.userId && (
+                          <span
+                            className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
+                            style={{
+                              backgroundColor: "var(--text-link)",
+                              color: "#ffffff",
+                            }}
+                          >
+                            {opt.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .slice(0, 2)
+                              .join("")
+                              .toUpperCase()}
+                          </span>
+                        )}
+                        <span>{opt.name}</span>
+                        {localAssignedTo === opt.userId && (
+                          <Check size={12} className="ml-auto text-blue-500" />
+                        )}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </Section>
 
           {/* Divider */}
           <div
@@ -504,336 +1148,127 @@ export default function TaskDetailPanel({
             style={{ backgroundColor: "var(--border-color)" }}
           />
 
-          {/* Date + options */}
-          {canManageOptions && (
-            <div className="flex items-center gap-3 flex-wrap">
-              <span
-                className="text-[var(--text-xs)]"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                Fecha
-              </span>
-              <TaskOptionsBar
-                dueDate={task.dueDate}
-                dueTime={task.dueTime}
-                reminders={task.reminders || []}
-                recurrence={task.recurrence}
-                onReminderChange={(r) => saveField({ reminders: r })}
-                onDueDateChange={(d) =>
-                  saveField({
-                    dueDate: d,
-                    dueTime: d ? task.dueTime || null : null,
-                  })
-                }
-                onRecurrenceChange={(r) => saveField({ recurrence: r })}
-                onDropdownOpenChange={() => {}}
-              />
-            </div>
-          )}
-
-          {/* Priority */}
-          {(canEdit || task.priority) && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className="text-[var(--text-xs)]"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                Prioridad
-              </span>
-              {canEdit ? (
-                <div className="relative">
-                  <button
-                    onClick={() => setPriorityMenuOpen((v) => !v)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[var(--text-xs)] font-medium transition-colors border"
-                    style={{
-                      backgroundColor: "var(--bg-secondary)",
-                      borderColor: "var(--border-color)",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    {pc ? (
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1",
-                          pc.text,
-                        )}
-                      >
-                        <span>{pc.emoji}</span> {pc.label}
-                      </span>
-                    ) : (
-                      <span>Sin prioridad</span>
-                    )}
-                    <ChevronDown
-                      size={12}
-                      style={{ color: "var(--text-tertiary)" }}
-                    />
-                  </button>
-                  <AnimatePresence>
-                    {priorityMenuOpen && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -4, scale: 0.97 }}
-                        transition={{ duration: 0.12 }}
-                        className="absolute left-0 top-full mt-1 z-50 rounded-[var(--radius-lg)] shadow-[var(--shadow-dropdown)] overflow-hidden min-w-[160px]"
-                        style={{
-                          backgroundColor: "var(--bg-card)",
-                          border: "1px solid var(--border-color)",
-                        }}
-                      >
-                        {(
-                          [
-                            undefined,
-                            "low",
-                            "medium",
-                            "high",
-                            "urgent",
-                          ] as const
-                        ).map((p) => {
-                          const cfg = p ? getPriorityConfig(p) : null;
-                          return (
-                            <button
-                              key={p ?? "none"}
-                              onClick={() => {
-                                setLocalPriority(p);
-                                setPriorityMenuOpen(false);
-                                saveField({ priority: p });
-                              }}
-                              className="w-full flex items-center justify-between px-3 py-2 text-[var(--text-sm)] transition-colors"
-                              style={{ color: "var(--text-secondary)" }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "var(--bg-secondary)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor =
-                                  "transparent";
-                              }}
-                            >
-                              {cfg ? (
-                                <span
-                                  className={cn(
-                                    "inline-flex items-center gap-1.5 font-medium",
-                                    cfg.text,
-                                  )}
-                                >
-                                  <span>{cfg.emoji}</span> {cfg.label}
-                                </span>
-                              ) : (
-                                <span style={{ color: "var(--text-tertiary)" }}>
-                                  Sin prioridad
-                                </span>
-                              )}
-                              {localPriority === p && (
-                                <Check size={12} className="text-blue-500" />
-                              )}
-                            </button>
-                          );
-                        })}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ) : pc ? (
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-1 text-[var(--text-xs)] font-medium",
-                    pc.text,
-                  )}
-                >
-                  <span>{pc.emoji}</span> {pc.label}
-                </span>
-              ) : null}
-            </div>
-          )}
-
-          {/* Assigned + Tags */}
-          {(task.assignedTo || (task.tags && task.tags.length > 0)) && (
-            <div className="flex flex-wrap items-center gap-2">
-              {task.assignedTo && (
-                <span
-                  className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[var(--text-xs)] font-medium border"
-                  style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    borderColor: "var(--border-color)",
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  <User size={11} />
-                  {resolveName(task.assignedTo)}
-                </span>
-              )}
-              {task.tags?.map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2 py-1 rounded-full text-[var(--text-xs)] font-medium border"
-                  style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    borderColor: "var(--border-color)",
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Completion info */}
-          {isCompleted && task.completedAt && (
-            <div
-              className="rounded-[var(--radius-lg)] p-3 space-y-1.5"
-              style={{
-                backgroundColor: "rgba(22,163,74,0.06)",
-                border: "1px solid rgba(22,163,74,0.15)",
-              }}
-            >
-              <div
-                className="flex items-center gap-1.5 text-[var(--text-xs)] font-medium"
-                style={{ color: "#16a34a" }}
-              >
-                <Check size={11} /> Completada
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2 text-[var(--text-sm)]">
-                  <span style={{ color: "var(--text-tertiary)" }}>Por</span>
-                  <span
-                    className="font-medium"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    {resolveName(task.completedBy)}
-                  </span>
-                </div>
-                {task.performedBy && task.performedBy !== task.completedBy && (
-                  <div className="flex items-center gap-2 text-[var(--text-sm)]">
-                    <span style={{ color: "var(--text-tertiary)" }}>
-                      Realizada por
-                    </span>
-                    <span
-                      className="font-medium"
-                      style={{ color: "var(--text-primary)" }}
-                    >
-                      {resolveName(task.performedBy)}
-                    </span>
-                  </div>
-                )}
-                <div
-                  className="text-[var(--text-xs)]"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  {new Date(task.completedAt).toLocaleDateString("es-ES", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                  {" · "}
-                  {new Date(task.completedAt).toLocaleTimeString("es-ES", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Comments */}
-          <div className="space-y-2">
-            <p
-              className="text-[var(--text-xs)] font-medium"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              Comentarios
-            </p>
+          <Section
+            icon={
+              <MessageSquare
+                size={16}
+                style={{ color: "var(--text-tertiary)" }}
+              />
+            }
+            label="Comentarios"
+          >
             <TaskComments
               taskId={task.id}
               listId={task.listId}
               memberNames={memberNames}
             />
-          </div>
+          </Section>
 
           {/* History */}
-          {task.history && task.history.length > 0 && (
-            <div className="space-y-2">
-              <p
-                className="text-[var(--text-xs)] font-medium"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                Historial
-              </p>
-              <div>
-                {[...task.history]
-                  .reverse()
-                  .slice(0, 20)
-                  .map((entry, i) => {
-                    const name =
-                      entry.performedByName || resolveName(entry.performedBy);
-                    const date = new Date(entry.performedAt);
-                    const isCompletion = entry.action === "completed";
-                    return (
-                      <div
-                        key={entry.id || i}
-                        className="flex gap-2 py-2 border-b last:border-0"
-                        style={{ borderColor: "var(--border-color)" }}
-                      >
+          {history.length > 0 && (
+            <Section
+              icon={
+                <History size={16} style={{ color: "var(--text-tertiary)" }} />
+              }
+              label="Historial"
+            >
+              <div className="space-y-3">
+                {history.map((entry, i) => {
+                  const name =
+                    entry.performedByName || resolveName(entry.performedBy);
+                  const { label, showDiff } = formatHistoryAction(entry.action);
+                  return (
+                    <div key={entry.id || i} className="space-y-1.5">
+                      <div className="flex items-center gap-2">
                         <div
-                          className="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center mt-0.5"
-                          style={{
-                            backgroundColor: isCompletion
-                              ? "rgba(22,163,74,0.12)"
-                              : "var(--bg-secondary)",
-                          }}
+                          className="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: "var(--bg-secondary)" }}
                         >
-                          {isCompletion ? (
-                            <Check size={8} style={{ color: "#16a34a" }} />
-                          ) : (
-                            <Clock
-                              size={8}
-                              style={{ color: "var(--text-tertiary)" }}
-                            />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className="text-[var(--text-sm)] leading-snug"
-                            style={{ color: "var(--text-primary)" }}
-                          >
-                            <span className="font-medium">{name}</span>{" "}
-                            {entry.details ||
-                              (entry.action === "created"
-                                ? "creó"
-                                : entry.action === "reopened"
-                                  ? "reabrió"
-                                  : entry.action === "archived"
-                                    ? "archivó"
-                                    : entry.action)}
-                          </p>
-                          <p
-                            className="text-[var(--text-2xs)] mt-0.5"
+                          <History
+                            size={8}
                             style={{ color: "var(--text-tertiary)" }}
-                          >
-                            {date.toLocaleDateString("es-ES", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })}{" "}
-                            ·{" "}
-                            {date.toLocaleTimeString("es-ES", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
+                          />
                         </div>
+                        <p
+                          className="text-[var(--text-sm)]"
+                          style={{ color: "var(--text-primary)" }}
+                        >
+                          <span className="font-medium">{name}</span> {label}
+                        </p>
+                        <span
+                          className="ml-auto text-[var(--text-2xs)]"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
+                          {formatDateTime(
+                            entry.performedAt ||
+                              (entry as unknown as { createdAt?: string })
+                                .createdAt,
+                          )}
+                        </span>
                       </div>
-                    );
-                  })}
+                      {showDiff && (
+                        <div className="pl-6 space-y-1.5">
+                          <div
+                            className="rounded-[var(--radius-md)] px-3 py-2 text-[var(--text-xs)]"
+                            style={{
+                              backgroundColor: "var(--bg-secondary)",
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            <span
+                              className="font-medium uppercase tracking-wider text-[10px]"
+                              style={{ color: "var(--text-tertiary)" }}
+                            >
+                              Antes
+                            </span>
+                            <p className="mt-0.5">
+                              {formatHistoryValue(
+                                entry.action,
+                                entry.previousValue,
+                              )}
+                            </p>
+                          </div>
+                          <div className="flex justify-center">
+                            <div
+                              className="w-5 h-5 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: "var(--bg-secondary)" }}
+                            >
+                              <span style={{ color: "var(--text-tertiary)" }}>
+                                ↓
+                              </span>
+                            </div>
+                          </div>
+                          <div
+                            className="rounded-[var(--radius-md)] px-3 py-2 text-[var(--text-xs)]"
+                            style={{
+                              backgroundColor: "rgba(59,130,246,0.08)",
+                              border: "1px solid rgba(59,130,246,0.15)",
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            <span
+                              className="font-medium uppercase tracking-wider text-[10px]"
+                              style={{ color: "#3b82f6" }}
+                            >
+                              Ahora
+                            </span>
+                            <p className="mt-0.5">
+                              {formatHistoryValue(entry.action, entry.newValue)}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            </Section>
           )}
 
           {/* Meta — creation */}
           <div
-            className="pt-2 border-t"
+            className="pt-3 border-t"
             style={{ borderColor: "var(--border-color)" }}
           >
             <span
@@ -853,7 +1288,7 @@ export default function TaskDetailPanel({
         </div>
       </div>
 
-      {/* ── Toast ── */}
+      {/* Toast */}
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -874,7 +1309,7 @@ export default function TaskDetailPanel({
         )}
       </AnimatePresence>
 
-      {/* ── Delete confirm overlay ── */}
+      {/* Delete confirm */}
       <AnimatePresence>
         {showDeleteConfirm && (
           <motion.div
@@ -933,14 +1368,13 @@ export default function TaskDetailPanel({
     </div>
   );
 
-  // ─── PORTAL RENDERING ───────────────────────────────────────────
+  // Portal rendering
   if (typeof document === "undefined") return null;
 
   return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -953,10 +1387,10 @@ export default function TaskDetailPanel({
             onClick={onClose}
           />
 
-          {/* Mobile: fullscreen sheet — above navbar (bottom: 64px) */}
+          {/* Mobile sheet */}
           <div
             className="sm:hidden fixed inset-x-0 top-0 z-[9001]"
-            style={{ bottom: "0px" }}
+            style={{ bottom: 0 }}
           >
             <motion.div
               initial={{ y: "100%" }}
@@ -964,12 +1398,8 @@ export default function TaskDetailPanel({
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 32, stiffness: 320 }}
               className="absolute inset-x-0 bottom-0 rounded-t-[var(--radius-lg)] overflow-hidden shadow-[var(--shadow-modal)] flex flex-col"
-              style={{
-                top: "40px",
-                backgroundColor: "var(--bg-card)",
-              }}
+              style={{ top: "40px", backgroundColor: "var(--bg-card)" }}
             >
-              {/* Drag handle */}
               <div className="flex justify-center pt-2.5 pb-0 flex-shrink-0">
                 <div
                   className="w-8 h-1 rounded-full"
@@ -980,7 +1410,7 @@ export default function TaskDetailPanel({
             </motion.div>
           </div>
 
-          {/* Desktop: right side panel */}
+          {/* Desktop panel */}
           <div className="hidden sm:block fixed inset-y-0 right-0 z-[9001] w-[400px] lg:w-[440px]">
             <motion.div
               initial={{ x: "100%", opacity: 0 }}
