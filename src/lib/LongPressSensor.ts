@@ -18,7 +18,9 @@ export class LongPressSensor extends PointerSensor {}
 
 export const LONG_PRESS_DELAY = 500;
 
+export const LONG_PRESS_TOLERANCE = 5;
+
 export const LONG_PRESS_CONSTRAINT: PointerActivationConstraint = {
   delay: LONG_PRESS_DELAY,
-  tolerance: 10,
+  tolerance: LONG_PRESS_TOLERANCE,
 };

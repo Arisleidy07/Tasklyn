@@ -79,7 +79,6 @@ interface EditListModalProps {
   memberProfiles: Record<string, User>;
   isOpen: boolean;
   onClose: () => void;
-  defaultTab?: "details" | "members";
 }
 
 const DEFAULT_CATEGORIES: BgCategoryConfig[] = [
@@ -129,6 +128,125 @@ const DEFAULT_CATEGORIES: BgCategoryConfig[] = [
     updatedAt: new Date().toISOString(),
   },
 ];
+
+// =====================================================
+// EMOJI PICKER
+// =====================================================
+
+const EMOJI_CATEGORIES = [
+  {
+    name: "Trabajo",
+    emojis: ["📁", "💼", "📊", "🖥️", "📅", "📎", "📌", "✏️", "📋", "📝"],
+  },
+  {
+    name: "Casa",
+    emojis: ["🏠", "🧹", "🛋️", "🪴", "🛏️", "🍳", "🧺", "🚪", "💡", "🧯"],
+  },
+  {
+    name: "Compras",
+    emojis: ["🛒", "🛍️", "🍎", "🥦", "🥛", "🍞", "🧴", "🧻", "🎁", "💳"],
+  },
+  {
+    name: "Escuela",
+    emojis: ["📚", "✏️", "🎓", "📝", "🖍️", "🎒", "📐", "🔬", "🌍", "📖"],
+  },
+  {
+    name: "Salud",
+    emojis: ["❤️", "💊", "🩺", "🏥", "🧘", "🥗", "💪", "🩹", "🧴", "🌡️"],
+  },
+  {
+    name: "Viajes",
+    emojis: ["✈️", "🚗", "🌎", "🏖️", "🗺️", "🧳", "🚢", "🚂", "🏕️", "📸"],
+  },
+  {
+    name: "Finanzas",
+    emojis: ["💰", "💳", "📈", "📉", "🏦", "🪙", "💵", "📊", "🧾", "🔒"],
+  },
+  {
+    name: "Ocio",
+    emojis: ["🎮", "🎬", "🎵", "🎨", "🎭", "⚽", "🏀", "🎲", "🧩", "🎸"],
+  },
+];
+
+interface EmojiPickerProps {
+  value: string;
+  onChange: (emoji: string) => void;
+}
+
+function EmojiPicker({ value, onChange }: EmojiPickerProps) {
+  const [open, setOpen] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [open]);
+
+  return (
+    <div className="relative" ref={pickerRef}>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-16 h-16 text-3xl flex items-center justify-center rounded-xl border-2 transition-all"
+        style={{
+          backgroundColor: "var(--bg-secondary)",
+          borderColor: "var(--border-color)",
+        }}
+        aria-label="Seleccionar emoji"
+      >
+        {value || "📋"}
+      </button>
+      {open && (
+        <div
+          className="absolute z-50 top-full left-0 mt-2 w-[280px] max-h-[320px] overflow-y-auto rounded-xl p-3 shadow-[var(--shadow-modal)]"
+          style={{
+            backgroundColor: "var(--bg-card)",
+            border: "1px solid var(--border-color)",
+          }}
+        >
+          {EMOJI_CATEGORIES.map((cat) => (
+            <div key={cat.name} className="mb-3">
+              <p
+                className="text-[11px] font-semibold uppercase tracking-wider mb-1.5"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                {cat.name}
+              </p>
+              <div className="grid grid-cols-5 gap-1.5">
+                {cat.emojis.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => {
+                      onChange(emoji);
+                      setOpen(false);
+                    }}
+                    className="h-9 w-9 flex items-center justify-center text-xl rounded-lg transition-colors hover:bg-[var(--bg-secondary)]"
+                    style={{
+                      backgroundColor:
+                        value === emoji ? "var(--bg-secondary)" : "transparent",
+                    }}
+                    aria-label={emoji}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // =====================================================
 // SORTABLE IMAGE ITEM
@@ -460,12 +578,8 @@ export default function EditListModal({
   memberProfiles,
   isOpen,
   onClose,
-  defaultTab = "details",
 }: EditListModalProps) {
   // State
-  const [activeTab, setActiveTab] = useState<
-    "details" | "members" | "backgrounds"
-  >(defaultTab);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [name, setName] = useState(list.name);
   const [description, setDescription] = useState(list.description || "");
@@ -586,7 +700,6 @@ export default function EditListModal({
       setEmoji(list.icon || "");
       setIsPublic(false);
       setBackgroundImage(list.backgroundImage || "");
-      setActiveTab(defaultTab);
       setSaved(false);
       setIsManagingCategories(false);
       // Lock body scroll
@@ -597,7 +710,7 @@ export default function EditListModal({
       // Unlock body scroll when modal closes
       document.body.style.overflow = "";
     };
-  }, [isOpen, list, defaultTab]);
+  }, [isOpen, list]);
 
   // Handlers
   const handleSelectBackground = async (url: string) => {
@@ -608,7 +721,6 @@ export default function EditListModal({
         backgroundImage: newUrl || undefined,
       });
       setSaved(true);
-      setActiveTab("details");
       setTimeout(() => {
         if (isMountedRef.current) setSaved(false);
       }, 2000);
@@ -638,10 +750,6 @@ export default function EditListModal({
       }
       await updateList(list.id, updates);
       setSaved(true);
-      // If saving from backgrounds tab, go back to details — keep modal open
-      if (activeTab === "backgrounds") {
-        setActiveTab("details");
-      }
       setTimeout(() => {
         if (isMountedRef.current) {
           setSaved(false);
@@ -969,27 +1077,9 @@ export default function EditListModal({
           >
             {/* Header */}
             <div className="flex-shrink-0 flex items-center justify-between px-6 py-4 border-b border-[var(--border-color)] bg-[var(--bg-card)]">
-              <div className="flex items-center gap-4">
-                <h2 className="text-xl font-bold text-[var(--text-primary)]">
-                  Editar Lista
-                </h2>
-                <div className="flex items-center gap-1 p-1 bg-[var(--bg-secondary)] rounded-xl">
-                  {[
-                    { id: "details", label: "Detalles", icon: Settings2 },
-                    { id: "members", label: "Miembros", icon: FolderOpen },
-                    { id: "backgrounds", label: "Fondos", icon: ImageIcon },
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => setActiveTab(tab.id as any)}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === tab.id ? "bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
-                    >
-                      <tab.icon size={16} />{" "}
-                      <span className="hidden sm:inline">{tab.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <h2 className="text-xl font-bold text-[var(--text-primary)]">
+                Editar lista
+              </h2>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsFullscreen(!isFullscreen)}
@@ -1013,182 +1103,91 @@ export default function EditListModal({
             {/* Content */}
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
               <div className="p-6 md:p-8">
-                {/* DETAILS TAB */}
-                {activeTab === "details" && (
-                  <div className="max-w-2xl mx-auto space-y-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[var(--text-primary)]">
-                        Nombre
-                      </label>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full px-4 py-3 bg-[var(--bg-secondary)] border-2 border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-blue-500 transition-all"
-                        placeholder="Mi Lista"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[var(--text-primary)]">
-                        Descripción
-                      </label>
-                      <textarea
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        rows={3}
-                        className="w-full px-4 py-3 bg-[var(--bg-secondary)] border-2 border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-blue-500 transition-all resize-none"
-                        placeholder="Describe el propósito..."
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[var(--text-primary)]">
-                        Emoji
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="text"
-                          value={emoji}
-                          onChange={(e) => setEmoji(e.target.value)}
-                          className="w-16 h-16 text-center text-3xl bg-[var(--bg-secondary)] border-2 border-[var(--border-color)] rounded-xl focus:outline-none focus:border-blue-500 transition-all"
-                          placeholder="📋"
-                        />
-                        <span className="text-sm text-[var(--text-secondary)]">
-                          Cualquier emoji del sistema
-                        </span>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-semibold text-[var(--text-primary)]">
-                        Color
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {colors.map((c) => (
-                          <button
-                            key={c}
-                            onClick={() => setColor(c)}
-                            className={`w-10 h-10 rounded-xl transition-all ${color === c ? "ring-2 ring-offset-2 ring-blue-500 scale-110" : "hover:scale-105"}`}
-                            style={{ backgroundColor: c }}
+                {/* DETAILS SECTION */}
+                {
+                  <div className="max-w-4xl mx-auto space-y-6">
+                    {/* Two-column grid: name/description | emoji/color */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Left column */}
+                      <div className="space-y-5">
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold text-[var(--text-primary)]">
+                            Nombre
+                          </label>
+                          <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full px-4 py-3 bg-[var(--bg-secondary)] border-2 border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-input-focus)] transition-all"
+                            placeholder="Mi Lista"
                           />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-4 bg-[var(--bg-secondary)] rounded-xl">
-                      <input
-                        type="checkbox"
-                        id="isPublic"
-                        checked={isPublic}
-                        onChange={(e) => setIsPublic(e.target.checked)}
-                        className="w-5 h-5 rounded border-[var(--border-color)] text-blue-500 focus:ring-blue-500"
-                      />
-                      <label
-                        htmlFor="isPublic"
-                        className="text-sm font-medium text-[var(--text-primary)] cursor-pointer"
-                      >
-                        Lista pública
-                      </label>
-                    </div>
-                    {backgroundImage && (
-                      <div className="space-y-2">
-                        <label className="text-sm font-semibold text-[var(--text-primary)]">
-                          Fondo activo
-                        </label>
-                        <div className="relative rounded-xl overflow-hidden border-2 border-blue-500/50 shadow-lg">
-                          <img
-                            src={backgroundImage}
-                            alt="Fondo"
-                            className="w-full h-48 object-contain bg-[var(--bg-secondary)]"
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold text-[var(--text-primary)]">
+                            Descripción
+                          </label>
+                          <textarea
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            rows={3}
+                            className="w-full px-4 py-3 bg-[var(--bg-secondary)] border-2 border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-input-focus)] transition-all resize-none"
+                            placeholder="Describe el propósito..."
                           />
-                          <div className="absolute top-3 left-3 px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">
-                            ✓ FONDO ACTIVO
-                          </div>
-                          <button
-                            onClick={() => setBackgroundImage("")}
-                            className="absolute top-3 right-3 p-2 bg-black/50 hover:bg-red-500 text-white rounded-lg transition-colors"
+                        </div>
+                        <div className="flex items-center gap-3 p-4 bg-[var(--bg-secondary)] rounded-xl">
+                          <input
+                            type="checkbox"
+                            id="isPublic"
+                            checked={isPublic}
+                            onChange={(e) => setIsPublic(e.target.checked)}
+                            className="w-5 h-5 rounded border-[var(--border-color)] text-[var(--text-info)] focus:ring-[var(--border-input-focus)]"
+                          />
+                          <label
+                            htmlFor="isPublic"
+                            className="text-sm font-medium text-[var(--text-primary)] cursor-pointer"
                           >
-                            <Trash2 size={16} />
-                          </button>
+                            Lista pública
+                          </label>
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
 
-                {/* MEMBERS TAB */}
-                {activeTab === "members" && (
-                  <div className="max-w-2xl mx-auto">
-                    <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">
-                      Miembros ({list.members?.length || 0})
-                    </h3>
-                    <div className="space-y-3">
-                      {list.members?.map((member) => {
-                        const profile = memberProfiles[member.userId];
-                        const roleLabels: Record<MemberRole, string> = {
-                          owner: "Dueño",
-                          admin: "Admin",
-                          editor: "Editor",
-                          viewer: "Espectador",
-                        };
-                        return (
-                          <div
-                            key={member.userId}
-                            className="flex items-center gap-4 p-4 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border-color)]"
-                          >
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
-                              {profile?.name?.[0]?.toUpperCase() ||
-                                profile?.email?.[0]?.toUpperCase() ||
-                                "?"}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-[var(--text-primary)] truncate">
-                                {profile?.name || profile?.email || "Usuario"}
-                              </p>
-                              <p className="text-sm text-[var(--text-secondary)]">
-                                {roleLabels[member.role]}
-                              </p>
-                            </div>
-                            {isOwner && member.userId !== user!.id && (
-                              <div className="flex items-center gap-2">
-                                <select
-                                  value={member.role}
-                                  onChange={(e) =>
-                                    handleRoleChange(
-                                      member.userId,
-                                      e.target.value as MemberRole,
-                                    )
-                                  }
-                                  className="px-3 py-2 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg text-sm text-[var(--text-primary)]"
-                                >
-                                  <option value="admin">Admin</option>
-                                  <option value="editor">Editor</option>
-                                  <option value="viewer">Espectador</option>
-                                </select>
-                                <button
-                                  onClick={() =>
-                                    handleRemoveMember(member.userId)
-                                  }
-                                  className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
-                                >
-                                  <Trash2 size={18} />
-                                </button>
-                              </div>
-                            )}
+                      {/* Right column */}
+                      <div className="space-y-5">
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold text-[var(--text-primary)]">
+                            Emoji
+                          </label>
+                          <div className="flex items-center gap-3">
+                            <EmojiPicker value={emoji} onChange={setEmoji} />
+                            <span className="text-sm text-[var(--text-secondary)]">
+                              Pulsa para elegir
+                            </span>
                           </div>
-                        );
-                      })}
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-sm font-semibold text-[var(--text-primary)]">
+                            Color
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            {colors.map((c) => (
+                              <button
+                                key={c}
+                                onClick={() => setColor(c)}
+                                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl transition-all ${color === c ? "ring-2 ring-offset-2 ring-[var(--border-input-focus)] scale-110" : "hover:scale-105"}`}
+                                style={{ backgroundColor: c }}
+                                aria-label={`Color ${c}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    {isOwner && (
-                      <button
-                        onClick={handleDeleteList}
-                        className="mt-8 w-full py-3 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-600 font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Trash2 size={18} /> Eliminar Lista
-                      </button>
-                    )}
                   </div>
-                )}
+                }
 
                 {/* BACKGROUNDS TAB — PREMIUM */}
-                {activeTab === "backgrounds" && (
+                {/* BACKGROUNDS SECTION */}
+                {
                   <div className="space-y-8 pb-4">
                     {/* ── ACTIVE BACKGROUND HERO ── */}
                     {backgroundImage ? (
@@ -1718,7 +1717,7 @@ export default function EditListModal({
                       </DragOverlay>
                     </DndContext>
                   </div>
-                )}
+                }
               </div>
             </div>
 
@@ -1744,9 +1743,7 @@ export default function EditListModal({
                   ? "Guardando..."
                   : saved
                     ? "Guardado ✓"
-                    : activeTab === "backgrounds"
-                      ? "Aplicar fondo"
-                      : "Guardar cambios"}
+                    : "Guardar cambios"}
               </button>
             </div>
 

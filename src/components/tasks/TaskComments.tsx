@@ -7,6 +7,7 @@ import {
   subscribeToTaskComments,
   addComment,
   deleteComment,
+  addTaskHistoryEntry,
 } from "@/lib/firestore";
 import type { TaskComment } from "@/types";
 import Avatar from "@/components/ui/Avatar";
@@ -98,6 +99,13 @@ export default function TaskComments({
         content: text.trim(),
         mentions,
       });
+      await addTaskHistoryEntry(taskId, {
+        action: "comment_added",
+        performedBy: user.id,
+        performedByName: user.name,
+        performedAt: new Date().toISOString(),
+        details: "Comentario añadido",
+      });
       setText("");
     } finally {
       setSending(false);
@@ -115,7 +123,8 @@ export default function TaskComments({
   const renderContent = (content: string) =>
     content.replace(
       /@(\w+)/g,
-      (match) => `<span class="text-blue-600 font-medium">${match}</span>`,
+      (match) =>
+        `<span class="text-[var(--text-link)] font-medium">${match}</span>`,
     );
 
   return (
@@ -184,9 +193,8 @@ export default function TaskComments({
                     className="opacity-0 group-hover:opacity-100 p-1 transition-opacity flex-shrink-0 rounded-md"
                     style={{ color: "var(--text-tertiary)" }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.color = "#ef4444";
-                      e.currentTarget.style.backgroundColor =
-                        "rgba(239,68,68,0.08)";
+                      e.currentTarget.style.color = "var(--text-error)";
+                      e.currentTarget.style.backgroundColor = "var(--bg-error)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.color = "var(--text-tertiary)";
@@ -224,7 +232,7 @@ export default function TaskComments({
                   e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
-                <AtSign size={10} className="text-blue-500" />
+                <AtSign size={10} className="text-[var(--text-link)]" />
                 <span
                   className="font-medium"
                   style={{ color: "var(--text-primary)" }}
@@ -250,7 +258,7 @@ export default function TaskComments({
               }}
               placeholder="Escribe un comentario... @nombre"
               rows={1}
-              className="w-full text-[var(--text-sm)] px-3 py-2 rounded-[var(--radius-lg)] focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none pr-9"
+              className="w-full text-[var(--text-sm)] px-3 py-2 rounded-[var(--radius-lg)] focus:outline-none focus:ring-2 focus:ring-[var(--border-input-focus)]/20 resize-none pr-9"
               style={{
                 border: "1px solid var(--border-input)",
                 backgroundColor: "var(--bg-input)",
@@ -264,7 +272,7 @@ export default function TaskComments({
               disabled={!text.trim() || sending}
               className={cn(
                 "absolute right-2 bottom-1.5 p-1 rounded-md transition-colors",
-                text.trim() ? "text-blue-600" : "cursor-not-allowed",
+                text.trim() ? "text-[var(--text-link)]" : "cursor-not-allowed",
               )}
             >
               <Send size={12} />

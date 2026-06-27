@@ -123,6 +123,19 @@ function getRecurrenceLabel(rec: RecurrenceConfig): string {
   return "Personalizado";
 }
 
+function getPriorityLabel(
+  priority?: "low" | "normal" | "medium" | "high" | "urgent" | null,
+): string {
+  const labels: Record<string, string> = {
+    low: "Baja",
+    normal: "Normal",
+    medium: "Media",
+    high: "Alta",
+    urgent: "Urgente",
+  };
+  return labels[priority || "normal"] || "Normal";
+}
+
 function calculateNextDueDate(
   task: Task,
 ): { dueDate: string; dueTime?: string } | null {
@@ -425,6 +438,19 @@ export const useTaskStore = create<TaskState>((set, get) => ({
           updates.recurrence
             ? `Repetición: ${getRecurrenceLabel(updates.recurrence)}`
             : "Repetición eliminada",
+        ),
+      );
+    }
+    if (updates.priority !== undefined && updates.priority !== task.priority) {
+      entries.push(
+        createHistoryEntry(
+          "priority_changed",
+          performedBy,
+          `Prioridad: ${getPriorityLabel(task.priority)} → ${getPriorityLabel(updates.priority)}`,
+          {
+            previousValue: task.priority || "",
+            newValue: updates.priority,
+          },
         ),
       );
     }
@@ -742,15 +768,31 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       status: "pending",
       completedBy: null,
       completedAt: null,
-      history: [
-        ...task.history,
-        createHistoryEntry("reopened", performedBy, "Task reopened"),
-      ],
     });
+
+    const reopenedEntry = createHistoryEntry(
+      "reopened",
+      performedBy,
+      "Tarea reabierta",
+    );
+    const { id: _reopenedEntryId, ...reopenedEntryData } = reopenedEntry;
+    await addTaskHistoryEntry(id, reopenedEntryData);
   },
 
   deleteTask: async (id: string) => {
     const task = get().tasks.find((t) => t.id === id);
+
+    if (task) {
+      const currentUser = useAuthStore.getState().user;
+      const deletedBy = currentUser?.id;
+      const deletedEntry = createHistoryEntry(
+        "deleted",
+        deletedBy || "unknown",
+        "Tarea eliminada",
+      );
+      const { id: _deletedEntryId, ...deletedEntryData } = deletedEntry;
+      await addTaskHistoryEntry(id, deletedEntryData);
+    }
 
     // Log activity before soft-deleting
     if (task) {

@@ -4,7 +4,7 @@ import React, { useCallback } from "react";
 import {
   DndContext,
   closestCenter,
-  PointerSensor,
+  MouseSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
@@ -141,7 +141,7 @@ export function SortableTaskContainer({
       activationConstraint: LONG_PRESS_CONSTRAINT,
     }),
     // Fallback for mouse users who prefer a small drag movement.
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: { distance: 8 },
     }),
     useSensor(KeyboardSensor, {

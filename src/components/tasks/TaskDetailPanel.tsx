@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { Task, MemberRole, TaskHistoryEntry } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -75,14 +76,24 @@ function formatHistoryAction(action: TaskHistoryEntry["action"]): {
       return { label: "cambió la fecha", showDiff: true };
     case "reminder_set":
       return { label: "cambió el recordatorio", showDiff: true };
+    case "priority_changed":
+      return { label: "cambió la prioridad", showDiff: true };
     case "assigned":
       return { label: "cambió la asignación", showDiff: true };
+    case "comment_added":
+      return { label: "añadió un comentario", showDiff: false };
+    case "comment_deleted":
+      return { label: "eliminó un comentario", showDiff: false };
+    case "comment_edited":
+      return { label: "editó un comentario", showDiff: false };
     case "completed":
       return { label: "completó la tarea", showDiff: false };
     case "reopened":
       return { label: "reabrió la tarea", showDiff: false };
     case "archived":
       return { label: "archivó la tarea", showDiff: false };
+    case "deleted":
+      return { label: "eliminó la tarea", showDiff: false };
     case "restored":
       return { label: "restauró la tarea", showDiff: false };
     case "created":
@@ -295,6 +306,7 @@ export default function TaskDetailPanel({
   const [localAssignedTo, setLocalAssignedTo] = useState<string | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [history, setHistory] = useState<TaskHistoryEntry[]>([]);
+  const [historyLimit, setHistoryLimit] = useState(5);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -376,6 +388,7 @@ export default function TaskDetailPanel({
       setLocalAssignedTo(task.assignedTo || null);
       setShowDeleteConfirm(false);
       setAssignOpen(false);
+      setHistoryLimit(5);
     }
   }, [task?.id, isOpen]);
 
@@ -1191,8 +1204,23 @@ export default function TaskDetailPanel({
               }
               label="Historial"
             >
+              <div className="flex items-center justify-between mb-2">
+                <span
+                  className="text-[var(--text-xs)]"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  {history.length} registro{history.length !== 1 ? "s" : ""}
+                </span>
+                <Link
+                  href="/history"
+                  className="text-[var(--text-xs)] font-medium hover:underline"
+                  style={{ color: "var(--text-link)" }}
+                >
+                  Ver todo el historial
+                </Link>
+              </div>
               <div className="space-y-3">
-                {history.map((entry, i) => {
+                {history.slice(0, historyLimit).map((entry, i) => {
                   const name =
                     entry.performedByName || resolveName(entry.performedBy);
                   const { label, showDiff } = formatHistoryAction(entry.action);
@@ -1209,13 +1237,14 @@ export default function TaskDetailPanel({
                           />
                         </div>
                         <p
-                          className="text-[var(--text-sm)]"
+                          className="text-[var(--text-sm)] min-w-0 flex-1"
                           style={{ color: "var(--text-primary)" }}
                         >
-                          <span className="font-medium">{name}</span> {label}
+                          <span className="font-medium truncate">{name}</span>{" "}
+                          <span className="truncate">{label}</span>
                         </p>
                         <span
-                          className="ml-auto text-[var(--text-2xs)]"
+                          className="ml-auto text-[var(--text-2xs)] flex-shrink-0"
                           style={{ color: "var(--text-tertiary)" }}
                         >
                           {formatDateTime(
@@ -1240,7 +1269,7 @@ export default function TaskDetailPanel({
                             >
                               Antes
                             </span>
-                            <p className="mt-0.5">
+                            <p className="mt-0.5 break-words">
                               {formatHistoryValue(
                                 entry.action,
                                 entry.previousValue,
@@ -1271,7 +1300,7 @@ export default function TaskDetailPanel({
                             >
                               Ahora
                             </span>
-                            <p className="mt-0.5">
+                            <p className="mt-0.5 break-words">
                               {formatHistoryValue(entry.action, entry.newValue)}
                             </p>
                           </div>
@@ -1281,6 +1310,18 @@ export default function TaskDetailPanel({
                   );
                 })}
               </div>
+              {historyLimit < history.length && (
+                <button
+                  onClick={() => setHistoryLimit((l) => l + 5)}
+                  className="w-full mt-3 py-2 rounded-[var(--radius-md)] text-[var(--text-sm)] font-medium transition-colors hover:opacity-90"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  Ver más
+                </button>
+              )}
             </Section>
           )}
 

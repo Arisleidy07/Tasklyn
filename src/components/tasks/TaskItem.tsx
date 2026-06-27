@@ -186,7 +186,7 @@ function TaskItem({
           string,
           unknown
         > as React.HTMLAttributes<HTMLDivElement>)}
-        className="group/task select-none mb-3"
+        className="group/task select-none mb-2 sm:mb-3 w-full max-w-full"
         style={{ touchAction: "pan-y" }}
       >
         <motion.div
@@ -196,7 +196,7 @@ function TaskItem({
           exit={{ opacity: 0, y: 8 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
           className={cn(
-            "glass-card relative flex flex-col gap-2 sm:gap-3 p-3.5 sm:p-4 rounded-[var(--radius-card)] cursor-pointer select-none",
+            "glass-card relative flex flex-col gap-2 sm:gap-3 p-3 sm:p-4 rounded-[var(--radius-card)] cursor-pointer select-none w-full max-w-full overflow-hidden",
             isDragging && "z-10 shadow-2xl",
           )}
           onClick={handleCardClick}
@@ -240,7 +240,7 @@ function TaskItem({
             </button>
             <p
               className={cn(
-                "flex-1 min-w-0 text-[var(--text-base)] sm:text-[var(--text-lg)] font-semibold leading-snug",
+                "flex-1 min-w-0 text-[var(--text-base)] sm:text-[var(--text-lg)] font-semibold leading-snug line-clamp-2 break-words",
                 isCompleted && "line-through opacity-70",
               )}
               style={{ color: "var(--text-primary)" }}
@@ -253,7 +253,7 @@ function TaskItem({
           {hasDescription && (
             <p
               className={cn(
-                "text-[var(--text-base)] leading-relaxed sm:pl-9 line-clamp-2 sm:line-clamp-none",
+                "text-[var(--text-base)] leading-relaxed sm:pl-9 line-clamp-2 break-words",
                 isCompleted && "opacity-70",
               )}
               style={{ color: "var(--text-secondary)" }}
@@ -264,7 +264,7 @@ function TaskItem({
 
           {/* Metadata chips: Teléfono · Ubicación · Recordatorio · Fecha */}
           {hasMeta && (
-            <div className="flex flex-wrap items-center gap-2 sm:pl-9">
+            <div className="flex flex-wrap items-center gap-2 sm:pl-9 w-full min-w-0">
               {firstPhone && (
                 <TaskCardMetaChip
                   icon={<Phone size={12} />}

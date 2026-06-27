@@ -29,12 +29,12 @@ export default function TaskCardMetaChip({
           {icon}
         </span>
       )}
-      <span className="truncate">{text}</span>
+      <span className="truncate min-w-0">{text}</span>
     </>
   );
 
   const baseClass = cn(
-    "inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[var(--text-xs)] font-medium transition-colors",
+    "inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-[var(--text-xs)] font-medium transition-colors max-w-full min-w-0",
     className,
   );
 

@@ -56,9 +56,6 @@ export default function ListDetailPage() {
   const [showAddTask, setShowAddTask] = useState(false);
   const [showSharePanel, setShowSharePanel] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [editModalTab, setEditModalTab] = useState<"details" | "members">(
-    "details",
-  );
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showMembersPanel, setShowMembersPanel] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
@@ -285,7 +282,6 @@ export default function ListDetailPage() {
           canShare={canShare}
           isOwner={isOwner}
           onEdit={() => {
-            setEditModalTab("details");
             setShowEditModal(true);
           }}
           onShare={() => setShowSharePanel(true)}
@@ -893,7 +889,6 @@ export default function ListDetailPage() {
           memberProfiles={memberProfiles}
           isOpen={showEditModal}
           onClose={() => setShowEditModal(false)}
-          defaultTab={editModalTab}
         />
 
         {/* Confirmar Eliminación */}

@@ -165,11 +165,15 @@ export interface TaskHistoryEntry {
     | "location_changed"
     | "phones_changed"
     | "due_date_changed"
+    | "priority_changed"
     | "reminder_set"
     | "recurrence_set"
     | "restored"
     | "auto_created"
-    | "reopened";
+    | "reopened"
+    | "comment_added"
+    | "comment_deleted"
+    | "comment_edited";
   performedBy: string; // userId
   performedByName?: string; // nombre del usuario (para mostrar sin necesidad de resolver)
   performedAt: string;
