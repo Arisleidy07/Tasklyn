@@ -142,11 +142,12 @@ function TaskItem({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.12, ease: "easeOut" }}
           className={cn(
-            "relative flex items-stretch min-h-[44px] transition-colors duration-150",
+            "relative flex items-stretch min-h-[44px] rounded-[var(--radius-md)] border transition-colors duration-150",
             isDragging && "z-10",
           )}
           style={{
-            backgroundColor: isDragging ? "var(--bg-secondary)" : "transparent",
+            backgroundColor: "var(--bg-card)",
+            borderColor: "var(--border-color)",
           }}
           onMouseEnter={(e) => {
             if (!isDragging) {
@@ -155,7 +156,7 @@ function TaskItem({
           }}
           onMouseLeave={(e) => {
             if (!isDragging) {
-              e.currentTarget.style.backgroundColor = "transparent";
+              e.currentTarget.style.backgroundColor = "var(--bg-card)";
             }
           }}
         >

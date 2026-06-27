@@ -56,15 +56,16 @@ export default function ArchivedTaskItem({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.12, ease: "easeOut" }}
-        className="group/archived relative flex items-stretch min-h-[44px] transition-colors duration-150"
+        className="group/archived relative flex items-stretch min-h-[44px] rounded-[var(--radius-md)] border transition-colors duration-150"
         style={{
-          backgroundColor: "transparent",
+          backgroundColor: "var(--bg-card)",
+          borderColor: "var(--border-color)",
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = "transparent";
+          e.currentTarget.style.backgroundColor = "var(--bg-card)";
         }}
       >
         <div className="flex-1 flex items-center gap-3 py-2 pr-3 min-w-0">

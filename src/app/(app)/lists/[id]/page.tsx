@@ -419,7 +419,7 @@ export default function ListDetailPage() {
                       </span>
                     </div>
                     {pendingTasks.length > 0 ? (
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         <SortableTaskContainer
                           tasks={pendingTasks}
                           onReorder={(newOrder) =>
@@ -505,7 +505,7 @@ export default function ListDetailPage() {
                             transition={{ duration: 0.2, ease: "easeInOut" }}
                             className="overflow-hidden"
                           >
-                            <div className="space-y-1 pt-0.5">
+                            <div className="space-y-2 pt-0.5">
                               <SortableTaskContainer
                                 tasks={completedTasks}
                                 onReorder={(newOrder) =>
@@ -639,7 +639,7 @@ export default function ListDetailPage() {
                     transition={{ duration: 0.2, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <div className="space-y-1 pt-2">
+                    <div className="space-y-2 pt-2">
                       <AnimatePresence mode="popLayout">
                         {archivedTasks.map((task) => (
                           <ArchivedTaskItem

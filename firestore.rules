@@ -52,6 +52,12 @@ service cloud.firestore {
       return resource.data.memberIds != null && uid() in resource.data.memberIds;
     }
 
+    // Cross-collection lookup for task permissions (task stores its listId)
+    function isListMemberOf(listId) {
+      let l = get(/databases/$(database)/documents/lists/$(listId)).data;
+      return l != null && l.memberIds != null && uid() in l.memberIds;
+    }
+
     function isAcceptingListInvitation() {
       return isAuth() &&
         !isListMember() &&
@@ -89,6 +95,7 @@ service cloud.firestore {
       allow update: if isAuth() && (
         resource.data.createdBy == uid() ||
         resource.data.assignedTo == uid() ||
+        (resource.data.listId != null && isListMemberOf(resource.data.listId)) ||
         (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
       );
       // Hard delete only allowed as part of team/list cascade deletion by owner
