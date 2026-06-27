@@ -4,27 +4,13 @@ import React, { useState, useMemo } from "react";
 import { Task, MemberRole } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
-import { canCompleteTask, canManageTaskOptions } from "@/lib/permissions";
+import { canCompleteTask } from "@/lib/permissions";
 import { motion } from "framer-motion";
 import TaskCompletionModal from "./TaskCompletionModal";
 import TaskDetailPanel from "./TaskDetailPanel";
-import TaskOptionsBar from "./TaskOptionsBar";
-import {
-  CheckCircle2,
-  Circle,
-  CalendarDays,
-  User,
-  MapPin,
-  Phone,
-  GripVertical,
-  UserCheck,
-  UserCog,
-  FileText,
-  Tag,
-} from "lucide-react";
+import { CheckCircle2, Circle, GripVertical, CalendarDays } from "lucide-react";
 import type { DragHandleProps } from "./SortableTaskContainer";
 import { cn } from "@/lib/utils";
-import { getPriorityConfig } from "@/lib/priority";
 
 interface TaskItemProps {
   task: Task;
@@ -72,6 +58,16 @@ function formatTaskDate(dateStr?: string | null): string | null {
   return year === currentYear ? `${day} ${month}` : `${day} ${month} ${year}`;
 }
 
+function isDueUrgent(dateStr?: string | null): boolean {
+  if (!dateStr) return false;
+  const d = new Date(dateStr + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(d);
+  target.setHours(0, 0, 0, 0);
+  return target.getTime() <= today.getTime();
+}
+
 function TaskItem({
   task,
   role,
@@ -84,31 +80,15 @@ function TaskItem({
   const [showCompletionModal, setShowCompletionModal] = useState(false);
 
   const { user } = useAuthStore();
-  const { uncompleteTask, updateTask } = useTaskStore();
+  const { uncompleteTask } = useTaskStore();
 
   const isCompleted = task.status === "completed";
   const canComplete = canCompleteTask(role);
-  const canManageOptions = canManageTaskOptions(role);
 
-  const pc = task.priority ? getPriorityConfig(task.priority) : null;
   const dueText = useMemo(() => formatTaskDate(task.dueDate), [task.dueDate]);
-  const assignedName = task.assignedTo ? memberNames[task.assignedTo] : null;
-  const hasSecondary =
-    pc ||
-    dueText ||
-    assignedName ||
-    task.tags?.length ||
-    task.location ||
-    task.phoneNumbers?.some((p) => p.trim());
-
-  const completedByName = task.completedBy
-    ? memberNames[task.completedBy] || "Usuario"
-    : null;
-  const performedByName = task.performedBy
-    ? memberNames[task.performedBy] || "Usuario"
-    : null;
-  const showCompletionInfo = isCompleted && completedByName;
-  const firstPhone = task.phoneNumbers?.find((p) => p.trim());
+  const dueUrgent = useMemo(() => isDueUrgent(task.dueDate), [task.dueDate]);
+  const hasNote = !!task.description?.trim();
+  const hasRecurrence = !!task.recurrence;
 
   const handleToggleComplete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -118,11 +98,6 @@ function TaskItem({
     } else {
       setShowCompletionModal(true);
     }
-  };
-
-  const saveField = async (updates: Partial<Task>) => {
-    if (!user) return;
-    await updateTask(task.id, updates, user.id, user.name);
   };
 
   return (
@@ -142,7 +117,7 @@ function TaskItem({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.12, ease: "easeOut" }}
           className={cn(
-            "relative flex items-stretch min-h-[44px] rounded-[var(--radius-md)] border transition-colors duration-150",
+            "relative flex items-center min-h-[48px] px-4 border-b transition-colors duration-150",
             isDragging && "z-10",
           )}
           style={{
@@ -160,7 +135,7 @@ function TaskItem({
             }
           }}
         >
-          {/* Drag handle */}
+          {/* Drag handle — subtle, only on hover/desktop */}
           {dragHandleProps && (
             <div
               {...(dragHandleProps.listeners as Record<
@@ -168,11 +143,9 @@ function TaskItem({
                 unknown
               > as React.HTMLAttributes<HTMLDivElement>)}
               onClick={(e) => e.stopPropagation()}
-              className="flex-shrink-0 flex items-center justify-center sm:opacity-0 sm:group-hover/task:opacity-100 transition-opacity"
+              className="absolute left-0 top-0 bottom-0 hidden sm:flex items-center justify-center w-6 opacity-0 group-hover/task:opacity-100 transition-opacity cursor-grab"
               style={{
                 touchAction: "none",
-                cursor: "grab",
-                width: "28px",
                 WebkitUserSelect: "none",
                 userSelect: "none",
               }}
@@ -185,9 +158,9 @@ function TaskItem({
             </div>
           )}
 
-          {/* Main row — only empty space opens detail */}
+          {/* Main row — opens detail panel on empty space */}
           <div
-            className="flex-1 flex items-center gap-3 py-2 pr-3 min-w-0"
+            className="flex-1 flex items-center gap-3 py-2 min-w-0"
             onClick={(e) => {
               if (
                 (e.target as HTMLElement).closest(
@@ -221,173 +194,46 @@ function TaskItem({
               )}
             </button>
 
-            {/* Title + metadata */}
+            {/* Title + compact metadata */}
             <div className="flex-1 min-w-0 flex flex-col justify-center">
               <p
                 className={cn(
-                  "text-[var(--text-base)] font-medium leading-snug",
+                  "text-[var(--text-base)] font-medium leading-snug line-clamp-2",
                   isCompleted && "line-through opacity-70",
                 )}
                 style={{
                   color: isCompleted
                     ? "var(--text-secondary)"
                     : "var(--text-primary)",
-                  wordBreak: "break-word",
                 }}
               >
                 {task.title}
               </p>
 
-              <div
-                className={cn(
-                  "flex items-center gap-2 mt-0.5 line-clamp-1",
-                  isCompleted && "opacity-60",
-                )}
-              >
-                {task.description && (
-                  <span className="inline-flex items-center gap-1 text-[var(--text-xs)] max-w-[160px] sm:max-w-[220px]">
-                    <FileText
-                      size={11}
-                      strokeWidth={1.8}
-                      style={{ color: "var(--text-tertiary)" }}
-                    />
+              {(dueText || hasNote || hasRecurrence) && (
+                <div
+                  className={cn(
+                    "flex items-center gap-2 mt-0.5 text-[var(--text-xs)] line-clamp-1",
+                    isCompleted && "opacity-60",
+                  )}
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  {dueText && (
                     <span
-                      className="truncate"
-                      style={{ color: "var(--text-tertiary)" }}
+                      className={cn(
+                        "inline-flex items-center gap-1",
+                        dueUrgent && !isCompleted && "text-[var(--text-error)]",
+                      )}
                     >
-                      {task.description}
+                      <CalendarDays size={11} strokeWidth={1.8} />
+                      <span>{dueText}</span>
                     </span>
-                  </span>
-                )}
-
-                {dueText && (
-                  <span className="inline-flex items-center gap-1 text-[var(--text-xs)]">
-                    <CalendarDays
-                      size={11}
-                      strokeWidth={1.8}
-                      style={{ color: "var(--text-tertiary)" }}
-                    />
-                    <span style={{ color: "var(--text-tertiary)" }}>
-                      {dueText}
-                    </span>
-                  </span>
-                )}
-
-                {assignedName && (
-                  <span className="inline-flex items-center gap-1 text-[var(--text-xs)]">
-                    <User
-                      size={11}
-                      strokeWidth={1.8}
-                      style={{ color: "var(--text-tertiary)" }}
-                    />
-                    <span style={{ color: "var(--text-tertiary)" }}>
-                      {assignedName}
-                    </span>
-                  </span>
-                )}
-
-                {task.location && (
-                  <a
-                    href={`https://maps.google.com/?q=${encodeURIComponent(task.location)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 text-[var(--text-xs)] hover:underline"
-                  >
-                    <MapPin
-                      size={11}
-                      strokeWidth={1.8}
-                      style={{ color: "var(--text-tertiary)" }}
-                    />
-                    <span
-                      className="truncate max-w-[100px] sm:max-w-[140px]"
-                      style={{ color: "var(--text-link)" }}
-                    >
-                      {task.location}
-                    </span>
-                  </a>
-                )}
-
-                {firstPhone && (
-                  <a
-                    href={`tel:${firstPhone.replace(/\s/g, "")}`}
-                    onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 text-[var(--text-xs)] hover:underline"
-                  >
-                    <Phone
-                      size={11}
-                      strokeWidth={1.8}
-                      style={{ color: "var(--text-tertiary)" }}
-                    />
-                    <span style={{ color: "var(--text-success)" }}>
-                      {firstPhone}
-                    </span>
-                  </a>
-                )}
-
-                {task.tags && task.tags.length > 0 && (
-                  <span className="inline-flex items-center gap-1 text-[var(--text-xs)]">
-                    <Tag
-                      size={11}
-                      strokeWidth={1.8}
-                      style={{ color: "var(--text-tertiary)" }}
-                    />
-                    <span style={{ color: "var(--text-tertiary)" }}>
-                      {task.tags[0]}
-                      {task.tags.length > 1 && ` +${task.tags.length - 1}`}
-                    </span>
-                  </span>
-                )}
-
-                {pc && !isCompleted && (
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 text-[var(--text-xs)] font-medium",
-                      pc.text,
-                    )}
-                  >
-                    <span>{pc.emoji}</span>
-                    <span>{pc.label}</span>
-                  </span>
-                )}
-
-                {isCompleted && showCompletionInfo && (
-                  <span className="inline-flex items-center gap-1 text-[var(--text-xs)]">
-                    <UserCheck
-                      size={11}
-                      strokeWidth={1.8}
-                      style={{ color: "#16a34a" }}
-                    />
-                    <span style={{ color: "var(--text-tertiary)" }}>
-                      {completedByName}
-                    </span>
-                  </span>
-                )}
-              </div>
+                  )}
+                  {hasRecurrence && !isCompleted && <span>↻</span>}
+                  {hasNote && <span>📝</span>}
+                </div>
+              )}
             </div>
-
-            {/* Task options */}
-            {!isCompleted && canManageOptions && (
-              <div
-                className="hidden sm:flex items-center self-center"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <TaskOptionsBar
-                  dueDate={task.dueDate}
-                  dueTime={task.dueTime}
-                  reminders={task.reminders || []}
-                  recurrence={task.recurrence}
-                  onReminderChange={(r) => saveField({ reminders: r })}
-                  onDueDateChange={(d) =>
-                    saveField({
-                      dueDate: d,
-                      dueTime: d ? task.dueTime || null : null,
-                    })
-                  }
-                  onRecurrenceChange={(r) => saveField({ recurrence: r })}
-                />
-              </div>
-            )}
           </div>
         </motion.div>
       </div>

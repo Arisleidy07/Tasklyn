@@ -56,7 +56,7 @@ export default function ArchivedTaskItem({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.12, ease: "easeOut" }}
-        className="group/archived relative flex items-stretch min-h-[44px] rounded-[var(--radius-md)] border transition-colors duration-150"
+        className="group/archived relative flex items-stretch min-h-[48px] px-4 border-b transition-colors duration-150"
         style={{
           backgroundColor: "var(--bg-card)",
           borderColor: "var(--border-color)",
@@ -68,7 +68,7 @@ export default function ArchivedTaskItem({
           e.currentTarget.style.backgroundColor = "var(--bg-card)";
         }}
       >
-        <div className="flex-1 flex items-center gap-3 py-2 pr-3 min-w-0">
+        <div className="flex-1 flex items-center gap-3 py-2 min-w-0">
           <div
             className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full"
             style={{ backgroundColor: "var(--bg-secondary)" }}
@@ -107,7 +107,7 @@ export default function ArchivedTaskItem({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center self-center gap-0.5 flex-shrink-0 pr-3">
+          <div className="flex items-center self-center gap-0.5 flex-shrink-0">
             {canEdit && (
               <button
                 onClick={handleRestore}
