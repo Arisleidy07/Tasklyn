@@ -1194,62 +1194,43 @@ export default function EditListModal({
                       <motion.div
                         initial={{ opacity: 0, y: -8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="relative rounded-3xl overflow-hidden"
+                        className="relative rounded-2xl overflow-hidden w-full border-2 shadow-lg"
                         style={{
-                          minHeight: 280,
-                          boxShadow:
-                            "0 12px 48px rgba(0,0,0,0.4), 0 0 0 2px rgba(59,130,246,0.5)",
+                          borderColor: "var(--border-color)",
+                          backgroundColor: "var(--bg-secondary)",
+                          boxShadow: "var(--shadow-card)",
+                          maxHeight: 420,
                         }}
                       >
                         <img
                           src={backgroundImage}
                           alt="Fondo activo"
-                          className="w-full object-cover"
-                          style={{ maxHeight: 360, minHeight: 280 }}
+                          className="w-full h-auto object-contain"
+                          style={{ maxHeight: 420 }}
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-                        <div className="absolute top-4 left-4">
+                        <div className="absolute top-3 left-3">
                           <span
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest text-white"
                             style={{
-                              backgroundColor: "rgba(37,99,235,0.9)",
-                              backdropFilter: "blur(12px)",
-                              boxShadow: "0 4px 16px rgba(37,99,235,0.5)",
+                              backgroundColor: "var(--text-success)",
+                              boxShadow: "var(--shadow-sm)",
                             }}
                           >
                             <Check size={10} strokeWidth={3} /> Fondo activo
                           </span>
                         </div>
-                        <div className="absolute bottom-0 left-0 right-0 px-6 py-6 flex items-end justify-between gap-4">
-                          <div className="min-w-0">
-                            <p className="text-white/60 text-[11px] font-semibold uppercase tracking-wider mb-1">
-                              {bgImages.find((i) => i.url === backgroundImage)
-                                ?.category || "Personalizado"}
-                            </p>
-                            <p
-                              className="text-white font-bold text-2xl leading-tight truncate"
-                              style={{
-                                textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-                              }}
-                            >
-                              {bgImages.find((i) => i.url === backgroundImage)
-                                ?.displayName || "Imagen personalizada"}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() =>
-                              handleSelectBackground(backgroundImage)
-                            }
-                            className="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-2xl text-sm font-bold text-white transition-all hover:scale-105 active:scale-95"
-                            style={{
-                              backgroundColor: "rgba(239,68,68,0.8)",
-                              backdropFilter: "blur(12px)",
-                              boxShadow: "0 4px 20px rgba(239,68,68,0.45)",
-                            }}
-                          >
-                            <X size={13} /> Quitar fondo
-                          </button>
-                        </div>
+                        <button
+                          onClick={() =>
+                            handleSelectBackground(backgroundImage)
+                          }
+                          className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white transition-all hover:scale-105 active:scale-95"
+                          style={{
+                            backgroundColor: "var(--text-error)",
+                            boxShadow: "var(--shadow-sm)",
+                          }}
+                        >
+                          <X size={13} /> Quitar
+                        </button>
                       </motion.div>
                     ) : (
                       <div
