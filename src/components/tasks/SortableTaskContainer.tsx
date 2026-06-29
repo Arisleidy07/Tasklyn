@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useRef, useState, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -11,6 +11,8 @@ import {
   DragEndEvent,
   DragOverlay,
   DragStartEvent,
+  DragMoveEvent,
+  useDndContext,
 } from "@dnd-kit/core";
 import {
   LongPressSensor,
@@ -120,6 +122,7 @@ export function SortableTaskItem({ task, children }: SortableTaskItemProps) {
 interface SortableTaskContainerProps {
   tasks: Task[];
   onReorder: (newOrder: Task[]) => void;
+  scrollContainerRef?: React.RefObject<HTMLDivElement>;
   children: (
     task: Task,
     dragHandleProps: DragHandleProps,
@@ -131,30 +134,113 @@ interface SortableTaskContainerProps {
 export function SortableTaskContainer({
   tasks,
   onReorder,
+  scrollContainerRef: externalScrollRef,
   children,
 }: SortableTaskContainerProps) {
   const [activeId, setActiveId] = React.useState<string | null>(null);
+  const scrollContainerRef = externalScrollRef || useRef<HTMLDivElement>(null);
+  const autoScrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
 
-  const sensors = useSensors(
-    // PointerSensor with distance: 5 (drag immediately on move)
-    // Works for both desktop and mobile like Microsoft To Do
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
+  const isTouchDevice = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(pointer: coarse)").matches;
+  }, []);
+
+  const sensorList = [
+    // Desktop: PointerSensor with distance (drag immediately on move)
+    !isTouchDevice
+      ? useSensor(PointerSensor, {
+          activationConstraint: {
+            distance: 5,
+          },
+        })
+      : null,
+    // Mobile: PointerSensor with delay + tolerance (long-press behavior)
+    isTouchDevice
+      ? useSensor(PointerSensor, {
+          activationConstraint: {
+            delay: 500,
+            tolerance: 5,
+          },
+        })
+      : null,
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
-  );
+  ].filter(Boolean);
+
+  const sensors = useSensors(...sensorList);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id as string);
   }, []);
 
+  const handleDragMove = useCallback(
+    (event: DragMoveEvent) => {
+      const container = scrollContainerRef.current;
+      if (!container || !activeId) return;
+
+      const { delta } = event;
+      const containerRect = container.getBoundingClientRect();
+      const scrollThreshold = 80; // px from edge to trigger auto-scroll
+      const scrollSpeed = 10; // px per scroll tick
+
+      // Get pointer position from the activator event
+      const activatorEvent = event.activatorEvent as
+        | PointerEvent
+        | MouseEvent
+        | TouchEvent
+        | null;
+      if (!activatorEvent) return;
+
+      let pointerY: number;
+      if ("clientY" in activatorEvent) {
+        pointerY = activatorEvent.clientY;
+      } else if (
+        "touches" in activatorEvent &&
+        activatorEvent.touches.length > 0
+      ) {
+        pointerY = activatorEvent.touches[0].clientY;
+      } else {
+        return;
+      }
+
+      // Check if near top edge
+      if (pointerY - containerRect.top < scrollThreshold) {
+        if (!autoScrollIntervalRef.current) {
+          autoScrollIntervalRef.current = setInterval(() => {
+            container.scrollBy({ top: -scrollSpeed, behavior: "auto" });
+          }, 16);
+        }
+      }
+      // Check if near bottom edge
+      else if (containerRect.bottom - pointerY < scrollThreshold) {
+        if (!autoScrollIntervalRef.current) {
+          autoScrollIntervalRef.current = setInterval(() => {
+            container.scrollBy({ top: scrollSpeed, behavior: "auto" });
+          }, 16);
+        }
+      }
+      // Clear auto-scroll if not near edges
+      else {
+        if (autoScrollIntervalRef.current) {
+          clearInterval(autoScrollIntervalRef.current);
+          autoScrollIntervalRef.current = null;
+        }
+      }
+    },
+    [activeId],
+  );
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       setActiveId(null);
+      if (autoScrollIntervalRef.current) {
+        clearInterval(autoScrollIntervalRef.current);
+        autoScrollIntervalRef.current = null;
+      }
       const { active, over } = event;
       if (!over || active.id === over.id) return;
       const oldIndex = tasks.findIndex((t) => t.id === active.id);
@@ -165,7 +251,13 @@ export function SortableTaskContainer({
     [tasks, onReorder],
   );
 
-  const handleDragCancel = useCallback(() => setActiveId(null), []);
+  const handleDragCancel = useCallback(() => {
+    setActiveId(null);
+    if (autoScrollIntervalRef.current) {
+      clearInterval(autoScrollIntervalRef.current);
+      autoScrollIntervalRef.current = null;
+    }
+  }, []);
 
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
 
@@ -174,6 +266,7 @@ export function SortableTaskContainer({
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
+      onDragMove={handleDragMove}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
