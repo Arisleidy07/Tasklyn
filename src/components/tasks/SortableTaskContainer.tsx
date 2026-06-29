@@ -4,7 +4,7 @@ import React, { useCallback } from "react";
 import {
   DndContext,
   closestCenter,
-  MouseSensor,
+  PointerSensor,
   KeyboardSensor,
   useSensor,
   useSensors,
@@ -136,13 +136,12 @@ export function SortableTaskContainer({
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
   const sensors = useSensors(
-    // Long-press anywhere on the card to drag; quick tap opens detail.
-    useSensor(LongPressSensor, {
-      activationConstraint: LONG_PRESS_CONSTRAINT,
-    }),
-    // Fallback for mouse users who prefer a small drag movement.
-    useSensor(MouseSensor, {
-      activationConstraint: { distance: 8 },
+    // PointerSensor with distance: 5 (drag immediately on move)
+    // Works for both desktop and mobile like Microsoft To Do
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,

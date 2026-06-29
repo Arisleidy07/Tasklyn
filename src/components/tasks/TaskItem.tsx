@@ -178,16 +178,9 @@ function TaskItem({
       {/* Whole-card drag handle: setNodeRef + listeners + attributes */}
       <div
         ref={dragHandleProps?.setNodeRef as React.Ref<HTMLDivElement>}
-        {...(dragHandleProps?.attributes as Record<
-          string,
-          unknown
-        > as React.HTMLAttributes<HTMLDivElement>)}
-        {...(dragHandleProps?.listeners as Record<
-          string,
-          unknown
-        > as React.HTMLAttributes<HTMLDivElement>)}
+        {...dragHandleProps?.attributes}
+        {...dragHandleProps?.listeners}
         className="group/task select-none mb-2 sm:mb-3 w-full max-w-full"
-        style={{ touchAction: "pan-y" }}
       >
         <motion.div
           layout
