@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
@@ -14,6 +14,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
 import Input from "@/components/ui/Input";
+import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import PremiumMembersPanel from "@/components/members/PremiumMembersPanel";
 import MembersPanel from "@/components/members/MembersPanel";
 import EditListModal from "@/components/members/EditListModal";
@@ -64,6 +65,10 @@ export default function ListDetailPage() {
   const [newTaskDescription, setNewTaskDescription] = useState("");
   const [newTaskLocation, setNewTaskLocation] = useState("");
   const [newTaskPhones, setNewTaskPhones] = useState<string[]>([""]);
+  const [newTaskPriority, setNewTaskPriority] = useState<
+    "low" | "medium" | "high" | "urgent"
+  >("medium");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const list = getList(listId);
   const tasks = getTasksByList(listId);
@@ -111,7 +116,15 @@ export default function ListDetailPage() {
   );
 
   const completedTasks = useMemo(
-    () => activeTasks.filter((t) => t.status === "completed"),
+    () =>
+      activeTasks
+        .filter((t) => t.status === "completed")
+        .sort((a, b) => {
+          // Sort by completedAt timestamp, newest first
+          const aTime = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+          const bTime = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+          return bTime - aTime;
+        }),
     [activeTasks],
   );
 
@@ -199,9 +212,10 @@ export default function ListDetailPage() {
     await createTask({
       listId,
       title: newTaskTitle.trim(),
-      description: newTaskDescription.trim(),
+      description: newTaskDescription.trim() || "",
       location: newTaskLocation.trim() || undefined,
       phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
+      priority: newTaskPriority,
       createdBy: user.id,
     });
 
@@ -210,6 +224,7 @@ export default function ListDetailPage() {
     setNewTaskDescription("");
     setNewTaskLocation("");
     setNewTaskPhones([""]);
+    setNewTaskPriority("medium");
     setShowAddTask(false);
   };
 
@@ -290,7 +305,10 @@ export default function ListDetailPage() {
           onBack={handleBackClick}
         />
 
-        <div className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto pb-6">
+        <div
+          ref={scrollContainerRef}
+          className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto pb-6"
+        >
           {/* Filtros - Segmented Control (Pendientes, Completadas, Todas) */}
           <div
             className="flex rounded-[var(--radius-lg)] p-1 mb-5 gap-1"
@@ -439,6 +457,7 @@ export default function ListDetailPage() {
                           onReorder={(newOrder) =>
                             reorderTasks(newOrder.map((t) => t.id))
                           }
+                          scrollContainerRef={scrollContainerRef}
                         >
                           {(
                             task,
@@ -542,6 +561,7 @@ export default function ListDetailPage() {
                                 onReorder={(newOrder) =>
                                   reorderTasks(newOrder.map((t) => t.id))
                                 }
+                                scrollContainerRef={scrollContainerRef}
                               >
                                 {(
                                   task,
@@ -575,6 +595,7 @@ export default function ListDetailPage() {
                   onReorder={(newOrder) =>
                     reorderTasks(newOrder.map((t) => t.id))
                   }
+                  scrollContainerRef={scrollContainerRef}
                 >
                   {(task, dragHandleProps, isDragging, justDraggedRef) => (
                     <TaskItem
@@ -725,13 +746,65 @@ export default function ListDetailPage() {
                 </span>
                 Título de la tarea
               </label>
-              <Input
+              <AutoResizeTextarea
                 placeholder="Ej: Instalar router principal"
                 value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
+                onChange={setNewTaskTitle}
                 autoFocus
-                className="h-11"
+                className="text-[var(--text-base)] px-3 py-2.5 w-full leading-relaxed bg-transparent"
+                minRows={1}
+                maxRows={5}
               />
+            </div>
+
+            {/* Prioridad */}
+            <div className="space-y-1.5">
+              <label
+                className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <AlertCircle
+                  size={12}
+                  style={{ color: "var(--text-tertiary)" }}
+                />
+                Prioridad
+              </label>
+              <div className="flex gap-2">
+                {[
+                  { value: "low" as const, label: "Baja", color: "#22c55e" },
+                  {
+                    value: "medium" as const,
+                    label: "Media",
+                    color: "#f59e0b",
+                  },
+                  { value: "high" as const, label: "Alta", color: "#f97316" },
+                  {
+                    value: "urgent" as const,
+                    label: "Urgente",
+                    color: "#ef4444",
+                  },
+                ].map((priority) => (
+                  <button
+                    key={priority.value}
+                    type="button"
+                    onClick={() => setNewTaskPriority(priority.value)}
+                    className={cn(
+                      "flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all",
+                      newTaskPriority === priority.value
+                        ? "text-white shadow-sm"
+                        : "opacity-60 hover:opacity-100",
+                    )}
+                    style={{
+                      backgroundColor:
+                        newTaskPriority === priority.value
+                          ? priority.color
+                          : "var(--bg-secondary)",
+                    }}
+                  >
+                    {priority.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Teléfonos dinámicos */}

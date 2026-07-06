@@ -39,6 +39,7 @@ import {
   MessageCircle,
   ChevronDown,
   Plus,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -304,6 +305,9 @@ export default function TaskDetailPanel({
   const [localLocation, setLocalLocation] = useState("");
   const [localPhones, setLocalPhones] = useState<string[]>([""]);
   const [localAssignedTo, setLocalAssignedTo] = useState<string | null>(null);
+  const [localPriority, setLocalPriority] = useState<
+    "low" | "medium" | "high" | "urgent"
+  >("medium");
   const [assignOpen, setAssignOpen] = useState(false);
   const [history, setHistory] = useState<TaskHistoryEntry[]>([]);
   const [historyLimit, setHistoryLimit] = useState(5);
@@ -386,6 +390,9 @@ export default function TaskDetailPanel({
       setLocalLocation(task.location || "");
       setLocalPhones(task.phoneNumbers?.length ? [...task.phoneNumbers] : [""]);
       setLocalAssignedTo(task.assignedTo || null);
+      setLocalPriority(
+        (task.priority === "normal" ? "medium" : task.priority) || "medium",
+      );
       setShowDeleteConfirm(false);
       setAssignOpen(false);
       setHistoryLimit(5);
@@ -396,6 +403,13 @@ export default function TaskDetailPanel({
   useEffect(() => {
     if (!isOpen) {
       flushPending();
+      // Reset local state to prevent stale values on next open
+      setLocalTitle("");
+      setLocalDescription("");
+      setLocalLocation("");
+      setLocalPhones([""]);
+      setLocalAssignedTo(null);
+      setLocalPriority("medium");
     }
   }, [isOpen, flushPending]);
 
@@ -479,8 +493,15 @@ export default function TaskDetailPanel({
   const handleDescriptionChange = (value: string) => {
     setLocalDescription(value);
     queueSave("description", {
-      description: value.trim() || undefined,
+      description: value.trim() || "",
     });
+  };
+
+  const handlePriorityChange = (
+    priority: "low" | "medium" | "high" | "urgent",
+  ) => {
+    setLocalPriority(priority);
+    queueSave("priority", { priority });
   };
 
   const handleLocationChange = (value: string) => {
@@ -686,6 +707,57 @@ export default function TaskDetailPanel({
                   {task.description}
                 </p>
               )}
+            </Section>
+          )}
+
+          {/* Priority */}
+          {canEdit && (
+            <Section
+              icon={
+                <AlertCircle
+                  size={16}
+                  style={{ color: "var(--text-tertiary)" }}
+                />
+              }
+              label="Prioridad"
+            >
+              <div className="flex gap-2">
+                {[
+                  { value: "low" as const, label: "Baja", color: "#22c55e" },
+                  {
+                    value: "medium" as const,
+                    label: "Media",
+                    color: "#f59e0b",
+                  },
+                  { value: "high" as const, label: "Alta", color: "#f97316" },
+                  {
+                    value: "urgent" as const,
+                    label: "Urgente",
+                    color: "#ef4444",
+                  },
+                ].map((priority) => (
+                  <button
+                    key={priority.value}
+                    type="button"
+                    onClick={() => handlePriorityChange(priority.value)}
+                    onBlur={flushPending}
+                    className={cn(
+                      "flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all",
+                      localPriority === priority.value
+                        ? "text-white shadow-sm"
+                        : "opacity-60 hover:opacity-100",
+                    )}
+                    style={{
+                      backgroundColor:
+                        localPriority === priority.value
+                          ? priority.color
+                          : "var(--bg-secondary)",
+                    }}
+                  >
+                    {priority.label}
+                  </button>
+                ))}
+              </div>
             </Section>
           )}
 

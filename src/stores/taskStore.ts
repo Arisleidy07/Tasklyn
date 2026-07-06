@@ -20,6 +20,8 @@ import {
   notifyTaskCompleted,
   notifyTaskAssigned,
   notifyTaskEdited,
+  notifyPriorityChanged,
+  notifyDescriptionChanged,
 } from "@/lib/notify";
 import { toISODate } from "@/lib/dateUtils";
 import {
@@ -351,7 +353,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         createHistoryEntry(
           "description_changed",
           performedBy,
-          "Descripción actualizada",
+          updates.description
+            ? "Descripción actualizada"
+            : "Descripción eliminada",
           {
             previousValue: task.description || "",
             newValue: updates.description || "",
@@ -503,21 +507,39 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }
 
     // Notify task creator when task is edited (if not the creator editing)
-    if (
-      performerName &&
-      performedBy !== task.createdBy &&
-      (updates.title ||
-        updates.description ||
-        updates.dueDate ||
-        updates.location)
-    ) {
-      notifyTaskEdited(
-        task.createdBy,
-        task.title,
-        performerName,
-        task.id,
-        task.listId,
-      );
+    if (performerName && performedBy !== task.createdBy) {
+      if (updates.priority) {
+        notifyPriorityChanged(
+          task.createdBy,
+          task.title,
+          performerName,
+          task.id,
+          task.listId,
+        );
+      } else if (updates.description !== undefined) {
+        notifyDescriptionChanged(
+          task.createdBy,
+          task.title,
+          performerName,
+          task.id,
+          task.listId,
+        );
+      } else if (updates.title || updates.dueDate || updates.location) {
+        notifyTaskEdited(
+          task.createdBy,
+          task.title,
+          performerName,
+          task.id,
+          task.listId,
+          updates.title
+            ? "title"
+            : updates.dueDate
+              ? "dueDate"
+              : updates.location
+                ? "location"
+                : undefined,
+        );
+      }
     }
   },
 
@@ -619,44 +641,30 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const { id: _completedEntryId, ...completedEntryData } = completedEntry;
     await addTaskHistoryEntry(id, completedEntryData);
 
-    // Log activity
+    // Log activity (only team activity subcollection, not legacy)
     const currentUser = useAuthStore.getState().user;
     const list = useListStore
       .getState()
       .lists.find((l) => l.id === task.listId);
-    if (currentUser) {
+    if (currentUser && list?.teamId) {
       const actualPerformer = performedByUser || {
         id: currentUser.id,
         name: currentUser.name,
       };
-      logTaskCompleted(
-        {
-          id: task.id,
-          title: task.title,
-          listId: task.listId,
-          listName: list?.name,
-        },
-        {
-          id: currentUser.id,
-          name: currentUser.name,
-          photoURL: currentUser.photoURL,
-        },
-        actualPerformer.id !== currentUser.id ? actualPerformer : undefined,
-      );
-      // Team activity subcollection
-      if (list?.teamId) {
-        logTeamActivity(list.teamId, {
-          teamId: list.teamId,
-          userId: currentUser.id,
-          userName: currentUser.name,
-          userPhotoURL: currentUser.photoURL,
-          action: "task_completed",
-          entityType: "task",
-          entityId: task.id,
-          entityName: task.title,
-          detail: `${currentUser.name} completó "${task.title}"`,
-        });
-      }
+      logTeamActivity(list.teamId, {
+        teamId: list.teamId,
+        userId: currentUser.id,
+        userName: currentUser.name,
+        userPhotoURL: currentUser.photoURL,
+        action: "task_completed",
+        entityType: "task",
+        entityId: task.id,
+        entityName: task.title,
+        detail:
+          actualPerformer.id !== currentUser.id
+            ? `${currentUser.name} marcó como completada "${task.title}" · Realizada por ${actualPerformer.name}`
+            : `${currentUser.name} completó "${task.title}"`,
+      });
     }
 
     // Notify relevant members (owner, admin, or editor), excluding the completer

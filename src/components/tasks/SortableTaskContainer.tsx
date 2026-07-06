@@ -122,7 +122,7 @@ export function SortableTaskItem({ task, children }: SortableTaskItemProps) {
 interface SortableTaskContainerProps {
   tasks: Task[];
   onReorder: (newOrder: Task[]) => void;
-  scrollContainerRef?: React.RefObject<HTMLDivElement>;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
   children: (
     task: Task,
     dragHandleProps: DragHandleProps,
@@ -138,7 +138,8 @@ export function SortableTaskContainer({
   children,
 }: SortableTaskContainerProps) {
   const [activeId, setActiveId] = React.useState<string | null>(null);
-  const scrollContainerRef = externalScrollRef || useRef<HTMLDivElement>(null);
+  const internalScrollRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = externalScrollRef || internalScrollRef;
   const autoScrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
     null,
   );

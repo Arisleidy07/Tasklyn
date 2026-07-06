@@ -171,7 +171,31 @@ function TaskItem({
     setShowDetailPanel(true);
   };
 
-  const hasMeta = firstPhone || task.location || reminderText || dueText;
+  const hasMeta =
+    firstPhone || task.location || reminderText || dueText || isCompleted;
+
+  // Format completion info
+  const completionInfo = useMemo(() => {
+    if (!isCompleted || !task.completedAt) return null;
+    const completedByName = task.completedBy
+      ? memberNames[task.completedBy] || "Usuario"
+      : "Usuario";
+    const completedDate = new Date(task.completedAt);
+    const dateStr = completedDate.toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "short",
+    });
+    const timeStr = completedDate.toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+    return {
+      name: completedByName,
+      date: dateStr,
+      time: timeStr,
+    };
+  }, [isCompleted, task.completedAt, task.completedBy, memberNames]);
 
   return (
     <>
@@ -180,7 +204,7 @@ function TaskItem({
         ref={dragHandleProps?.setNodeRef as React.Ref<HTMLDivElement>}
         {...dragHandleProps?.attributes}
         {...dragHandleProps?.listeners}
-        className="group/task select-none mb-2 sm:mb-3 w-full max-w-full"
+        className="group/task select-none mb-1.5 sm:mb-2 w-full max-w-full"
       >
         <motion.div
           layout
@@ -189,7 +213,7 @@ function TaskItem({
           exit={{ opacity: 0, y: 8 }}
           transition={{ duration: 0.18, ease: "easeOut" }}
           className={cn(
-            "glass-card relative flex flex-col gap-2 sm:gap-3 p-3 sm:p-4 rounded-[var(--radius-card)] cursor-pointer select-none w-full max-w-full overflow-hidden",
+            "glass-card relative flex flex-col gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-[var(--radius-card)] cursor-pointer select-none w-full max-w-full overflow-hidden",
             isDragging && "z-10 shadow-2xl",
           )}
           onClick={handleCardClick}
@@ -208,7 +232,7 @@ function TaskItem({
           )}
 
           {/* Title row */}
-          <div className="flex items-start gap-3 sm:pl-6">
+          <div className="flex items-start gap-2 sm:pl-5">
             <button
               onClick={handleToggleComplete}
               disabled={!canComplete}
@@ -246,7 +270,7 @@ function TaskItem({
           {hasDescription && (
             <p
               className={cn(
-                "text-[var(--text-base)] leading-relaxed sm:pl-9 line-clamp-2 break-words",
+                "text-[var(--text-base)] leading-relaxed sm:pl-7 line-clamp-2 break-words",
                 isCompleted && "opacity-70",
               )}
               style={{ color: "var(--text-secondary)" }}
@@ -255,9 +279,9 @@ function TaskItem({
             </p>
           )}
 
-          {/* Metadata chips: Teléfono · Ubicación · Recordatorio · Fecha */}
+          {/* Metadata chips: Teléfono · Ubicación · Recordatorio · Fecha · Completada */}
           {hasMeta && (
-            <div className="flex flex-wrap items-center gap-2 sm:pl-9 w-full min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5 sm:pl-7 w-full min-w-0">
               {firstPhone && (
                 <TaskCardMetaChip
                   icon={<Phone size={12} />}
@@ -296,6 +320,13 @@ function TaskItem({
                       ? "var(--text-error)"
                       : "var(--text-tertiary)"
                   }
+                />
+              )}
+              {completionInfo && (
+                <TaskCardMetaChip
+                  icon={<CheckCircle2 size={12} />}
+                  text={`Completada por ${completionInfo.name} · ${completionInfo.date} ${completionInfo.time}`}
+                  color="var(--text-info)"
                 />
               )}
             </div>

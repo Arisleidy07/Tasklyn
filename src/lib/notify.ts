@@ -109,14 +109,64 @@ export function notifyTaskEdited(
   editorName: string,
   taskId: string,
   listId: string,
+  field?: string,
 ) {
+  const fieldLabels: Record<string, string> = {
+    title: "el título",
+    description: "la descripción",
+    priority: "la prioridad",
+    location: "la ubicación",
+    phones: "el teléfono",
+    dueDate: "la fecha",
+    reminder: "el recordatorio",
+  };
+
+  const fieldLabel = field ? fieldLabels[field] : "";
+  const title = fieldLabel
+    ? `${editorName} cambió ${fieldLabel}`
+    : `${editorName} editó una tarea`;
+
   return notifyUser({
     userId: targetUserId,
     type: "task_edited",
-    title: `${editorName} editó una tarea`,
+    title,
     body: `"${taskTitle}"`,
-    data: { taskId, listId },
+    data: { taskId, listId, ...(field && { field }) },
   });
+}
+
+export function notifyPriorityChanged(
+  targetUserId: string,
+  taskTitle: string,
+  editorName: string,
+  taskId: string,
+  listId: string,
+) {
+  return notifyTaskEdited(
+    targetUserId,
+    taskTitle,
+    editorName,
+    taskId,
+    listId,
+    "priority",
+  );
+}
+
+export function notifyDescriptionChanged(
+  targetUserId: string,
+  taskTitle: string,
+  editorName: string,
+  taskId: string,
+  listId: string,
+) {
+  return notifyTaskEdited(
+    targetUserId,
+    taskTitle,
+    editorName,
+    taskId,
+    listId,
+    "description",
+  );
 }
 
 export function notifyInvitationAccepted(
