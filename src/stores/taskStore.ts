@@ -8,6 +8,7 @@ import {
   subscribeToListTasks,
   addTaskHistoryEntry,
 } from "@/lib/firestore";
+import { canAddMoreTasks } from "@/lib/permissions";
 import { PLAN_FEATURES } from "@/types";
 import type {
   Task,
@@ -223,11 +224,12 @@ function createHistoryEntry(
     newValue?: string;
   },
 ): TaskHistoryEntry {
+  const currentUser = useAuthStore.getState().user;
   return {
     id: Math.random().toString(36).slice(2),
     action,
     performedBy,
-    performedByName: useAuthStore.getState().user?.name,
+    performedByName: currentUser?.name || "Usuario",
     performedAt: new Date().toISOString(),
     details,
     ...(extraFields?.previousValue !== undefined && {
@@ -266,12 +268,17 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     tags,
   }) => {
     const plan = (useAuthStore.getState().user?.plan || "free") as Plan;
+    // El límite se aplica por lista, no de forma global
     const activeTaskCount = get().tasks.filter(
-      (task) => task.createdBy === createdBy && task.isDeleted !== true,
+      (task) =>
+        task.listId === listId &&
+        task.createdBy === createdBy &&
+        task.isDeleted !== true,
     ).length;
-    if (activeTaskCount >= PLAN_FEATURES[plan].maxTasksPerList) {
+    if (!canAddMoreTasks(activeTaskCount, plan)) {
+      const planFeatures = PLAN_FEATURES[plan] || PLAN_FEATURES["free"];
       throw new Error(
-        `Has alcanzado el límite de ${PLAN_FEATURES[plan].maxTasksPerList} tareas de tu plan.`,
+        `Has alcanzado el límite de ${planFeatures.maxTasksPerList} tareas en esta lista para tu plan.`,
       );
     }
 
@@ -318,7 +325,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         { id, title, listId, listName: list?.name },
         {
           id: currentUser.id,
-          name: currentUser.name,
+          name: currentUser.name || "Usuario",
           photoURL: currentUser.photoURL,
         },
       );
@@ -327,13 +334,13 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         logTeamActivity(list.teamId, {
           teamId: list.teamId,
           userId: currentUser.id,
-          userName: currentUser.name,
+          userName: currentUser.name || "Usuario",
           userPhotoURL: currentUser.photoURL,
           action: "task_created",
           entityType: "task",
           entityId: id,
           entityName: title,
-          detail: `${currentUser.name} creó la tarea "${title}"`,
+          detail: `${currentUser.name || "Usuario"} creó la tarea "${title}"`,
         });
       }
     }
@@ -342,6 +349,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       id,
       ...newTaskData,
       createdAt: new Date().toISOString(),
+      history: [],
     } as Task;
   },
 

@@ -877,7 +877,7 @@ export const logTeamActivity = async (
   try {
     const ref = doc(collection(db, "teams", teamId, "activity"));
     await setDoc(ref, {
-      ...entry,
+      ...stripUndefined(entry),
       teamId,
       timestamp: serverTimestamp(),
     });
@@ -2133,7 +2133,7 @@ export const addTaskHistoryEntry = async (
 ): Promise<void> => {
   const ref = doc(collection(db, "tasks", taskId, "history"));
   await setDoc(ref, {
-    ...entry,
+    ...stripUndefined(entry),
     createdAt: serverTimestamp(),
   });
 };

@@ -63,6 +63,8 @@ export default function ListDetailPage() {
   const [newTaskPriority, setNewTaskPriority] = useState<
     "low" | "medium" | "high" | "urgent"
   >("medium");
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [createTaskError, setCreateTaskError] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const list = getList(listId);
@@ -194,28 +196,42 @@ export default function ListDetailPage() {
   };
 
   const handleAddTask = async () => {
-    if (!newTaskTitle.trim() || !user) return;
+    if (!newTaskTitle.trim() || !user || isCreatingTask) return;
 
-    // Filter out empty phone numbers
-    const validPhones = newTaskPhones.filter((p) => p.trim());
+    setIsCreatingTask(true);
+    setCreateTaskError(null);
 
-    await createTask({
-      listId,
-      title: newTaskTitle.trim(),
-      description: newTaskDescription.trim() || "",
-      location: newTaskLocation.trim() || undefined,
-      phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
-      priority: newTaskPriority,
-      createdBy: user.id,
-    });
+    try {
+      // Filter out empty phone numbers
+      const validPhones = newTaskPhones.filter((p) => p.trim());
 
-    // Reset form
-    setNewTaskTitle("");
-    setNewTaskDescription("");
-    setNewTaskLocation("");
-    setNewTaskPhones([""]);
-    setNewTaskPriority("medium");
-    setShowAddTask(false);
+      await createTask({
+        listId,
+        title: newTaskTitle.trim(),
+        description: newTaskDescription.trim() || "",
+        location: newTaskLocation.trim() || undefined,
+        phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
+        priority: newTaskPriority,
+        createdBy: user.id,
+      });
+
+      // Reset form on success
+      setNewTaskTitle("");
+      setNewTaskDescription("");
+      setNewTaskLocation("");
+      setNewTaskPhones([""]);
+      setNewTaskPriority("medium");
+      setShowAddTask(false);
+    } catch (err) {
+      console.error("Error creating task:", err);
+      setCreateTaskError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo crear la tarea. Intenta de nuevo.",
+      );
+    } finally {
+      setIsCreatingTask(false);
+    }
   };
 
   const handleAddPhone = () => {
@@ -717,11 +733,26 @@ export default function ListDetailPage() {
             setNewTaskDescription("");
             setNewTaskLocation("");
             setNewTaskPhones([""]);
+            setCreateTaskError(null);
           }}
           title="Añadir nueva tarea"
           size="task"
         >
           <div className="space-y-5 p-5 sm:p-6">
+            {createTaskError && (
+              <div
+                className="flex items-start gap-2 p-3 rounded-lg text-sm"
+                style={{
+                  backgroundColor: "rgba(239,68,68,0.08)",
+                  color: "var(--text-danger, #dc2626)",
+                  border: "1px solid rgba(239,68,68,0.2)",
+                }}
+                role="alert"
+              >
+                <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+                <span>{createTaskError}</span>
+              </div>
+            )}
             {/* Título de la tarea */}
             <div className="space-y-1.5">
               <label
@@ -920,7 +951,8 @@ export default function ListDetailPage() {
               </Button>
               <Button
                 onClick={handleAddTask}
-                disabled={!newTaskTitle.trim()}
+                disabled={!newTaskTitle.trim() || isCreatingTask}
+                isLoading={isCreatingTask}
                 className="flex-1 h-11"
                 icon={<Plus size={16} />}
               >
