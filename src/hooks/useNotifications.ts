@@ -2,14 +2,10 @@
 
 import { useEffect, useCallback, useState } from "react";
 import {
-  requestNotificationPermission,
-  registerForegroundHandler,
-  registerServiceWorker,
-  showInAppNotification,
   subscribeToToasts,
   getToastQueue,
   removeToast,
-  playNotificationSound,
+  showInAppNotification,
 } from "@/lib/notifications";
 import { useNotificationStore } from "@/stores/notificationStore";
 
@@ -21,21 +17,6 @@ import { useNotificationStore } from "@/stores/notificationStore";
  */
 export function useNotifications() {
   const [toasts, setToasts] = useState(getToastQueue());
-
-  useEffect(() => {
-    // Register service worker
-    registerServiceWorker();
-
-    // Register foreground FCM handler
-    registerForegroundHandler((payload) => {
-      if (payload.title && payload.body) {
-        showInAppNotification(payload.title, payload.body);
-      }
-    });
-
-    // Request permission on first load
-    requestNotificationPermission();
-  }, []);
 
   useEffect(() => {
     const unsub = subscribeToToasts(() => {

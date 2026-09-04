@@ -111,7 +111,11 @@ export default function InvitePage() {
       setTimeout(() => {
         router.push(`/lists/${invitation.listId ?? invitation.targetId}`);
       }, 1500);
-    } catch {
+    } catch (error) {
+      if (error instanceof Error && error.message === "already-member") {
+        setStatus("already-member");
+        return;
+      }
       setError("Error al unirse a la lista. Por favor, inténtalo de nuevo.");
       setStatus("ready");
     }

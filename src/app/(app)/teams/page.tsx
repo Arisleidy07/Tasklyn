@@ -448,10 +448,10 @@ export default function TeamsPage() {
       console.error("[deleteTeam] Error:", err.code, err.message, e);
       if (err.code === "permission-denied") {
         alert(
-          `Sin permiso para eliminar "${deleteTarget.name}".\n\nEsto puede ocurrir si el equipo fue creado automáticamente con otro usuario. ID del equipo: ${deleteTarget.id}\n\nContacta al soporte con este ID para eliminarlo manualmente.`,
+          `No tienes permisos suficientes para eliminar “${deleteTarget.name}”.`,
         );
       } else {
-        alert(`Error al eliminar: ${err.message || "desconocido"}`);
+        alert("No se pudo eliminar el equipo. Inténtalo de nuevo.");
       }
     } finally {
       setIsDeleting(false);

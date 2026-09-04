@@ -159,13 +159,22 @@ export default function NotificationsPage() {
   const { getInvitation, acceptInvitation, rejectInvitation } =
     useInvitationStore();
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [isMarkingAll, setIsMarkingAll] = useState(false);
   const [activeFilter, setActiveFilter] = useState<
     "all" | "unread" | "invitations" | "archived"
   >("all");
 
   if (!user) return null;
 
-  const handleMarkAll = () => markAllRead(user.id);
+  const handleMarkAll = async () => {
+    if (isMarkingAll || unreadCount === 0) return;
+    setIsMarkingAll(true);
+    try {
+      await markAllRead(user.id);
+    } finally {
+      setIsMarkingAll(false);
+    }
+  };
 
   // Filter notifications by status
   const pendingNotifications = notifications.filter(
@@ -209,7 +218,7 @@ export default function NotificationsPage() {
         return;
       }
       await acceptInvitation(invitation, user.id, user.name);
-      const list = await getList(invitation.targetId);
+      const list = await getList(invitation.listId ?? invitation.targetId);
       const isNowMember = list?.members?.some((m) => m.userId === user.id);
       if (!isNowMember) {
         throw new Error("No se pudo verificar la membresía en la lista");
@@ -257,36 +266,18 @@ export default function NotificationsPage() {
         showMenuButton={true}
         actions={
           <>
-            {unreadCount > 0 ? (
-              <>
-                <button
-                  onClick={handleMarkAll}
-                  className="p-2 rounded-xl transition-colors flex items-center justify-center sm:hidden active:scale-90"
-                  style={{ color: "var(--text-tertiary)" }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "var(--text-secondary)";
-                    e.currentTarget.style.backgroundColor =
-                      "var(--bg-secondary)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = "var(--text-tertiary)";
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
-                  title="Marcar todo como leído"
-                >
-                  <CheckCheck size={20} />
-                </button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleMarkAll}
-                  icon={<CheckCheck size={16} />}
-                  className="hidden sm:flex"
-                >
-                  Marcar todo como leído
-                </Button>
-              </>
-            ) : undefined}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleMarkAll}
+              disabled={unreadCount === 0 || isMarkingAll}
+              isLoading={isMarkingAll}
+              icon={<CheckCheck size={16} />}
+              className="min-h-11 px-3 sm:px-4"
+            >
+              <span className="hidden sm:inline">Marcar todo como leído</span>
+              <span className="sm:hidden">Leer todas</span>
+            </Button>
           </>
         }
       />
@@ -313,7 +304,7 @@ export default function NotificationsPage() {
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveFilter(tab.id as any)}
+              onClick={() => setActiveFilter(tab.id as typeof activeFilter)}
               className="px-3 py-1.5 rounded-full text-sm font-medium transition-all border"
               style={
                 activeFilter === tab.id

@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTeamStore } from "@/stores/teamStore";
-import { useNotificationStore } from "@/stores/notificationStore";
-import { useUIStore } from "@/stores/uiStore";
+import { useTaskStore } from "@/stores/taskStore";
 import AppLayout from "@/components/layout/AppLayout";
 
 export default function AuthenticatedLayout({
@@ -16,11 +15,10 @@ export default function AuthenticatedLayout({
 }) {
   const router = useRouter();
   const { isAuthenticated, isAuthReady, user } = useAuthStore();
-  const { subscribeToLists, unsubscribeFromLists } = useListStore();
+  const { lists, subscribeToLists, unsubscribeFromLists } = useListStore();
+  const { subscribeToList, unsubscribeFromList, unsubscribeAll } =
+    useTaskStore();
   const { subscribeToTeams, unsubscribeFromTeams } = useTeamStore();
-  const { subscribe: subscribeNotifs, unsubscribe: unsubscribeNotifs } =
-    useNotificationStore();
-  const { theme } = useUIStore();
 
   useEffect(() => {
     if (isAuthReady && !isAuthenticated) {
@@ -38,6 +36,16 @@ export default function AuthenticatedLayout({
     }
   }, [user?.id, subscribeToLists, unsubscribeFromLists]);
 
+  useEffect(() => {
+    const activeIds = new Set(lists.map((list) => list.id));
+    lists.forEach((list) => subscribeToList(list.id));
+    useTaskStore.getState().taskUnsubscribes.forEach((_unsubscribe, listId) => {
+      if (!activeIds.has(listId)) unsubscribeFromList(listId);
+    });
+  }, [lists, subscribeToList, unsubscribeFromList]);
+
+  useEffect(() => () => unsubscribeAll(), [unsubscribeAll]);
+
   // Subscribe to teams when user is authenticated
   useEffect(() => {
     if (user?.id) {
@@ -47,16 +55,6 @@ export default function AuthenticatedLayout({
       };
     }
   }, [user?.id, subscribeToTeams, unsubscribeFromTeams]);
-
-  // Subscribe to notifications
-  useEffect(() => {
-    if (user?.id) {
-      subscribeNotifs(user.id);
-      return () => {
-        unsubscribeNotifs();
-      };
-    }
-  }, [user?.id, subscribeNotifs, unsubscribeNotifs]);
 
   if (!isAuthReady || !isAuthenticated) {
     return (

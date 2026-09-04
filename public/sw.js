@@ -1,4 +1,4 @@
-const CACHE_NAME = "tasklyn-v3";
+const CACHE_NAME = "tasklyn-v4";
 const STATIC_ASSETS = [
   "/",
   "/dashboard",
@@ -110,13 +110,23 @@ messaging.onBackgroundMessage((payload) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
+  const data = event.notification.data || {};
+  const path =
+    data.actionUrl ||
+    (data.listId ? `/lists/${data.listId}` : "/notifications");
+  const targetUrl = new URL(path, self.location.origin).href;
   event.waitUntil(
-    self.clients.matchAll({ type: "window" }).then((clientList) => {
-      if (clientList.length > 0) {
-        clientList[0].focus();
-      } else {
-        self.clients.openWindow("/");
-      }
-    }),
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        const existingClient = clientList.find((client) =>
+          client.url.startsWith(self.location.origin),
+        );
+        if (existingClient) {
+          existingClient.navigate(targetUrl);
+          return existingClient.focus();
+        }
+        return self.clients.openWindow(targetUrl);
+      }),
   );
 });

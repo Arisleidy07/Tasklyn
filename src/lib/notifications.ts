@@ -52,9 +52,9 @@ export function registerForegroundHandler(
     body?: string;
     data?: Record<string, string>;
   }) => void,
-): void {
+): (() => void) | undefined {
   if (!messaging) return;
-  onMessage(messaging, (payload) => {
+  return onMessage(messaging, (payload) => {
     onNotification({
       title: payload.notification?.title,
       body: payload.notification?.body,

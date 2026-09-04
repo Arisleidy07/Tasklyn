@@ -7,14 +7,12 @@ import { useTeamStore } from "@/stores/teamStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { getUser } from "@/lib/firestore";
 import Header from "@/components/layout/Header";
-import Button from "@/components/ui/Button";
 import {
   Trophy,
   Medal,
   Award,
   TrendingUp,
   Crown,
-  Target,
   ChevronUp,
   ChevronDown,
 } from "lucide-react";
@@ -32,15 +30,6 @@ interface RankingUser {
   trend: number; // percentage change
   rank: number;
   previousRank: number;
-}
-
-// Extended member type that can have name/email from user object
-interface ExtendedTeamMember {
-  userId: string;
-  role?: string;
-  joinedAt?: string;
-  name?: string;
-  email?: string;
 }
 
 interface RankingCardProps {
@@ -74,23 +63,11 @@ function RankingCard({
     }
   };
 
-  const getMedalBg = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return "";
-      case 2:
-        return "";
-      case 3:
-        return "";
-      default:
-        return "";
-    }
-  };
-
   const rankChange = user.previousRank - user.rank;
 
   return (
     <motion.div
+      data-current-user={isCurrentUser || undefined}
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       whileHover={{
@@ -283,22 +260,31 @@ export default function RankingPage() {
       const ranking: RankingUser[] = profiles
         .filter((p) => p.name !== "...") // skip unresolved profiles
         .map((profile) => {
-          const memberTasks = tasks.filter((t) => {
-            const isOwner =
-              t.assignedTo === profile.id ||
-              t.completedBy === profile.id ||
-              t.createdBy === profile.id;
-            if (!isOwner) return false;
+          const memberTasks = tasks.filter((task) => {
+            if (selectedTeam !== "all" && task.teamId !== selectedTeam) {
+              return false;
+            }
+            if (
+              task.assignedTo !== profile.id &&
+              task.completedBy !== profile.id
+            ) {
+              return false;
+            }
+            const activityDate = task.completedAt ?? task.createdAt;
             try {
-              return isAfter(parseISO(t.createdAt), periodBoundary);
+              return isAfter(parseISO(activityDate), periodBoundary);
             } catch {
               return false;
             }
           });
           const completedTasks = memberTasks.filter(
-            (t) => t.status === "completed",
+            (task) =>
+              task.status === "completed" && task.completedBy === profile.id,
           ).length;
-          const totalTasks = memberTasks.length;
+          const totalTasks = memberTasks.filter(
+            (task) =>
+              task.assignedTo === profile.id || task.completedBy === profile.id,
+          ).length;
           const completionRate =
             totalTasks > 0
               ? Math.round((completedTasks / totalTasks) * 100)
@@ -337,7 +323,6 @@ export default function RankingPage() {
 
   if (!user) return null;
 
-  const currentUserRanking = rankingData.find((r) => r.userId === user.id);
   const topThree = rankingData.slice(0, 3);
   const restOfRanking = rankingData.slice(3);
 
@@ -351,13 +336,28 @@ export default function RankingPage() {
             : "Ranking general de todos los equipos"
         }
         showMenuButton={true}
-        actions={
-          <div className="flex items-center gap-2 flex-wrap">
-            {teams.length > 0 && (
+      />
+
+      <div className="p-3 sm:p-4 md:p-8 space-y-6 max-w-[1200px] mx-auto">
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 sm:p-4 rounded-xl border"
+          style={{
+            backgroundColor: "var(--bg-card)",
+            borderColor: "var(--border-color)",
+          }}
+        >
+          {teams.length > 0 && (
+            <label className="space-y-1.5 min-w-0">
+              <span
+                className="text-xs font-medium"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                Equipo
+              </span>
               <select
                 value={selectedTeam}
                 onChange={(e) => setSelectedTeam(e.target.value)}
-                className="px-3 py-2 text-sm rounded-lg max-w-[140px] sm:max-w-none"
+                className="w-full min-h-11 px-3 text-sm rounded-lg"
                 style={{
                   border: "1px solid var(--border-input)",
                   backgroundColor: "var(--bg-input)",
@@ -371,7 +371,15 @@ export default function RankingPage() {
                   </option>
                 ))}
               </select>
-            )}
+            </label>
+          )}
+          <label className="space-y-1.5 min-w-0">
+            <span
+              className="text-xs font-medium"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Período
+            </span>
             <select
               value={selectedPeriod}
               onChange={(e) =>
@@ -379,122 +387,36 @@ export default function RankingPage() {
                   e.target.value as "today" | "week" | "month" | "year",
                 )
               }
-              className="px-3 py-2 text-sm rounded-lg"
+              className="w-full min-h-11 px-3 text-sm rounded-lg"
               style={{
-                backgroundColor: "var(--bg-card)",
-                borderColor: "var(--border-color)",
+                backgroundColor: "var(--bg-input)",
+                border: "1px solid var(--border-input)",
                 color: "var(--text-primary)",
-                borderWidth: "1px",
-                borderStyle: "solid",
               }}
             >
               <option value="today">Hoy</option>
-              <option value="week">Semana</option>
-              <option value="month">Mes</option>
-              <option value="year">Año</option>
+              <option value="week">Últimos 7 días</option>
+              <option value="month">Últimos 30 días</option>
+              <option value="year">Último año</option>
             </select>
-          </div>
-        }
-      />
-
-      <div className="p-3 sm:p-4 md:p-8 space-y-6 max-w-[1200px] mx-auto">
+          </label>
+        </div>
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full" />
           </div>
         ) : (
           <>
-            {/* Top 3 Podium */}
             {topThree.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-              >
-                {topThree.map((user, index) => (
-                  <motion.div
-                    key={user.userId}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.5 }}
-                    className="relative p-6 rounded-2xl border text-center"
-                    style={
-                      index === 0
-                        ? {
-                            backgroundColor: "rgba(253,224,71,0.12)",
-                            borderColor: "rgba(234,179,8,0.35)",
-                          }
-                        : index === 1
-                          ? {
-                              backgroundColor: "rgba(156,163,175,0.1)",
-                              borderColor: "rgba(156,163,175,0.35)",
-                            }
-                          : {
-                              backgroundColor: "rgba(251,191,36,0.1)",
-                              borderColor: "rgba(217,119,6,0.35)",
-                            }
-                    }
-                  >
-                    {/* Medal Icon */}
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <div
-                        className={cn(
-                          "w-16 h-16 rounded-full flex items-center justify-center shadow-lg",
-                          index === 0 &&
-                            "bg-gradient-to-br from-yellow-400 to-orange-500",
-                          index === 1 &&
-                            "bg-gradient-to-br from-gray-400 to-slate-500",
-                          index === 2 &&
-                            "bg-gradient-to-br from-amber-400 to-yellow-500",
-                        )}
-                      >
-                        <span className="text-2xl">
-                          {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="mt-8">
-                      <div
-                        className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-2xl font-bold shadow-lg"
-                        style={{ color: "var(--text-on-accent)" }}
-                      >
-                        {user.name.charAt(0)}
-                      </div>
-                      <h3
-                        className="text-xl font-bold mb-2"
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        {user.name}
-                      </h3>
-                      <p
-                        className="text-3xl font-bold mb-1"
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        {user.completedTasks}
-                      </p>
-                      <p
-                        className="text-sm mb-3"
-                        style={{ color: "var(--text-secondary)" }}
-                      >
-                        tareas completadas
-                      </p>
-                      <div className="flex items-center justify-center gap-2">
-                        <Target
-                          size={16}
-                          style={{ color: "var(--text-tertiary)" }}
-                        />
-                        <span
-                          className="text-lg font-semibold"
-                          style={{ color: "var(--text-secondary)" }}
-                        >
-                          {user.completionRate}%
-                        </span>
-                      </div>
-                    </div>
-                  </motion.div>
+              <div className="space-y-3 mb-8">
+                {topThree.map((rankingUser) => (
+                  <RankingCard
+                    key={rankingUser.userId}
+                    user={rankingUser}
+                    isCurrentUser={rankingUser.userId === user.id}
+                  />
                 ))}
-              </motion.div>
+              </div>
             )}
 
             {/* Rest of Ranking */}

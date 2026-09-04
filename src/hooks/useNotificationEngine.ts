@@ -12,6 +12,8 @@ import {
 import { notifyReminder, notifyDueSoon } from "@/lib/notify";
 import { useTaskStore } from "@/stores/taskStore";
 import { updateTask } from "@/lib/firestore";
+import { db } from "@/lib/firebase";
+import { arrayUnion, doc, updateDoc } from "firebase/firestore";
 
 /**
  * Global notification engine.
@@ -37,14 +39,35 @@ export function useNotificationEngine() {
 
   // Register service worker & FCM on mount
   useEffect(() => {
-    registerServiceWorker();
-    registerForegroundHandler((payload) => {
+    void registerServiceWorker();
+    const unsubscribe = registerForegroundHandler((payload) => {
       if (payload.title && payload.body) {
         showInAppNotification(payload.title, payload.body);
       }
     });
-    requestNotificationPermission();
-  }, []);
+
+    if (
+      user &&
+      typeof Notification !== "undefined" &&
+      Notification.permission !== "denied"
+    ) {
+      void requestNotificationPermission()
+        .then(async (token) => {
+          if (!token) return;
+          await updateDoc(doc(db, "users", user.id), {
+            notificationTokens: arrayUnion(token),
+          });
+        })
+        .catch((error) => {
+          console.error(
+            "No se pudo registrar este dispositivo para notificaciones:",
+            error,
+          );
+        });
+    }
+
+    return unsubscribe;
+  }, [user]);
 
   // Periodic check for reminders and due dates
   useEffect(() => {

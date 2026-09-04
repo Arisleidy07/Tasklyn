@@ -11,6 +11,7 @@ import {
   getUserByEmail,
   createNotification,
   getList,
+  logTeamActivity,
 } from "@/lib/firestore";
 import {
   notifyInvitationAccepted,
@@ -250,6 +251,19 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
       );
     }
 
+    if (accepterName && invitation.teamId) {
+      await logTeamActivity(invitation.teamId, {
+        teamId: invitation.teamId,
+        userId,
+        userName: accepterName,
+        action: "member_joined",
+        entityType: "member",
+        entityId: userId,
+        entityName: accepterName,
+        detail: `${accepterName} se unió a “${invitation.targetName ?? "una lista compartida"}”`,
+      });
+    }
+
     // Step 4: Notify the inviter that invitation was accepted
     if (accepterName) {
       console.log(
@@ -259,9 +273,9 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
         const listId = invitation.listId ?? invitation.targetId;
         await notifyInvitationAccepted(
           invitation.invitedBy,
-          listId,
+          invitation.targetName ?? "la lista compartida",
           accepterName,
-          invitation.targetName ?? listId,
+          listId,
         );
         console.log("[invitationStore] Step 4: Notification sent to owner");
       } catch (error) {
@@ -285,9 +299,9 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
         const listId = invitation.listId ?? invitation.targetId;
         await notifyInvitationRejected(
           invitation.invitedBy,
-          listId,
+          invitation.targetName ?? "la lista compartida",
           rejecterName,
-          invitation.targetName ?? listId,
+          listId,
         );
       } catch (error) {
         console.error(

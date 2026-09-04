@@ -46,13 +46,8 @@ export default function ListDetailPage() {
 
   const { user } = useAuthStore();
   const { getList, deleteList, getDisplayName } = useListStore();
-  const {
-    getTasksByList,
-    subscribeToList,
-    unsubscribeFromList,
-    createTask,
-    reorderTasks,
-  } = useTaskStore();
+  const { getTasksByList, subscribeToList, createTask, reorderTasks } =
+    useTaskStore();
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
   const [showAddTask, setShowAddTask] = useState(false);
   const [showSharePanel, setShowSharePanel] = useState(false);
@@ -75,13 +70,8 @@ export default function ListDetailPage() {
 
   // Subscribe to real-time tasks for this list
   useEffect(() => {
-    if (listId) {
-      subscribeToList(listId);
-      return () => {
-        unsubscribeFromList(listId);
-      };
-    }
-  }, [listId, subscribeToList, unsubscribeFromList]);
+    if (listId) subscribeToList(listId);
+  }, [listId, subscribeToList]);
 
   // Collect ALL user IDs referenced in this list context:
   // current members + anyone who created/completed a task or appears in history.

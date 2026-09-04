@@ -8,7 +8,6 @@ import MobileNav from "./MobileNav";
 import ToastOverlay from "@/components/ui/ToastOverlay";
 import { useNotificationEngine } from "@/hooks/useNotificationEngine";
 import { useUIStore } from "@/stores/uiStore";
-import { useAuthStore } from "@/stores/authStore";
 import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
@@ -18,7 +17,6 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   useNotificationEngine();
   const { sidebarCollapsed, theme } = useUIStore();
-  const { user } = useAuthStore();
   const [mounted] = useState(() => typeof window !== "undefined");
 
   useEffect(() => {
@@ -36,7 +34,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <div
       className={cn(
-        "min-h-screen relative overflow-x-hidden transition-colors duration-300",
+        "min-h-dvh relative overflow-x-clip transition-colors duration-300",
         "bg-[var(--bg-primary)] text-[var(--text-primary)]",
         theme === "dark" && "app-theme-dark",
         theme === "light" && "app-theme-light",
@@ -85,7 +83,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {/* Main content */}
       <main
         className={cn(
-          "relative z-10 min-h-screen transition-[margin-left] duration-300 ease-in-out pb-20 md:pb-0",
+          "relative z-10 min-h-dvh transition-[margin-left] duration-300 ease-in-out pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0",
           mounted
             ? sidebarCollapsed
               ? "md:ml-[72px]"

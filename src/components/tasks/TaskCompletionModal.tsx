@@ -53,11 +53,15 @@ export default function TaskCompletionModal({
   const handleConfirm = async () => {
     setLoading(true);
     try {
-      const performer = selectedPerformer
-        ? { id: selectedPerformer, name: getProfile(selectedPerformer).name }
-        : undefined;
+      const completedBy = selectedPerformer ?? user.id;
+      const completerName = selectedPerformer
+        ? getProfile(selectedPerformer).name
+        : user.name;
 
-      await completeTask(taskId, user.id, user.name, listMembers, performer);
+      await completeTask(taskId, completedBy, completerName, listMembers, {
+        id: user.id,
+        name: user.name,
+      });
 
       onConfirm(selectedPerformer);
       onClose();

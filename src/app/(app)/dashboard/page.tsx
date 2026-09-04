@@ -631,8 +631,13 @@ export default function DashboardPage() {
     view === "shared" ? "shared" : view === "personal" ? "personal" : "todas";
 
   const { user } = useAuthStore();
-  const { getListsWithoutTeam, getSharedLists, getUserLists, lists } =
-    useListStore();
+  const {
+    getListsWithoutTeam,
+    getSharedLists,
+    getUserLists,
+    lists,
+    isLoading: listsLoading,
+  } = useListStore();
   const { tasks } = useTaskStore();
   const {
     activities,
@@ -795,6 +800,25 @@ export default function DashboardPage() {
       sparklineData: generateSparklineData(pendingTasks.length / 3, 2),
     },
   ];
+
+  if (listsLoading) {
+    return (
+      <>
+        <Header
+          title={isListsSection ? "Mis listas" : "Panel de control"}
+          description="Cargando información actualizada..."
+          showMenuButton={true}
+        />
+        <div
+          className="min-h-[50dvh] flex items-center justify-center"
+          role="status"
+        >
+          <div className="animate-spin h-8 w-8 border-2 border-blue-600 border-t-transparent rounded-full" />
+          <span className="sr-only">Cargando listas y estadísticas</span>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

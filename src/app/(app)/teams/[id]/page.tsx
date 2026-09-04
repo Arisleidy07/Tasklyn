@@ -381,8 +381,7 @@ export default function TeamDetailPage() {
     } catch (error) {
       console.error("Failed to delete team:", error);
       setDeleteError(
-        (error as Error).message ||
-          "Error al eliminar el equipo. Intenta nuevamente.",
+        "No se pudo eliminar el equipo. Verifica tus permisos e inténtalo nuevamente.",
       );
       setDeleteLoading(false);
     }

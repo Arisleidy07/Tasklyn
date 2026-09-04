@@ -1524,8 +1524,20 @@ export const acceptInvitation = async (
   if (!listId) throw new Error("Invitation has no listId");
 
   const invitationRef = doc(db, "invitations", invitation.id);
-  const snapshot = await getDoc(invitationRef);
+  const listRef = doc(db, "lists", listId);
+  const [snapshot, listSnapshot] = await Promise.all([
+    getDoc(invitationRef),
+    getDoc(listRef),
+  ]);
   if (!snapshot.exists()) throw new Error("Invitation not found");
+  if (!listSnapshot.exists()) throw new Error("List not found");
+  const listData = listSnapshot.data();
+  if (
+    listData.memberIds?.includes(userId) ||
+    listData.members?.some((member: ListMember) => member.userId === userId)
+  ) {
+    throw new Error("already-member");
+  }
 
   const current = snapshot.data() as Invitation;
   if (current.status !== "pending") {

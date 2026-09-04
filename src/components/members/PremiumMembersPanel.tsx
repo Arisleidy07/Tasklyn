@@ -100,7 +100,7 @@ export default function PremiumMembersPanel({
         url = `${window.location.origin}/invite/${invitation.token}`;
         setInviteLink(url);
       }
-      const message = `¡Te invito a mi lista “${list.name}” en TASKLYN! 🎉`;
+      const message = `¡Te invito a mi lista “${list.name}” en TASKLYN! `;
       if (navigator.share) {
         await navigator.share({
           title: `Invitación a ${list.name}`,

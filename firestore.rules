@@ -58,6 +58,11 @@ service cloud.firestore {
       return l != null && l.memberIds != null && uid() in l.memberIds;
     }
 
+    function isListOwnerOf(listId) {
+      let l = get(/databases/$(database)/documents/lists/$(listId)).data;
+      return l != null && l.owner == uid();
+    }
+
     function acceptedInvitation(invitationId, targetType, targetId) {
       let invitation = getAfter(/databases/$(database)/documents/invitations/$(invitationId)).data;
       return invitation != null &&
@@ -164,7 +169,11 @@ service cloud.firestore {
           (request.resource.data.status == "accepted" && request.resource.data.acceptedBy == uid()) ||
           (request.resource.data.status == "declined" && request.resource.data.declinedBy == uid())
         );
-      allow delete: if isAuth() && resource.data.invitedBy == uid();
+      allow delete: if isAuth() && (
+        resource.data.invitedBy == uid() ||
+        (resource.data.listId != null && isListOwnerOf(resource.data.listId)) ||
+        (resource.data.teamId != null && isTeamOwnerOf(resource.data.teamId))
+      );
     }
 
     match /teams/{teamId} {
@@ -283,7 +292,10 @@ service cloud.firestore {
       allow read: if isAuth() && resource.data.userId == uid();
       allow create: if isAuth();
       allow update: if isAuth() && resource.data.userId == uid();
-      allow delete: if isAuth() && resource.data.userId == uid();
+      allow delete: if isAuth() && (
+        resource.data.userId == uid() ||
+        (resource.data.teamId != null && isTeamOwnerOf(resource.data.teamId))
+      );
     }
 
     // Legacy root comments collection (new comments go to tasks/{taskId}/comments)
@@ -291,7 +303,10 @@ service cloud.firestore {
       allow read: if isAuth();
       allow create: if isAuth() && request.resource.data.authorId == uid();
       allow update: if isAuth() && resource.data.authorId == uid();
-      allow delete: if isAuth() && resource.data.authorId == uid();
+      allow delete: if isAuth() && (
+        resource.data.authorId == uid() ||
+        (resource.data.listId != null && isListOwnerOf(resource.data.listId))
+      );
     }
 
     // Background images library

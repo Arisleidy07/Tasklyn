@@ -621,17 +621,15 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     const completedAt = new Date().toISOString();
     const newCount = (task.completedCount || 0) + 1;
 
-    const resolvedCompleterName =
+    const resolvedCompleterName = completerName || "Usuario desconocido";
+    const resolvedPerformerName =
+      performedByUser?.name ||
       useAuthStore.getState().user?.name ||
-      completerName ||
-      "Usuario desconocido";
-    const resolvedPerformerName = performedByUser
-      ? performedByUser.name
-      : resolvedCompleterName;
+      resolvedCompleterName;
 
     const completionDetails =
       performedByUser && performedByUser.id !== completedBy
-        ? `Marcada como completada por ${resolvedCompleterName} · Realizada por ${resolvedPerformerName}`
+        ? `Marcada como completada por ${resolvedPerformerName} · Realizada por ${resolvedCompleterName}`
         : `Completada por ${resolvedCompleterName}`;
 
     // Optimistic update: move task to completed immediately
@@ -660,7 +658,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
     const completedEntry = createHistoryEntry(
       "completed",
-      completedBy,
+      performedByUser?.id ?? completedBy,
       completionDetails,
       {
         completedByName: resolvedCompleterName,
@@ -676,9 +674,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       .getState()
       .lists.find((l) => l.id === task.listId);
     if (currentUser && list?.teamId) {
-      const actualPerformer = performedByUser || {
-        id: currentUser.id,
-        name: currentUser.name,
+      const actualCompleter = {
+        id: completedBy,
+        name: resolvedCompleterName,
       };
       logTeamActivity(list.teamId, {
         teamId: list.teamId,
@@ -690,8 +688,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         entityId: task.id,
         entityName: task.title,
         detail:
-          actualPerformer.id !== currentUser.id
-            ? `${currentUser.name} marcó como completada "${task.title}" · Realizada por ${actualPerformer.name}`
+          actualCompleter.id !== currentUser.id
+            ? `${currentUser.name} marcó como completada "${task.title}" · Realizada por ${actualCompleter.name}`
             : `${currentUser.name} completó "${task.title}"`,
       });
     }
@@ -873,8 +871,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
   },
 
   subscribeToList: (listId) => {
-    // Unsubscribe existing listener for this list
-    get().taskUnsubscribes.get(listId)?.();
+    if (get().taskUnsubscribes.has(listId)) return;
 
     const unsubscribe = subscribeToListTasks(listId, (incomingTasks) => {
       set((state) => {
