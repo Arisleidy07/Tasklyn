@@ -25,24 +25,10 @@ import {
 import Modal from "@/components/ui/Modal";
 import { UpgradeModal } from "@/components/shared/UpgradeModal";
 import TeamImage from "@/components/ui/TeamImage";
+import Avatar from "@/components/ui/Avatar";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { canCreateMoreTeams } from "@/lib/permissions";
-import { cn } from "@/lib/utils";
 import type { Team } from "@/types";
-
-// ── Team color palette ──────────────────────────────────────────────────────
-const TEAM_GRADIENTS = [
-  "from-blue-500 to-indigo-600",
-  "from-violet-500 to-purple-600",
-  "from-emerald-500 to-teal-600",
-  "from-orange-500 to-amber-600",
-  "from-rose-500 to-pink-600",
-  "from-cyan-500 to-blue-600",
-];
-
-function getTeamGradient(teamId: string) {
-  const idx = teamId.charCodeAt(0) % TEAM_GRADIENTS.length;
-  return TEAM_GRADIENTS[idx];
-}
 
 // ── Team Card ────────────────────────────────────────────────────────────────
 interface TeamCardProps {
@@ -64,6 +50,25 @@ function TeamCard({
   index,
   onDelete,
 }: TeamCardProps) {
+  const members = Array.from(
+    new Map(
+      [
+        ...team.members,
+        ...(team.members.some((member) => member.userId === team.owner)
+          ? []
+          : [
+              {
+                userId: team.owner,
+                role: "owner" as const,
+                joinedAt: team.createdAt,
+              },
+            ]),
+      ].map((member) => [member.userId, member]),
+    ).values(),
+  );
+  const { getProfile } = useUserProfiles(
+    members.map((member) => member.userId),
+  );
   const progress =
     taskCount > 0 ? Math.round((completedCount / taskCount) * 100) : 0;
 
@@ -138,7 +143,7 @@ function TeamCard({
       {/* Stats row */}
       <div className="flex items-center gap-4 mb-4">
         {[
-          { icon: Users, label: "Miembros", value: team.members.length },
+          { icon: Users, label: "Miembros", value: members.length },
           { icon: FolderOpen, label: "Listas", value: listCount },
           { icon: ClipboardList, label: "Tareas", value: taskCount },
         ].map((s) => (
@@ -198,22 +203,20 @@ function TeamCard({
         style={{ borderColor: "var(--border-color)" }}
       >
         <div className="flex -space-x-1.5">
-          {team.members.slice(0, 4).map((m, i) => (
-            <div
-              key={m.userId}
-              className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-[9px] font-bold shadow-sm flex-shrink-0"
-              style={{
-                zIndex: 10 - i,
-                borderColor: "var(--bg-card)",
-                backgroundColor: "var(--text-primary)",
-                color: "var(--text-on-accent)",
-                opacity: 0.8,
-              }}
-            >
-              {m.userId.charAt(0).toUpperCase()}
-            </div>
-          ))}
-          {team.members.length > 4 && (
+          {members.slice(0, 4).map((member, index) => {
+            const profile = getProfile(member.userId);
+            return (
+              <div key={member.userId} style={{ zIndex: 10 - index }}>
+                <Avatar
+                  name={profile.name}
+                  photoURL={profile.photoURL}
+                  size="sm"
+                  className="border-2 border-[var(--bg-card)] shadow-sm flex-shrink-0"
+                />
+              </div>
+            );
+          })}
+          {members.length > 4 && (
             <div
               className="w-6 h-6 rounded-full border-2 flex items-center justify-center text-[9px] font-medium flex-shrink-0"
               style={{
@@ -223,7 +226,7 @@ function TeamCard({
                 zIndex: 0,
               }}
             >
-              +{team.members.length - 4}
+              +{members.length - 4}
             </div>
           )}
         </div>
@@ -549,7 +552,7 @@ export default function TeamsPage() {
           ) : filtered.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-                No se encontraron equipos para "{searchQuery}"
+                No se encontraron equipos para “{searchQuery}”
               </p>
             </div>
           ) : (
@@ -603,7 +606,7 @@ export default function TeamsPage() {
                   className="font-bold"
                   style={{ color: "var(--text-primary)" }}
                 >
-                  Eliminar "{deleteTarget.name}"
+                  Eliminar “{deleteTarget.name}”
                 </p>
                 <p
                   className="text-sm mt-1"

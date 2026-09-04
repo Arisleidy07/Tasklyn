@@ -41,13 +41,10 @@ import {
   Check,
   Activity,
   Trophy,
-  Medal,
   Zap,
-  Target,
   Copy,
   Mail,
   Calendar,
-  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -109,10 +106,9 @@ export default function TeamDetailPage() {
     removeTeamMember,
     updateTeamMemberRole,
     updateTeam,
-    addTeamMember,
   } = useTeamStore();
   const { tasks } = useTaskStore();
-  const { lists } = useListStore();
+  const { lists, reorderLists } = useListStore();
 
   const [activeTab, setActiveTab] = useState<TabId>("panel");
   const [memberProfiles, setMemberProfiles] = useState<MemberProfile[]>([]);
@@ -130,7 +126,6 @@ export default function TeamDetailPage() {
   const [copiedLink, setCopiedLink] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showCreateListModal, setShowCreateListModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
 
@@ -155,10 +150,53 @@ export default function TeamDetailPage() {
     joinedAt: string;
     name?: string;
     photoURL?: string;
-  }> =
-    subcollectionMembers.length > 0
-      ? subcollectionMembers
-      : team?.members || [];
+  }> = Array.from(
+    new Map(
+      [
+        ...(subcollectionMembers.length > 0
+          ? subcollectionMembers
+          : team?.members || []),
+        ...(team &&
+        !(
+          subcollectionMembers.length > 0 ? subcollectionMembers : team.members
+        ).some((member) => member.userId === team.owner)
+          ? [
+              {
+                userId: team.owner,
+                role: "owner" as const,
+                joinedAt: team.createdAt,
+              },
+            ]
+          : []),
+        ...(user &&
+        !(
+          subcollectionMembers.length > 0
+            ? subcollectionMembers
+            : team?.members || []
+        ).some((member) => member.userId === user.id)
+          ? [
+              {
+                userId: user.id,
+                role:
+                  team?.owner === user.id
+                    ? ("owner" as const)
+                    : ("member" as const),
+                joinedAt: team?.createdAt ?? user.createdAt,
+                name: user.name,
+                photoURL: user.photoURL,
+              },
+            ]
+          : []),
+      ].map((member) => [member.userId, member]),
+    ).values(),
+  );
+  const activeMemberKey = activeMembers
+    .map(
+      (member) =>
+        `${member.userId}:${member.role}:${member.name ?? ""}:${member.photoURL ?? ""}`,
+    )
+    .sort()
+    .join("|");
 
   // Load member profiles (enriched from user docs + task stats)
   useEffect(() => {
@@ -197,12 +235,12 @@ export default function TeamDetailPage() {
       setMemberProfiles(profiles);
       setLoadingProfiles(false);
     });
-  }, [team?.id, subcollectionMembers.length, tasks.length]);
+  }, [team?.id, team?.name, activeMemberKey, tasks]);
 
   // Subscribe to team activity
   useEffect(() => {
     if (!teamId) return;
-    const unsub = subscribeToTeamActivity(teamId, setActivityLog, 40);
+    const unsub = subscribeToTeamActivity(teamId, setActivityLog, 500);
     return () => unsub();
   }, [teamId]);
 
@@ -233,7 +271,6 @@ export default function TeamDetailPage() {
   const teamLists = [...lists.filter((l) => l.teamId === teamId)].sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0),
   );
-  const { reorderLists } = useListStore();
   const teamTasks = tasks.filter((t) =>
     teamLists.some((l) => l.id === t.listId),
   );
@@ -374,16 +411,15 @@ export default function TeamDetailPage() {
   const handleDeleteTeam = async () => {
     if (!team || userRole !== "owner") return;
     setDeleteLoading(true);
-    setDeleteError(null);
     try {
       await useTeamStore.getState().deleteTeam(teamId);
       router.push("/teams");
     } catch (error) {
       console.error("Failed to delete team:", error);
-      setDeleteError(
-        "No se pudo eliminar el equipo. Verifica tus permisos e inténtalo nuevamente.",
-      );
+      const message =
+        "No se pudo eliminar el equipo. Verifica tus permisos e inténtalo nuevamente.";
       setDeleteLoading(false);
+      throw new Error(message);
     }
   };
 
@@ -394,13 +430,6 @@ export default function TeamDetailPage() {
       return { ...m, score };
     })
     .sort((a, b) => b.score - a.score);
-
-  const medalFor = (idx: number) => {
-    if (idx === 0) return { emoji: "🥇", color: "text-yellow-500" };
-    if (idx === 1) return { emoji: "🥈", color: "var(--text-tertiary)" };
-    if (idx === 2) return { emoji: "🥉", color: "text-amber-600" };
-    return null;
-  };
 
   return (
     <>
@@ -789,7 +818,15 @@ export default function TeamDetailPage() {
                         initial={{ opacity: 0, x: -8 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.04 }}
-                        className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] transition-all"
+                        role="link"
+                        tabIndex={0}
+                        onClick={() => router.push(`/lists/${list.id}`)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            router.push(`/lists/${list.id}`);
+                          }
+                        }}
+                        className="group flex items-center gap-4 p-4 rounded-xl border border-[var(--border-color)] bg-[var(--bg-card)] hover:border-blue-500/40 cursor-pointer transition-all"
                       >
                         <div
                           className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
@@ -821,15 +858,12 @@ export default function TeamDetailPage() {
                             </span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
-                            onClick={() => router.push(`/lists/${list.id}`)}
-                            className="p-2 rounded-lg transition-colors"
-                            style={{ color: "var(--text-tertiary)" }}
-                            title="Abrir lista"
-                          >
-                            <ChevronRight size={16} />
-                          </button>
+                        <div
+                          className="p-2 rounded-lg flex-shrink-0"
+                          style={{ color: "var(--text-tertiary)" }}
+                          aria-hidden="true"
+                        >
+                          <ChevronRight size={18} />
                         </div>
                       </motion.div>
                     </SortableListItem>
@@ -1006,7 +1040,7 @@ export default function TeamDetailPage() {
               <div className="relative">
                 <div className="absolute left-5 top-0 bottom-0 w-px bg-[var(--bg-secondary)]" />
                 <div className="space-y-0">
-                  {activityLog.slice(0, 4).map((entry, i) => (
+                  {activityLog.map((entry, i) => (
                     <motion.div
                       key={entry.id}
                       initial={{ opacity: 0, x: -8 }}
@@ -1064,24 +1098,6 @@ export default function TeamDetailPage() {
                     </motion.div>
                   ))}
                 </div>
-                {activityLog.length > 4 && (
-                  <button
-                    className="w-full mt-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
-                    style={{
-                      backgroundColor: "var(--bg-secondary)",
-                      color: "var(--text-primary)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "var(--bg-hover)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "var(--bg-secondary)";
-                    }}
-                  >
-                    Ver todas las actividades ({activityLog.length})
-                  </button>
-                )}
               </div>
             )}
           </motion.div>
@@ -1122,7 +1138,6 @@ export default function TeamDetailPage() {
               </div>
             ) : (
               rankingData.map((member, idx) => {
-                const medal = medalFor(idx);
                 const maxScore = rankingData[0]?.score || 1;
                 const pct = maxScore > 0 ? (member.score / maxScore) * 100 : 0;
                 return (
@@ -1132,20 +1147,23 @@ export default function TeamDetailPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.05 }}
                     className={cn(
-                      "flex items-center gap-4 p-4 rounded-xl border transition-all",
+                      "flex items-center gap-4 p-4 rounded-xl border bg-[var(--bg-card)] transition-all",
                       idx === 0
-                        ? "border-yellow-200 bg-yellow-50/50"
-                        : "border-[var(--border-color)] bg-[var(--bg-card)]",
+                        ? "border-blue-500/40"
+                        : "border-[var(--border-color)]",
                     )}
                   >
                     <div className="w-8 text-center flex-shrink-0">
-                      {medal ? (
-                        <span className="text-xl">{medal.emoji}</span>
-                      ) : (
-                        <span className="text-sm font-bold text-[var(--text-tertiary)]">
-                          #{idx + 1}
-                        </span>
-                      )}
+                      <span
+                        className={cn(
+                          "text-sm font-bold",
+                          idx === 0
+                            ? "text-blue-600"
+                            : "text-[var(--text-tertiary)]",
+                        )}
+                      >
+                        {idx + 1}
+                      </span>
                     </div>
                     <Avatar
                       name={member.name}
@@ -1165,12 +1183,7 @@ export default function TeamDetailPage() {
                             ease: "easeOut",
                             delay: idx * 0.05,
                           }}
-                          className={cn(
-                            "h-full rounded-full",
-                            idx === 0
-                              ? "bg-gradient-to-r from-yellow-400 to-amber-500"
-                              : "bg-gradient-to-r from-blue-500 to-indigo-600",
-                          )}
+                          className="h-full rounded-full bg-blue-600"
                         />
                       </div>
                       <div className="flex items-center gap-3 mt-1 text-xs text-[var(--text-tertiary)]">
@@ -1575,7 +1588,6 @@ export default function TeamDetailPage() {
         onClose={() => {
           if (!deleteLoading) {
             setShowDeleteModal(false);
-            setDeleteError(null);
           }
         }}
         onConfirm={handleDeleteTeam}
