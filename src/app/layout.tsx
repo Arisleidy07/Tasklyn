@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import ServiceWorkerRegistration from "@/components/providers/ServiceWorkerRegistration";
+import StartupIntro from "@/components/providers/StartupIntro";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -84,8 +85,10 @@ export default function RootLayout({
           color: "var(--text-primary)",
         }}
       >
-        <AuthProvider>{children}</AuthProvider>
-        <ServiceWorkerRegistration />
+        <StartupIntro>
+          <AuthProvider>{children}</AuthProvider>
+          <ServiceWorkerRegistration />
+        </StartupIntro>
       </body>
     </html>
   );
