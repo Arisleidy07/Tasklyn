@@ -71,7 +71,7 @@ export default function StartupIntro({
         >
           <video
             ref={videoRef}
-            src="/ANIMACION-TASKLYN.mp4"
+            src="/ANIMACION-TASKLYN-WHITE.mp4"
             autoPlay
             playsInline
             preload="auto"
@@ -79,7 +79,7 @@ export default function StartupIntro({
             disablePictureInPicture
             onEnded={finishIntro}
             onError={() => setIsPlaying(false)}
-            className="block h-auto max-h-[34dvh] w-[min(54vw,210px)] object-contain sm:max-h-[38dvh] sm:w-[min(34vw,300px)] lg:w-[300px]"
+            className="block h-auto max-h-[58dvh] w-[min(84vw,360px)] object-contain sm:max-h-[62dvh] sm:w-[min(72vw,560px)] lg:max-h-[66dvh] lg:w-[min(58vw,680px)]"
           />
         </div>
       )}

@@ -1,4 +1,4 @@
-const CACHE_NAME = "tasklyn-v5";
+const CACHE_NAME = "tasklyn-v6";
 const STATIC_ASSETS = [
   "/",
   "/dashboard",
@@ -10,7 +10,7 @@ const STATIC_ASSETS = [
   "/manifest.json",
   "/T.PNG",
   "/TA.PNG",
-  "/ANIMACION-TASKLYN.mp4",
+  "/ANIMACION-TASKLYN-WHITE.mp4",
 ];
 
 // Force skip waiting on install — activate immediately
