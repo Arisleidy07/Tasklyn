@@ -2,7 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { useSubscriptionStore } from "@/stores/subscriptionStore";
+import { useAuthStore } from "@/stores/authStore";
 import Header from "@/components/layout/Header";
 import {
   Check,
@@ -227,7 +227,14 @@ function PlanCard({ plan, isCurrentPlan, isPopular }: PlanCardProps) {
 }
 
 export default function PricingPage() {
-  const { currentPlan } = useSubscriptionStore();
+  const { user } = useAuthStore();
+  const currentPlan = user?.plan ?? "free";
+  const currentPlanName =
+    currentPlan === "business"
+      ? "Business"
+      : currentPlan === "pro"
+        ? "Pro"
+        : "Gratis";
 
   return (
     <>
@@ -271,6 +278,34 @@ export default function PricingPage() {
             Comienza gratis y escala cuando lo necesites. Sin contratos, cancela
             cuando quieras.
           </motion.p>
+        </div>
+
+        <div
+          className="mb-8 p-4 rounded-xl border flex items-center justify-between gap-4"
+          style={{
+            backgroundColor: "var(--bg-card)",
+            borderColor: "var(--border-color)",
+          }}
+        >
+          <div>
+            <p
+              className="text-xs font-medium"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Mi plan actual
+            </p>
+            <p
+              className="text-lg font-semibold mt-0.5"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Plan actual: {currentPlanName}
+            </p>
+          </div>
+          <Crown
+            size={22}
+            className="text-blue-600 flex-shrink-0"
+            aria-hidden="true"
+          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 lg:gap-7 mb-14">

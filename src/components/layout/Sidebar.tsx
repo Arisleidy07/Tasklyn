@@ -558,6 +558,27 @@ export default function Sidebar() {
               {!collapsed && <span className="flex-1">Perfil</span>}
             </Link>
             <Link
+              href="/pricing"
+              title={collapsed ? "Planes" : undefined}
+              className={cn(
+                "sidebar-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200",
+                isActive("/pricing") && "shadow-sm",
+                collapsed && "justify-center px-0",
+              )}
+              style={{
+                backgroundColor: isActive("/pricing")
+                  ? "var(--bg-card)"
+                  : "transparent",
+                color: isActive("/pricing")
+                  ? "var(--text-primary)"
+                  : "var(--text-secondary)",
+              }}
+            >
+              {isActive("/pricing") && <div className="sidebar-indicator" />}
+              <Sparkles size={18} className="flex-shrink-0" />
+              {!collapsed && <span className="flex-1">Planes</span>}
+            </Link>
+            <Link
               href="/settings"
               title={collapsed ? "Configuración" : undefined}
               className={cn(

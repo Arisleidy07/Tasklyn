@@ -332,19 +332,15 @@ export default function ProfilePage() {
                       </p>
                     </div>
                     <div className="flex flex-col gap-2 flex-shrink-0">
-                      {user.plan === "free" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          icon={<Crown size={14} />}
-                          className="whitespace-nowrap"
-                        >
-                          <span className="hidden sm:inline">
-                            Actualizar a PRO
-                          </span>
-                          <span className="sm:hidden">PRO</span>
-                        </Button>
-                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => router.push("/pricing")}
+                        icon={<Crown size={14} />}
+                        className="whitespace-nowrap"
+                      >
+                        Ver planes
+                      </Button>
                       <Button
                         size="sm"
                         variant="ghost"
@@ -602,8 +598,8 @@ export default function ProfilePage() {
                         {user.plan === "business"
                           ? "Plan empresarial completo"
                           : user.plan === "pro"
-                            ? "Acceso ilimitado"
-                            : "3 listas · 50 tareas"}
+                            ? "20 listas · 35 tareas"
+                            : "4 listas · 15 tareas"}
                       </p>
                     </div>
                   </div>

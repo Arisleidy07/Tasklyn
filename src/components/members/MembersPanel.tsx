@@ -1,34 +1,18 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { TaskList, MemberRole } from "@/types";
 import { useListStore } from "@/stores/listStore";
 import { useAuthStore } from "@/stores/authStore";
-import { useInvitationStore } from "@/stores/invitationStore";
 import {
   getUserRole,
   canChangeRoles,
   canRemoveMembers,
-  canInviteMembers,
 } from "@/lib/permissions";
 import Avatar from "@/components/ui/Avatar";
-import Badge from "@/components/ui/Badge";
-import Button from "@/components/ui/Button";
-import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
-import {
-  Trash2,
-  Check,
-  Shield,
-  Pencil,
-  X as XIcon,
-  Mail,
-  Send,
-  UserPlus,
-  CheckCircle2,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { Trash2, Check, Pencil, X as XIcon } from "lucide-react";
+import { motion } from "framer-motion";
 
 interface MembersPanelProps {
   list: TaskList;
@@ -37,18 +21,6 @@ interface MembersPanelProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-const roleOptions: { value: string; label: string }[] = [
-  { value: "editor", label: "Editor" },
-  { value: "viewer", label: "Viewer" },
-];
-
-const roleBadgeVariant: Record<MemberRole, "blue" | "sky" | "default"> = {
-  owner: "blue",
-  admin: "blue",
-  editor: "sky",
-  viewer: "default",
-};
 
 function InlineNameEditor({
   currentName,
@@ -122,16 +94,14 @@ export default function MembersPanel({
 }: MembersPanelProps) {
   const { user } = useAuthStore();
   const { updateMemberRole, removeMember, setCustomName } = useListStore();
-  const { sendEmailInvitation } = useInvitationStore();
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<MemberRole>("viewer");
-  const [isSending, setIsSending] = useState(false);
-  const [inviteSent, setInviteSent] = useState<{
-    email: string;
-    notified: boolean;
-  } | null>(null);
-  const [inviteError, setInviteError] = useState<string | null>(null);
+  const uniqueMembers = useMemo(
+    () =>
+      Array.from(
+        new Map(list.members.map((member) => [member.userId, member])).values(),
+      ),
+    [list.members],
+  );
 
   if (!user) return null;
 
@@ -139,44 +109,6 @@ export default function MembersPanel({
   const isOwner = myRole === "owner";
   const canManageRoles = canChangeRoles(myRole);
   const canRemove = canRemoveMembers(myRole);
-  const canInvite = canInviteMembers(myRole);
-
-  const handleSendInvitation = async () => {
-    if (!inviteEmail.trim()) return;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(inviteEmail.trim())) {
-      setInviteError("Ingresa un correo electrónico válido.");
-      return;
-    }
-    const alreadyMember = list.members.some(
-      (m) => memberNames[m.userId]?.toLowerCase() === inviteEmail.toLowerCase(),
-    );
-    if (alreadyMember) {
-      setInviteError("Este usuario ya es miembro de la lista.");
-      return;
-    }
-
-    setIsSending(true);
-    setInviteError(null);
-    try {
-      const result = await sendEmailInvitation({
-        listId: list.id,
-        listName: list.name,
-        invitedBy: user.id,
-        inviterName: user.name,
-        email: inviteEmail.trim(),
-        role: inviteRole,
-      });
-      setInviteSent({ email: inviteEmail.trim(), notified: result.notified });
-      setInviteEmail("");
-      setInviteRole("viewer");
-      setTimeout(() => setInviteSent(null), 5000);
-    } catch {
-      setInviteError("No se pudo enviar la invitación. Intenta de nuevo.");
-    } finally {
-      setIsSending(false);
-    }
-  };
 
   const handleRoleChange = (memberId: string, newRole: string) => {
     updateMemberRole(list.id, memberId, newRole as MemberRole);
@@ -228,8 +160,9 @@ export default function MembersPanel({
               className="text-xs mt-0.5"
               style={{ color: "var(--text-tertiary)" }}
             >
-              {list.members.length}{" "}
-              {list.members.length === 1 ? "miembro" : "miembros"} · {list.name}
+              {uniqueMembers.length}{" "}
+              {uniqueMembers.length === 1 ? "miembro" : "miembros"} ·{" "}
+              {list.name}
             </p>
           </div>
           <button
@@ -247,98 +180,10 @@ export default function MembersPanel({
           </button>
         </div>
 
-        {/* Invite section */}
-        {canInvite && (
-          <div
-            className="flex-shrink-0 px-6 py-4 border-b"
-            style={{
-              borderColor: "var(--border-color)",
-              backgroundColor: "var(--bg-secondary)",
-            }}
-          >
-            <p
-              className="text-xs font-semibold uppercase tracking-wide mb-2.5"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              Invitar por correo
-            </p>
-            <div className="flex gap-2">
-              <input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => {
-                  setInviteEmail(e.target.value);
-                  setInviteError(null);
-                }}
-                onKeyDown={(e) => e.key === "Enter" && handleSendInvitation()}
-                placeholder="correo@ejemplo.com"
-                className="flex-1 h-10 px-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
-                style={{
-                  border: "1px solid var(--border-input)",
-                  backgroundColor: "var(--bg-input)",
-                  color: "var(--text-primary)",
-                }}
-              />
-              <select
-                value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as MemberRole)}
-                className="h-10 px-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 appearance-none cursor-pointer"
-                style={{
-                  border: "1px solid var(--border-input)",
-                  backgroundColor: "var(--bg-input)",
-                  color: "var(--text-primary)",
-                }}
-              >
-                <option value="editor">Editor</option>
-                <option value="viewer">Observador</option>
-              </select>
-              <button
-                onClick={handleSendInvitation}
-                disabled={isSending || !inviteEmail.trim()}
-                className="flex items-center gap-1.5 h-10 px-4 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
-                style={{ backgroundColor: "#2563eb", color: "#fff" }}
-              >
-                {isSending ? (
-                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <Send size={14} />
-                )}
-                Invitar
-              </button>
-            </div>
-            <AnimatePresence>
-              {inviteError && (
-                <motion.p
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="text-xs mt-2"
-                  style={{ color: "#ef4444" }}
-                >
-                  {inviteError}
-                </motion.p>
-              )}
-              {inviteSent && (
-                <motion.div
-                  initial={{ opacity: 0, y: -4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="flex items-center gap-1.5 mt-2"
-                >
-                  <CheckCircle2 size={13} className="text-emerald-500" />
-                  <p className="text-xs text-emerald-600">
-                    Invitación enviada a {inviteSent.email}
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
-
         {/* Members list */}
         <div className="flex-1 overflow-y-auto min-h-0">
           <div className="px-6 py-3 space-y-1.5">
-            {list.members.map((member) => {
+            {uniqueMembers.map((member) => {
               const isOwnerMember = member.role === "owner";
               const isSelf = member.userId === user.id;
               const displayName = memberNames[member.userId] || "Cargando...";

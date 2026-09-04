@@ -77,7 +77,8 @@ service cloud.firestore {
         !isListMember() &&
         request.resource.data.memberIds != null &&
         uid() in request.resource.data.memberIds &&
-        request.resource.data.members.size() == resource.data.members.size() + 1 &&
+        request.resource.data.memberIds.toSet().hasAll(resource.data.memberIds.toSet()) &&
+        request.resource.data.memberIds.toSet().size() == resource.data.memberIds.toSet().size() + 1 &&
         request.resource.data.lastProcessedInvitationId is string &&
         acceptedInvitation(request.resource.data.lastProcessedInvitationId, "list", listId);
     }
@@ -289,7 +290,10 @@ service cloud.firestore {
     }
 
     match /notifications/{notificationId} {
-      allow read: if isAuth() && resource.data.userId == uid();
+      allow read: if isAuth() && (
+        resource.data.userId == uid() ||
+        (resource.data.teamId != null && isTeamOwnerOf(resource.data.teamId))
+      );
       allow create: if isAuth();
       allow update: if isAuth() && resource.data.userId == uid();
       allow delete: if isAuth() && (

@@ -269,6 +269,7 @@ export default function MobileSidebar() {
                   </p>
                   {[
                     { href: "/profile", icon: User, label: "Perfil" },
+                    { href: "/pricing", icon: Sparkles, label: "Planes" },
                     {
                       href: "/settings",
                       icon: Settings,

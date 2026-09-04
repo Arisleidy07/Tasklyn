@@ -107,6 +107,15 @@ const stripUndefined = <T extends Record<string, unknown>>(
   return result;
 };
 
+const dedupeMembers = (members: ListMember[] = []): ListMember[] =>
+  Array.from(
+    new Map(
+      members
+        .filter((member) => Boolean(member?.userId))
+        .map((member) => [member.userId, member]),
+    ).values(),
+  );
+
 const withTimestamps = <T extends Record<string, unknown>>(
   data: T,
 ): T & { updatedAt: ReturnType<typeof serverTimestamp> } => ({
@@ -219,7 +228,7 @@ export const getList = async (listId: string): Promise<TaskList | null> => {
     ...data,
     id: snap.id,
     createdAt: toDate(data.createdAt),
-    members: data.members || [],
+    members: dedupeMembers(data.members),
     customNames: data.customNames || {},
   } as TaskList;
 };
@@ -271,9 +280,21 @@ export const addListMember = async (
   if (!listSnap.exists()) throw new Error("List not found");
 
   const data = listSnap.data();
-  const members: ListMember[] = data.members || [];
+  const originalMembers: ListMember[] = data.members || [];
+  const members = dedupeMembers(originalMembers);
 
-  if (members.some((m) => m.userId === userId)) return; // Already member
+  if (members.some((m) => m.userId === userId)) {
+    if (members.length !== originalMembers.length) {
+      await updateDoc(
+        listRef,
+        withTimestamps({
+          members,
+          memberIds: members.map((member) => member.userId),
+        }),
+      );
+    }
+    return;
+  }
 
   members.push({
     userId,
@@ -377,7 +398,7 @@ export const getUserLists = async (userId: string): Promise<TaskList[]> => {
       ...data,
       id: doc.id,
       createdAt: toDate(data.createdAt),
-      members: data.members || [],
+      members: dedupeMembers(data.members),
       customNames: data.customNames || {},
     } as TaskList;
   });
@@ -407,11 +428,22 @@ export const subscribeToUserLists = (
 
       const lists = snap.docs.map((doc) => {
         const data = doc.data();
+        const rawMembers: ListMember[] = data.members || [];
+        const members = dedupeMembers(rawMembers);
+        if (data.owner === userId && members.length !== rawMembers.length) {
+          void updateDoc(doc.ref, {
+            members,
+            memberIds: members.map((member) => member.userId),
+            updatedAt: serverTimestamp(),
+          }).catch((error) => {
+            console.error("Failed to repair duplicate list members:", error);
+          });
+        }
         const list = {
           ...data,
           id: doc.id,
           createdAt: toDate(data.createdAt),
-          members: data.members || [],
+          members,
           customNames: data.customNames || {},
         } as TaskList;
 
@@ -1556,14 +1588,16 @@ export const acceptInvitation = async (
   }
 
   const joinedAt = new Date().toISOString();
+  const members = dedupeMembers(listData.members);
+  members.push({
+    userId,
+    role: (current.defaultRole as MemberRole) || "viewer",
+    joinedAt,
+  });
   const batch = writeBatch(db);
   batch.update(doc(db, "lists", listId), {
-    members: arrayUnion({
-      userId,
-      role: (current.defaultRole as MemberRole) || "viewer",
-      joinedAt,
-    } satisfies ListMember),
-    memberIds: arrayUnion(userId),
+    members,
+    memberIds: members.map((member) => member.userId),
     type: "shared",
     lastProcessedInvitationId: invitation.id,
     updatedAt: serverTimestamp(),

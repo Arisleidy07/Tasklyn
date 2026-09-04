@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
@@ -54,7 +55,7 @@ export default function SettingsPage() {
             borderColor: "var(--border-color)",
           }}
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center"
@@ -92,11 +93,17 @@ export default function SettingsPage() {
                   {user.plan === "business"
                     ? "Plan empresarial con todas las funciones"
                     : user.plan === "pro"
-                      ? "Acceso ilimitado a todas las funciones"
-                      : "3 listas máximo, 50 tareas por lista"}
+                      ? "Hasta 20 listas, 35 tareas y funciones avanzadas"
+                      : "Hasta 4 listas, 15 tareas y 5 personas por lista"}
                 </p>
               </div>
             </div>
+            <Link
+              href="/pricing"
+              className="inline-flex min-h-11 items-center justify-center px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold transition-colors"
+            >
+              Ver planes
+            </Link>
           </div>
         </motion.div>
 
