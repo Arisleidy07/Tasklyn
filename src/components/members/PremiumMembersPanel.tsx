@@ -9,14 +9,11 @@ import Button from "@/components/ui/Button";
 import Select from "@/components/ui/Select";
 import Modal from "@/components/ui/Modal";
 import {
-  Check,
   Mail,
   Send,
   UserPlus,
   CheckCircle2,
   Share2,
-  Link2,
-  Copy,
   Eye,
   Edit3,
   Crown,
@@ -96,7 +93,7 @@ export default function PremiumMembersPanel({
     try {
       let url = inviteLink;
       if (!url) {
-        const invitation = await createInvitation(list.id, user.id, "viewer");
+        const invitation = await createInvitation(list.id, user.id, inviteRole);
         url = `${window.location.origin}/invite/${invitation.token}`;
         setInviteLink(url);
       }
@@ -126,10 +123,10 @@ export default function PremiumMembersPanel({
       isOpen={isOpen}
       onClose={onClose}
       title="Compartir lista"
-      description={`Invita personas a "${list.name}"`}
-      size="md"
+      description={`Invita personas a colaborar en “${list.name}”`}
+      size="lg"
     >
-      <div className="space-y-6">
+      <div className="space-y-6 p-4 sm:p-6">
         {/* Role guide */}
         <div
           className="rounded-2xl p-5"
@@ -161,7 +158,7 @@ export default function PremiumMembersPanel({
               </p>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-2">
             {[
               {
                 icon: <Crown size={13} />,
@@ -224,46 +221,67 @@ export default function PremiumMembersPanel({
               </h3>
             </div>
 
-            <div className="relative">
-              <Mail
-                size={16}
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
-              />
-              <input
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => {
-                  setInviteEmail(e.target.value);
-                  setInviteError(null);
-                  setInviteSent(null);
-                }}
-                onKeyDown={(e) => e.key === "Enter" && handleSendInvitation()}
-                placeholder="correo@ejemplo.com"
-                className="w-full h-11 pl-10 pr-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
-                style={{
-                  border: "1px solid var(--border-input)",
-                  backgroundColor: "var(--bg-input)",
-                  color: "var(--text-primary)",
-                }}
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_180px] gap-3">
+              <label className="space-y-1.5 min-w-0">
+                <span
+                  className="text-xs font-medium"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Correo electrónico
+                </span>
+                <div className="relative">
+                  <Mail
+                    size={17}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
+                    style={{ color: "var(--text-tertiary)" }}
+                  />
+                  <input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => {
+                      setInviteEmail(e.target.value);
+                      setInviteError(null);
+                      setInviteSent(null);
+                    }}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleSendInvitation()
+                    }
+                    placeholder="persona@ejemplo.com"
+                    className="w-full min-h-12 pl-11 pr-4 rounded-xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                    style={{
+                      border: "1px solid var(--border-input)",
+                      backgroundColor: "var(--bg-input)",
+                      color: "var(--text-primary)",
+                    }}
+                  />
+                </div>
+              </label>
+
+              <label className="space-y-1.5 min-w-0">
+                <span
+                  className="text-xs font-medium"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Rol al unirse
+                </span>
+                <Select
+                  options={roleOptions}
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as MemberRole)}
+                  className="!min-h-12 !text-base sm:!text-sm w-full"
+                />
+              </label>
             </div>
 
-            <div className="flex gap-2">
-              <Select
-                options={roleOptions}
-                value={inviteRole}
-                onChange={(e) => setInviteRole(e.target.value as MemberRole)}
-                className="!h-11 !text-sm flex-1"
-              />
-              <Button
-                onClick={handleSendInvitation}
-                isLoading={isSending}
-                icon={<Send size={15} />}
-                className="h-11 px-5 bg-blue-600 hover:bg-blue-700 flex-shrink-0"
-              >
-                Enviar
-              </Button>
-            </div>
+            <Button
+              onClick={handleSendInvitation}
+              isLoading={isSending}
+              disabled={!inviteEmail.trim() || isSending}
+              icon={<Send size={16} />}
+              className="w-full sm:w-auto min-h-12 px-6 bg-blue-600 hover:bg-blue-700"
+            >
+              Enviar invitación
+            </Button>
 
             <AnimatePresence>
               {inviteError && (
@@ -317,49 +335,54 @@ export default function PremiumMembersPanel({
 
         {/* Copy invite link */}
         <div
-          className="pt-2 border-t"
-          style={{ borderColor: "var(--border-color)" }}
+          className="p-4 sm:p-5 rounded-2xl border"
+          style={{
+            borderColor: "var(--border-color)",
+            backgroundColor: "var(--bg-secondary)",
+          }}
         >
+          <div className="mb-3">
+            <h3
+              className="text-sm font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Compartir mediante otra aplicación
+            </h3>
+            <p
+              className="text-xs mt-1"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Abre el menú del dispositivo para enviarla por mensajes, correo u
+              otra aplicación.
+            </p>
+          </div>
           <motion.button
             onClick={handleShareInvitation}
             disabled={isCopyingLink}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             className={cn(
-              "w-full flex items-center justify-center gap-2 h-11 rounded-xl border text-sm font-medium transition-all duration-200",
-              linkCopied ? "border-green-300 text-green-700" : "",
+              "w-full flex items-center justify-center gap-2 min-h-12 rounded-xl text-sm font-semibold text-white transition-all duration-200 bg-blue-600 hover:bg-blue-700 disabled:opacity-60",
+              linkCopied && "bg-green-600 hover:bg-green-600",
             )}
           >
             {isCopyingLink ? (
-              <div
-                className="w-4 h-4 border-2 border-t-transparent rounded-full animate-spin"
-                style={{
-                  borderColor: "var(--text-tertiary)",
-                  borderTopColor: "transparent",
-                }}
-              />
-            ) : linkCopied ? (
-              <Check size={15} className="text-green-600" />
+              <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
             ) : (
-              <Link2 size={15} />
+              <Share2 size={17} aria-hidden="true" />
             )}
             {linkCopied
-              ? "¡Enlace copiado!"
+              ? "Invitación copiada"
               : isCopyingLink
-                ? "Generando enlace..."
+                ? "Preparando invitación..."
                 : "Compartir invitación"}
-            {!linkCopied && !isCopyingLink && (
-              <Copy
-                size={12}
-                style={{ color: "var(--text-tertiary)", marginLeft: "2px" }}
-              />
-            )}
           </motion.button>
           <p
             className="text-[11px] text-center mt-2"
             style={{ color: "var(--text-tertiary)" }}
           >
-            Expira en 7 días · Se une como Viewer
+            Expira en 7 días · Rol:{" "}
+            {inviteRole === "editor" ? "Editor" : "Viewer"}
           </p>
           {shareError && (
             <p className="text-xs text-center text-red-600 mt-2" role="alert">
