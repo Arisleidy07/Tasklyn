@@ -35,12 +35,17 @@ export default function Modal({
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const mq = window.matchMedia("(max-width: 639px)");
-    setIsMobile(mq.matches);
+    const frame = requestAnimationFrame(() => {
+      setMounted(true);
+      setIsMobile(mq.matches);
+    });
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    return () => {
+      cancelAnimationFrame(frame);
+      mq.removeEventListener("change", handler);
+    };
   }, []);
 
   const handleKeyDown = useCallback(
@@ -54,12 +59,10 @@ export default function Modal({
     if (isOpen) {
       document.addEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "hidden";
-      document.body.style.touchAction = "none";
     }
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
-      document.body.style.touchAction = "";
     };
   }, [isOpen, handleKeyDown]);
 
@@ -145,7 +148,7 @@ export default function Modal({
               </div>
               {/* Content */}
               <div
-                className="flex-1 overflow-y-auto flex flex-col min-h-0"
+                className="flex-1 overflow-y-auto overscroll-contain touch-pan-y flex flex-col min-h-0"
                 style={{ backgroundColor: "var(--bg-modal)" }}
               >
                 {children}

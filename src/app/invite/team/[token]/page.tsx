@@ -8,6 +8,7 @@ import { useTeamStore } from "@/stores/teamStore";
 import {
   getTeamInvitationByToken,
   acceptTeamInvitation,
+  declineInvitation,
   getTeam,
 } from "@/lib/firestore";
 import type { Invitation, Team } from "@/types";
@@ -31,6 +32,8 @@ type Status =
   | "not-logged-in"
   | "ready"
   | "accepting"
+  | "rejecting"
+  | "rejected"
   | "success";
 
 export default function TeamInvitePage() {
@@ -79,7 +82,7 @@ export default function TeamInvitePage() {
     };
 
     load();
-  }, [token, isAuthReady, isAuthenticated, user?.id]);
+  }, [token, isAuthReady, isAuthenticated, user, isTeamMember]);
 
   const handleLogin = async () => {
     try {
@@ -102,6 +105,19 @@ export default function TeamInvitePage() {
     } catch (err) {
       console.error("[TeamInvitePage] Accept error:", err);
       setError("Error al unirse al equipo. Por favor, inténtalo de nuevo.");
+      setStatus("ready");
+    }
+  };
+
+  const handleReject = async () => {
+    if (!invitation || !user) return;
+    setStatus("rejecting");
+    setError("");
+    try {
+      await declineInvitation(invitation, user.id);
+      setStatus("rejected");
+    } catch {
+      setError("No se pudo rechazar la invitación. Inténtalo de nuevo.");
       setStatus("ready");
     }
   };
@@ -159,7 +175,8 @@ export default function TeamInvitePage() {
                   Invitación expirada
                 </h2>
                 <p className="text-slate-400 mb-6">
-                  Este enlace expiró. Pide al administrador del equipo que genere uno nuevo.
+                  Este enlace expiró. Pide al administrador del equipo que
+                  genere uno nuevo.
                 </p>
                 <Button onClick={() => router.push("/")} className="w-full">
                   Ir al inicio
@@ -169,10 +186,7 @@ export default function TeamInvitePage() {
 
             {status === "already-member" && (
               <div className="text-center py-8">
-                <CheckCircle
-                  size={48}
-                  className="mx-auto text-blue-500 mb-4"
-                />
+                <CheckCircle size={48} className="mx-auto text-blue-500 mb-4" />
                 <h2 className="text-xl font-bold text-slate-100 mb-2">
                   Ya eres miembro
                 </h2>
@@ -210,9 +224,7 @@ export default function TeamInvitePage() {
                 <p className="text-sm text-slate-500 mb-6">
                   Inicia sesión con Google para aceptar esta invitación.
                 </p>
-                {error && (
-                  <p className="text-red-400 text-sm mb-4">{error}</p>
-                )}
+                {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
                 <Button
                   onClick={handleLogin}
                   className="w-full"
@@ -223,7 +235,9 @@ export default function TeamInvitePage() {
               </div>
             )}
 
-            {(status === "ready" || status === "accepting") && (
+            {(status === "ready" ||
+              status === "accepting" ||
+              status === "rejecting") && (
               <div className="text-center py-8">
                 <Users size={48} className="mx-auto text-blue-500 mb-4" />
                 <h2 className="text-xl font-bold text-slate-100 mb-2">
@@ -239,27 +253,45 @@ export default function TeamInvitePage() {
                   <ShieldCheck size={14} className="text-blue-400" />
                   Rol: {roleLabel}
                 </div>
-                {error && (
-                  <p className="text-red-400 text-sm mb-4">{error}</p>
-                )}
+                {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
                 <div className="flex gap-3">
                   <Button
                     variant="ghost"
-                    onClick={() => router.push("/dashboard")}
+                    onClick={handleReject}
                     className="flex-1"
-                    disabled={status === "accepting"}
+                    disabled={status !== "ready"}
+                    isLoading={status === "rejecting"}
                   >
                     Rechazar
                   </Button>
                   <Button
                     onClick={handleAccept}
                     className="flex-1"
+                    disabled={status !== "ready"}
                     isLoading={status === "accepting"}
                     icon={<ArrowRight size={16} />}
                   >
                     Unirse
                   </Button>
                 </div>
+              </div>
+            )}
+
+            {status === "rejected" && (
+              <div className="text-center py-8">
+                <CheckCircle size={56} className="mx-auto text-blue-500 mb-4" />
+                <h2 className="text-xl font-bold text-slate-100 mb-2">
+                  Invitación rechazada
+                </h2>
+                <p className="text-slate-400 mb-6">
+                  La invitación fue procesada y ya no está pendiente.
+                </p>
+                <Button
+                  onClick={() => router.push("/dashboard")}
+                  className="w-full"
+                >
+                  Ir a mis listas
+                </Button>
               </div>
             )}
 

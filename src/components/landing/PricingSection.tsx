@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import { Check, Zap, Building2, User } from "lucide-react";
-import Button from "@/components/ui/Button";
 
 interface PricingPlan {
   name: string;
@@ -21,47 +20,52 @@ const plans: PricingPlan[] = [
   {
     name: "Free",
     price: "$0",
-    period: "Forever",
-    description: "Perfecto para empezar sin fricciones.",
+    period: "/mes",
+    description: "Para organizar tus tareas esenciales.",
     badge: "Gratis",
     badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
-    features: ["3 listas", "100 tareas", "1 equipo"],
+    features: [
+      "Hasta 4 listas",
+      "Hasta 15 tareas",
+      "Hasta 5 personas por lista",
+      "Funciones básicas",
+    ],
     cta: "Comenzar gratis",
     ctaVariant: "secondary",
   },
   {
-    name: "Pro ⭐",
-    price: "$5.99",
+    name: "Pro",
+    price: "$2.99",
     period: "/mes",
     description: "Para profesionales productivos.",
     badge: "MOST POPULAR",
     badgeColor: "bg-blue-500/20 text-blue-400 border-blue-500/40",
     features: [
-      "Listas ilimitadas",
-      "Equipos ilimitados",
-      "Ranking avanzado",
+      "Hasta 20 listas",
+      "Hasta 35 tareas",
+      "Mayor límite de personas",
       "Historial completo",
-      "Estadísticas avanzadas",
-      "Prioridades avanzadas",
+      "Personalización",
+      "Funciones avanzadas",
     ],
-    cta: "✨ Suscribirse ahora",
+    cta: "Elegir Pro",
     ctaVariant: "primary",
     popular: true,
   },
   {
-    name: "Business 🚀",
-    price: "$14.99",
+    name: "Business",
+    price: "$10",
     period: "/mes",
     description: "Para equipos y empresas.",
     badge: "Empresas",
     badgeColor: "bg-violet-500/15 text-violet-400 border-violet-500/30",
     features: [
-      "Todo lo Pro",
-      "Administración empresarial",
-      "Estadísticas premium",
-      "Funciones futuras",
+      "Listas, tareas y personas ilimitadas",
+      "Equipos y colaboración sin límite",
+      "Todas las funciones Pro",
+      "Futuras funciones empresariales",
     ],
-    cta: "🚀 Comenzar",
+    cta: "Elegir Business",
     ctaVariant: "secondary",
   },
 ];

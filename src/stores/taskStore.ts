@@ -8,9 +8,11 @@ import {
   subscribeToListTasks,
   addTaskHistoryEntry,
 } from "@/lib/firestore";
+import { PLAN_FEATURES } from "@/types";
 import type {
   Task,
   TaskStatus,
+  Plan,
   TaskHistoryEntry,
   RecurrenceConfig,
   TaskReminder,
@@ -260,9 +262,26 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     dueTime,
     reminders,
     recurrence,
+    priority,
+    tags,
   }) => {
+    const plan = (useAuthStore.getState().user?.plan || "free") as Plan;
+    const activeTaskCount = get().tasks.filter(
+      (task) => task.createdBy === createdBy && task.isDeleted !== true,
+    ).length;
+    if (activeTaskCount >= PLAN_FEATURES[plan].maxTasksPerList) {
+      throw new Error(
+        `Has alcanzado el límite de ${PLAN_FEATURES[plan].maxTasksPerList} tareas de tu plan.`,
+      );
+    }
+
+    const list = useListStore
+      .getState()
+      .lists.find((item) => item.id === listId);
     const newTaskData = {
+      teamId: list?.teamId,
       listId,
+      isDeleted: false,
       title,
       description: description || "",
       status: "pending" as TaskStatus,
@@ -276,6 +295,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       dueTime: dueTime || undefined,
       reminders: reminders || undefined,
       recurrence: recurrence || undefined,
+      priority: priority || "normal",
+      tags: tags || [],
       parentTaskId: null,
       completedCount: 0,
     };
@@ -292,7 +313,6 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
     // Log activity
     const currentUser = useAuthStore.getState().user;
-    const list = useListStore.getState().lists.find((l) => l.id === listId);
     if (currentUser) {
       logTaskCreated(
         { id, title, listId, listName: list?.name },
@@ -459,12 +479,21 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       );
     }
 
-    await updateTaskInDb(id, updates);
-
-    for (const entry of entries) {
-      const { id: _entryId, ...entryData } = entry;
-      await addTaskHistoryEntry(id, entryData);
+    try {
+      await updateTaskInDb(id, updates);
+    } catch (error) {
+      set((state) => ({
+        tasks: state.tasks.map((item) => (item.id === id ? task : item)),
+      }));
+      throw error;
     }
+
+    await Promise.allSettled(
+      entries.map((entry) => {
+        const { id: _entryId, ...entryData } = entry;
+        return addTaskHistoryEntry(id, entryData);
+      }),
+    );
 
     // Log team activity for assignment
     const currentUser = useAuthStore.getState().user;

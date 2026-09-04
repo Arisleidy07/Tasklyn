@@ -6,6 +6,7 @@ import {
   getInvitationByToken,
   getInvitationsByList,
   deleteInvitation as deleteInvitationInDb,
+  declineInvitation as declineInvitationInDb,
   acceptInvitation as acceptInvitationInDb,
   getUserByEmail,
   createNotification,
@@ -79,13 +80,17 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
 
     console.log("[invitationStore] List teamId:", teamId || "none");
 
-    const invitationData: any = {
+    if (!list) throw new Error("List not found");
+
+    const invitationData: Omit<Invitation, "id" | "createdAt"> = {
+      type: "list",
+      targetId: listId,
+      targetName: list.name,
       listId,
       invitedBy,
       defaultRole,
-      token:
-        Math.random().toString(36).slice(2) +
-        Math.random().toString(36).slice(2),
+      status: "pending",
+      token: crypto.randomUUID(),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     };
 
@@ -124,14 +129,18 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
       teamId || "none",
     );
 
-    const token =
-      Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    const token = crypto.randomUUID();
 
-    const invitationData: any = {
+    const invitationData: Omit<Invitation, "id" | "createdAt"> = {
+      type: "list",
+      targetId: listId,
+      targetName: listName,
+      inviterName,
       listId,
       invitedBy,
-      invitedEmail: email,
+      invitedEmail: email.toLowerCase(),
       defaultRole: role,
+      status: "pending",
       token,
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     };
@@ -246,13 +255,18 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
       console.log(
         "[invitationStore] Step 4: Sending notification to inviter...",
       );
-      await notifyInvitationAccepted(
-        invitation.invitedBy,
-        invitation.targetId,
-        accepterName,
-        invitation.targetId,
-      );
-      console.log("[invitationStore] Step 4: Notification sent to owner");
+      try {
+        const listId = invitation.listId ?? invitation.targetId;
+        await notifyInvitationAccepted(
+          invitation.invitedBy,
+          listId,
+          accepterName,
+          invitation.targetName ?? listId,
+        );
+        console.log("[invitationStore] Step 4: Notification sent to owner");
+      } catch (error) {
+        console.error("[invitationStore] Notification failed:", error);
+      }
     } else {
       console.log(
         "[invitationStore] Step 4: Skipping notification (no accepterName)",
@@ -264,15 +278,23 @@ export const useInvitationStore = create<InvitationState>((set, get) => ({
     );
   },
 
-  rejectInvitation: async (invitation, _userId, rejecterName) => {
-    await deleteInvitationInDb(invitation.id);
+  rejectInvitation: async (invitation, userId, rejecterName) => {
+    await declineInvitationInDb(invitation, userId);
     if (rejecterName) {
-      await notifyInvitationRejected(
-        invitation.invitedBy,
-        invitation.targetId,
-        rejecterName,
-        invitation.targetId,
-      );
+      try {
+        const listId = invitation.listId ?? invitation.targetId;
+        await notifyInvitationRejected(
+          invitation.invitedBy,
+          listId,
+          rejecterName,
+          invitation.targetName ?? listId,
+        );
+      } catch (error) {
+        console.error(
+          "[invitationStore] Rejection notification failed:",
+          error,
+        );
+      }
     }
   },
 }));

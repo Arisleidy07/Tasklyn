@@ -593,6 +593,25 @@ export const deleteInvitation = async (invitationId: string): Promise<void> => {
   await deleteDoc(doc(db, "invitations", invitationId));
 };
 
+export const declineInvitation = async (
+  invitation: Invitation,
+  userId: string,
+): Promise<void> => {
+  await runTransaction(db, async (transaction) => {
+    const invitationRef = doc(db, "invitations", invitation.id);
+    const snapshot = await transaction.get(invitationRef);
+    if (!snapshot.exists()) throw new Error("Invitation not found");
+    if (snapshot.data().status !== "pending") {
+      throw new Error("Invitation already processed");
+    }
+    transaction.update(invitationRef, {
+      status: "declined",
+      declinedAt: serverTimestamp(),
+      declinedBy: userId,
+    });
+  });
+};
+
 /**
  * Create a team invitation with a UUID token.
  * Stored in /invitations with type:"team".
@@ -655,29 +674,62 @@ export const acceptTeamInvitation = async (
   invitation: Invitation,
   userId: string,
 ): Promise<void> => {
-  if (!invitation.teamId) throw new Error("Invitation has no teamId");
+  const teamId = invitation.teamId ?? invitation.targetId;
+  if (!teamId) throw new Error("Invitation has no teamId");
 
-  // 1. Add user to team (subcollection + legacy arrays)
-  await addTeamMember(
-    invitation.teamId,
+  const invitationRef = doc(db, "invitations", invitation.id);
+  const [invitationSnapshot, userSnapshot] = await Promise.all([
+    getDoc(invitationRef),
+    getDoc(doc(db, "users", userId)),
+  ]);
+  if (!invitationSnapshot.exists()) throw new Error("Invitation not found");
+
+  const current = invitationSnapshot.data() as Invitation;
+  if (current.status !== "pending") {
+    if (current.status === "accepted" && current.acceptedBy === userId) return;
+    throw new Error("Invitation already processed");
+  }
+  if (new Date(toDate(current.expiresAt)).getTime() <= Date.now()) {
+    throw new Error("Invitation expired");
+  }
+
+  const userData = userSnapshot.data() ?? {};
+  const joinedAt = new Date().toISOString();
+  const role = (current.defaultRole as "admin" | "member") || "member";
+  const batch = writeBatch(db);
+  batch.update(doc(db, "teams", teamId), {
+    members: arrayUnion({
+      userId,
+      role,
+      joinedAt,
+      invitedBy: current.invitedBy,
+    }),
+    memberIds: arrayUnion(userId),
+    "stats.totalMembers": increment(1),
+    lastProcessedInvitationId: invitation.id,
+    updatedAt: serverTimestamp(),
+  });
+  batch.set(doc(db, "teams", teamId, "members", userId), {
     userId,
-    (invitation.defaultRole as "admin" | "member") || "member",
-    invitation.invitedBy,
-  );
-
-  // 2. Mark invitation as accepted
-  const invRef = doc(db, "invitations", invitation.id);
-  await updateDoc(invRef, {
+    name: userData.name || "",
+    email: userData.email || "",
+    photoURL: userData.photoURL || "",
+    role,
+    joinedAt,
+    invitedBy: current.invitedBy,
+    invitationId: invitation.id,
+    xp: 0,
+    streak: 0,
+  });
+  batch.update(invitationRef, {
     status: "accepted",
     acceptedAt: serverTimestamp(),
     acceptedBy: userId,
   });
+  await batch.commit();
 
-  // 3. Log activity
-  const userSnap = await getDoc(doc(db, "users", userId));
-  const userData = userSnap.exists() ? userSnap.data() : {};
-  await logTeamActivity(invitation.teamId, {
-    teamId: invitation.teamId,
+  await logTeamActivity(teamId, {
+    teamId,
     userId,
     userName: userData.name || "Usuario",
     userPhotoURL: userData.photoURL || "",
@@ -1468,66 +1520,64 @@ export const acceptInvitation = async (
   invitation: Invitation,
   userId: string,
 ): Promise<void> => {
-  const debugPrefix = `[acceptInvitation ${userId.substring(0, 6)}...]`;
-  console.log(`${debugPrefix} ===== STARTING INVITATION ACCEPTANCE =====`);
-  console.log(`${debugPrefix} Invitation ID: ${invitation.id}`);
-  console.log(`${debugPrefix} List ID: ${invitation.listId}`);
-  console.log(`${debugPrefix} Team ID: ${invitation.teamId || "none"}`);
-  console.log(`${debugPrefix} User ID: ${userId}`);
-  console.log(`${debugPrefix} Default Role: ${invitation.defaultRole}`);
+  const listId = invitation.listId ?? invitation.targetId;
+  if (!listId) throw new Error("Invitation has no listId");
 
-  const resolvedListId = invitation.listId ?? invitation.targetId;
-  if (!resolvedListId) throw new Error("Invitation has no listId");
-
-  const listRef = doc(db, "lists", resolvedListId);
   const invitationRef = doc(db, "invitations", invitation.id);
-  const teamRef = invitation.teamId
-    ? doc(db, "teams", invitation.teamId)
-    : null;
+  const snapshot = await getDoc(invitationRef);
+  if (!snapshot.exists()) throw new Error("Invitation not found");
 
-  // Use arrayUnion to add user without reading the document first
-  // This avoids permission-denied errors
-  const newMember: ListMember = {
-    userId,
-    role: (invitation.defaultRole as MemberRole) || "viewer",
-    joinedAt: new Date().toISOString(),
-  };
-
-  console.log(`${debugPrefix} Adding user to list with arrayUnion`);
-  await updateDoc(listRef, {
-    members: arrayUnion(newMember),
-    memberIds: arrayUnion(userId),
-    type: "shared" as const,
-    updatedAt: serverTimestamp(),
-  });
-  console.log(`${debugPrefix} User added to list successfully`);
-
-  // If list has a team, add user to team
-  if (invitation.teamId && teamRef) {
-    console.log(
-      `${debugPrefix} List has team ${invitation.teamId}, adding user to team`,
-    );
-    const newTeamMember: TeamMember = {
-      userId,
-      role: "member" as TeamRole,
-      joinedAt: new Date().toISOString(),
-      invitedBy: invitation.invitedBy,
-    };
-    await updateDoc(teamRef, {
-      members: arrayUnion(newTeamMember),
-      memberIds: arrayUnion(userId),
-      "stats.totalMembers": increment(1),
-      updatedAt: serverTimestamp(),
-    });
-    console.log(`${debugPrefix} User added to team successfully`);
+  const current = snapshot.data() as Invitation;
+  if (current.status !== "pending") {
+    if (current.status === "accepted" && current.acceptedBy === userId) return;
+    throw new Error("Invitation already processed");
+  }
+  if (new Date(toDate(current.expiresAt)).getTime() <= Date.now()) {
+    throw new Error("Invitation expired");
+  }
+  if (current.invitedEmail) {
+    const userSnapshot = await getDoc(doc(db, "users", userId));
+    const email = userSnapshot.data()?.email?.toLowerCase();
+    if (!email || email !== current.invitedEmail.toLowerCase()) {
+      throw new Error("Invitation belongs to another account");
+    }
   }
 
-  // Delete the invitation
-  console.log(`${debugPrefix} Deleting invitation`);
-  await deleteDoc(invitationRef);
-  console.log(`${debugPrefix} Invitation deleted successfully`);
+  const joinedAt = new Date().toISOString();
+  const batch = writeBatch(db);
+  batch.update(doc(db, "lists", listId), {
+    members: arrayUnion({
+      userId,
+      role: (current.defaultRole as MemberRole) || "viewer",
+      joinedAt,
+    } satisfies ListMember),
+    memberIds: arrayUnion(userId),
+    type: "shared",
+    lastProcessedInvitationId: invitation.id,
+    updatedAt: serverTimestamp(),
+  });
 
-  console.log(`${debugPrefix} ===== INVITATION ACCEPTANCE COMPLETED =====`);
+  if (current.teamId) {
+    batch.update(doc(db, "teams", current.teamId), {
+      members: arrayUnion({
+        userId,
+        role: "member",
+        joinedAt,
+        invitedBy: current.invitedBy,
+      } satisfies TeamMember),
+      memberIds: arrayUnion(userId),
+      "stats.totalMembers": increment(1),
+      lastProcessedInvitationId: invitation.id,
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  batch.update(invitationRef, {
+    status: "accepted",
+    acceptedAt: serverTimestamp(),
+    acceptedBy: userId,
+  });
+  await batch.commit();
 };
 
 // ============================================

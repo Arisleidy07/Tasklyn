@@ -23,7 +23,8 @@ export default function InvitePage() {
   const token = params.token as string;
 
   const { user, isAuthenticated, isAuthReady, login } = useAuthStore();
-  const { getInvitation, acceptInvitation } = useInvitationStore();
+  const { getInvitation, acceptInvitation, rejectInvitation } =
+    useInvitationStore();
   const { getList } = useListStore();
 
   const [invitation, setInvitation] =
@@ -37,6 +38,8 @@ export default function InvitePage() {
     | "already-member"
     | "ready"
     | "accepting"
+    | "rejecting"
+    | "rejected"
     | "success"
   >("loading");
   const [error, setError] = useState<string>("");
@@ -50,17 +53,18 @@ export default function InvitePage() {
         return;
       }
 
+      if (inv.status && inv.status !== "pending") {
+        setStatus("invalid");
+        return;
+      }
+
       if (new Date(inv.expiresAt) < new Date()) {
         setStatus("expired");
         return;
       }
 
-      const list = await getList(inv.targetId);
-      if (list) {
-        setListName(list.name);
-      }
-
       setInvitation(inv);
+      setListName(inv.targetName ?? "");
 
       if (!isAuthReady) {
         setStatus("loading");
@@ -71,6 +75,9 @@ export default function InvitePage() {
         setStatus("not-logged-in");
         return;
       }
+
+      const list = await getList(inv.listId ?? inv.targetId);
+      if (list) setListName(list.name);
 
       // Check if already member
       if (list?.members.some((m) => m.userId === user?.id)) {
@@ -86,18 +93,9 @@ export default function InvitePage() {
 
   const handleLogin = async () => {
     try {
+      setError("");
       await login();
-      // Después de iniciar sesión, volver a verificar el estado de la invitación
-      const inv = await getInvitation(token);
-      if (inv) {
-        const list = await getList(inv.targetId);
-        if (list?.members.some((m) => m.userId === user?.id)) {
-          setStatus("already-member");
-        } else {
-          setStatus("ready");
-        }
-      }
-    } catch (err) {
+    } catch {
       setError("Error al iniciar sesión. Por favor, inténtalo de nuevo.");
     }
   };
@@ -107,20 +105,29 @@ export default function InvitePage() {
 
     setStatus("accepting");
     try {
-      await acceptInvitation(invitation, user.id);
+      await acceptInvitation(invitation, user.id, user.name);
       setStatus("success");
       // Redirigir después de un breve retraso
       setTimeout(() => {
-        router.push(`/lists/${invitation.listId}`);
+        router.push(`/lists/${invitation.listId ?? invitation.targetId}`);
       }, 1500);
-    } catch (err) {
+    } catch {
       setError("Error al unirse a la lista. Por favor, inténtalo de nuevo.");
       setStatus("ready");
     }
   };
 
-  const handleDecline = () => {
-    router.push("/dashboard");
+  const handleDecline = async () => {
+    if (!invitation || !user) return;
+    setStatus("rejecting");
+    setError("");
+    try {
+      await rejectInvitation(invitation, user.id, user.name);
+      setStatus("rejected");
+    } catch {
+      setError("No se pudo rechazar la invitación. Inténtalo de nuevo.");
+      setStatus("ready");
+    }
   };
 
   return (
@@ -225,7 +232,9 @@ export default function InvitePage() {
               </div>
             )}
 
-            {(status === "ready" || status === "accepting") && (
+            {(status === "ready" ||
+              status === "accepting" ||
+              status === "rejecting") && (
               <div className="text-center py-8">
                 <Users size={48} className="mx-auto text-blue-500 mb-4" />
                 <h2 className="text-xl font-bold text-slate-100 mb-2">
@@ -240,19 +249,39 @@ export default function InvitePage() {
                     variant="ghost"
                     onClick={handleDecline}
                     className="flex-1"
-                    disabled={status === "accepting"}
+                    disabled={status !== "ready"}
+                    isLoading={status === "rejecting"}
                   >
                     Rechazar
                   </Button>
                   <Button
                     onClick={handleAccept}
                     className="flex-1"
+                    disabled={status !== "ready"}
                     isLoading={status === "accepting"}
                     icon={<ArrowRight size={16} />}
                   >
-                    Unirse
+                    Aceptar
                   </Button>
                 </div>
+              </div>
+            )}
+
+            {status === "rejected" && (
+              <div className="text-center py-8">
+                <CheckCircle size={56} className="mx-auto text-blue-500 mb-4" />
+                <h2 className="text-xl font-bold text-slate-100 mb-2">
+                  Invitación rechazada
+                </h2>
+                <p className="text-slate-400 mb-6">
+                  La invitación fue procesada y ya no está pendiente.
+                </p>
+                <Button
+                  onClick={() => router.push("/dashboard")}
+                  className="w-full"
+                >
+                  Ir a mis listas
+                </Button>
               </div>
             )}
 

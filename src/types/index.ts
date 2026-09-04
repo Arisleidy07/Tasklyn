@@ -343,6 +343,8 @@ export interface Invitation {
   token: string;
   type: "team" | "list";
   targetId: string; // teamId or listId
+  targetName?: string;
+  inviterName?: string;
   listId?: string; // kept for backward compat
   teamId?: string; // kept for backward compat
   invitedBy: string;
@@ -351,6 +353,10 @@ export interface Invitation {
   status: "pending" | "accepted" | "declined" | "expired";
   createdAt: string;
   expiresAt: string;
+  acceptedAt?: string;
+  acceptedBy?: string;
+  declinedAt?: string;
+  declinedBy?: string;
 }
 
 // ---- Plan Features ----
@@ -382,9 +388,9 @@ export interface PlanFeatures {
 
 export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
   free: {
-    maxLists: 3,
-    maxTasksPerList: 50,
-    maxCollaborators: 2,
+    maxLists: 4,
+    maxTasksPerList: 15,
+    maxCollaborators: 5,
     canShare: true,
     canAssign: false,
     canSetReminders: true,
@@ -406,9 +412,9 @@ export const PLAN_FEATURES: Record<Plan, PlanFeatures> = {
     maxTeamMembers: 0,
   },
   pro: {
-    maxLists: Infinity,
-    maxTasksPerList: Infinity,
-    maxCollaborators: Infinity,
+    maxLists: 20,
+    maxTasksPerList: 35,
+    maxCollaborators: 20,
     canShare: true,
     canAssign: true,
     canSetReminders: true,

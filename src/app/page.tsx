@@ -1,31 +1,24 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import Logo from "@/components/shared/Logo";
 import PricingSection from "@/components/landing/PricingSection";
 import Button from "@/components/ui/Button";
 import { motion } from "framer-motion";
-import {
-  ArrowRight,
-  ListTodo,
-  Users,
-  Shield,
-  Zap,
-  Clock,
-  Bell,
-} from "lucide-react";
+import { ArrowRight, ListTodo, Users, Shield, Zap, Clock } from "lucide-react";
 
 export default function LandingPage() {
   const router = useRouter();
   const { isAuthenticated, user, login, isLoading } = useAuthStore();
 
-  useEffect(() => {
+  const handlePrimaryAction = () => {
     if (isAuthenticated || user) {
       router.push("/dashboard");
+      return;
     }
-  }, [isAuthenticated, user, router]);
+    login();
+  };
 
   const scrollToId = (id: string) => {
     if (typeof document === "undefined") return;
@@ -92,13 +85,13 @@ export default function LandingPage() {
 
           <div className="flex items-center gap-2">
             <Button
-              onClick={login}
+              onClick={handlePrimaryAction}
               isLoading={isLoading}
               size="sm"
               icon={<ArrowRight size={16} />}
               className="bg-blue-600 hover:bg-blue-500 text-white border-none"
             >
-              Iniciar sesión
+              {isAuthenticated || user ? "Ir a mis listas" : "Iniciar sesión"}
             </Button>
           </div>
         </div>
@@ -134,28 +127,29 @@ export default function LandingPage() {
             </div>
 
             <h1 className="text-3.5xl sm:text-5xl lg:text-6xl font-semibold tracking-tight mb-5 leading-tight">
-              <span className="text-slate-50">Control total del trabajo</span>
-              <br className="hidden sm:block" />
-              <span className="text-blue-400">
-                y gestión colaborativa en tiempo real.
+              <span className="text-slate-50">
+                Organiza tareas, listas y equipos
               </span>
+              <br className="hidden sm:block" />
+              <span className="text-blue-400">en un solo lugar.</span>
             </h1>
 
             <p className="text-base sm:text-lg text-slate-200 mb-7 max-w-2xl mx-auto">
-              Tasklyn centraliza operaciones, seguimiento de tareas,
-              recordatorios automáticos y calendario inteligente para empresas
-              que necesitan resultados.
+              Convierte trabajo disperso en listas claras con prioridades,
+              fechas, recordatorios, responsables y colaboración en tiempo real.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-5">
               <Button
-                onClick={login}
+                onClick={handlePrimaryAction}
                 isLoading={isLoading}
                 size="lg"
                 icon={<ArrowRight size={18} />}
                 className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white border-none shadow-[0_20px_60px_rgba(37,99,235,0.55)] hover:shadow-[0_20px_70px_rgba(37,99,235,0.7)] transition-shadow"
               >
-                Comenzar gratis
+                {isAuthenticated || user
+                  ? "Abrir TASKLYN"
+                  : "Crear cuenta gratis"}
               </Button>
             </div>
           </motion.div>
@@ -305,7 +299,7 @@ export default function LandingPage() {
               <div className="flex gap-3">
                 <span className="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
                 <div>
-                  <p className="font-medium">Reducción 40% en seguimiento</p>
+                  <p className="font-medium">Menos seguimiento disperso</p>
                   <p className="text-slate-400 text-sm">
                     Centraliza comunicación y elimina llamadas dispersas. Cada
                     tarea tiene dueño, contexto y trazabilidad completa.
@@ -408,13 +402,15 @@ export default function LandingPage() {
               solo lugar.
             </p>
             <Button
-              onClick={login}
+              onClick={handlePrimaryAction}
               isLoading={isLoading}
               size="lg"
               icon={<ArrowRight size={18} />}
               className="bg-blue-600 hover:bg-blue-500 text-white border-none"
             >
-              Crear cuenta gratis
+              {isAuthenticated || user
+                ? "Ir a mis listas"
+                : "Crear cuenta gratis"}
             </Button>
           </motion.div>
         </div>

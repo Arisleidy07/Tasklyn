@@ -13,8 +13,10 @@ import {
   setCustomName,
   reorderLists as reorderListsInDb,
 } from "@/lib/firestore";
-import type { TaskList, ListMember, MemberRole, ListType } from "@/types";
+import { PLAN_FEATURES } from "@/types";
+import type { TaskList, ListMember, MemberRole, ListType, Plan } from "@/types";
 import { Unsubscribe } from "firebase/firestore";
+import { useAuthStore } from "./authStore";
 
 interface ListState {
   lists: TaskList[];
@@ -91,6 +93,16 @@ export const useListStore = create<ListState>((set, get) => ({
     ),
 
   createList: async (name, owner, type, description, teamId) => {
+    const plan = (useAuthStore.getState().user?.plan || "free") as Plan;
+    const ownedListCount = get().lists.filter(
+      (list) => list.owner === owner,
+    ).length;
+    if (ownedListCount >= PLAN_FEATURES[plan].maxLists) {
+      throw new Error(
+        `Has alcanzado el límite de ${PLAN_FEATURES[plan].maxLists} listas de tu plan.`,
+      );
+    }
+
     const newListData: Omit<TaskList, "id" | "createdAt"> = {
       name,
       owner,
@@ -119,11 +131,21 @@ export const useListStore = create<ListState>((set, get) => ({
   },
 
   updateList: async (id, updates) => {
+    const previous = get().lists.find((list) => list.id === id);
     // Optimistic update — reflect immediately, Firestore snapshot will confirm
     set((state) => ({
       lists: state.lists.map((l) => (l.id === id ? { ...l, ...updates } : l)),
     }));
-    await updateListInDb(id, updates);
+    try {
+      await updateListInDb(id, updates);
+    } catch (error) {
+      if (previous) {
+        set((state) => ({
+          lists: state.lists.map((list) => (list.id === id ? previous : list)),
+        }));
+      }
+      throw error;
+    }
   },
 
   deleteList: async (id) => {

@@ -52,6 +52,8 @@ export default function PremiumMembersPanel({
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [isCopyingLink, setIsCopyingLink] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
 
   if (!user) return null;
 
@@ -87,17 +89,33 @@ export default function PremiumMembersPanel({
     }
   };
 
-  const handleCopyLink = async () => {
+  const handleShareInvitation = async () => {
     if (!user) return;
     setIsCopyingLink(true);
+    setShareError(null);
     try {
-      const invitation = await createInvitation(list.id, user.id, "viewer");
-      const url = `${window.location.origin}/invite/${invitation.token}`;
-      await navigator.clipboard.writeText(url);
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 3000);
+      let url = inviteLink;
+      if (!url) {
+        const invitation = await createInvitation(list.id, user.id, "viewer");
+        url = `${window.location.origin}/invite/${invitation.token}`;
+        setInviteLink(url);
+      }
+      const message = `¡Te invito a mi lista “${list.name}” en TASKLYN! 🎉`;
+      if (navigator.share) {
+        await navigator.share({
+          title: `Invitación a ${list.name}`,
+          text: message,
+          url,
+        });
+      } else {
+        await navigator.clipboard.writeText(`${message}\n\n${url}`);
+        setLinkCopied(true);
+        setTimeout(() => setLinkCopied(false), 3000);
+      }
     } catch (error) {
-      console.error("Error creating invite link:", error);
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      console.error("Error sharing invite link:", error);
+      setShareError("No se pudo compartir la invitación. Inténtalo de nuevo.");
     } finally {
       setIsCopyingLink(false);
     }
@@ -303,7 +321,7 @@ export default function PremiumMembersPanel({
           style={{ borderColor: "var(--border-color)" }}
         >
           <motion.button
-            onClick={handleCopyLink}
+            onClick={handleShareInvitation}
             disabled={isCopyingLink}
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
@@ -329,7 +347,7 @@ export default function PremiumMembersPanel({
               ? "¡Enlace copiado!"
               : isCopyingLink
                 ? "Generando enlace..."
-                : "Copiar enlace de invitación"}
+                : "Compartir invitación"}
             {!linkCopied && !isCopyingLink && (
               <Copy
                 size={12}
@@ -343,6 +361,11 @@ export default function PremiumMembersPanel({
           >
             Expira en 7 días · Se une como Viewer
           </p>
+          {shareError && (
+            <p className="text-xs text-center text-red-600 mt-2" role="alert">
+              {shareError}
+            </p>
+          )}
         </div>
       </div>
     </Modal>
