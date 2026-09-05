@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
+
+const INTRO_SHOWN_KEY = "tasklyn-intro-shown";
 
 export default function StartupIntro({
   children,
@@ -8,10 +11,32 @@ export default function StartupIntro({
   children: React.ReactNode;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const pathname = usePathname();
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const isHome = pathname === "/";
+    const alreadyShown = sessionStorage.getItem(INTRO_SHOWN_KEY) === "true";
+    if (isHome && !alreadyShown) {
+      setIsPlaying(true);
+    } else {
+      setIsPlaying(false);
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (!isPlaying) return;
     const video = videoRef.current;
     if (!video) return;
 
@@ -38,19 +63,17 @@ export default function StartupIntro({
       video.removeAttribute("src");
       video.load();
     };
-  }, []);
-
-  useEffect(() => {
-    if (!isPlaying) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
   }, [isPlaying]);
+
+  const markIntroShown = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(INTRO_SHOWN_KEY, "true");
+    }
+  };
 
   const finishIntro = () => {
     setIsLeaving(true);
+    markIntroShown();
     window.setTimeout(() => setIsPlaying(false), 220);
   };
 
@@ -78,7 +101,10 @@ export default function StartupIntro({
             controls={false}
             disablePictureInPicture
             onEnded={finishIntro}
-            onError={() => setIsPlaying(false)}
+            onError={() => {
+              markIntroShown();
+              setIsPlaying(false);
+            }}
             className="block h-auto max-h-[58dvh] w-[min(84vw,360px)] object-contain sm:max-h-[62dvh] sm:w-[min(72vw,560px)] lg:max-h-[66dvh] lg:w-[min(58vw,680px)]"
           />
         </div>

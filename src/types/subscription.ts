@@ -79,7 +79,7 @@ export interface PlanFeatures {
 export const PLAN_FEATURES: Record<PlanType, PlanFeatures> = {
   free: {
     maxLists: 4,
-    maxTasksPerList: 15,
+    maxTasksPerList: 200,
     maxCollaborators: 5,
     canShare: true,
     canAssign: false,
