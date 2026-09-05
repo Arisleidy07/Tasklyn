@@ -13,6 +13,7 @@ import {
   setCustomName,
   reorderLists as reorderListsInDb,
 } from "@/lib/firestore";
+import { canCreateMoreLists } from "@/lib/permissions";
 import { PLAN_FEATURES } from "@/types";
 import type { TaskList, ListMember, MemberRole, ListType, Plan } from "@/types";
 import { Unsubscribe } from "firebase/firestore";
@@ -97,9 +98,10 @@ export const useListStore = create<ListState>((set, get) => ({
     const ownedListCount = get().lists.filter(
       (list) => list.owner === owner,
     ).length;
-    if (ownedListCount >= PLAN_FEATURES[plan].maxLists) {
+    if (!canCreateMoreLists(ownedListCount, plan)) {
+      const planFeatures = PLAN_FEATURES[plan] || PLAN_FEATURES["free"];
       throw new Error(
-        `Has alcanzado el límite de ${PLAN_FEATURES[plan].maxLists} listas de tu plan.`,
+        `Has alcanzado el límite de ${planFeatures.maxLists} listas de tu plan.`,
       );
     }
 

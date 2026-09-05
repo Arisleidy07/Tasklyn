@@ -53,30 +53,32 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       // Computed helpers
       canCreateList: (currentListCount: number) => {
         const { currentPlan } = get();
-        const maxLists = PLAN_FEATURES[currentPlan].maxLists;
-        return currentListCount < maxLists;
+        const features = PLAN_FEATURES[currentPlan] || PLAN_FEATURES["free"];
+        return currentListCount < features.maxLists;
       },
 
       canCreateTask: (currentTaskCount: number) => {
         const { currentPlan } = get();
-        const maxTasks = PLAN_FEATURES[currentPlan].maxTasksPerList;
-        return currentTaskCount < maxTasks;
+        const features = PLAN_FEATURES[currentPlan] || PLAN_FEATURES["free"];
+        return currentTaskCount < features.maxTasksPerList;
       },
 
       canAddCollaborator: (currentMemberCount: number) => {
         const { currentPlan } = get();
-        const maxCollaborators = PLAN_FEATURES[currentPlan].maxCollaborators;
-        return currentMemberCount < maxCollaborators;
+        const features = PLAN_FEATURES[currentPlan] || PLAN_FEATURES["free"];
+        return currentMemberCount < features.maxCollaborators;
       },
 
       canUseFeature: (feature: keyof (typeof PLAN_FEATURES)["free"]) => {
         const { currentPlan } = get();
-        return PLAN_FEATURES[currentPlan][feature] as boolean;
+        const features = PLAN_FEATURES[currentPlan] || PLAN_FEATURES["free"];
+        return features[feature] as boolean;
       },
 
       getFeatureLimit: (feature: keyof (typeof PLAN_FEATURES)["free"]) => {
         const { currentPlan } = get();
-        return PLAN_FEATURES[currentPlan][feature];
+        const features = PLAN_FEATURES[currentPlan] || PLAN_FEATURES["free"];
+        return features[feature];
       },
 
       // Actions
