@@ -5,10 +5,7 @@ import {
   LayoutDashboard,
   Activity,
   Users,
-  BarChart3,
-  Trophy,
   Calendar,
-  History,
   Bell,
   FolderOpen,
   Plus,
@@ -25,10 +22,7 @@ const mainNav = [
   { name: "Panel de control", icon: LayoutDashboard, active: true },
   { name: "Actividad", icon: Activity, active: false },
   { name: "Equipos", icon: Users, active: false },
-  { name: "Panel de Equipo", icon: BarChart3, active: false },
-  { name: "Ranking", icon: Trophy, active: false },
   { name: "Calendario", icon: Calendar, active: false },
-  { name: "Historial", icon: History, active: false },
   { name: "Notificaciones", icon: Bell, active: false, badge: 3 },
 ];
 
@@ -36,7 +30,6 @@ const recentLists = [
   { name: "Operaciones Junio", type: "shared" },
   { name: "Ventas Q2", type: "personal" },
   { name: "Logística", type: "shared" },
-  { name: "Finanzas", type: "personal" },
 ];
 
 /* ── Animated bar chart data ── */
@@ -105,7 +98,7 @@ export default function HeroDemo() {
 
       {/* Demo shell */}
       <div className="relative overflow-hidden rounded-[1.5rem] border border-slate-700/60 bg-slate-900 shadow-[0_24px_80px_rgba(5,10,30,0.85)] w-full max-w-[580px] mx-auto">
-        <div className="flex h-[420px]">
+        <div className="flex h-[480px]">
           {/* ── Authentic Tasklyn Sidebar ── */}
           <div className="w-[220px] flex-shrink-0 flex flex-col bg-slate-950/70 border-r border-slate-800/60">
             {/* Logo */}
@@ -114,16 +107,16 @@ export default function HeroDemo() {
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 px-3 py-4 space-y-4 overflow-hidden">
+            <nav className="flex-1 px-3 py-3 space-y-3 overflow-hidden">
               {/* General */}
-              <div className="space-y-1">
-                <p className="px-3 mb-2 text-[9px] font-semibold uppercase tracking-widest text-slate-500">
+              <div className="space-y-0.5">
+                <p className="px-3 mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-slate-500">
                   General
                 </p>
                 {mainNav.map((item) => (
                   <div
                     key={item.name}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] font-medium transition-all ${
+                    className={`flex items-center gap-3 px-3 py-1.5 rounded-xl text-[11px] font-medium transition-all ${
                       item.active
                         ? "bg-blue-600 text-white shadow-sm shadow-blue-600/25"
                         : "text-slate-400 hover:bg-slate-800 hover:text-slate-200"
@@ -141,32 +134,32 @@ export default function HeroDemo() {
               </div>
 
               {/* Workspace */}
-              <div className="space-y-1">
-                <p className="px-3 mb-2 text-[9px] font-semibold uppercase tracking-widest text-slate-500">
+              <div className="space-y-0.5">
+                <p className="px-3 mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-slate-500">
                   Workspace
                 </p>
-                <div className="flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] font-medium bg-blue-600 text-white shadow-sm shadow-blue-600/25">
+                <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[11px] font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 cursor-pointer">
                   <FolderOpen size={16} className="flex-shrink-0" />
                   <span className="flex-1">Listas</span>
-                  <span className="text-[10px] font-semibold min-w-[16px] h-4 flex items-center justify-center rounded-md px-1.5 bg-white/20">
+                  <span className="text-[10px] font-semibold min-w-[16px] h-4 flex items-center justify-center rounded-md px-1.5 bg-slate-800 text-slate-300">
                     12
                   </span>
                 </div>
-                <div className="flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] font-medium text-blue-400 hover:bg-blue-950/30 cursor-pointer">
+                <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[11px] font-medium text-blue-400 hover:bg-blue-950/30 cursor-pointer">
                   <Plus size={16} className="flex-shrink-0" />
                   <span>Nueva lista</span>
                 </div>
               </div>
 
               {/* Recientes */}
-              <div className="space-y-1">
-                <p className="px-3 mb-2 text-[9px] font-semibold uppercase tracking-widest text-slate-500">
+              <div className="space-y-0.5">
+                <p className="px-3 mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-slate-500">
                   Recientes
                 </p>
                 {recentLists.map((list) => (
                   <div
                     key={list.name}
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] text-slate-400 hover:bg-slate-800 hover:text-slate-200 cursor-pointer"
+                    className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[11px] text-slate-400 hover:bg-slate-800 hover:text-slate-200 cursor-pointer"
                   >
                     <div
                       className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
@@ -179,15 +172,15 @@ export default function HeroDemo() {
               </div>
 
               {/* Cuenta */}
-              <div className="space-y-1">
-                <p className="px-3 mb-2 text-[9px] font-semibold uppercase tracking-widest text-slate-500">
+              <div className="space-y-0.5">
+                <p className="px-3 mb-1.5 text-[9px] font-semibold uppercase tracking-widest text-slate-500">
                   Cuenta
                 </p>
-                <div className="flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 cursor-pointer">
+                <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[11px] font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 cursor-pointer">
                   <User size={16} className="flex-shrink-0" />
                   <span className="flex-1">Perfil</span>
                 </div>
-                <div className="flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 cursor-pointer">
+                <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl text-[11px] font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-200 cursor-pointer">
                   <Settings size={16} className="flex-shrink-0" />
                   <span className="flex-1">Configuración</span>
                 </div>
@@ -195,17 +188,17 @@ export default function HeroDemo() {
             </nav>
 
             {/* User section */}
-            <div className="px-3 py-3 border-t border-slate-800/60 flex-shrink-0">
-              <div className="flex items-center gap-3 p-2 rounded-xl">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-[10px] text-white font-bold">
-                  AR
+            <div className="px-3 py-2.5 border-t border-slate-800/60 flex-shrink-0">
+              <div className="flex items-center gap-3 p-1.5 rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center flex-shrink-0">
+                  <User size={14} className="text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-semibold text-slate-200 truncate">
-                    Arisleidy
+                    Perfil
                   </p>
                   <p className="text-[10px] text-slate-500 truncate">
-                    arisleidy@tasklyn.com
+                    Cuenta personal
                   </p>
                 </div>
               </div>
@@ -220,9 +213,7 @@ export default function HeroDemo() {
                 <h1 className="text-sm font-semibold text-slate-100">
                   Panel de control
                 </h1>
-                <p className="text-[10px] text-slate-500">
-                  Bienvenido, Arisleidy
-                </p>
+                <p className="text-[10px] text-slate-500">Bienvenido</p>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[9px] text-emerald-400 font-medium flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">

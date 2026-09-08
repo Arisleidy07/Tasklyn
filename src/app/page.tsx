@@ -19,7 +19,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 const DEMO_WIDTH = 580;
-const DEMO_HEIGHT = 420;
+const DEMO_HEIGHT = 480;
 
 /** Scales the fixed-size product demo down to fit any viewport (never overflows). */
 function ScaledDemo() {

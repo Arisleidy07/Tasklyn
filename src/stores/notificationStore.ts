@@ -9,6 +9,10 @@ import {
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Notification, NotificationType } from "@/types";
+import {
+  showInAppNotification,
+  sendBrowserNotification,
+} from "@/lib/notifications";
 
 interface NotificationStore {
   notifications: Notification[];
@@ -48,7 +52,31 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
     set({ isLoading: true });
 
+    // Surface each genuinely new notification exactly once, on the
+    // recipient's device only. The initial snapshot is marked as seen
+    // without toasting so old notifications don't replay on login.
+    const seen = new Set<string>();
+    let initialized = false;
+
     const unsub = subscribeToNotifications(userId, (notifications) => {
+      const fresh = initialized
+        ? notifications.filter((n) => !seen.has(n.id) && !n.read)
+        : [];
+      notifications.forEach((n) => seen.add(n.id));
+      initialized = true;
+
+      fresh.forEach((n) => {
+        if (n.data?.silent === "1") return;
+        if (
+          typeof document !== "undefined" &&
+          document.visibilityState === "hidden"
+        ) {
+          sendBrowserNotification(n.title, n.body);
+        } else {
+          showInAppNotification(n.title, n.body);
+        }
+      });
+
       set({
         notifications,
         unreadCount: notifications.filter((n) => !n.read).length,

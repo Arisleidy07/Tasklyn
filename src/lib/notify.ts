@@ -4,11 +4,6 @@
 // ============================================
 
 import { createNotification } from "./firestore";
-import {
-  showInAppNotification,
-  playNotificationSound,
-  sendBrowserNotification,
-} from "./notifications";
 import type { NotificationType } from "@/types";
 
 // Prevent duplicate notifications within a short time window
@@ -56,22 +51,12 @@ export async function notifyUser(params: NotifyParams): Promise<void> {
       body: params.body,
       read: false,
       status: "pending",
-      data: params.data,
+      data: { ...params.data, ...(params.silent ? { silent: "1" } : {}) },
     });
-
-    if (!params.silent) {
-      // showInAppNotification already plays the sound internally —
-      // calling playNotificationSound() here too would double it.
-      showInAppNotification(params.title, params.body);
-      // Only push a system notification when the app isn't visible;
-      // in the foreground the in-app toast already informs the user.
-      if (
-        typeof document !== "undefined" &&
-        document.visibilityState === "hidden"
-      ) {
-        sendBrowserNotification(params.title, params.body);
-      }
-    }
+    // NOTE: no local toast/sound here. The notification is displayed on the
+    // RECIPIENT's device by notificationStore.subscribe, which listens for
+    // new docs in real time — showing it here would surface other people's
+    // notifications on the sender's screen (and duplicate per recipient).
   } catch (err) {
     console.error("Failed to send notification:", err);
   }
