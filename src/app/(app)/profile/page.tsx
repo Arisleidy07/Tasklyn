@@ -582,7 +582,7 @@ export default function ProfilePage() {
                       >
                         {user.plan === "business"
                           ? "Plan empresarial completo"
-                          : `${PLAN_FEATURES[(user.plan || "free") as Plan].maxLists} listas · ${PLAN_FEATURES[(user.plan || "free") as Plan].maxTasksPerList} tareas por lista`}
+                          : `${(PLAN_FEATURES[(user.plan || "free") as Plan] || PLAN_FEATURES.free).maxLists} listas · ${(PLAN_FEATURES[(user.plan || "free") as Plan] || PLAN_FEATURES.free).maxTasksPerList} tareas por lista`}
                       </p>
                     </div>
                   </div>
