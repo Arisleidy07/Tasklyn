@@ -29,8 +29,7 @@ function ScaledDemo() {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const update = () =>
-      setScale(Math.min(1, el.clientWidth / DEMO_WIDTH));
+    const update = () => setScale(Math.min(1, el.clientWidth / DEMO_WIDTH));
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
@@ -136,13 +135,13 @@ export default function LandingPage() {
             </span>
           </button>
 
-          <nav className="hidden md:flex items-center gap-6 text-sm text-slate-300">
+          <nav className="hidden md:flex items-center gap-1 rounded-full border border-slate-800 bg-slate-900/60 p-1">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => scrollToId(item.id)}
-                className="hover:text-white transition-colors"
+                className="px-4 h-8 rounded-full text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
               >
                 {item.label}
               </button>
@@ -154,7 +153,7 @@ export default function LandingPage() {
             isLoading={isLoading}
             size="sm"
             icon={<ArrowRight size={16} />}
-            className="bg-blue-600 hover:bg-blue-500 text-white border-none"
+            className="rounded-full bg-blue-600 hover:bg-blue-500 text-white border-none shadow-[0_8px_24px_rgba(37,99,235,0.35)]"
           >
             {isAuthenticated || user ? "Mis listas" : "Empezar"}
           </Button>
@@ -172,23 +171,25 @@ export default function LandingPage() {
           <div className="animate-glow-drift-2 absolute bottom-[-10%] left-[-10%] w-[440px] h-[440px] rounded-full bg-indigo-500/14 blur-[110px]" />
         </div>
 
-        <div className="relative max-w-3xl mx-auto text-center">
+        <div className="relative max-w-6xl mx-auto grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            className="text-center lg:text-left"
           >
-            <div className="flex items-center justify-center gap-3 mb-5">
-              <Logo size="lg" textClassName="text-slate-50" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-700/80 bg-slate-900/70 px-3.5 py-1.5 text-xs font-medium text-slate-300 mb-6">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+              Colaboración en tiempo real
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight mb-5 leading-[1.1]">
+            <h1 className="text-4xl sm:text-5xl lg:text-[3.4rem] font-semibold tracking-tight mb-5 leading-[1.08]">
               Gestión de tareas pensada para equipos.
             </h1>
-            <p className="text-base sm:text-lg text-slate-300 mb-8 max-w-xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg text-slate-300 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed">
               Crea listas, asigna tareas, controla vencimientos y mantén a tu
               equipo sincronizado en tiempo real.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3">
               <Button
                 onClick={handlePrimaryAction}
                 isLoading={isLoading}
@@ -208,7 +209,7 @@ export default function LandingPage() {
                 Ver características
               </button>
             </div>
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs sm:text-sm text-slate-400">
+            <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-xs sm:text-sm text-slate-400">
               <span>Gratis para empezar</span>
               <span className="hidden sm:inline text-slate-700">·</span>
               <span>Tiempo real</span>
@@ -216,11 +217,16 @@ export default function LandingPage() {
               <span>Móvil y escritorio</span>
             </div>
           </motion.div>
-        </div>
 
-        {/* Product visual */}
-        <div className="relative max-w-5xl mx-auto mt-12 sm:mt-16 px-1">
-          <ScaledDemo />
+          {/* Product visual */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.15 }}
+            className="relative"
+          >
+            <ScaledDemo />
+          </motion.div>
         </div>
       </section>
 
@@ -308,15 +314,15 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
           <div>
             <h3 className="text-lg font-semibold text-slate-50 mb-1">
-              Tasklyn para empresas
+              ¿Necesitas algo?
             </h3>
             <p className="text-sm text-slate-400 max-w-md">
-              Implementa Tasklyn con tu equipo y procesos actuales.
+              Escríbenos y te respondemos lo antes posible.
             </p>
           </div>
           <a
             href="mailto:tasklyn.oficial@gmail.com"
-            className="inline-flex items-center justify-center px-5 h-11 rounded-xl border border-slate-700 text-sm font-medium text-slate-100 hover:bg-slate-900/80 hover:text-white transition-colors"
+            className="inline-flex items-center justify-center gap-2 px-5 h-11 rounded-xl border border-slate-700 text-sm font-medium text-slate-100 hover:bg-slate-900/80 hover:text-white transition-colors"
           >
             tasklyn.oficial@gmail.com
           </a>

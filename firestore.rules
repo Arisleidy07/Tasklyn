@@ -134,9 +134,12 @@ service cloud.firestore {
         (resource.data.listId != null && isListMemberOf(resource.data.listId)) ||
         (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
       );
-      // Hard delete only allowed as part of team/list cascade deletion by owner
+      // Delete allowed for the creator, any member of the task's list (editors),
+      // and the team owner (cascade/admin cleanup)
       allow delete: if isAuth() && (
         resource.data.createdBy == uid() ||
+        resource.data.assignedTo == uid() ||
+        (resource.data.listId != null && isListMemberOf(resource.data.listId)) ||
         (resource.data.teamId != null && isTeamOwnerOf(resource.data.teamId))
       );
 
