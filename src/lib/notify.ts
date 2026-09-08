@@ -60,9 +60,17 @@ export async function notifyUser(params: NotifyParams): Promise<void> {
     });
 
     if (!params.silent) {
-      playNotificationSound();
+      // showInAppNotification already plays the sound internally —
+      // calling playNotificationSound() here too would double it.
       showInAppNotification(params.title, params.body);
-      sendBrowserNotification(params.title, params.body);
+      // Only push a system notification when the app isn't visible;
+      // in the foreground the in-app toast already informs the user.
+      if (
+        typeof document !== "undefined" &&
+        document.visibilityState === "hidden"
+      ) {
+        sendBrowserNotification(params.title, params.body);
+      }
     }
   } catch (err) {
     console.error("Failed to send notification:", err);

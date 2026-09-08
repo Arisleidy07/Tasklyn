@@ -658,9 +658,10 @@ export default function TaskDetailPanel({
 
       {/* Scrollable body */}
       <div
-        className="flex-1 overflow-y-auto overscroll-contain"
+        className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
         style={{
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
+          touchAction: "pan-y",
         }}
       >
         <div className="px-4 py-5 space-y-5">
@@ -1226,7 +1227,7 @@ export default function TaskDetailPanel({
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -4, scale: 0.97 }}
                     transition={{ duration: 0.12 }}
-                    className="absolute left-0 top-full mt-1 z-50 rounded-[var(--radius-lg)] shadow-[var(--shadow-dropdown)] overflow-hidden min-w-[180px]"
+                    className="absolute left-0 top-full mt-1 z-50 rounded-[var(--radius-lg)] shadow-[var(--shadow-dropdown)] overflow-hidden min-w-[180px] max-w-[calc(100vw-2rem)] overflow-y-auto max-h-64"
                     style={{
                       backgroundColor: "var(--bg-card)",
                       border: "1px solid var(--border-color)",
@@ -1487,10 +1488,10 @@ export default function TaskDetailPanel({
             onClick={onClose}
           />
 
-          {/* Mobile sheet */}
+          {/* Mobile sheet — full-screen, horizontally locked */}
           <div
             className="sm:hidden fixed inset-x-0 top-0 z-[9001]"
-            style={{ bottom: 0 }}
+            style={{ bottom: 0, width: "100vw", maxWidth: "100vw" }}
           >
             <motion.div
               initial={{ y: "100%" }}
@@ -1498,7 +1499,13 @@ export default function TaskDetailPanel({
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 32, stiffness: 320 }}
               className="absolute inset-x-0 bottom-0 overflow-hidden shadow-[var(--shadow-modal)] flex flex-col"
-              style={{ top: 0, backgroundColor: "var(--bg-card)" }}
+              style={{
+                top: 0,
+                backgroundColor: "var(--bg-card)",
+                width: "100vw",
+                maxWidth: "100vw",
+                touchAction: "pan-y",
+              }}
             >
               <div className="flex justify-center pt-2.5 pb-0 flex-shrink-0">
                 <div
