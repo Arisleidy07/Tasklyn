@@ -584,62 +584,38 @@ export default function TeamsPage() {
       </div>
 
       {/* Delete confirmation */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => !isDeleting && setDeleteTarget(null)}
-          />
-          <div
-            className="relative w-full max-w-sm rounded-2xl p-6 shadow-2xl space-y-4"
-            style={{
-              backgroundColor: "var(--bg-card)",
-              border: "1px solid rgba(239,68,68,0.3)",
-            }}
-          >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0">
-                <Trash2 size={18} className="text-red-500" />
-              </div>
-              <div>
-                <p
-                  className="font-bold"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  Eliminar “{deleteTarget.name}”
-                </p>
-                <p
-                  className="text-sm mt-1"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Esta acción no se puede deshacer. Se eliminarán el equipo y
-                  todos sus datos.
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                disabled={isDeleting}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  color: "var(--text-secondary)",
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleDeleteTeam}
-                disabled={isDeleting}
-                className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
-              >
-                {isDeleting ? "Eliminando..." : "Eliminar"}
-              </button>
-            </div>
+      <Modal
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title={
+          deleteTarget ? `Eliminar “${deleteTarget.name}”` : "Eliminar equipo"
+        }
+        description="Esta acción no se puede deshacer. Se eliminarán el equipo y todos sus datos."
+        size="sm"
+        icon={<Trash2 size={18} style={{ color: "#ef4444" }} />}
+        disableClose={isDeleting}
+        footer={
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteTarget(null)}
+              disabled={isDeleting}
+              className="flex-1 h-10"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDeleteTeam}
+              disabled={isDeleting}
+              isLoading={isDeleting}
+              className="flex-1 h-10"
+            >
+              Eliminar
+            </Button>
           </div>
-        </div>
-      )}
+        }
+      ></Modal>
 
       <CreateTeamModal
         isOpen={showCreateModal}

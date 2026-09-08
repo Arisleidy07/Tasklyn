@@ -7,34 +7,68 @@ import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { useUIStore } from "@/stores/uiStore";
 import Header from "@/components/layout/Header";
+import Button from "@/components/ui/Button";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { PLAN_FEATURES } from "@/types";
 import {
-  Settings,
-  CheckCircle2,
   Crown,
   FolderOpen,
   Users,
   ClipboardList,
+  ArrowRight,
+  UserRound,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
   const { lists } = useListStore();
   const { tasks } = useTaskStore();
-  const { theme, setTheme } = useUIStore();
   if (!user) return null;
 
+  const planFeatures = PLAN_FEATURES[user.plan] || PLAN_FEATURES["free"];
   const personalListsCount = lists.filter((l) => l.owner === user.id).length;
   const sharedListsCount = lists.filter(
     (l) =>
       l.owner !== user.id &&
       l.members.some((m: { userId: string }) => m.userId === user.id),
   ).length;
-  const totalTasks = tasks.filter((t) =>
-    lists.some((l) => l.id === t.listId),
-  ).length;
+  const planName =
+    user.plan === "business"
+      ? "BUSINESS"
+      : user.plan === "pro"
+        ? "PRO"
+        : "Gratis";
+  const maxTasksInList = lists.reduce(
+    (max, l) => Math.max(max, tasks.filter((t) => t.listId === l.id).length),
+    0,
+  );
+  const formatLimit = (n: number) => (n === Infinity ? "ilimitadas" : `${n}`);
+
+  const planDescription =
+    user.plan === "business"
+      ? "Plan empresarial con todas las funciones"
+      : `${formatLimit(planFeatures.maxLists)} listas, ${formatLimit(planFeatures.maxTasksPerList)} tareas por lista${user.plan === "free" ? ` y ${planFeatures.maxCollaborators} personas por lista` : " y funciones avanzadas"}`;
+
+  const usage = [
+    {
+      label: "Listas",
+      value: personalListsCount,
+      limit: planFeatures.maxLists,
+      icon: FolderOpen,
+    },
+    {
+      label: "Tareas en tu lista más grande",
+      value: maxTasksInList,
+      limit: planFeatures.maxTasksPerList,
+      icon: ClipboardList,
+    },
+    {
+      label: "Compartidas",
+      value: sharedListsCount,
+      icon: Users,
+    },
+  ];
 
   return (
     <>
@@ -44,12 +78,61 @@ export default function SettingsPage() {
         showMenuButton={true}
       />
 
-      <div className="p-4 md:p-8 max-w-3xl mx-auto pb-24 md:pb-8">
-        {/* Plan actual */}
+      <div className="p-4 md:p-8 max-w-3xl mx-auto pb-28 md:pb-10 space-y-6">
+        {/* Cuenta */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border shadow-sm p-6 mb-6"
+          className="rounded-2xl border shadow-sm p-5 sm:p-6"
+          style={{
+            backgroundColor: "var(--bg-card)",
+            borderColor: "var(--border-color)",
+          }}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4 min-w-0">
+              <div
+                className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: "var(--bg-secondary)" }}
+              >
+                <UserRound
+                  size={22}
+                  style={{ color: "var(--text-tertiary)" }}
+                />
+              </div>
+              <div className="min-w-0">
+                <h2
+                  className="text-lg font-semibold truncate"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  Cuenta
+                </h2>
+                <p
+                  className="text-sm truncate"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  {user.email}
+                </p>
+              </div>
+            </div>
+            <Link href="/profile" className="w-full sm:w-auto flex-shrink-0">
+              <Button
+                size="sm"
+                variant="outline"
+                icon={<ArrowRight size={14} />}
+                className="w-full sm:w-auto"
+              >
+                Ver perfil
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* Plan */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border shadow-sm p-5 sm:p-6"
           style={{
             backgroundColor: "var(--bg-card)",
             borderColor: "var(--border-color)",
@@ -59,19 +142,21 @@ export default function SettingsPage() {
             <div className="flex items-center gap-4">
               <div
                 className="w-12 h-12 rounded-xl flex items-center justify-center"
-                style={
-                  user.plan === "pro" || user.plan === "business"
-                    ? { backgroundColor: "rgba(37,99,235,0.1)" }
-                    : { backgroundColor: "var(--bg-secondary)" }
-                }
+                style={{
+                  backgroundColor:
+                    user.plan === "pro" || user.plan === "business"
+                      ? "rgba(37,99,235,0.1)"
+                      : "var(--bg-secondary)",
+                }}
               >
                 <Crown
                   size={24}
-                  style={
-                    user.plan === "pro" || user.plan === "business"
-                      ? { color: "#2563eb" }
-                      : { color: "var(--text-tertiary)" }
-                  }
+                  style={{
+                    color:
+                      user.plan === "pro" || user.plan === "business"
+                        ? "#2563eb"
+                        : "var(--text-tertiary)",
+                  }}
                 />
               </div>
               <div>
@@ -79,128 +164,109 @@ export default function SettingsPage() {
                   className="text-lg font-semibold"
                   style={{ color: "var(--text-primary)" }}
                 >
-                  Plan{" "}
-                  {user.plan === "business"
-                    ? "BUSINESS"
-                    : user.plan === "pro"
-                      ? "PRO"
-                      : "Gratis"}
+                  Plan {planName}
                 </h2>
                 <p
                   className="text-sm"
                   style={{ color: "var(--text-secondary)" }}
                 >
-                  {user.plan === "business"
-                    ? "Plan empresarial con todas las funciones"
-                    : user.plan === "pro"
-                      ? "Hasta 20 listas, 35 tareas y funciones avanzadas"
-                      : "Hasta 4 listas, 15 tareas y 5 personas por lista"}
+                  {planDescription}
                 </p>
               </div>
             </div>
-            <Link
-              href="/pricing"
-              className="inline-flex min-h-11 items-center justify-center px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-sm font-semibold transition-colors"
-            >
-              Ver planes
+            <Link href="/pricing" className="w-full sm:w-auto">
+              <Button
+                size="sm"
+                variant="outline"
+                icon={<ArrowRight size={14} />}
+                className="w-full sm:w-auto"
+              >
+                Ver planes
+              </Button>
             </Link>
           </div>
         </motion.div>
 
-        {/* Theme Selector - Premium Design */}
+        {/* Theme */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-xl border shadow-sm p-6 mb-6"
+          transition={{ delay: 0.05 }}
+          className="rounded-2xl border shadow-sm p-5 sm:p-6"
           style={{
             backgroundColor: "var(--bg-card)",
             borderColor: "var(--border-color)",
           }}
         >
-          <div className="flex items-center gap-2 mb-2">
-            <Settings size={20} style={{ color: "var(--text-tertiary)" }} />
+          <div className="mb-4">
             <h2
               className="text-lg font-semibold"
               style={{ color: "var(--text-primary)" }}
             >
-              Tema de la aplicación
+              Apariencia
             </h2>
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+              Elige el estilo visual que prefieras para Tasklyn.
+            </p>
           </div>
-          <p
-            className="text-sm mb-6"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            Elige el estilo visual que prefieras para Tasklyn.
-          </p>
-
           <ThemeToggle size="lg" variant="segment" />
         </motion.div>
 
-        {/* Estadísticas */}
+        {/* Stats */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="rounded-xl border shadow-sm p-6"
+          transition={{ delay: 0.1 }}
+          className="rounded-2xl border shadow-sm p-5 sm:p-6"
           style={{
             backgroundColor: "var(--bg-card)",
             borderColor: "var(--border-color)",
           }}
         >
           <h2
-            className="text-lg font-semibold mb-4 flex items-center gap-2"
+            className="text-lg font-semibold mb-5"
             style={{ color: "var(--text-primary)" }}
           >
-            <CheckCircle2 size={20} style={{ color: "var(--text-tertiary)" }} />
-            Tus estadísticas
+            Uso del plan
           </h2>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              {
-                label: "Listas",
-                value: personalListsCount,
-                icon: FolderOpen,
-              },
-              {
-                label: "Compartidas",
-                value: sharedListsCount,
-                icon: Users,
-              },
-              {
-                label: "Tareas",
-                value: totalTasks,
-                icon: ClipboardList,
-              },
-            ].map((stat) => (
-              <div
-                key={stat.label}
-                className="flex flex-col items-center gap-2 p-4 rounded-xl border"
-                style={{
-                  backgroundColor: "var(--bg-secondary)",
-                  borderColor: "var(--border-color)",
-                }}
-              >
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm shadow-blue-500/25">
-                  <stat.icon
-                    size={14}
-                    style={{ color: "var(--text-on-accent)" }}
-                  />
+          <div className="space-y-4">
+            {usage.map((item) => {
+              const pct =
+                typeof item.limit === "number" && item.limit > 0
+                  ? Math.min(100, Math.round((item.value / item.limit) * 100))
+                  : null;
+              return (
+                <div key={item.label}>
+                  <div className="flex items-center justify-between text-sm mb-1.5">
+                    <div
+                      className="flex items-center gap-2"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      <item.icon size={14} />
+                      <span>{item.label}</span>
+                    </div>
+                    <span
+                      className="font-semibold tabular-nums"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      {item.value}
+                      {typeof item.limit === "number" ? ` / ${item.limit}` : ""}
+                    </span>
+                  </div>
+                  {pct !== null && (
+                    <div
+                      className="h-2 rounded-full overflow-hidden"
+                      style={{ backgroundColor: "var(--bg-secondary)" }}
+                    >
+                      <div
+                        className="h-full rounded-full bg-blue-600 transition-all duration-500"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  )}
                 </div>
-                <p
-                  className="text-2xl font-bold tabular-nums"
-                  style={{ color: "var(--text-primary)" }}
-                >
-                  {stat.value}
-                </p>
-                <p
-                  className="text-[10px] text-center leading-tight"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  {stat.label}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
       </div>

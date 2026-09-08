@@ -140,7 +140,7 @@ export default function ReminderPicker({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[99998] bg-black/60"
+            className="fixed inset-0 z-[99998] bg-[var(--bg-modal-overlay)] backdrop-blur-sm"
             onClick={onClose}
           />
           {/* Modal */}
@@ -156,11 +156,13 @@ export default function ReminderPicker({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="relative z-10 w-full max-w-[340px] max-w-[calc(100vw-32px)] rounded-2xl overflow-hidden"
+                className="relative z-10 w-full max-w-[min(340px,calc(100vw-32px))] rounded-2xl overflow-y-auto"
                 style={{
                   backgroundColor: "var(--bg-modal)",
                   boxShadow: "var(--shadow-modal)",
                   border: "1px solid var(--border-color)",
+                  maxHeight: "min(520px, calc(100dvh - 64px))",
+                  paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
                 }}
               >
                 {/* Header */}
@@ -182,17 +184,8 @@ export default function ReminderPicker({
                   </div>
                   <button
                     onClick={onClose}
-                    className="p-1.5 rounded-lg transition-colors"
+                    className="min-w-10 min-h-10 p-1.5 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                     style={{ color: "var(--text-tertiary)" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "var(--bg-secondary)";
-                      e.currentTarget.style.color = "var(--text-primary)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                      e.currentTarget.style.color = "var(--text-tertiary)";
-                    }}
                   >
                     <X size={18} />
                   </button>
@@ -213,7 +206,7 @@ export default function ReminderPicker({
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => setRecipientType("me")}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                        className="min-h-9 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center transition-colors"
                         style={{
                           backgroundColor:
                             recipientType === "me"
@@ -233,7 +226,7 @@ export default function ReminderPicker({
                       </button>
                       <button
                         onClick={() => setRecipientType("team")}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                        className="min-h-9 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center transition-colors"
                         style={{
                           backgroundColor:
                             recipientType === "team"
@@ -253,7 +246,7 @@ export default function ReminderPicker({
                       </button>
                       <button
                         onClick={() => setRecipientType("members")}
-                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                        className="min-h-9 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center justify-center transition-colors"
                         style={{
                           backgroundColor:
                             recipientType === "members"
@@ -300,17 +293,22 @@ export default function ReminderPicker({
                                 borderColor: selectedMemberIds.includes(
                                   member.userId,
                                 )
-                                  ? "#2563eb"
+                                  ? "var(--text-link)"
                                   : "var(--border-color)",
                                 backgroundColor: selectedMemberIds.includes(
                                   member.userId,
                                 )
-                                  ? "#2563eb"
+                                  ? "var(--text-link)"
                                   : "transparent",
                               }}
                             >
                               {selectedMemberIds.includes(member.userId) && (
-                                <div className="w-2 h-2 rounded-full bg-white" />
+                                <div
+                                  className="w-2 h-2 rounded-full"
+                                  style={{
+                                    backgroundColor: "var(--text-inverse)",
+                                  }}
+                                />
                               )}
                             </div>
                             {member.name}
@@ -330,57 +328,31 @@ export default function ReminderPicker({
                         onSelect(opt.getReminders());
                         onClose();
                       }}
-                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors"
+                      className="w-full min-h-10 flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--bg-hover)]"
                       style={{ color: "var(--text-primary)" }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "var(--bg-secondary)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }}
                     >
-                      <span className="font-medium">{opt.label}</span>
+                      <span>{opt.label}</span>
                     </button>
                   ))}
 
                   {taskDueDate && (
                     <button
                       onClick={handleAddToDueDate}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-colors"
+                      className="w-full min-h-10 flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--bg-hover)]"
                       style={{ color: "var(--text-primary)" }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "var(--bg-secondary)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }}
                     >
                       <Clock
                         size={14}
                         style={{ color: "var(--text-tertiary)" }}
                       />
-                      <span
-                        className="font-medium"
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        1 hora antes del vencimiento
-                      </span>
+                      <span>1 hora antes del vencimiento</span>
                     </button>
                   )}
 
                   <button
                     onClick={() => setShowCustom(true)}
-                    className="w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-                    style={{ color: "var(--text-primary)" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "var(--bg-secondary)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
+                    className="w-full min-h-10 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--bg-hover)]"
+                    style={{ color: "var(--text-link)" }}
                   >
                     Elegir fecha y hora
                   </button>
@@ -391,15 +363,8 @@ export default function ReminderPicker({
                         onSelect([]);
                         onClose();
                       }}
-                      className="w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-                      style={{ color: "#ef4444" }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "rgba(239,68,68,0.08)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }}
+                      className="w-full min-h-10 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--bg-error)]"
+                      style={{ color: "var(--text-error)" }}
                     >
                       Eliminar recordatorio
                     </button>
@@ -411,11 +376,13 @@ export default function ReminderPicker({
                 initial={{ opacity: 0, scale: 0.95, y: 10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                className="relative z-10 w-full max-w-[340px] max-w-[calc(100vw-32px)] rounded-2xl overflow-hidden"
+                className="relative z-10 w-full max-w-[min(340px,calc(100vw-32px))] rounded-2xl overflow-y-auto"
                 style={{
                   backgroundColor: "var(--bg-modal)",
                   boxShadow: "var(--shadow-modal)",
                   border: "1px solid var(--border-color)",
+                  maxHeight: "min(640px, calc(100dvh - 64px))",
+                  paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
                 }}
               >
                 <div
@@ -430,17 +397,8 @@ export default function ReminderPicker({
                   </h3>
                   <button
                     onClick={() => setShowCustom(false)}
-                    className="p-1.5 rounded-lg transition-colors"
+                    className="min-w-10 min-h-10 p-1.5 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                     style={{ color: "var(--text-tertiary)" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "var(--bg-secondary)";
-                      e.currentTarget.style.color = "var(--text-primary)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                      e.currentTarget.style.color = "var(--text-tertiary)";
-                    }}
                   >
                     <X size={18} />
                   </button>

@@ -6,6 +6,7 @@ import type { AppTheme } from "@/stores/uiStore";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
+  Home,
   LayoutDashboard,
   LogOut,
   FolderOpen,
@@ -74,6 +75,7 @@ export default function Sidebar() {
   };
 
   const mainNav = [
+    { name: "Inicio", href: "/", icon: Home },
     { name: "Panel de control", href: "/dashboard", icon: LayoutDashboard },
     { name: "Actividad", href: "/activity", icon: Activity },
     { name: "Equipos", href: "/teams", icon: Users },

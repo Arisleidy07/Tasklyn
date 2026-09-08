@@ -6,14 +6,12 @@ import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
 import { useMemberProfiles } from "@/lib/useMemberProfiles";
-import Header from "@/components/layout/Header";
 import ListHeader from "@/components/lists/ListHeader";
 import TaskItem from "@/components/tasks/TaskItem";
 import ArchivedTaskItem from "@/components/tasks/ArchivedTaskItem";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
-import Input from "@/components/ui/Input";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import PremiumMembersPanel from "@/components/members/PremiumMembersPanel";
 import MembersPanel from "@/components/members/MembersPanel";
@@ -21,23 +19,25 @@ import EditListModal from "@/components/members/EditListModal";
 import { SortableTaskContainer } from "@/components/tasks/SortableTaskContainer";
 import {
   Plus,
-  Share2,
   Trash2,
   CheckCircle2,
   Clock,
   AlertCircle,
-  Settings2,
-  Users,
   Phone,
   MapPin,
-  FileText,
   X,
   Archive,
   ChevronDown,
+  Calendar,
+  Bell,
+  UserPlus,
+  Flag,
+  ListChecks,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { canShareList } from "@/lib/permissions";
+import { usePlanLimits } from "@/hooks/usePlanLimits";
 
 export default function ListDetailPage() {
   const params = useParams();
@@ -63,6 +63,12 @@ export default function ListDetailPage() {
   const [newTaskPriority, setNewTaskPriority] = useState<
     "low" | "medium" | "high" | "urgent"
   >("medium");
+  const [newTaskDueDate, setNewTaskDueDate] = useState("");
+  const [newTaskDueTime, setNewTaskDueTime] = useState("");
+  const [newTaskReminder, setNewTaskReminder] = useState("");
+  const [newTaskAssignee, setNewTaskAssignee] = useState("");
+  const [showMoreFields, setShowMoreFields] = useState(false);
+  const limits = usePlanLimits();
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [createTaskError, setCreateTaskError] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -195,6 +201,25 @@ export default function ListDetailPage() {
     router.push("/dashboard");
   };
 
+  const resetTaskForm = () => {
+    setNewTaskTitle("");
+    setNewTaskDescription("");
+    setNewTaskLocation("");
+    setNewTaskPhones([""]);
+    setNewTaskPriority("medium");
+    setNewTaskDueDate("");
+    setNewTaskDueTime("");
+    setNewTaskReminder("");
+    setNewTaskAssignee("");
+    setShowMoreFields(false);
+    setCreateTaskError(null);
+  };
+
+  const closeTaskModal = () => {
+    setShowAddTask(false);
+    resetTaskForm();
+  };
+
   const handleAddTask = async () => {
     if (!newTaskTitle.trim() || !user || isCreatingTask) return;
 
@@ -213,15 +238,25 @@ export default function ListDetailPage() {
         phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
         priority: newTaskPriority,
         createdBy: user.id,
+        dueDate: newTaskDueDate || undefined,
+        dueTime: newTaskDueDate && newTaskDueTime ? newTaskDueTime : undefined,
+        reminders: newTaskReminder
+          ? [
+              {
+                id: `rem_${Date.now().toString(36)}`,
+                at: new Date(newTaskReminder).toISOString(),
+                sent: false,
+                recipientType: "me",
+              },
+            ]
+          : undefined,
+        assignedTo:
+          limits.features.canAssign && newTaskAssignee
+            ? newTaskAssignee
+            : undefined,
       });
 
-      // Reset form on success
-      setNewTaskTitle("");
-      setNewTaskDescription("");
-      setNewTaskLocation("");
-      setNewTaskPhones([""]);
-      setNewTaskPriority("medium");
-      setShowAddTask(false);
+      closeTaskModal();
     } catch (err) {
       console.error("Error creating task:", err);
       setCreateTaskError(
@@ -315,87 +350,104 @@ export default function ListDetailPage() {
           ref={scrollContainerRef}
           className="p-3 sm:p-4 md:p-6 max-w-4xl mx-auto pb-6"
         >
-          {/* Filtros - Segmented Control (Pendientes, Completadas, Todas) */}
-          <div
-            className="flex rounded-[var(--radius-lg)] p-1 mb-5 gap-1"
-            style={{
-              backgroundColor: "var(--bg-secondary)",
-              border: "1px solid var(--border-color)",
-            }}
-          >
-            {[
-              {
-                key: "pending" as const,
-                label: "Pendientes",
-                count: pendingCount,
-                Icon: Clock,
-              },
-              {
-                key: "completed" as const,
-                label: "Completadas",
-                count: completedCount,
-                Icon: CheckCircle2,
-              },
-              {
-                key: "all" as const,
-                label: "Todas",
-                count: activeTasks.length,
-                Icon: null,
-              },
-            ].map(({ key, label, count, Icon }) => (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                className={cn(
-                  "relative flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-[var(--radius-md)] text-[var(--text-xs)] sm:text-[var(--text-sm)] font-semibold tracking-tight transition-all duration-200 min-h-[36px] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1",
-                  filter === key ? "shadow-sm" : "border border-transparent",
-                )}
-                style={
-                  filter === key
-                    ? {
-                        backgroundColor: "var(--bg-card)",
-                        color: "var(--text-primary)",
-                        border: "1px solid var(--border-color)",
-                      }
-                    : { color: "var(--text-secondary)" }
-                }
-              >
-                {Icon && (
-                  <Icon size={13} className="hidden sm:block flex-shrink-0" />
-                )}
-                <span>{label}</span>
-                <span
-                  className={cn(
-                    "text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none tracking-wide",
-                    filter === key ? "bg-blue-600 shadow-sm" : "",
-                  )}
-                  style={
-                    filter !== key
-                      ? {
-                          backgroundColor: "var(--bg-tertiary)",
-                          color: "var(--text-tertiary)",
-                        }
-                      : { color: "var(--text-on-accent)" }
-                  }
-                >
-                  {count}
-                </span>
-              </button>
-            ))}
-          </div>
+          {/* Filtros + acción principal */}
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+            <div
+              role="tablist"
+              aria-label="Filtrar tareas"
+              className="grid grid-cols-3 gap-1 p-1 rounded-xl flex-1 min-w-0"
+              style={{
+                backgroundColor: "var(--bg-secondary)",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              {[
+                {
+                  key: "pending" as const,
+                  label: "Pendientes",
+                  count: pendingCount,
+                  Icon: Clock,
+                },
+                {
+                  key: "completed" as const,
+                  label: "Completadas",
+                  count: completedCount,
+                  Icon: CheckCircle2,
+                },
+                {
+                  key: "all" as const,
+                  label: "Todas",
+                  count: activeTasks.length,
+                  Icon: ListChecks,
+                },
+              ].map(({ key, label, count, Icon }) => {
+                const active = filter === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    onClick={() => setFilter(key)}
+                    className={cn(
+                      "relative flex items-center justify-center gap-1.5 min-w-0 h-10 px-1.5 sm:px-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150 select-none",
+                      "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 active:scale-[0.98]",
+                      active
+                        ? "shadow-sm"
+                        : "hover:bg-[var(--bg-hover)]",
+                    )}
+                    style={{
+                      backgroundColor: active ? "var(--bg-card)" : "transparent",
+                      color: active
+                        ? "var(--text-primary)"
+                        : "var(--text-secondary)",
+                      border: active
+                        ? "1px solid var(--border-color)"
+                        : "1px solid transparent",
+                    }}
+                  >
+                    <Icon
+                      size={14}
+                      className="hidden sm:block flex-shrink-0"
+                      style={{
+                        color: active
+                          ? key === "completed"
+                            ? "var(--text-success)"
+                            : "var(--text-link)"
+                          : "var(--text-tertiary)",
+                      }}
+                    />
+                    <span className="truncate">{label}</span>
+                    <span
+                      className={cn(
+                        "text-[10px] font-semibold min-w-[20px] h-5 px-1.5 rounded-full leading-none flex items-center justify-center flex-shrink-0 tabular-nums",
+                      )}
+                      style={{
+                        backgroundColor: active
+                          ? "var(--bg-info)"
+                          : "var(--bg-tertiary)",
+                        color: active
+                          ? "var(--text-link)"
+                          : "var(--text-tertiary)",
+                      }}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* Botón añadir tarea */}
-          {canEdit && (
-            <div className="mb-5">
+            {canEdit && (
               <Button
                 onClick={() => setShowAddTask(true)}
-                icon={<Plus size={14} />}
-                className="w-full sm:w-auto"
+                icon={<Plus size={16} />}
+                className="w-full sm:w-auto h-10 flex-shrink-0"
               >
                 Añadir tarea
               </Button>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Tareas */}
           <div className="space-y-2">
@@ -723,28 +775,49 @@ export default function ListDetailPage() {
           )}
         </div>
 
-        {/* Modal Añadir Tarea - PREMIUM */}
+        {/* Modal Crear tarea */}
         <Modal
           isOpen={showAddTask}
-          onClose={() => {
-            setShowAddTask(false);
-            // Reset form on close
-            setNewTaskTitle("");
-            setNewTaskDescription("");
-            setNewTaskLocation("");
-            setNewTaskPhones([""]);
-            setCreateTaskError(null);
-          }}
-          title="Añadir nueva tarea"
+          onClose={closeTaskModal}
+          title="Nueva tarea"
+          description={`Se añadirá a “${list.name}”`}
+          icon={<Plus size={18} />}
           size="task"
+          disableClose={isCreatingTask}
+          footer={
+            <div className="flex items-center justify-end gap-3">
+              <Button
+                variant="ghost"
+                onClick={closeTaskModal}
+                className="min-w-[96px] h-10"
+                disabled={isCreatingTask}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleAddTask}
+                disabled={!newTaskTitle.trim() || isCreatingTask}
+                isLoading={isCreatingTask}
+                className="min-w-[128px] h-10"
+              >
+                Crear tarea
+              </Button>
+            </div>
+          }
         >
-          <div className="space-y-5 p-5 sm:p-6">
+          <form
+            className="px-5 sm:px-6 py-5 space-y-5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleAddTask();
+            }}
+          >
             {createTaskError && (
               <div
-                className="flex items-start gap-2 p-3 rounded-lg text-sm"
+                className="flex items-start gap-2 p-3 rounded-xl text-sm"
                 style={{
                   backgroundColor: "rgba(239,68,68,0.08)",
-                  color: "var(--text-danger, #dc2626)",
+                  color: "var(--text-error)",
                   border: "1px solid rgba(239,68,68,0.2)",
                 }}
                 role="alert"
@@ -753,213 +826,350 @@ export default function ListDetailPage() {
                 <span>{createTaskError}</span>
               </div>
             )}
-            {/* Título de la tarea */}
-            <div className="space-y-1.5">
+
+            {/* Título — campo principal */}
+            <div>
               <label
-                className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-                style={{ color: "var(--text-secondary)" }}
+                htmlFor="new-task-title"
+                className="block text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+                style={{ color: "var(--text-tertiary)" }}
               >
-                <span
-                  className="w-4 h-4 rounded flex items-center justify-center text-[10px]"
-                  style={{ backgroundColor: "var(--bg-secondary)" }}
-                >
-                  1
-                </span>
-                Título de la tarea
+                Título
               </label>
               <AutoResizeTextarea
-                placeholder="Ej: Instalar router principal"
+                id="new-task-title"
+                placeholder="¿Qué hay que hacer?"
                 value={newTaskTitle}
                 onChange={setNewTaskTitle}
                 autoFocus
-                className="text-[var(--text-base)] px-3 py-2.5 w-full leading-relaxed bg-transparent"
-                minRows={1}
-                maxRows={5}
-              />
-            </div>
-
-            {/* Prioridad */}
-            <div className="space-y-1.5">
-              <label
-                className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                <AlertCircle
-                  size={12}
-                  style={{ color: "var(--text-tertiary)" }}
-                />
-                Prioridad
-              </label>
-              <div className="flex gap-2">
-                {[
-                  { value: "low" as const, label: "Baja", color: "#22c55e" },
-                  {
-                    value: "medium" as const,
-                    label: "Media",
-                    color: "#f59e0b",
-                  },
-                  { value: "high" as const, label: "Alta", color: "#f97316" },
-                  {
-                    value: "urgent" as const,
-                    label: "Urgente",
-                    color: "#ef4444",
-                  },
-                ].map((priority) => (
-                  <button
-                    key={priority.value}
-                    type="button"
-                    onClick={() => setNewTaskPriority(priority.value)}
-                    className={cn(
-                      "flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all",
-                      newTaskPriority === priority.value
-                        ? "text-white shadow-sm"
-                        : "opacity-60 hover:opacity-100",
-                    )}
-                    style={{
-                      backgroundColor:
-                        newTaskPriority === priority.value
-                          ? priority.color
-                          : "var(--bg-secondary)",
-                    }}
-                  >
-                    {priority.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Teléfonos dinámicos */}
-            <div className="space-y-2">
-              <label
-                className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                <Phone size={12} style={{ color: "var(--text-tertiary)" }} />
-                Teléfonos de contacto
-              </label>
-              <AnimatePresence mode="popLayout">
-                {newTaskPhones.map((phone, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10, height: 0 }}
-                    className="flex items-center gap-2"
-                  >
-                    <Input
-                      type="tel"
-                      placeholder={`Teléfono ${index + 1}`}
-                      value={phone}
-                      onChange={(e) => handlePhoneChange(index, e.target.value)}
-                      className="text-sm flex-1"
-                    />
-                    {newTaskPhones.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemovePhone(index)}
-                        className="p-2 rounded-lg transition-colors flex-shrink-0"
-                        style={{ color: "var(--text-tertiary)" }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.color = "#ef4444";
-                          e.currentTarget.style.backgroundColor =
-                            "rgba(239,68,68,0.08)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.color = "var(--text-tertiary)";
-                          e.currentTarget.style.backgroundColor = "transparent";
-                        }}
-                      >
-                        <X size={16} />
-                      </button>
-                    )}
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-              <button
-                type="button"
-                onClick={handleAddPhone}
-                className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors mt-1"
-              >
-                <div className="w-5 h-5 rounded-full bg-blue-50 flex items-center justify-center">
-                  <Plus size={12} />
-                </div>
-                Agregar otro teléfono
-              </button>
-            </div>
-
-            {/* Ubicación */}
-            <div className="space-y-1.5">
-              <label
-                className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                <MapPin size={12} style={{ color: "var(--text-tertiary)" }} />
-                Ubicación / Dirección
-              </label>
-              <Input
-                placeholder="Dirección o enlace de Google Maps"
-                value={newTaskLocation}
-                onChange={(e) => setNewTaskLocation(e.target.value)}
-                className="text-sm"
-              />
-            </div>
-
-            {/* Descripción */}
-            <div className="space-y-1.5">
-              <label
-                className="text-xs font-semibold uppercase tracking-wide flex items-center gap-1.5"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                <FileText size={12} style={{ color: "var(--text-tertiary)" }} />
-                Descripción
-              </label>
-              <textarea
-                placeholder="Detalles adicionales de la tarea..."
-                value={newTaskDescription}
-                onChange={(e) => {
-                  setNewTaskDescription(e.target.value);
-                  e.target.style.height = "auto";
-                  e.target.style.height = e.target.scrollHeight + "px";
-                }}
-                rows={2}
-                className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all resize-none overflow-hidden min-h-[44px]"
+                className="w-full px-4 py-3 rounded-xl text-base font-medium leading-snug focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
                 style={{
                   border: "1px solid var(--border-input)",
                   backgroundColor: "var(--bg-input)",
                   color: "var(--text-primary)",
                 }}
+                minRows={1}
+                maxRows={4}
               />
             </div>
 
-            {/* Actions */}
-            <div
-              className="flex gap-3 pt-2 border-t"
-              style={{ borderColor: "var(--border-color)" }}
-            >
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowAddTask(false);
-                  setNewTaskTitle("");
-                  setNewTaskDescription("");
-                  setNewTaskLocation("");
-                  setNewTaskPhones([""]);
+            {/* Descripción */}
+            <div>
+              <label
+                htmlFor="new-task-description"
+                className="block text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                Descripción{" "}
+                <span className="font-normal normal-case tracking-normal opacity-80">
+                  (opcional)
+                </span>
+              </label>
+              <AutoResizeTextarea
+                id="new-task-description"
+                placeholder="Detalles, contexto o pasos..."
+                value={newTaskDescription}
+                onChange={setNewTaskDescription}
+                className="w-full px-4 py-2.5 rounded-xl text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                style={{
+                  border: "1px solid var(--border-input)",
+                  backgroundColor: "var(--bg-input)",
+                  color: "var(--text-primary)",
                 }}
-                className="flex-1 h-11"
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleAddTask}
-                disabled={!newTaskTitle.trim() || isCreatingTask}
-                isLoading={isCreatingTask}
-                className="flex-1 h-11"
-                icon={<Plus size={16} />}
-              >
-                Crear tarea
-              </Button>
+                minRows={2}
+                maxRows={6}
+              />
             </div>
-          </div>
+
+            {/* Prioridad */}
+            <div>
+              <label
+                className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide mb-2"
+                style={{ color: "var(--text-tertiary)" }}
+              >
+                <Flag size={12} />
+                Prioridad
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { value: "low" as const, label: "Baja", color: "#16a34a" },
+                  { value: "medium" as const, label: "Media", color: "#d97706" },
+                  { value: "high" as const, label: "Alta", color: "#ea580c" },
+                  { value: "urgent" as const, label: "Urgente", color: "#dc2626" },
+                ].map((p) => {
+                  const selected = newTaskPriority === p.value;
+                  return (
+                    <button
+                      key={p.value}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => setNewTaskPriority(p.value)}
+                      className="h-10 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+                      style={{
+                        backgroundColor: selected
+                          ? `${p.color}1a`
+                          : "var(--bg-secondary)",
+                        color: selected ? p.color : "var(--text-secondary)",
+                        border: selected
+                          ? `1px solid ${p.color}`
+                          : "1px solid var(--border-color)",
+                      }}
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: p.color }}
+                      />
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Fecha y hora */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label
+                  htmlFor="new-task-date"
+                  className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  <Calendar size={12} />
+                  Fecha límite
+                </label>
+                <input
+                  id="new-task-date"
+                  type="date"
+                  value={newTaskDueDate}
+                  onChange={(e) => setNewTaskDueDate(e.target.value)}
+                  className="w-full min-w-0 h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                  style={{
+                    border: "1px solid var(--border-input)",
+                    backgroundColor: "var(--bg-input)",
+                    color: "var(--text-primary)",
+                    colorScheme: "inherit",
+                  }}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="new-task-time"
+                  className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  <Clock size={12} />
+                  Hora{" "}
+                  <span className="font-normal normal-case tracking-normal opacity-80">
+                    (opcional)
+                  </span>
+                </label>
+                <input
+                  id="new-task-time"
+                  type="time"
+                  value={newTaskDueTime}
+                  onChange={(e) => setNewTaskDueTime(e.target.value)}
+                  disabled={!newTaskDueDate}
+                  className="w-full min-w-0 h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-50"
+                  style={{
+                    border: "1px solid var(--border-input)",
+                    backgroundColor: "var(--bg-input)",
+                    color: "var(--text-primary)",
+                    colorScheme: "inherit",
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Más opciones */}
+            <button
+              type="button"
+              onClick={() => setShowMoreFields((v) => !v)}
+              aria-expanded={showMoreFields}
+              className="flex items-center gap-1.5 text-sm font-medium h-9 -ml-1 px-1 rounded-md transition-colors hover:opacity-80"
+              style={{ color: "var(--text-link)" }}
+            >
+              <ChevronDown
+                size={16}
+                className={cn(
+                  "transition-transform duration-200",
+                  showMoreFields && "rotate-180",
+                )}
+              />
+              {showMoreFields ? "Menos opciones" : "Más opciones"}
+              {!showMoreFields && (
+                <span
+                  className="font-normal hidden sm:inline"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  · recordatorio, responsable, teléfono, ubicación
+                </span>
+              )}
+            </button>
+
+            <AnimatePresence initial={false}>
+              {showMoreFields && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
+                  className="overflow-hidden"
+                >
+                  <div className="space-y-5 pt-1">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Recordatorio */}
+                      <div>
+                        <label
+                          htmlFor="new-task-reminder"
+                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
+                          <Bell size={12} />
+                          Recordatorio
+                        </label>
+                        <input
+                          id="new-task-reminder"
+                          type="datetime-local"
+                          value={newTaskReminder}
+                          onChange={(e) => setNewTaskReminder(e.target.value)}
+                          className="w-full min-w-0 h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                          style={{
+                            border: "1px solid var(--border-input)",
+                            backgroundColor: "var(--bg-input)",
+                            color: "var(--text-primary)",
+                            colorScheme: "inherit",
+                          }}
+                        />
+                      </div>
+
+                      {/* Responsable */}
+                      <div>
+                        <label
+                          htmlFor="new-task-assignee"
+                          className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
+                          <UserPlus size={12} />
+                          Responsable
+                        </label>
+                        <div className="relative">
+                          <select
+                            id="new-task-assignee"
+                            value={newTaskAssignee}
+                            onChange={(e) => setNewTaskAssignee(e.target.value)}
+                            disabled={!limits.features.canAssign}
+                            className="w-full h-11 px-4 pr-10 rounded-xl text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                            style={{
+                              border: "1px solid var(--border-input)",
+                              backgroundColor: "var(--bg-input)",
+                              color: "var(--text-primary)",
+                            }}
+                          >
+                            <option value="">Sin asignar</option>
+                            {list.members.map((m) => (
+                              <option key={m.userId} value={m.userId}>
+                                {memberNames[m.userId] ||
+                                  (m.userId === user.id ? "Tú" : "Miembro")}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown
+                            size={14}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                            style={{ color: "var(--text-tertiary)" }}
+                          />
+                        </div>
+                        {!limits.features.canAssign && (
+                          <p
+                            className="text-[11px] mt-1.5"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
+                            Asignar responsables está disponible en Pro.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Teléfonos */}
+                    <div>
+                      <label
+                        className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        <Phone size={12} />
+                        Teléfonos de contacto
+                      </label>
+                      <div className="space-y-2">
+                        {newTaskPhones.map((phone, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <input
+                              type="tel"
+                              inputMode="tel"
+                              placeholder={`Teléfono ${index + 1}`}
+                              value={phone}
+                              onChange={(e) =>
+                                handlePhoneChange(index, e.target.value)
+                              }
+                              className="flex-1 min-w-0 h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                              style={{
+                                border: "1px solid var(--border-input)",
+                                backgroundColor: "var(--bg-input)",
+                                color: "var(--text-primary)",
+                              }}
+                            />
+                            {newTaskPhones.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemovePhone(index)}
+                                aria-label="Quitar teléfono"
+                                className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:bg-[var(--bg-hover)]"
+                                style={{ color: "var(--text-tertiary)" }}
+                              >
+                                <X size={16} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={handleAddPhone}
+                          className="flex items-center gap-1.5 text-sm font-medium h-9 px-1 -ml-1 rounded-md hover:opacity-80 transition-colors"
+                          style={{ color: "var(--text-link)" }}
+                        >
+                          <Plus size={14} />
+                          Agregar otro teléfono
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Ubicación */}
+                    <div>
+                      <label
+                        htmlFor="new-task-location"
+                        className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        <MapPin size={12} />
+                        Ubicación
+                      </label>
+                      <input
+                        id="new-task-location"
+                        placeholder="Dirección o enlace de Google Maps"
+                        value={newTaskLocation}
+                        onChange={(e) => setNewTaskLocation(e.target.value)}
+                        className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                        style={{
+                          border: "1px solid var(--border-input)",
+                          backgroundColor: "var(--bg-input)",
+                          color: "var(--text-primary)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </form>
         </Modal>
 
         {/* Share panel — invite only */}
@@ -991,37 +1201,42 @@ export default function ListDetailPage() {
           isOpen={showDeleteConfirm}
           onClose={() => setShowDeleteConfirm(false)}
           title="¿Eliminar lista?"
-        >
-          <div className="space-y-4 p-5">
-            <div
-              className="flex items-start gap-3 p-3 rounded-lg text-sm"
-              style={{
-                backgroundColor: "rgba(239,68,68,0.08)",
-                color: "var(--text-danger, #dc2626)",
-                border: "1px solid rgba(239,68,68,0.2)",
-              }}
-            >
-              <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-              <p>
-                Esto eliminará permanentemente &quot;{list.name}&quot; y todas
-                sus tareas. Esta acción no se puede deshacer.
-              </p>
-            </div>
-            <div className="flex gap-3">
+          description="Esta acción no se puede deshacer."
+          size="sm"
+          icon={<Trash2 size={18} />}
+          footer={
+            <div className="flex items-center justify-end gap-3">
               <Button
                 variant="ghost"
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1"
+                className="min-w-[96px] h-10"
               >
                 Cancelar
               </Button>
               <Button
                 variant="danger"
                 onClick={handleDeleteList}
-                className="flex-1"
+                className="min-w-[110px] h-10"
               >
                 Eliminar
               </Button>
+            </div>
+          }
+        >
+          <div className="px-5 sm:px-6 py-5">
+            <div
+              className="flex items-start gap-3 p-3 rounded-xl text-sm"
+              style={{
+                backgroundColor: "rgba(239,68,68,0.08)",
+                color: "var(--text-error)",
+                border: "1px solid rgba(239,68,68,0.2)",
+              }}
+            >
+              <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+              <p className="break-words min-w-0">
+                Se eliminará permanentemente &quot;{list.name}&quot; y todas sus
+                tareas.
+              </p>
             </div>
           </div>
         </Modal>

@@ -110,7 +110,7 @@ export default function HeroDemo() {
           <div className="w-[220px] flex-shrink-0 flex flex-col bg-slate-950/70 border-r border-slate-800/60">
             {/* Logo */}
             <div className="h-14 flex items-center justify-between px-4 border-b border-slate-800/60 flex-shrink-0">
-              <Logo size="md" />
+              <Logo size="md" textClassName="text-slate-100" />
             </div>
 
             {/* Navigation */}

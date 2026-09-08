@@ -6,6 +6,7 @@ import { useUIStore } from "@/stores/uiStore";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
+  Home,
   LayoutDashboard,
   LogOut,
   Crown,
@@ -52,6 +53,7 @@ export default function MobileSidebar() {
   };
 
   const mainNav = [
+    { name: "Inicio", href: "/", icon: Home },
     { name: "Panel de control", href: "/dashboard", icon: LayoutDashboard },
     { name: "Actividad", href: "/activity", icon: Activity },
     { name: "Equipos", href: "/teams", icon: Users },

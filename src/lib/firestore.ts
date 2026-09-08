@@ -211,7 +211,7 @@ export const createList = async (
   // Assign order = current timestamp millis so new lists go at the end
   const order = list.order ?? Date.now();
   await setDoc(listRef, {
-    ...list,
+    ...stripUndefined(list as Record<string, unknown>),
     order,
     memberIds,
     createdAt: serverTimestamp(),

@@ -12,6 +12,8 @@ interface AutoResizeTextareaProps {
   minRows?: number;
   maxRows?: number;
   onBlur?: () => void;
+  id?: string;
+  style?: React.CSSProperties;
 }
 
 export default function AutoResizeTextarea({
@@ -23,6 +25,8 @@ export default function AutoResizeTextarea({
   minRows = 1,
   maxRows = 8,
   onBlur,
+  id,
+  style,
 }: AutoResizeTextareaProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isOverflowing, setIsOverflowing] = useState(false);
@@ -45,6 +49,8 @@ export default function AutoResizeTextarea({
   return (
     <textarea
       ref={textareaRef}
+      id={id}
+      style={style}
       value={value}
       onChange={handleChange}
       onBlur={onBlur}
@@ -52,7 +58,8 @@ export default function AutoResizeTextarea({
       autoFocus={autoFocus}
       rows={minRows}
       className={cn(
-        "w-full bg-transparent border-none focus:outline-none focus:ring-0 resize-none overflow-x-hidden whitespace-pre-wrap break-words",
+        "w-full bg-transparent border-none resize-none overflow-x-hidden whitespace-pre-wrap break-words",
+        !style && "focus:outline-none focus:ring-0",
         isOverflowing ? "overflow-y-auto" : "overflow-y-hidden",
         className,
       )}

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Check, Zap, Building2, User } from "lucide-react";
+import { PLAN_FEATURES } from "@/lib/planFeatures";
 
 interface PricingPlan {
   name: string;
@@ -25,9 +26,9 @@ const plans: PricingPlan[] = [
     badge: "Gratis",
     badgeColor: "bg-slate-800 text-slate-300 border-slate-700",
     features: [
-      "Hasta 4 listas",
-      "Hasta 15 tareas",
-      "Hasta 5 personas por lista",
+      `Hasta ${PLAN_FEATURES.free.maxLists} listas`,
+      `Hasta ${PLAN_FEATURES.free.maxTasksPerList} tareas por lista`,
+      `Hasta ${PLAN_FEATURES.free.maxCollaborators} personas por lista`,
       "Funciones básicas",
     ],
     cta: "Comenzar gratis",
@@ -41,8 +42,8 @@ const plans: PricingPlan[] = [
     badge: "MOST POPULAR",
     badgeColor: "bg-blue-500/20 text-blue-400 border-blue-500/40",
     features: [
-      "Hasta 20 listas",
-      "Hasta 35 tareas",
+      `Hasta ${PLAN_FEATURES.pro.maxLists} listas`,
+      `Hasta ${PLAN_FEATURES.pro.maxTasksPerList} tareas por lista`,
       "Mayor límite de personas",
       "Historial completo",
       "Personalización",

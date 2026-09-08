@@ -833,7 +833,9 @@ select option {
 }
 
 /* ===== DARK THEME ===== */
-.app-theme-dark {
+.app-theme-dark,
+[data-theme="dark"],
+html.dark {
   color-scheme: dark;
 }
 

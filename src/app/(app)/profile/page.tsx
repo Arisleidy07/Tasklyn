@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
@@ -20,6 +19,7 @@ import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
 import Badge from "@/components/ui/Badge";
 import Input from "@/components/ui/Input";
+import Modal from "@/components/ui/Modal";
 import PhotoCropperModal from "@/components/profile/PhotoCropperModal";
 import {
   Mail,
@@ -36,7 +36,6 @@ import {
   ChevronRight,
   Edit2,
   Upload,
-  X,
   Check,
   Camera,
   Trash2,
@@ -45,9 +44,10 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { PLAN_FEATURES, type Plan } from "@/types";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -63,11 +63,6 @@ export default function ProfilePage() {
   const [dragActive, setDragActive] = useState(false);
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (!user) return null;
 
@@ -266,92 +261,82 @@ export default function ProfilePage() {
             }}
           >
             <div className="px-4 sm:px-6 md:px-8 pt-5 sm:pt-7 pb-4 sm:pb-6">
-              <div className="flex items-start gap-4 sm:gap-5 mb-5 sm:mb-6">
-                <Avatar
-                  name={user.name}
-                  photoURL={user.photoURL}
-                  size="xl"
-                  className="w-16 h-16 sm:w-20 sm:h-20 text-xl ring-4 ring-white shadow-md flex-shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h1
-                          className="text-xl sm:text-2xl font-bold tracking-tight truncate"
-                          style={{ color: "var(--text-primary)" }}
-                        >
-                          {user.name}
-                        </h1>
-                        <button
-                          onClick={handleOpenEdit}
-                          className="p-1.5 rounded-lg transition-colors flex-shrink-0"
-                          style={{ color: "var(--text-secondary)" }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.color = "#2563eb";
-                            e.currentTarget.style.backgroundColor =
-                              "var(--bg-info)";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.color =
-                              "var(--text-secondary)";
-                            e.currentTarget.style.backgroundColor =
-                              "transparent";
-                          }}
-                          title="Editar perfil"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <Badge
-                          variant={
-                            user.plan === "pro" || user.plan === "business"
-                              ? "blue"
-                              : "default"
-                          }
-                        >
-                          {user.plan === "business"
-                            ? "BUSINESS"
-                            : user.plan === "pro"
-                              ? "PRO"
-                              : "Gratis"}
-                        </Badge>
-                      </div>
-                      <div
-                        className="flex items-center gap-1.5 text-sm mt-1"
-                        style={{ color: "var(--text-secondary)" }}
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-5 mb-5 sm:mb-6">
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  <Avatar
+                    name={user.name}
+                    photoURL={user.photoURL}
+                    size="xl"
+                    className="w-16 h-16 sm:w-20 sm:h-20 text-xl ring-4 shadow-md flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <h1
+                        className="text-xl sm:text-2xl font-bold tracking-tight truncate"
+                        style={{ color: "var(--text-primary)" }}
                       >
-                        <Mail size={12} />
-                        <span className="truncate">{user.email}</span>
-                      </div>
-                      <p
-                        className="flex items-center gap-1.5 text-xs mt-0.5"
+                        {user.name}
+                      </h1>
+                      <button
+                        onClick={handleOpenEdit}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors flex-shrink-0 hover:bg-[var(--bg-hover)]"
+                        style={{ color: "var(--text-secondary)" }}
+                        title="Editar perfil"
+                        aria-label="Editar perfil"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 min-w-0">
+                      <Badge
+                        variant={
+                          user.plan === "pro" || user.plan === "business"
+                            ? "blue"
+                            : "default"
+                        }
+                      >
+                        {user.plan === "business"
+                          ? "BUSINESS"
+                          : user.plan === "pro"
+                            ? "PRO"
+                            : "Gratis"}
+                      </Badge>
+                      <span
+                        className="flex items-center gap-1 text-xs truncate"
                         style={{ color: "var(--text-tertiary)" }}
                       >
-                        <Calendar size={11} />
+                        <Calendar size={11} className="flex-shrink-0" />
                         Miembro desde {joinDate}
-                      </p>
+                      </span>
                     </div>
-                    <div className="flex flex-col gap-2 flex-shrink-0">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => router.push("/pricing")}
-                        icon={<Crown size={14} />}
-                        className="whitespace-nowrap"
-                      >
-                        Ver planes
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={handleLogout}
-                        className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                        icon={<LogOut size={14} />}
-                      >
-                        Salir
-                      </Button>
+                    <div
+                      className="flex items-center gap-1.5 text-sm mt-1.5 min-w-0"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      <Mail size={12} className="flex-shrink-0" />
+                      <span className="truncate">{user.email}</span>
                     </div>
                   </div>
+                </div>
+                <div className="flex sm:flex-col gap-2 flex-shrink-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => router.push("/pricing")}
+                    icon={<Crown size={14} />}
+                    className="whitespace-nowrap flex-1 sm:flex-none h-9"
+                  >
+                    Ver planes
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleLogout}
+                    className="flex-1 sm:flex-none h-9 text-red-500 hover:text-red-600 hover:!bg-[rgba(239,68,68,0.08)]"
+                    icon={<LogOut size={14} />}
+                  >
+                    Salir
+                  </Button>
                 </div>
               </div>
 
@@ -597,9 +582,7 @@ export default function ProfilePage() {
                       >
                         {user.plan === "business"
                           ? "Plan empresarial completo"
-                          : user.plan === "pro"
-                            ? "20 listas · 35 tareas"
-                            : "4 listas · 15 tareas"}
+                          : `${PLAN_FEATURES[(user.plan || "free") as Plan].maxLists} listas · ${PLAN_FEATURES[(user.plan || "free") as Plan].maxTasksPerList} tareas por lista`}
                       </p>
                     </div>
                   </div>
@@ -736,254 +719,149 @@ export default function ProfilePage() {
         currentPhotoURL={editPhotoURL}
       />
 
-      {/* Edit Profile Modal - DISEÑO PREMIUM MINIMALISTA */}
-      {mounted &&
-        showEditProfile &&
-        !cropImageSrc &&
-        createPortal(
-          <AnimatePresence>
-            {showEditProfile && !cropImageSrc && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[99990] flex items-center justify-center p-4"
+      {/* Edit Profile Modal */}
+      <Modal
+        isOpen={showEditProfile && !cropImageSrc}
+        onClose={() => setShowEditProfile(false)}
+        title="Editar perfil"
+        size="md"
+        footer={
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowEditProfile(false)}
+              disabled={isSavingProfile}
+              className="flex-1 h-10"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSaveProfile}
+              disabled={!editName.trim() || isSavingProfile}
+              isLoading={isSavingProfile}
+              className="flex-1 h-10"
+            >
+              Guardar cambios
+            </Button>
+          </div>
+        }
+      >
+        <div className="px-5 sm:px-6 py-5 space-y-6">
+          {/* Photo Section */}
+          <div className="flex flex-col items-center">
+            <div className="relative group">
+              <div
+                className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden ring-4 transition-all"
+                style={{ backgroundColor: "var(--bg-secondary)" }}
               >
-                {/* Overlay elegante - sutil */}
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 backdrop-blur-sm"
-                  style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
-                  onClick={() => setShowEditProfile(false)}
-                />
+                {editPhotoURL ? (
+                  <img
+                    src={editPhotoURL}
+                    alt="Profile"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <User size={36} style={{ color: "var(--border-color)" }} />
+                )}
+              </div>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
+                style={{
+                  backgroundColor: "#2563eb",
+                  color: "var(--text-on-accent)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#1d4ed8";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#2563eb";
+                }}
+              >
+                <Camera size={14} />
+              </button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <p
+              className="text-xs mt-3 font-medium"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {editPhotoURL
+                ? "Cambiar foto de perfil"
+                : "Agregar foto de perfil"}
+            </p>
 
-                {/* Modal premium - estilo Linear/Notion */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: 8 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 8 }}
-                  transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                  className="relative z-10 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-                  style={{
-                    backgroundColor: "var(--bg-card)",
-                    border: "1px solid var(--border-color)",
-                  }}
-                >
-                  {/* Header minimalista */}
-                  <div
-                    className="flex items-center justify-between px-6 py-5 border-b"
-                    style={{ borderColor: "var(--border-color)" }}
-                  >
-                    <h2
-                      className="text-base font-semibold tracking-tight"
-                      style={{ color: "var(--text-primary)" }}
-                    >
-                      Editar perfil
-                    </h2>
-                    <button
-                      onClick={() => setShowEditProfile(false)}
-                      className="p-2 rounded-lg transition-colors"
-                      style={{ color: "var(--text-tertiary)" }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor =
-                          "var(--bg-secondary)";
-                        e.currentTarget.style.color = "var(--text-primary)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                        e.currentTarget.style.color = "var(--text-tertiary)";
-                      }}
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-
-                  {/* Content - espaciado premium */}
-                  <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                    {/* Photo Section - elegante */}
-                    <div className="flex flex-col items-center">
-                      <div className="relative group">
-                        <div
-                          className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden ring-4 transition-all"
-                          style={{ backgroundColor: "var(--bg-secondary)" }}
-                        >
-                          {editPhotoURL ? (
-                            <img
-                              src={editPhotoURL}
-                              alt="Profile"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <User
-                              size={36}
-                              style={{ color: "var(--border-color)" }}
-                            />
-                          )}
-                        </div>
-                        <button
-                          onClick={() => fileInputRef.current?.click()}
-                          className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-105 active:scale-95"
-                          style={{
-                            backgroundColor: "#2563eb",
-                            color: "var(--text-on-accent)",
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = "#1d4ed8";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = "#2563eb";
-                          }}
-                        >
-                          <Camera size={14} />
-                        </button>
-                      </div>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                      />
-                      <p
-                        className="text-xs mt-3 font-medium"
-                        style={{ color: "var(--text-secondary)" }}
-                      >
-                        {editPhotoURL
-                          ? "Cambiar foto de perfil"
-                          : "Agregar foto de perfil"}
-                      </p>
-
-                      {/* Eliminar foto */}
-                      {editPhotoURL && (
-                        <button
-                          onClick={handleDeletePhoto}
-                          className="mt-2 text-xs text-red-500 hover:text-red-600 font-medium transition-colors flex items-center gap-1"
-                        >
-                          <Trash2 size={12} />
-                          Eliminar foto
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Divider */}
-                    <div
-                      className="h-px"
-                      style={{ backgroundColor: "var(--border-color)" }}
-                    />
-
-                    {/* Name Input - limpio */}
-                    <div className="space-y-2">
-                      <label
-                        className="text-sm font-medium"
-                        style={{ color: "var(--text-secondary)" }}
-                      >
-                        Nombre completo
-                      </label>
-                      <Input
-                        placeholder="Tu nombre"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" && handleSaveProfile()
-                        }
-                        autoFocus
-                        className="h-11 transition-colors"
-                        style={{
-                          backgroundColor: "var(--bg-input)",
-                          borderColor: "var(--border-input)",
-                        }}
-                      />
-                    </div>
-
-                    {/* Email (read only) - sutil */}
-                    <div className="space-y-2">
-                      <label
-                        className="text-sm font-medium"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        Correo electrónico
-                      </label>
-                      <div
-                        className="h-11 px-3 flex items-center rounded-lg text-sm border border-transparent"
-                        style={{
-                          backgroundColor: "var(--bg-secondary)",
-                          color: "var(--text-tertiary)",
-                        }}
-                      >
-                        {user.email}
-                      </div>
-                      <p
-                        className="text-[11px]"
-                        style={{ color: "var(--text-tertiary)" }}
-                      >
-                        El correo no se puede cambiar
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Actions - modernas */}
-                  <div
-                    className="p-6 pt-4 border-t"
-                    style={{
-                      borderColor: "var(--border-color)",
-                      backgroundColor: "var(--bg-secondary)",
-                    }}
-                  >
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => setShowEditProfile(false)}
-                        className="flex-1 h-11 px-4 rounded-xl text-sm font-medium transition-colors"
-                        style={{ color: "var(--text-secondary)" }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor =
-                            "var(--bg-tertiary)";
-                          e.currentTarget.style.color = "var(--text-primary)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = "transparent";
-                          e.currentTarget.style.color = "var(--text-secondary)";
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        onClick={handleSaveProfile}
-                        disabled={!editName.trim() || isSavingProfile}
-                        className={cn(
-                          "flex-1 h-11 px-4 rounded-xl text-sm font-medium transition-all",
-                          !editName.trim() || isSavingProfile
-                            ? "cursor-not-allowed"
-                            : "bg-blue-600 hover:bg-blue-500 hover:shadow-lg active:scale-[0.98]",
-                        )}
-                        style={
-                          !editName.trim() || isSavingProfile
-                            ? {
-                                backgroundColor: "var(--bg-tertiary)",
-                                color: "var(--text-tertiary)",
-                              }
-                            : { color: "var(--text-on-accent)" }
-                        }
-                      >
-                        {isSavingProfile ? (
-                          <span className="flex items-center justify-center gap-2">
-                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            Guardando...
-                          </span>
-                        ) : (
-                          "Guardar cambios"
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              </motion.div>
+            {editPhotoURL && (
+              <button
+                onClick={handleDeletePhoto}
+                className="mt-2 text-xs text-red-500 hover:text-red-600 font-medium transition-colors flex items-center gap-1"
+              >
+                <Trash2 size={12} />
+                Eliminar foto
+              </button>
             )}
-          </AnimatePresence>,
-          document.body,
-        )}
+          </div>
+
+          <div
+            className="h-px"
+            style={{ backgroundColor: "var(--border-color)" }}
+          />
+
+          {/* Name Input */}
+          <div className="space-y-2">
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Nombre completo
+            </label>
+            <Input
+              placeholder="Tu nombre"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSaveProfile()}
+              autoFocus
+              className="h-11 transition-colors"
+              style={{
+                backgroundColor: "var(--bg-input)",
+                borderColor: "var(--border-input)",
+              }}
+            />
+          </div>
+
+          {/* Email (read only) */}
+          <div className="space-y-2">
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              Correo electrónico
+            </label>
+            <div
+              className="h-11 px-3 flex items-center rounded-lg text-sm border border-transparent"
+              style={{
+                backgroundColor: "var(--bg-secondary)",
+                color: "var(--text-tertiary)",
+              }}
+            >
+              {user.email}
+            </div>
+            <p
+              className="text-[11px]"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              El correo no se puede cambiar
+            </p>
+          </div>
+        </div>
+      </Modal>
     </>
   );
 }

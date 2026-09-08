@@ -106,6 +106,11 @@ export const useAuthStore = create<AuthState>()(
 
 // Initialize auth state listener
 export const initAuthListener = () => {
+  if (process.env.NEXT_PUBLIC_UI_PREVIEW === "1") {
+    // TEMP visual-QA harness
+    import("@/lib/devPreview").then((m) => m.seedDevPreview());
+    return;
+  }
   onAuthStateChanged(auth, async (firebaseUser) => {
     if (firebaseUser) {
       let user = await getUser(firebaseUser.uid);

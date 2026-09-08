@@ -1,18 +1,10 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  X,
-  Loader2,
-  Camera,
-  Type,
-  FileText,
-  Palette,
-  Check,
-} from "lucide-react";
+import { Camera, Type, FileText, Palette, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Button from "@/components/ui/Button";
+import Modal from "@/components/ui/Modal";
 import TeamImage from "@/components/ui/TeamImage";
 import type { Team } from "@/types";
 
@@ -125,250 +117,179 @@ export default function EditTeamModal({
   if (!isOpen) return null;
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      title="Editar equipo"
+      description="Personaliza la apariencia y configuración"
+      size="lg"
+      icon={<Camera size={18} />}
+      disableClose={isSaving}
+      footer={
+        <div className="flex items-center justify-end gap-3">
+          <Button
+            variant="outline"
             onClick={handleClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
-          />
-
-          {/* Modal */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 400 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+            disabled={isSaving}
+            className="min-w-[96px] h-10"
           >
-            <div
-              className="w-full max-w-lg rounded-2xl shadow-2xl pointer-events-auto overflow-hidden"
-              style={{ backgroundColor: "var(--bg-card)" }}
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={!hasChanges || isSaving || !name.trim()}
+            isLoading={isSaving}
+            className="min-w-[140px] h-10"
+          >
+            {isSaving ? "Guardando..." : "Guardar cambios"}
+          </Button>
+        </div>
+      }
+    >
+      <div className="px-5 sm:px-6 py-5 space-y-6">
+        {/* Team Image */}
+        <div className="flex items-center gap-4">
+          <TeamImage
+            teamId={team.id}
+            name={name || team.name}
+            photoURL={photoURL}
+            size="xl"
+            editable
+            onUpdate={handlePhotoUpdate}
+            color={selectedColor}
+          />
+          <div className="flex-1">
+            <p
+              className="font-medium mb-1"
+              style={{ color: "var(--text-primary)" }}
             >
-              {/* Header */}
-              <div
-                className="px-6 py-4 border-b flex items-center justify-between"
-                style={{ borderColor: "var(--border-color)" }}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: "var(--bg-secondary)" }}
-                  >
-                    <Camera
-                      size={18}
-                      style={{ color: "var(--text-secondary)" }}
-                    />
-                  </div>
-                  <div>
-                    <h2
-                      className="text-lg font-semibold"
-                      style={{ color: "var(--text-primary)" }}
-                    >
-                      Editar equipo
-                    </h2>
-                    <p
-                      className="text-sm"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      Personaliza la apariencia y configuración
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleClose}
-                  disabled={isSaving}
-                  className="p-1.5 rounded-lg transition-colors"
-                  style={{ color: "var(--text-tertiary)" }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor =
-                      "var(--bg-secondary)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
+              Foto del equipo
+            </p>
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+              Haz clic en la imagen para cambiarla. Formatos: JPG, PNG. Máximo
+              5MB.
+            </p>
+          </div>
+        </div>
 
-              {/* Content */}
-              <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-                {/* Team Image */}
-                <div className="flex items-center gap-4">
-                  <TeamImage
-                    teamId={team.id}
-                    name={name || team.name}
-                    photoURL={photoURL}
-                    size="xl"
-                    editable
-                    onUpdate={handlePhotoUpdate}
-                    color={selectedColor}
-                  />
-                  <div className="flex-1">
-                    <p
-                      className="font-medium mb-1"
-                      style={{ color: "var(--text-primary)" }}
-                    >
-                      Foto del equipo
-                    </p>
-                    <p
-                      className="text-sm"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      Haz clic en la imagen para cambiarla. Formatos: JPG, PNG.
-                      Máximo 5MB.
-                    </p>
-                  </div>
-                </div>
+        {/* Name Input */}
+        <div className="space-y-2">
+          <label
+            className="text-sm font-medium flex items-center gap-1.5"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <Type size={14} />
+            Nombre del equipo
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            disabled={isSaving}
+            placeholder="Ej: Marketing, Ventas, Desarrollo..."
+            maxLength={60}
+            className={cn(
+              "w-full px-4 py-2.5 rounded-xl text-sm transition-all outline-none",
+              "border focus:ring-2 focus:ring-blue-500/20",
+            )}
+            style={{
+              backgroundColor: "var(--bg-input)",
+              borderColor: "var(--border-input)",
+              color: "var(--text-primary)",
+            }}
+          />
+          <p
+            className="text-xs text-right"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            {name.length}/60
+          </p>
+        </div>
 
-                {/* Name Input */}
-                <div className="space-y-2">
-                  <label
-                    className="text-sm font-medium flex items-center gap-1.5"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    <Type size={14} />
-                    Nombre del equipo
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    disabled={isSaving}
-                    placeholder="Ej: Marketing, Ventas, Desarrollo..."
-                    maxLength={60}
-                    className={cn(
-                      "w-full px-4 py-2.5 rounded-xl text-sm transition-all outline-none",
-                      "border focus:ring-2 focus:ring-blue-500/20",
-                    )}
-                    style={{
-                      backgroundColor: "var(--bg-input)",
-                      borderColor: "var(--border-input)",
-                      color: "var(--text-primary)",
-                    }}
-                  />
-                  <p
-                    className="text-xs text-right"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    {name.length}/60
-                  </p>
-                </div>
+        {/* Description Input */}
+        <div className="space-y-2">
+          <label
+            className="text-sm font-medium flex items-center gap-1.5"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <FileText size={14} />
+            Descripción
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={isSaving}
+            placeholder="¿Para qué es este equipo?"
+            rows={3}
+            maxLength={200}
+            className={cn(
+              "w-full px-4 py-2.5 rounded-xl text-sm transition-all outline-none resize-none",
+              "border focus:ring-2 focus:ring-blue-500/20",
+            )}
+            style={{
+              backgroundColor: "var(--bg-input)",
+              borderColor: "var(--border-input)",
+              color: "var(--text-primary)",
+            }}
+          />
+          <p
+            className="text-xs text-right"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            {description.length}/200
+          </p>
+        </div>
 
-                {/* Description Input */}
-                <div className="space-y-2">
-                  <label
-                    className="text-sm font-medium flex items-center gap-1.5"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    <FileText size={14} />
-                    Descripción
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    disabled={isSaving}
-                    placeholder="¿Para qué es este equipo?"
-                    rows={3}
-                    maxLength={200}
-                    className={cn(
-                      "w-full px-4 py-2.5 rounded-xl text-sm transition-all outline-none resize-none",
-                      "border focus:ring-2 focus:ring-blue-500/20",
-                    )}
-                    style={{
-                      backgroundColor: "var(--bg-input)",
-                      borderColor: "var(--border-input)",
-                      color: "var(--text-primary)",
-                    }}
-                  />
-                  <p
-                    className="text-xs text-right"
-                    style={{ color: "var(--text-tertiary)" }}
-                  >
-                    {description.length}/200
-                  </p>
-                </div>
-
-                {/* Color Selection */}
-                <div className="space-y-3">
-                  <label
-                    className="text-sm font-medium flex items-center gap-1.5"
-                    style={{ color: "var(--text-secondary)" }}
-                  >
-                    <Palette size={14} />
-                    Color del equipo
-                  </label>
-                  <div className="flex flex-wrap gap-3">
-                    {PRESET_COLORS.map((color) => (
-                      <button
-                        key={color.value}
-                        onClick={() => setSelectedColor(color.value)}
-                        disabled={isSaving}
-                        className={cn(
-                          "w-10 h-10 rounded-xl bg-gradient-to-br transition-all duration-200",
-                          "flex items-center justify-center",
-                          selectedColor === color.value
-                            ? "ring-2 ring-offset-2 ring-blue-500 scale-110"
-                            : "hover:scale-105",
-                        )}
-                        style={{
-                          background: `linear-gradient(135deg, ${color.value}, ${color.value}dd)`,
-                        }}
-                        title={color.name}
-                      >
-                        {selectedColor === color.value && (
-                          <Check size={16} className="text-white" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Error message */}
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-3 rounded-lg"
-                    style={{
-                      backgroundColor: "rgba(239, 68, 68, 0.1)",
-                      border: "1px solid rgba(239, 68, 68, 0.2)",
-                    }}
-                  >
-                    <p className="text-sm text-red-600">{error}</p>
-                  </motion.div>
+        {/* Color Selection */}
+        <div className="space-y-3">
+          <label
+            className="text-sm font-medium flex items-center gap-1.5"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <Palette size={14} />
+            Color del equipo
+          </label>
+          <div className="flex flex-wrap gap-3">
+            {PRESET_COLORS.map((color) => (
+              <button
+                key={color.value}
+                onClick={() => setSelectedColor(color.value)}
+                disabled={isSaving}
+                className={cn(
+                  "w-10 h-10 rounded-xl bg-gradient-to-br transition-all duration-200",
+                  "flex items-center justify-center",
+                  selectedColor === color.value
+                    ? "ring-2 ring-offset-2 ring-blue-500 scale-110"
+                    : "hover:scale-105",
                 )}
-              </div>
-
-              {/* Footer */}
-              <div
-                className="px-6 py-4 border-t flex justify-end gap-3"
-                style={{ borderColor: "var(--border-color)" }}
+                style={{
+                  background: `linear-gradient(135deg, ${color.value}, ${color.value}dd)`,
+                }}
+                title={color.name}
               >
-                <Button
-                  variant="outline"
-                  onClick={handleClose}
-                  disabled={isSaving}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  disabled={!hasChanges || isSaving || !name.trim()}
-                  isLoading={isSaving}
-                >
-                  {isSaving ? "Guardando..." : "Guardar cambios"}
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        </>
-      )}
-    </AnimatePresence>
+                {selectedColor === color.value && (
+                  <Check size={16} className="text-white" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Error message */}
+        {error && (
+          <div
+            className="p-3 rounded-lg"
+            style={{
+              backgroundColor: "rgba(239, 68, 68, 0.1)",
+              border: "1px solid rgba(239, 68, 68, 0.2)",
+            }}
+          >
+            <p className="text-sm" style={{ color: "#ef4444" }}>
+              {error}
+            </p>
+          </div>
+        )}
+      </div>
+    </Modal>
   );
 }

@@ -15,7 +15,7 @@ export default function MobileNav() {
   const { unreadCount } = useNotificationStore();
 
   const items = [
-    { name: "Inicio", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Panel", href: "/dashboard", icon: LayoutDashboard },
     {
       name: "Listas",
       href: "/dashboard?section=lists&view=todas",

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import {
@@ -13,6 +12,7 @@ import {
 import type { Client } from "@/types";
 import Header from "@/components/layout/Header";
 import Avatar from "@/components/ui/Avatar";
+import Modal from "@/components/ui/Modal";
 import {
   Users,
   Plus,
@@ -78,256 +78,213 @@ function ClientForm({ initial, onClose, onSave, title }: ClientFormProps) {
     }
   };
 
-  if (typeof document === "undefined") return null;
-  return createPortal(
-    <>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[99998] bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          onClick={(e) => e.stopPropagation()}
-          className="rounded-2xl p-6 max-w-lg w-full shadow-2xl max-h-[90vh] overflow-y-auto"
-          style={{
-            backgroundColor: "var(--bg-card)",
-            border: "1px solid var(--border-color)",
-          }}
-        >
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-                <Users size={18} style={{ color: "var(--text-on-accent)" }} />
-              </div>
-              <h3
-                className="text-lg font-semibold"
-                style={{ color: "var(--text-primary)" }}
-              >
-                {title}
-              </h3>
-            </div>
-            <button
-              onClick={onClose}
-              className="transition-colors"
-              style={{ color: "var(--text-tertiary)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--text-secondary)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--text-tertiary)";
-              }}
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={title}
+      size="lg"
+      icon={<Users size={18} />}
+      footer={
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 min-h-[44px] px-4 rounded-xl text-sm font-medium transition-colors"
+            style={{
+              border: "1px solid var(--border-color)",
+              color: "var(--text-secondary)",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+            }}
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            form="client-form"
+            disabled={saving || !name.trim()}
+            className="flex-1 min-h-[44px] px-4 bg-blue-600 hover:bg-blue-700 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
+            style={{ color: "var(--text-on-accent)" }}
+          >
+            {saving ? "Guardando..." : "Guardar"}
+          </button>
+        </div>
+      }
+    >
+      <form id="client-form" onSubmit={handleSubmit} className="space-y-4 px-1">
+        <div>
+          <label
+            className="block text-sm font-medium mb-1.5"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Nombre *
+          </label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Nombre del cliente"
+            required
+            autoFocus
+            className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{
+              border: "1px solid var(--border-input)",
+              backgroundColor: "var(--bg-input)",
+              color: "var(--text-primary)",
+            }}
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label
+              className="block text-sm font-medium mb-1.5"
+              style={{ color: "var(--text-secondary)" }}
             >
-              <X size={16} />
-            </button>
+              Correo
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="correo@ejemplo.com"
+              className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
+            />
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                className="block text-sm font-medium mb-1.5"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                Nombre *
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Nombre del cliente"
-                required
-                autoFocus
-                className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          <div>
+            <label
+              className="block text-sm font-medium mb-1.5"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Teléfono
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+1 000 000 0000"
+              className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
+            />
+          </div>
+        </div>
+        <div>
+          <label
+            className="block text-sm font-medium mb-1.5"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Dirección
+          </label>
+          <input
+            type="text"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Dirección o ciudad"
+            className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{
+              border: "1px solid var(--border-input)",
+              backgroundColor: "var(--bg-input)",
+              color: "var(--text-primary)",
+            }}
+          />
+        </div>
+        <div>
+          <label
+            className="block text-sm font-medium mb-1.5"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Notas
+          </label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Notas internas..."
+            rows={3}
+            className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            style={{
+              border: "1px solid var(--border-input)",
+              backgroundColor: "var(--bg-input)",
+              color: "var(--text-primary)",
+            }}
+          />
+        </div>
+        <div>
+          <label
+            className="block text-sm font-medium mb-1.5"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            Etiquetas
+          </label>
+          <div className="flex gap-2 mb-2 flex-wrap">
+            {tags.map((t) => (
+              <span
+                key={t}
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
                 style={{
-                  border: "1px solid var(--border-input)",
-                  backgroundColor: "var(--bg-input)",
-                  color: "var(--text-primary)",
+                  backgroundColor: "rgba(37,99,235,0.08)",
+                  color: "#2563eb",
                 }}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label
-                  className="block text-sm font-medium mb-1.5"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Correo
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="correo@ejemplo.com"
-                  className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    border: "1px solid var(--border-input)",
-                    backgroundColor: "var(--bg-input)",
-                    color: "var(--text-primary)",
-                  }}
-                />
-              </div>
-              <div>
-                <label
-                  className="block text-sm font-medium mb-1.5"
-                  style={{ color: "var(--text-secondary)" }}
-                >
-                  Teléfono
-                </label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+1 000 000 0000"
-                  className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    border: "1px solid var(--border-input)",
-                    backgroundColor: "var(--bg-input)",
-                    color: "var(--text-primary)",
-                  }}
-                />
-              </div>
-            </div>
-            <div>
-              <label
-                className="block text-sm font-medium mb-1.5"
-                style={{ color: "var(--text-secondary)" }}
               >
-                Dirección
-              </label>
-              <input
-                type="text"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Dirección o ciudad"
-                className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                style={{
-                  border: "1px solid var(--border-input)",
-                  backgroundColor: "var(--bg-input)",
-                  color: "var(--text-primary)",
-                }}
-              />
-            </div>
-            <div>
-              <label
-                className="block text-sm font-medium mb-1.5"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                Notas
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notas internas..."
-                rows={3}
-                className="w-full px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                style={{
-                  border: "1px solid var(--border-input)",
-                  backgroundColor: "var(--bg-input)",
-                  color: "var(--text-primary)",
-                }}
-              />
-            </div>
-            <div>
-              <label
-                className="block text-sm font-medium mb-1.5"
-                style={{ color: "var(--text-secondary)" }}
-              >
-                Etiquetas
-              </label>
-              <div className="flex gap-2 mb-2 flex-wrap">
-                {tags.map((t) => (
-                  <span
-                    key={t}
-                    className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
-                    style={{
-                      backgroundColor: "rgba(37,99,235,0.08)",
-                      color: "#2563eb",
-                    }}
-                  >
-                    #{t}
-                    <button
-                      type="button"
-                      onClick={() => setTags(tags.filter((x) => x !== t))}
-                      className="ml-0.5 hover:text-red-500"
-                    >
-                      <X size={10} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="flex gap-2">
-                <input
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && (e.preventDefault(), addTag())
-                  }
-                  placeholder="#Ventas #Urgente..."
-                  className="flex-1 px-4 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  style={{
-                    border: "1px solid var(--border-input)",
-                    backgroundColor: "var(--bg-input)",
-                    color: "var(--text-primary)",
-                  }}
-                />
+                #{t}
                 <button
                   type="button"
-                  onClick={addTag}
-                  className="px-3 py-2 rounded-xl text-sm font-medium transition-colors"
-                  style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    color: "var(--text-primary)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor =
-                      "var(--bg-tertiary)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor =
-                      "var(--bg-secondary)";
-                  }}
+                  onClick={() => setTags(tags.filter((x) => x !== t))}
+                  className="ml-0.5 hover:text-red-500"
                 >
-                  Añadir
+                  <X size={10} />
                 </button>
-              </div>
-            </div>
-            <div className="flex gap-3 pt-1">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
-                style={{
-                  border: "1px solid var(--border-color)",
-                  color: "var(--text-secondary)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={saving || !name.trim()}
-                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-sm font-medium rounded-xl transition-colors disabled:opacity-50"
-                style={{ color: "var(--text-on-accent)" }}
-              >
-                {saving ? "Guardando..." : "Guardar"}
-              </button>
-            </div>
-          </form>
-        </motion.div>
-      </div>
-    </>,
-    document.body,
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) =>
+                e.key === "Enter" && (e.preventDefault(), addTag())
+              }
+              placeholder="#Ventas #Urgente..."
+              className="flex-1 px-4 py-2 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
+            />
+            <button
+              type="button"
+              onClick={addTag}
+              className="px-3 py-2 rounded-xl text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: "var(--bg-secondary)",
+                color: "var(--text-primary)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-tertiary)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "var(--bg-secondary)";
+              }}
+            >
+              Añadir
+            </button>
+          </div>
+        </div>
+      </form>
+    </Modal>
   );
 }
 

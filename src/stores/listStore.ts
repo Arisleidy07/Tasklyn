@@ -35,6 +35,7 @@ interface ListState {
     type: ListType,
     description?: string,
     teamId?: string,
+    appearance?: { color?: string; icon?: string },
   ) => Promise<TaskList>;
   updateList: (
     id: string,
@@ -93,7 +94,7 @@ export const useListStore = create<ListState>((set, get) => ({
       (l) => l.type === "shared" && l.members.some((m) => m.userId === userId),
     ),
 
-  createList: async (name, owner, type, description, teamId) => {
+  createList: async (name, owner, type, description, teamId, appearance) => {
     const plan = (useAuthStore.getState().user?.plan || "free") as Plan;
     const ownedListCount = get().lists.filter(
       (list) => list.owner === owner,
@@ -111,6 +112,8 @@ export const useListStore = create<ListState>((set, get) => ({
       type,
       description: description || "",
       teamId: teamId || undefined,
+      ...(appearance?.color ? { color: appearance.color } : {}),
+      ...(appearance?.icon ? { icon: appearance.icon } : {}),
       members: [
         {
           userId: owner,

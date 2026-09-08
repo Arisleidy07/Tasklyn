@@ -6,9 +6,8 @@ import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import type { Task } from "@/types";
-import { Plus, X, Phone, MapPin, Tag } from "lucide-react";
-import { motion } from "framer-motion";
-import { getPriorityConfig, PRIORITY_CONFIG } from "@/lib/priority";
+import { Plus, X, Phone, MapPin, Tag, Flag, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface CreateTaskFormProps {
   listId: string;
@@ -29,42 +28,12 @@ export default function CreateTaskForm({
   >(undefined);
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const { user } = useAuthStore();
   const { createTask } = useTaskStore();
 
-  const handleAddPhone = () => {
-    setPhoneNumbers([...phoneNumbers, ""]);
-  };
-
-  const handleRemovePhone = (index: number) => {
-    setPhoneNumbers(phoneNumbers.filter((_, i) => i !== index));
-  };
-
-  const handlePhoneChange = (index: number, value: string) => {
-    const newPhones = [...phoneNumbers];
-    newPhones[index] = value;
-    setPhoneNumbers(newPhones);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !user) return;
-
-    // Filter out empty phone numbers
-    const validPhones = phoneNumbers.filter((p) => p.trim());
-
-    createTask({
-      listId,
-      title: title.trim(),
-      description: description.trim(),
-      createdBy: user.id,
-      location: location.trim() || undefined,
-      phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
-      priority: priority || undefined,
-      tags: tags.length > 0 ? tags : undefined,
-    });
-
+  const reset = () => {
     setTitle("");
     setDescription("");
     setLocation("");
@@ -72,23 +41,61 @@ export default function CreateTaskForm({
     setPriority(undefined);
     setTags([]);
     setTagInput("");
-    setIsOpen(false);
-    onCreated?.();
+    setError(null);
   };
+
+  const handleAddPhone = () => setPhoneNumbers((p) => [...p, ""]);
+  const handleRemovePhone = (index: number) =>
+    setPhoneNumbers((p) => p.filter((_, i) => i !== index));
+  const handlePhoneChange = (index: number, value: string) => {
+    const next = [...phoneNumbers];
+    next[index] = value;
+    setPhoneNumbers(next);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !user) return;
+
+    const validPhones = phoneNumbers.filter((p) => p.trim());
+    try {
+      await createTask({
+        listId,
+        title: title.trim(),
+        description: description.trim(),
+        createdBy: user.id,
+        location: location.trim() || undefined,
+        phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
+        priority: priority || undefined,
+        tags: tags.length > 0 ? tags : undefined,
+      });
+      reset();
+      setIsOpen(false);
+      onCreated?.();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudo crear la tarea",
+      );
+    }
+  };
+
+  const removeTag = (t: string) =>
+    setTags((prev) => prev.filter((x) => x !== t));
 
   if (!isOpen) {
     return (
       <button
+        type="button"
         onClick={() => setIsOpen(true)}
-        className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-dashed transition-all duration-200 cursor-pointer group"
+        className="w-full min-h-10 flex items-center gap-2.5 px-4 py-3 rounded-xl border-2 border-dashed transition-all duration-200 cursor-pointer group"
         style={{
           borderColor: "var(--border-color)",
           color: "var(--text-tertiary)",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "#93c5fd";
-          e.currentTarget.style.color = "#3b82f6";
-          e.currentTarget.style.backgroundColor = "rgba(37,99,235,0.03)";
+          e.currentTarget.style.borderColor = "var(--border-input-focus)";
+          e.currentTarget.style.color = "var(--text-link)";
+          e.currentTarget.style.backgroundColor = "var(--bg-info)";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.borderColor = "var(--border-color)";
@@ -96,8 +103,11 @@ export default function CreateTaskForm({
           e.currentTarget.style.backgroundColor = "transparent";
         }}
       >
-        <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors">
-          <Plus size={14} className="text-blue-600" />
+        <div
+          className="w-6 h-6 rounded-full flex items-center justify-center transition-colors"
+          style={{ backgroundColor: "var(--bg-info)" }}
+        >
+          <Plus size={14} style={{ color: "var(--text-link)" }} />
         </div>
         <span className="text-sm font-medium">Agregar tarea</span>
       </button>
@@ -106,183 +116,212 @@ export default function CreateTaskForm({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -8, scale: 0.98 }}
+      initial={{ opacity: 0, y: -6, scale: 0.99 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="rounded-2xl p-5 shadow-xl"
+      transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+      className="rounded-2xl p-4 sm:p-5"
       style={{
-        border: "1px solid rgba(37,99,235,0.25)",
+        border: "1px solid var(--border-color)",
         backgroundColor: "var(--bg-card)",
         boxShadow: "var(--shadow-card)",
       }}
     >
-      <form onSubmit={handleSubmit} className="space-y-3">
-        {/* Título */}
-        <AutoResizeTextarea
-          value={title}
-          onChange={setTitle}
-          placeholder="¿Qué necesitas hacer?"
-          autoFocus
-          className="text-base font-semibold"
-          minRows={1}
-        />
-
-        {/* Descripción */}
-        <AutoResizeTextarea
-          value={description}
-          onChange={setDescription}
-          placeholder="Añade una descripción..."
-          className="text-sm"
-          minRows={1}
-        />
-
-        {/* Ubicación */}
-        <div className="flex items-start gap-2">
-          <MapPin size={14} className="text-gray-300 flex-shrink-0 mt-0.5" />
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Title */}
+        <div>
+          <label
+            className="block text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            Título
+          </label>
           <AutoResizeTextarea
-            value={location}
-            onChange={setLocation}
-            placeholder="Ubicación o dirección"
-            className="text-sm"
+            id="create-task-title"
+            value={title}
+            onChange={setTitle}
+            placeholder="¿Qué hay que hacer?"
+            autoFocus
+            className="w-full px-4 py-3 rounded-xl text-base font-medium leading-snug focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+            style={{
+              border: "1px solid var(--border-input)",
+              backgroundColor: "var(--bg-input)",
+              color: "var(--text-primary)",
+            }}
             minRows={1}
+            maxRows={4}
           />
         </div>
 
-        {/* Teléfonos */}
-        <div className="space-y-1.5">
-          {phoneNumbers.map((phone, index) => (
-            <div key={index} className="flex items-start gap-2">
-              <Phone size={14} className="text-gray-300 flex-shrink-0 mt-0.5" />
-              <AutoResizeTextarea
-                value={phone}
-                onChange={(v) => handlePhoneChange(index, v)}
-                placeholder={`Teléfono ${index + 1}`}
-                className="flex-1 text-sm"
-                minRows={1}
-              />
-              {phoneNumbers.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => handleRemovePhone(index)}
-                  className="p-1 rounded-md transition-colors flex-shrink-0"
-                  style={{ color: "var(--text-tertiary)" }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "#ef4444";
+        {/* Description */}
+        <div>
+          <label
+            className="block text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            Descripción{" "}
+            <span className="font-normal normal-case tracking-normal opacity-80">
+              (opcional)
+            </span>
+          </label>
+          <AutoResizeTextarea
+            id="create-task-description"
+            value={description}
+            onChange={setDescription}
+            placeholder="Detalles, contexto o pasos..."
+            className="w-full px-4 py-2.5 rounded-xl text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+            style={{
+              border: "1px solid var(--border-input)",
+              backgroundColor: "var(--bg-input)",
+              color: "var(--text-primary)",
+            }}
+            minRows={2}
+            maxRows={6}
+          />
+        </div>
+
+        {/* Location */}
+        <div>
+          <label
+            className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            <MapPin size={12} />
+            Ubicación
+          </label>
+          <input
+            id="create-task-location"
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            placeholder="Dirección o enlace de Google Maps"
+            className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+            style={{
+              border: "1px solid var(--border-input)",
+              backgroundColor: "var(--bg-input)",
+              color: "var(--text-primary)",
+            }}
+          />
+        </div>
+
+        {/* Phones */}
+        <div>
+          <label
+            className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            <Phone size={12} />
+            Teléfonos de contacto
+          </label>
+          <div className="space-y-2">
+            {phoneNumbers.map((phone, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <input
+                  type="tel"
+                  inputMode="tel"
+                  placeholder={`Teléfono ${index + 1}`}
+                  value={phone}
+                  onChange={(e) => handlePhoneChange(index, e.target.value)}
+                  className="flex-1 min-w-0 h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                  style={{
+                    border: "1px solid var(--border-input)",
+                    backgroundColor: "var(--bg-input)",
+                    color: "var(--text-primary)",
                   }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = "var(--text-tertiary)";
+                />
+                {phoneNumbers.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhone(index)}
+                    aria-label="Quitar teléfono"
+                    className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors hover:bg-[var(--bg-hover)]"
+                    style={{ color: "var(--text-tertiary)" }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "var(--text-error)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "var(--text-tertiary)")
+                    }
+                  >
+                    <X size={16} />
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={handleAddPhone}
+              className="flex items-center gap-1.5 text-sm font-medium h-9 px-1 -ml-1 rounded-md hover:opacity-80 transition-colors"
+              style={{ color: "var(--text-link)" }}
+            >
+              <Plus size={14} />
+              Agregar otro teléfono
+            </button>
+          </div>
+        </div>
+
+        {/* Priority */}
+        <div>
+          <label
+            className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide mb-2"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            <Flag size={12} />
+            Prioridad
+          </label>
+          <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+            {(
+              [
+                { value: "low" as const, label: "Baja", color: "#16a34a" },
+                { value: "normal" as const, label: "Normal", color: "#2563eb" },
+                { value: "medium" as const, label: "Media", color: "#d97706" },
+                { value: "high" as const, label: "Alta", color: "#ea580c" },
+                {
+                  value: "urgent" as const,
+                  label: "Urgente",
+                  color: "#dc2626",
+                },
+              ] as const
+            ).map((p) => {
+              const selected = priority === p.value;
+              return (
+                <button
+                  key={p.value}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setPriority(selected ? undefined : p.value)}
+                  className="h-10 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+                  style={{
+                    backgroundColor: selected
+                      ? `${p.color}1a`
+                      : "var(--bg-secondary)",
+                    color: selected ? p.color : "var(--text-secondary)",
+                    border: selected
+                      ? `1px solid ${p.color}`
+                      : "1px solid var(--border-color)",
                   }}
                 >
-                  <X size={14} />
+                  <span
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: p.color }}
+                  />
+                  {p.label}
                 </button>
-              )}
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={handleAddPhone}
-            className="flex items-center gap-1.5 text-xs transition-colors ml-6"
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Tags */}
+        <div>
+          <label
+            className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide mb-1.5"
             style={{ color: "var(--text-tertiary)" }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = "var(--text-secondary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--text-tertiary)";
-            }}
           >
-            <Plus size={12} />
-            Agregar teléfono
-          </button>
-        </div>
-
-        {/* Priority selector */}
-        <div className="space-y-1.5 pt-1">
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-sm leading-none">
-              {getPriorityConfig(priority).emoji}
-            </span>
-            <span
-              className="text-xs font-medium"
-              style={{ color: "var(--text-tertiary)" }}
-            >
-              Prioridad
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {(
-              Object.entries(PRIORITY_CONFIG) as [
-                keyof typeof PRIORITY_CONFIG,
-                (typeof PRIORITY_CONFIG)[keyof typeof PRIORITY_CONFIG],
-              ][]
-            ).map(([value, cfg]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() =>
-                  setPriority(priority === value ? undefined : value)
-                }
-                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all flex items-center gap-1 ${
-                  priority === value
-                    ? `${cfg.dot.replace("bg-", "bg-").replace("500", "500")} text-white border-transparent`
-                    : `${cfg.bg} ${cfg.bgDark} ${cfg.text} ${cfg.textDark} ${cfg.border} ${cfg.borderDark}`
-                }`}
-                style={
-                  priority === value
-                    ? {
-                        backgroundColor: cfg.dot.includes("red")
-                          ? "#ef4444"
-                          : cfg.dot.includes("orange")
-                            ? "#f97316"
-                            : cfg.dot.includes("yellow")
-                              ? "#eab308"
-                              : cfg.dot.includes("blue")
-                                ? "#3b82f6"
-                                : "#22c55e",
-                        color: "white",
-                        borderColor: "transparent",
-                      }
-                    : {}
-                }
-              >
-                <span className="text-[9px] leading-none">{cfg.emoji}</span>
-                {cfg.label}
-              </button>
-            ))}
-            {priority && (
-              <button
-                type="button"
-                onClick={() => setPriority(undefined)}
-                className="px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all flex items-center gap-1"
-                style={{
-                  borderColor: "var(--border-color)",
-                  color: "var(--text-tertiary)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#ef4444";
-                  e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)";
-                  e.currentTarget.style.backgroundColor =
-                    "rgba(239,68,68,0.05)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "var(--text-tertiary)";
-                  e.currentTarget.style.borderColor = "var(--border-color)";
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                <X size={9} />
-                Quitar
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Tags row */}
-        <div className="flex items-center gap-1.5">
-          <Tag
-            size={13}
-            style={{ color: "var(--text-tertiary)", flexShrink: 0 }}
-          />
+            <Tag size={12} />
+            Etiquetas
+          </label>
           <input
+            id="create-task-tags"
             value={tagInput}
             onChange={(e) => setTagInput(e.target.value)}
             onKeyDown={(e) => {
@@ -294,35 +333,58 @@ export default function CreateTaskForm({
               }
             }}
             placeholder="#etiqueta + Enter"
-            className="flex-1 text-xs rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
             style={{
               border: "1px solid var(--border-input)",
               backgroundColor: "var(--bg-input)",
               color: "var(--text-primary)",
             }}
           />
-        </div>
-        {tags.length > 0 && (
-          <div className="flex gap-1.5 flex-wrap">
-            {tags.map((t) => (
-              <span
-                key={t}
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium"
-                style={{
-                  backgroundColor: "rgba(37,99,235,0.08)",
-                  color: "#2563eb",
-                }}
+          <AnimatePresence>
+            {tags.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex gap-1.5 flex-wrap mt-2"
               >
-                #{t}
-                <button
-                  type="button"
-                  onClick={() => setTags(tags.filter((x) => x !== t))}
-                  className="hover:text-red-500"
-                >
-                  <X size={9} />
-                </button>
-              </span>
-            ))}
+                {tags.map((t) => (
+                  <span
+                    key={t}
+                    className="flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium"
+                    style={{
+                      backgroundColor: "var(--bg-info)",
+                      color: "var(--text-link)",
+                    }}
+                  >
+                    #{t}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(t)}
+                      className="hover:opacity-70 transition-opacity"
+                      style={{ color: "inherit" }}
+                    >
+                      <X size={10} />
+                    </button>
+                  </span>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {error && (
+          <div
+            className="flex items-start gap-2 p-3 rounded-xl text-sm"
+            role="alert"
+            style={{
+              backgroundColor: "var(--bg-error)",
+              color: "var(--text-error)",
+              border: "1px solid var(--border-color)",
+            }}
+          >
+            <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+            <span>{error}</span>
           </div>
         )}
 
@@ -337,10 +399,7 @@ export default function CreateTaskForm({
             size="sm"
             onClick={() => {
               setIsOpen(false);
-              setTitle("");
-              setDescription("");
-              setLocation("");
-              setPhoneNumbers([""]);
+              reset();
             }}
           >
             Cancelar
@@ -351,7 +410,7 @@ export default function CreateTaskForm({
             disabled={!title.trim()}
             icon={<Plus size={14} />}
           >
-            Crear
+            Crear tarea
           </Button>
         </div>
       </form>

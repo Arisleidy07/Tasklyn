@@ -17,6 +17,7 @@ import { canEditTask, canDeleteTask, canArchiveTask } from "@/lib/permissions";
 import TaskComments from "./TaskComments";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import Button from "@/components/ui/Button";
+import Modal from "@/components/ui/Modal";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { timeAgo } from "@/lib/utils";
 import { subscribeToTaskHistory } from "@/lib/firestore";
@@ -265,7 +266,7 @@ function IconButton({
   color?: string;
 }) {
   const className =
-    "p-1.5 rounded-md transition-colors hover:bg-[var(--bg-secondary)]";
+    "min-w-10 min-h-10 p-1.5 rounded-md transition-colors hover:bg-[var(--bg-secondary)] flex items-center justify-center";
   const style = { color };
   if (href) {
     return (
@@ -442,14 +443,14 @@ export default function TaskDetailPanel({
     };
   }, [isOpen]);
 
-  // Escape closes
+  // Escape closes when open
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && isOpen) onClose();
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  }, [isOpen, onClose]);
 
   // Subscribe to history subcollection
   useEffect(() => {
@@ -459,6 +460,14 @@ export default function TaskDetailPanel({
     });
     return () => unsubscribe();
   }, [task?.id, isOpen]);
+
+  const assignOptions = useMemo(() => {
+    const options = [{ userId: "", name: "Sin asignar" }];
+    (listMembers || []).forEach((m) => {
+      options.push({ userId: m.userId, name: resolveName(m.userId) });
+    });
+    return options;
+  }, [listMembers, resolveName]);
 
   if (!task) return null;
 
@@ -598,13 +607,6 @@ export default function TaskDetailPanel({
   };
 
   const assignedName = localAssignedTo ? resolveName(localAssignedTo) : null;
-  const assignOptions = useMemo(() => {
-    const options = [{ userId: "", name: "Sin asignar" }];
-    (listMembers || []).forEach((m) => {
-      options.push({ userId: m.userId, name: resolveName(m.userId) });
-    });
-    return options;
-  }, [listMembers, resolveName]);
 
   // ─── PANEL CONTENT ─────────────────────────────────────────────
   const panelContent = (
@@ -620,7 +622,7 @@ export default function TaskDetailPanel({
         <button
           onClick={handleCopyTask}
           title="Copiar para compartir"
-          className="p-2 rounded-lg transition-colors duration-150 hover:bg-[var(--bg-secondary)]"
+          className="min-w-10 min-h-10 p-2 rounded-lg transition-colors duration-150 flex items-center justify-center hover:bg-[var(--bg-secondary)]"
           style={{ color: "var(--text-secondary)" }}
         >
           <Copy size={16} />
@@ -629,7 +631,7 @@ export default function TaskDetailPanel({
           <button
             onClick={handleArchive}
             title="Archivar"
-            className="p-2 rounded-lg transition-colors duration-150 hover:bg-[var(--bg-secondary)]"
+            className="min-w-10 min-h-10 p-2 rounded-lg transition-colors duration-150 flex items-center justify-center hover:bg-[var(--bg-secondary)]"
             style={{ color: "var(--text-secondary)" }}
           >
             <Archive size={16} />
@@ -639,7 +641,7 @@ export default function TaskDetailPanel({
           <button
             onClick={() => setShowDeleteConfirm(true)}
             title="Eliminar"
-            className="p-2 rounded-lg transition-colors duration-150 hover:bg-red-50 hover:text-red-500"
+            className="min-w-10 min-h-10 p-2 rounded-lg transition-colors duration-150 flex items-center justify-center hover:bg-[var(--bg-error)] hover:text-[var(--text-error)]"
             style={{ color: "var(--text-tertiary)" }}
           >
             <Trash2 size={16} />
@@ -647,7 +649,7 @@ export default function TaskDetailPanel({
         )}
         <button
           onClick={onClose}
-          className="p-2 rounded-lg transition-colors duration-150 ml-0.5 hover:bg-[var(--bg-secondary)]"
+          className="min-w-10 min-h-10 p-2 rounded-lg transition-colors duration-150 ml-0.5 flex items-center justify-center hover:bg-[var(--bg-secondary)]"
           style={{ color: "var(--text-tertiary)" }}
         >
           <X size={18} />
@@ -759,10 +761,10 @@ export default function TaskDetailPanel({
                     onClick={() => handlePriorityChange(priority.value)}
                     onBlur={flushPending}
                     className={cn(
-                      "flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all",
+                      "flex-1 min-h-10 py-2 px-3 rounded-lg text-xs font-medium transition-all active:scale-[0.98]",
                       localPriority === priority.value
-                        ? "text-white shadow-sm"
-                        : "opacity-60 hover:opacity-100",
+                        ? "text-[var(--text-inverse)] shadow-sm"
+                        : "opacity-70 hover:opacity-100",
                     )}
                     style={{
                       backgroundColor:
@@ -790,9 +792,12 @@ export default function TaskDetailPanel({
                 {canEdit ? (
                   <>
                     {localPhones.map((phone, i) => (
-                      <div key={i} className="flex items-center gap-2">
+                      <div
+                        key={i}
+                        className="flex flex-col sm:flex-row sm:items-center gap-2"
+                      >
                         <div
-                          className="flex items-center gap-2 flex-1 rounded-[var(--radius-lg)] border px-3 py-2 focus-within:border-[var(--border-input-focus)] focus-within:ring-2 focus-within:ring-[var(--border-input-focus)]/15 transition-all"
+                          className="flex items-center gap-2 flex-1 min-w-0 w-full rounded-[var(--radius-lg)] border px-3 py-2 min-h-10 focus-within:border-[var(--border-input-focus)] focus-within:ring-2 focus-within:ring-[var(--border-input-focus)]/15 transition-all"
                           style={{
                             backgroundColor: "var(--bg-secondary)",
                             borderColor: "var(--border-input)",
@@ -810,7 +815,7 @@ export default function TaskDetailPanel({
                             style={{ color: "var(--text-primary)" }}
                           />
                         </div>
-                        <div className="flex items-center gap-0.5">
+                        <div className="flex items-center gap-0.5 sm:flex-shrink-0">
                           <IconButton
                             icon={<Copy size={14} />}
                             title="Copiar"
@@ -1252,7 +1257,11 @@ export default function TaskDetailPanel({
                         )}
                         <span>{opt.name}</span>
                         {localAssignedTo === opt.userId && (
-                          <Check size={12} className="ml-auto text-blue-500" />
+                          <Check
+                            size={12}
+                            className="ml-auto"
+                            style={{ color: "var(--text-link)" }}
+                          />
                         )}
                       </button>
                     ))}
@@ -1456,63 +1465,6 @@ export default function TaskDetailPanel({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Delete confirm */}
-      <AnimatePresence>
-        {showDeleteConfirm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 flex items-end sm:items-center justify-center p-4"
-            style={{
-              backgroundColor: "var(--bg-modal-overlay)",
-              backdropFilter: "blur(3px)",
-            }}
-          >
-            <motion.div
-              initial={{ y: 16, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 16, opacity: 0 }}
-              className="w-full max-w-sm rounded-[var(--radius-lg)] p-4 space-y-3 shadow-[var(--shadow-modal)]"
-              style={{
-                backgroundColor: "var(--bg-card)",
-                border: "1px solid var(--border-color)",
-              }}
-            >
-              <div
-                className="flex items-start gap-3 p-3 rounded-[var(--radius-lg)] text-[var(--text-sm)]"
-                style={{
-                  backgroundColor: "var(--bg-error)",
-                  color: "var(--text-error)",
-                }}
-              >
-                <Trash2 size={15} className="flex-shrink-0 mt-0.5" />
-                <p>
-                  ¿Eliminar "<strong>{task.title}</strong>"? No se puede
-                  deshacer.
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={handleDelete}
-                  className="flex-1"
-                >
-                  Eliminar
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 
@@ -1574,6 +1526,49 @@ export default function TaskDetailPanel({
               {panelContent}
             </motion.div>
           </div>
+
+          {/* Delete confirm modal */}
+          <Modal
+            isOpen={showDeleteConfirm}
+            onClose={() => setShowDeleteConfirm(false)}
+            title="¿Eliminar tarea?"
+            description="Esta acción no se puede deshacer."
+            size="sm"
+            icon={<Trash2 size={18} style={{ color: "var(--text-error)" }} />}
+            footer={
+              <div className="flex items-center justify-end gap-3">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="min-w-[96px] h-10"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="danger"
+                  onClick={handleDelete}
+                  className="min-w-[110px] h-10"
+                >
+                  Eliminar
+                </Button>
+              </div>
+            }
+          >
+            <div className="px-5 sm:px-6 py-5">
+              <div
+                className="flex items-start gap-3 p-3 rounded-[var(--radius-lg)] text-[var(--text-sm)]"
+                style={{
+                  backgroundColor: "var(--bg-error)",
+                  color: "var(--text-error)",
+                }}
+              >
+                <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+                <p className="break-words min-w-0">
+                  Se eliminará permanentemente &quot;{task.title}&quot;.
+                </p>
+              </div>
+            </div>
+          </Modal>
         </>
       )}
     </AnimatePresence>,

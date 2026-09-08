@@ -73,7 +73,7 @@ export default function DueDatePicker({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[99998] bg-black/60"
+            className="fixed inset-0 z-[99998] bg-[var(--bg-modal-overlay)] backdrop-blur-sm"
             onClick={onClose}
           />
           {/* Modal */}
@@ -88,11 +88,13 @@ export default function DueDatePicker({
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative z-10 w-full max-w-[340px] max-w-[calc(100vw-32px)] rounded-2xl overflow-hidden"
+              className="relative z-10 w-full max-w-[min(340px,calc(100vw-32px))] rounded-2xl overflow-y-auto"
               style={{
                 backgroundColor: "var(--bg-modal)",
                 boxShadow: "var(--shadow-modal)",
                 border: "1px solid var(--border-color)",
+                maxHeight: "min(560px, calc(100dvh - 64px))",
+                paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
               }}
             >
               {/* Header */}
@@ -114,17 +116,8 @@ export default function DueDatePicker({
                 </div>
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-lg transition-colors"
+                  className="min-w-10 min-h-10 p-1.5 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-secondary)] hover:text-[var(--text-primary)]"
                   style={{ color: "var(--text-tertiary)" }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor =
-                      "var(--bg-secondary)";
-                    e.currentTarget.style.color = "var(--text-primary)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.color = "var(--text-tertiary)";
-                  }}
                 >
                   <X size={18} />
                 </button>
@@ -142,17 +135,10 @@ export default function DueDatePicker({
                       onSelect(opt.getDate());
                       onClose();
                     }}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm transition-colors"
+                    className="w-full min-h-10 flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--bg-hover)]"
                     style={{ color: "var(--text-primary)" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "var(--bg-secondary)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
                   >
-                    <span className="font-medium">{opt.label}</span>
+                    <span>{opt.label}</span>
                     <span
                       className="text-xs"
                       style={{ color: "var(--text-tertiary)" }}
@@ -166,15 +152,8 @@ export default function DueDatePicker({
                     onSelect(null);
                     onClose();
                   }}
-                  className="w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
-                  style={{ color: "#ef4444" }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor =
-                      "rgba(239,68,68,0.08)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                  }}
+                  className="w-full min-h-10 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors hover:bg-[var(--bg-error)]"
+                  style={{ color: "var(--text-error)" }}
                 >
                   Sin fecha
                 </button>
@@ -185,14 +164,7 @@ export default function DueDatePicker({
                 <div className="flex items-center justify-between mb-4">
                   <button
                     onClick={handlePrevMonth}
-                    className="p-1 rounded-lg transition-colors"
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "var(--bg-secondary)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
+                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-secondary)]"
                   >
                     <ChevronLeft
                       size={18}
@@ -207,14 +179,7 @@ export default function DueDatePicker({
                   </span>
                   <button
                     onClick={handleNextMonth}
-                    className="p-1 rounded-lg transition-colors"
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "var(--bg-secondary)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
+                    className="w-9 h-9 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-secondary)]"
                   >
                     <ChevronRight
                       size={18}
@@ -254,7 +219,7 @@ export default function DueDatePicker({
                           color: !day.currentMonth
                             ? "var(--text-muted)"
                             : isSelected
-                              ? "#fff"
+                              ? "var(--text-inverse)"
                               : "var(--text-primary)",
                           backgroundColor: isSelected
                             ? "var(--text-primary)"
