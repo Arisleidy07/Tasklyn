@@ -27,11 +27,11 @@ interface ModalProps {
 
 const sizeMap: Record<ModalSize, string> = {
   sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-xl",
-  xl: "max-w-2xl",
-  task: "max-w-[720px]",
-  full: "max-w-full sm:max-w-[90vw] lg:max-w-[1100px]",
+  md: "max-w-lg",
+  lg: "max-w-2xl",
+  xl: "max-w-4xl",
+  task: "max-w-4xl",
+  full: "max-w-full sm:max-w-[94vw] lg:max-w-[1280px]",
 };
 
 export default function Modal({
@@ -101,7 +101,7 @@ export default function Modal({
             className={cn(
               "relative z-10 flex flex-col w-full overflow-hidden",
               "rounded-t-2xl sm:rounded-2xl",
-              "max-h-[92dvh] sm:max-h-[88dvh]",
+              "max-h-[92dvh] sm:max-h-[90dvh]",
               "shadow-[var(--shadow-modal)]",
               sizeMap[size],
             )}

@@ -161,6 +161,8 @@ function SortableImageItem({
     isDragging,
   } = useSortable({ id: image.id });
 
+  const [imageFailed, setImageFailed] = useState(false);
+
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition: transition || "transform 200ms ease",
@@ -182,13 +184,29 @@ function SortableImageItem({
             : undefined
         }
       >
-        {/* Image */}
-        <img
-          src={image.url}
-          alt={image.displayName || category}
-          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-          loading="lazy"
-        />
+        {/* Image (with fallback when the URL fails to load) */}
+        {imageFailed ? (
+          <div
+            className="w-full h-full flex flex-col items-center justify-center gap-1.5"
+            style={{ backgroundColor: "var(--bg-secondary)" }}
+          >
+            <ImageIcon size={20} style={{ color: "var(--text-tertiary)" }} />
+            <span
+              className="text-[10px]"
+              style={{ color: "var(--text-tertiary)" }}
+            >
+              No disponible
+            </span>
+          </div>
+        ) : (
+          <img
+            src={image.url}
+            alt={image.displayName || category}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+            onError={() => setImageFailed(true)}
+          />
+        )}
 
         {/* Always-on bottom gradient for legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
@@ -628,12 +646,8 @@ export default function EditListModal({
         updates.backgroundImage = backgroundImage || undefined;
       }
       await updateList(list.id, updates);
-      setSaved(true);
-      setTimeout(() => {
-        if (isMountedRef.current) {
-          setSaved(false);
-        }
-      }, 2000);
+      // Close the modal once the changes are saved
+      onClose();
     } catch (e) {
       console.error("Error saving list:", e);
     } finally {
@@ -880,7 +894,8 @@ export default function EditListModal({
     }
   };
 
-  // Grouped images
+  // Grouped images — every image must render, even if its category
+  // no longer exists in bgCategories (otherwise photos "disappear")
   const groupedImages = useMemo(() => {
     const grouped: Record<string, BackgroundImage[]> = {};
     categories.forEach((cat) => {
@@ -893,6 +908,21 @@ export default function EditListModal({
     });
     return grouped;
   }, [bgImages, categories]);
+
+  // Categories to render = real categories + any image-only group names
+  // (legacy, renamed or missing categories still get their own section)
+  const displayCategories = useMemo(() => {
+    const known = new Set(categories.map((c) => c.name));
+    const orphans = Object.keys(groupedImages)
+      .filter((name) => !known.has(name) && groupedImages[name].length > 0)
+      .map((name, i) => ({
+        id: `orphan-${name}`,
+        name,
+        emoji: "🖼️",
+        order: 1000 + i,
+      }));
+    return [...categories, ...orphans];
+  }, [categories, groupedImages]);
 
   if (!isOpen || !user) return null;
 
@@ -1277,7 +1307,7 @@ export default function EditListModal({
                         </div>
                       ))}
                     </div>
-                  ) : categories.length === 0 ? (
+                  ) : displayCategories.length === 0 ? (
                     <div
                       className="flex flex-col items-center justify-center gap-5 py-24 rounded-3xl border-2 border-dashed"
                       style={{
@@ -1319,7 +1349,7 @@ export default function EditListModal({
                       </button>
                     </div>
                   ) : (
-                    categories.map((category) => {
+                    displayCategories.map((category) => {
                       const images = (groupedImages[category.name] || [])
                         .slice()
                         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));

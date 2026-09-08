@@ -1845,7 +1845,10 @@ export const subscribeToBackgrounds = (
       });
       callback(images);
     },
-    () => callback([]),
+    (error) => {
+      console.error("❌ Error loading background images:", error);
+      callback([]);
+    },
   );
 };
 
@@ -1905,7 +1908,10 @@ export const subscribeToBgCategories = (
       });
       callback(categories);
     },
-    () => callback([]),
+    (error) => {
+      console.error("❌ Error loading background categories:", error);
+      callback([]);
+    },
   );
 };
 
