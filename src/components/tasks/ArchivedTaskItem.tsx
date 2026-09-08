@@ -5,6 +5,8 @@ import { Task, MemberRole } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import { canDeleteTask, canEditTask } from "@/lib/permissions";
+import { getPriorityConfig } from "@/lib/priority";
+import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import Modal from "@/components/ui/Modal";
 import Button from "@/components/ui/Button";
@@ -71,6 +73,14 @@ export default function ArchivedTaskItem({
             <Archive size={12} style={{ color: "var(--text-tertiary)" }} />
           </div>
 
+          <span
+            className={cn(
+              "flex-shrink-0 w-2.5 h-2.5 rounded-full opacity-60",
+              getPriorityConfig(task.priority).dot,
+            )}
+            title={getPriorityConfig(task.priority).label}
+            aria-label={`Prioridad: ${getPriorityConfig(task.priority).label}`}
+          />
           <p
             className="flex-1 min-w-0 text-[var(--text-base)] font-medium leading-snug line-through opacity-60"
             style={{ color: "var(--text-primary)" }}

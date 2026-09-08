@@ -35,7 +35,7 @@ export const PRIORITY_CONFIG: Record<PriorityLevel, PriorityConfig> = {
   high: {
     label: "Alta",
     emoji: "🟠",
-    dot: "bg-orange-500",
+    dot: "bg-orange-600",
     text: "text-orange-600",
     textDark: "dark:text-orange-400",
     bg: "bg-orange-50",
@@ -49,7 +49,7 @@ export const PRIORITY_CONFIG: Record<PriorityLevel, PriorityConfig> = {
   medium: {
     label: "Media",
     emoji: "🟡",
-    dot: "bg-yellow-500",
+    dot: "bg-amber-500",
     text: "text-yellow-600",
     textDark: "dark:text-yellow-400",
     bg: "bg-yellow-50",

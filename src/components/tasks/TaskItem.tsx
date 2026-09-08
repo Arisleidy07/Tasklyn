@@ -5,6 +5,7 @@ import { Task, MemberRole } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import { canCompleteTask } from "@/lib/permissions";
+import { getPriorityConfig } from "@/lib/priority";
 import { motion } from "framer-motion";
 import TaskCompletionModal from "./TaskCompletionModal";
 import TaskDetailPanel from "./TaskDetailPanel";
@@ -255,6 +256,15 @@ function TaskItem({
                 <Circle size={24} strokeWidth={1.8} />
               )}
             </button>
+            <span
+              className={cn(
+                "flex-shrink-0 w-2.5 h-2.5 rounded-full mt-[7px]",
+                getPriorityConfig(task.priority).dot,
+                isCompleted && "opacity-50",
+              )}
+              title={getPriorityConfig(task.priority).label}
+              aria-label={`Prioridad: ${getPriorityConfig(task.priority).label}`}
+            />
             <p
               className={cn(
                 "flex-1 min-w-0 text-[var(--text-base)] sm:text-[var(--text-lg)] font-semibold leading-snug line-clamp-2 break-words",
