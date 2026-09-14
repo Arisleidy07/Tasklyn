@@ -11,7 +11,7 @@ import {
   Check,
   AlertTriangle,
 } from "lucide-react";
-import { uploadBackgroundImage } from "@/lib/storage";
+import { uploadBackgroundImage, prepareImageFile } from "@/lib/storage";
 import { addBackgroundImage } from "@/lib/firestore";
 import Modal from "@/components/ui/Modal";
 import type { User } from "@/types";
@@ -73,14 +73,46 @@ export default function ImageUploadModal({
   }, [isOpen, defaultCategory]);
 
   const addFiles = useCallback((files: FileList | File[]) => {
-    const arr = Array.from(files).filter((f) => f.type.startsWith("image/"));
-    const newItems: PendingImage[] = arr.map((file) => ({
-      id: `${Date.now()}-${Math.random()}`,
-      file,
-      previewUrl: URL.createObjectURL(file),
-      name: file.name.replace(/\.[^/.]+$/, ""),
-    }));
-    setPendingImages((prev) => [...prev, ...newItems]);
+    const fileList = Array.from(files);
+    const newItems: PendingImage[] = [];
+    const rejected: string[] = [];
+
+    for (const file of fileList) {
+      try {
+        prepareImageFile(file, { maxSizeBytes: 10 * 1024 * 1024 });
+        newItems.push({
+          id: `${Date.now()}-${Math.random()}`,
+          file,
+          previewUrl: URL.createObjectURL(file),
+          name: file.name.replace(/\.[^/.]+$/, ""),
+        });
+      } catch (err) {
+        rejected.push(
+          `${file.name}: ${err instanceof Error ? err.message : "No válido"}`,
+        );
+      }
+    }
+
+    if (rejected.length > 0) {
+      setUploadError(rejected.join("\n"));
+    } else if (isMountedRef.current) {
+      setUploadError(null);
+    }
+
+    setPendingImages((prev) => {
+      const existingNames = new Set(prev.map((p) => p.file.name));
+      const unique = newItems.filter(
+        (item) => !existingNames.has(item.file.name),
+      );
+      if (unique.length < newItems.length && isMountedRef.current) {
+        setUploadError((prevErr) =>
+          prevErr
+            ? `${prevErr}\nAlgunas imágenes ya estaban en la cola y se omitieron.`
+            : "Algunas imágenes ya estaban en la cola y se omitieron.",
+        );
+      }
+      return [...prev, ...unique];
+    });
   }, []);
 
   const removeImage = (id: string) => {
@@ -108,11 +140,16 @@ export default function ImageUploadModal({
     setIsUploading(true);
     setUploadError(null);
     let lastUrl = "";
+    let failed = false;
     try {
       for (const item of pendingImages) {
-        const url = await uploadBackgroundImage(user.id, item.file);
+        const { url, storagePath } = await uploadBackgroundImage(
+          user.id,
+          item.file,
+        );
         await addBackgroundImage({
           url,
+          storagePath,
           category: selectedCategory,
           uploadedBy: user.id,
           uploaderName: user.name,
@@ -129,10 +166,13 @@ export default function ImageUploadModal({
         onClose();
       }
     } catch (err) {
-      console.error("Upload error:", err);
+      failed = true;
+      console.error("[ImageUpload] Upload error:", err);
       if (isMountedRef.current) {
         setUploadError(
-          "Error al subir. Verifica tu conexión e inténtalo de nuevo.",
+          err instanceof Error
+            ? err.message
+            : "Error al subir. Verifica tu conexión, el formato y el tamaño.",
         );
       }
     } finally {

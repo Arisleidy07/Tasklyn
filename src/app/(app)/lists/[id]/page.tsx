@@ -71,9 +71,15 @@ export default function ListDetailPage() {
   const limits = usePlanLimits();
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [createTaskError, setCreateTaskError] = useState<string | null>(null);
+  const [bgError, setBgError] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const list = getList(listId);
+
+  // Reset background error when the image reference changes
+  useEffect(() => {
+    setBgError(false);
+  }, [list?.backgroundImage]);
   const tasks = getTasksByList(listId);
 
   // Subscribe to real-time tasks for this list
@@ -298,10 +304,11 @@ export default function ListDetailPage() {
           zIndex: 0,
         }}
       >
-        {list.backgroundImage ? (
+        {!bgError && list.backgroundImage ? (
           <img
             src={list.backgroundImage}
             alt=""
+            onError={() => setBgError(true)}
             style={{
               width: "100%",
               height: "100%",
@@ -392,12 +399,12 @@ export default function ListDetailPage() {
                     className={cn(
                       "relative flex items-center justify-center gap-1.5 min-w-0 h-10 px-1.5 sm:px-3 rounded-lg text-xs sm:text-sm font-medium transition-all duration-150 select-none",
                       "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 active:scale-[0.98]",
-                      active
-                        ? "shadow-sm"
-                        : "hover:bg-[var(--bg-hover)]",
+                      active ? "shadow-sm" : "hover:bg-[var(--bg-hover)]",
                     )}
                     style={{
-                      backgroundColor: active ? "var(--bg-card)" : "transparent",
+                      backgroundColor: active
+                        ? "var(--bg-card)"
+                        : "transparent",
                       color: active
                         ? "var(--text-primary)"
                         : "var(--text-secondary)",
@@ -893,9 +900,17 @@ export default function ListDetailPage() {
               <div className="grid grid-cols-4 gap-2">
                 {[
                   { value: "low" as const, label: "Baja", color: "#16a34a" },
-                  { value: "medium" as const, label: "Media", color: "#d97706" },
+                  {
+                    value: "medium" as const,
+                    label: "Media",
+                    color: "#d97706",
+                  },
                   { value: "high" as const, label: "Alta", color: "#ea580c" },
-                  { value: "urgent" as const, label: "Urgente", color: "#dc2626" },
+                  {
+                    value: "urgent" as const,
+                    label: "Urgente",
+                    color: "#dc2626",
+                  },
                 ].map((p) => {
                   const selected = newTaskPriority === p.value;
                   return (

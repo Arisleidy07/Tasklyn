@@ -10,30 +10,74 @@ service firebase.storage {
       return request.auth.uid;
     }
 
+    // Cross-service Firestore lookups for team/list membership.
+    // These cost one Firestore read per request under the Blaze plan.
+    function firestoreTeam(teamId) {
+      return firestore.get(/databases/(default)/documents/teams/$(teamId)).data;
+    }
+
+    function isTeamMember(teamId) {
+      let t = firestoreTeam(teamId);
+      return t != null && t.memberIds != null && getAuthUid() in t.memberIds;
+    }
+
+    function isTeamAdminOrOwner(teamId) {
+      let t = firestoreTeam(teamId);
+      if (t == null) return false;
+      if (t.owner != null && t.owner == getAuthUid()) return true;
+      let m = firestore.get(/databases/(default)/documents/teams/$(teamId)/members/$(getAuthUid())).data;
+      return m != null && (m.role == "owner" || m.role == "admin");
+    }
+
+    function firestoreList(listId) {
+      return firestore.get(/databases/(default)/documents/lists/$(listId)).data;
+    }
+
+    function isListOwner(listId) {
+      let l = firestoreList(listId);
+      return l != null && l.owner == getAuthUid();
+    }
+
+    function isListMember(listId) {
+      let l = firestoreList(listId);
+      return l != null && l.memberIds != null && getAuthUid() in l.memberIds;
+    }
+
     // Profile photos — owner can read/write, others can read
-    match /profile-photos/{userId}/{allPaths=**} {
-      allow read: if isAuth();
-      allow write: if isAuth() && getAuthUid() == userId;
-    }
-
-    // Team photos — any auth user can read, team owner path controls write
-    match /team-photos/{teamId}/{allPaths=**} {
-      allow read: if isAuth();
-      allow write: if isAuth();
-    }
-
-    // Background images library — any auth user can read
-    // Only the uploader (matched by folder userId) can write/delete
-    match /background-images/{userId}/{allPaths=**} {
+    match /users/{userId}/{allPaths=**} {
       allow read: if isAuth();
       allow write: if isAuth() && getAuthUid() == userId;
       allow delete: if isAuth() && getAuthUid() == userId;
     }
 
-    // Fallback: deny all other paths
+    // Team photos — team members can read, team admin/owner can write/delete
+    match /teams/{teamId}/{allPaths=**} {
+      allow read: if isAuth() && isTeamMember(teamId);
+      allow write: if isAuth() && isTeamAdminOrOwner(teamId);
+      allow delete: if isAuth() && isTeamAdminOrOwner(teamId);
+    }
+
+    // Background images library — any authenticated user can read.
+    // Only the uploader (matched by folder userId) can write/delete.
+    match /backgrounds/{userId}/{allPaths=**} {
+      allow read: if isAuth();
+      allow write: if isAuth() && getAuthUid() == userId;
+      allow delete: if isAuth() && getAuthUid() == userId;
+    }
+
+    // List-specific images (foto/fondo asociado a una lista)
+    // Only list members can read; only list owner can write/delete.
+    match /lists/{listId}/{allPaths=**} {
+      allow read: if isAuth() && isListMember(listId);
+      allow write: if isAuth() && isListOwner(listId);
+      allow delete: if isAuth() && isListOwner(listId);
+    }
+
+    // Fallback: read for any auth user, write denied
     match /{allPaths=**} {
       allow read: if isAuth();
       allow write: if false;
+      allow delete: if false;
     }
   }
 }

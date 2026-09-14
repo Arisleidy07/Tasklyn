@@ -6,6 +6,7 @@
 export interface BackgroundImage {
   id: string;
   url: string;
+  storagePath?: string;
   category: string;
   uploadedBy: string;
   uploaderName?: string;

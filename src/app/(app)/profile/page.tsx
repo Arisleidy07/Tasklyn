@@ -143,8 +143,10 @@ export default function ProfilePage() {
   };
 
   const handleDeletePhoto = async () => {
-    if (user.photoURL) {
-      await deleteProfilePhoto(user.photoURL);
+    try {
+      await deleteProfilePhoto(user.id);
+    } catch (e) {
+      console.error("Error deleting profile photo:", e);
     }
     setEditPhotoURL("");
     const updates = { photoURL: "" };

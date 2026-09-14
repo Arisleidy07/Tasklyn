@@ -135,9 +135,12 @@ const DEFAULT_CATEGORIES: BgCategoryConfig[] = [
 
 interface SortableImageItemProps {
   image: BackgroundImage;
-  isSelected: boolean;
+  isActive: boolean;
+  isChecked: boolean;
+  selectionMode: boolean;
   category: string;
   onSelect: (url: string) => void;
+  onToggle: (id: string) => void;
   onDownload: (url: string, displayName?: string) => void;
   onDelete: (image: BackgroundImage) => void;
   userId: string;
@@ -145,9 +148,12 @@ interface SortableImageItemProps {
 
 function SortableImageItem({
   image,
-  isSelected,
+  isActive,
+  isChecked,
+  selectionMode,
   category,
   onSelect,
+  onToggle,
   onDownload,
   onDelete,
   userId,
@@ -172,13 +178,17 @@ function SortableImageItem({
   return (
     <div ref={setNodeRef} style={style} className="relative group select-none">
       <div
-        onClick={() => !isDragging && onSelect(image.url)}
+        onClick={() =>
+          !isDragging &&
+          (selectionMode ? onToggle(image.id) : onSelect(image.url))
+        }
         className="relative aspect-[4/3] rounded-2xl overflow-hidden cursor-pointer transition-all duration-200"
         style={
-          isSelected
+          isActive || isChecked
             ? {
-                boxShadow:
-                  "0 0 0 3px #3b82f6, 0 0 0 7px rgba(59,130,246,0.2), 0 12px 40px rgba(59,130,246,0.35)",
+                boxShadow: isChecked
+                  ? "0 0 0 3px #16a34a, 0 0 0 7px rgba(22,163,74,0.2), 0 12px 40px rgba(22,163,74,0.35)"
+                  : "0 0 0 3px #3b82f6, 0 0 0 7px rgba(59,130,246,0.2), 0 12px 40px rgba(59,130,246,0.35)",
                 transform: "scale(1.01)",
               }
             : undefined
@@ -211,8 +221,8 @@ function SortableImageItem({
         {/* Always-on bottom gradient for legibility */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
 
-        {/* Selected state */}
-        {isSelected && (
+        {/* Active background state */}
+        {isActive && (
           <>
             <div className="absolute inset-0 bg-blue-500/10 backdrop-blur-[0.5px] pointer-events-none" />
             <div className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center shadow-xl ring-2 ring-white/60">
@@ -227,6 +237,25 @@ function SortableImageItem({
               </span>
             </div>
           </>
+        )}
+
+        {/* Selection check */}
+        {isChecked && !isActive && (
+          <div className="absolute inset-0 bg-green-500/10 backdrop-blur-[0.5px] pointer-events-none" />
+        )}
+        {selectionMode && (
+          <div
+            className="absolute top-2.5 left-2.5 w-7 h-7 rounded-full flex items-center justify-center shadow-xl ring-2 transition-all"
+            style={{
+              backgroundColor: isChecked ? "#16a34a" : "rgba(0,0,0,0.35)",
+              borderColor: isChecked ? "#22c55e" : "rgba(255,255,255,0.8)",
+              borderWidth: isChecked ? 0 : 2,
+            }}
+          >
+            {isChecked && (
+              <Check size={14} className="text-white" strokeWidth={3} />
+            )}
+          </div>
         )}
 
         {/* Hover overlay — name + actions */}
@@ -289,7 +318,7 @@ function SortableImageItem({
         </div>
 
         {/* Non-selected hover ring */}
-        {!isSelected && (
+        {!(isActive || isChecked) && (
           <div className="absolute inset-0 rounded-2xl ring-2 ring-transparent group-hover:ring-white/40 transition-all duration-200 pointer-events-none" />
         )}
       </div>
@@ -527,6 +556,12 @@ export default function EditListModal({
   const [deleteCategoryMoveTo, setDeleteCategoryMoveTo] = useState<string>("");
   const [isDeletingCategory, setIsDeletingCategory] = useState(false);
 
+  // Image manager selection mode
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
+  const [showBulkMove, setShowBulkMove] = useState(false);
+  const [bulkMoveTarget, setBulkMoveTarget] = useState<string>("");
+
   const isMountedRef = useRef(true);
   const { updateList, removeMember, updateMemberRole, deleteList } =
     useListStore();
@@ -599,6 +634,9 @@ export default function EditListModal({
       setBackgroundImage(list.backgroundImage || "");
       setSaved(false);
       setIsManagingCategories(false);
+      setSelectionMode(false);
+      setSelectedImageIds([]);
+      setShowBulkMove(false);
       // Lock body scroll
       document.body.style.overflow = "hidden";
     }
@@ -769,6 +807,10 @@ export default function EditListModal({
     if (!deleteTarget) return;
     setIsDeleting(true);
     try {
+      // Delete the actual file from Storage if we have a real reference.
+      if (deleteTarget.storagePath) {
+        await deleteBackgroundImage(deleteTarget.storagePath);
+      }
       await deleteBackgroundImageDoc(deleteTarget.id);
       if (backgroundImage === deleteTarget.url) setBackgroundImage("");
       setDeleteTarget(null);
@@ -804,6 +846,78 @@ export default function EditListModal({
       await updateBackgroundImage(imageId, { category: newCategory });
     } catch (e) {
       console.error("Error moving image:", e);
+    }
+  };
+
+  // Bulk selection handlers
+  const toggleImageSelection = (imageId: string) => {
+    setSelectedImageIds((prev) =>
+      prev.includes(imageId)
+        ? prev.filter((id) => id !== imageId)
+        : [...prev, imageId],
+    );
+  };
+
+  const selectAllInCategory = (categoryName: string, select: boolean) => {
+    const ids = (groupedImages[categoryName] || []).map((img) => img.id);
+    setSelectedImageIds((prev) =>
+      select
+        ? Array.from(new Set([...prev, ...ids]))
+        : prev.filter((id) => !ids.includes(id)),
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedImageIds.length === 0) return;
+    if (
+      !confirm(
+        `¿Eliminar ${selectedImageIds.length} imagen${selectedImageIds.length === 1 ? "" : "es"}?`,
+      )
+    )
+      return;
+    setIsDeleting(true);
+    try {
+      const toDelete = bgImages.filter((img) =>
+        selectedImageIds.includes(img.id),
+      );
+      for (const img of toDelete) {
+        if (img.storagePath) await deleteBackgroundImage(img.storagePath);
+        await deleteBackgroundImageDoc(img.id);
+        if (backgroundImage === img.url) setBackgroundImage("");
+      }
+      setSelectedImageIds([]);
+      setSelectionMode(false);
+    } catch (e) {
+      console.error("Error bulk deleting images:", e);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkDownload = () => {
+    const toDownload = bgImages.filter((img) =>
+      selectedImageIds.includes(img.id),
+    );
+    toDownload.forEach((img, index) => {
+      setTimeout(() => {
+        handleDownloadImage(img.url, img.displayName);
+      }, index * 200);
+    });
+  };
+
+  const handleBulkMove = async (targetCategory: string) => {
+    if (!targetCategory || selectedImageIds.length === 0) return;
+    setIsSaving(true);
+    try {
+      for (const id of selectedImageIds) {
+        await handleMoveImageToCategory(id, targetCategory);
+      }
+      setSelectedImageIds([]);
+      setShowBulkMove(false);
+    } catch (e) {
+      console.error("Error moving images:", e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -932,41 +1046,92 @@ export default function EditListModal({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        size="task"
+        size="full"
         title="Editar lista"
-        disableClose={isSaving}
+        disableClose={isSaving || isDeleting}
         footer={
-          <div className="flex items-center justify-between gap-3 w-full">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSaving}
-              className="px-5 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
-              style={{
-                backgroundColor: "var(--bg-secondary)",
-                color: "var(--text-secondary)",
-              }}
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={!name.trim() || isSaving}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 min-w-[140px] justify-center"
-              style={{
-                backgroundColor: saved ? "#16a34a" : "#2563eb",
-                color: "#fff",
-              }}
-            >
-              {saved ? <Check size={16} /> : null}
-              {isSaving
-                ? "Guardando..."
-                : saved
-                  ? "Guardado ✓"
-                  : "Guardar cambios"}
-            </button>
-          </div>
+          selectedImageIds.length > 0 ? (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full">
+              <span
+                className="text-sm font-semibold"
+                style={{ color: "var(--text-primary)" }}
+              >
+                {selectedImageIds.length} imagen
+                {selectedImageIds.length === 1 ? "" : "es"} seleccionada
+                {selectedImageIds.length === 1 ? "" : "s"}
+              </span>
+              <div className="flex items-center gap-2 justify-end flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleBulkDownload}
+                  disabled={isDeleting}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all active:scale-95 disabled:opacity-50"
+                  style={{ backgroundColor: "#2563eb" }}
+                >
+                  <Download size={15} /> Descargar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBulkMoveTarget(
+                      categories.find((c) => c.name !== uploadModalCategory)
+                        ?.name || "",
+                    );
+                    setShowBulkMove(true);
+                  }}
+                  disabled={isDeleting}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95 disabled:opacity-50"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <FolderOpen size={15} /> Mover a carpeta
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDelete}
+                  disabled={isDeleting}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all active:scale-95 disabled:opacity-50"
+                  style={{ backgroundColor: "#ef4444" }}
+                >
+                  <Trash2 size={15} /> Borrar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3 w-full">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={isSaving}
+                className="px-5 py-2.5 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+                style={{
+                  backgroundColor: "var(--bg-secondary)",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={!name.trim() || isSaving}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50 min-w-[140px] justify-center"
+                style={{
+                  backgroundColor: saved ? "#16a34a" : "#2563eb",
+                  color: "#fff",
+                }}
+              >
+                {saved ? <Check size={16} /> : null}
+                {isSaving
+                  ? "Guardando..."
+                  : saved
+                    ? "Guardado ✓"
+                    : "Guardar cambios"}
+              </button>
+            </div>
+          )
         }
       >
         <div className="p-5 sm:p-6 space-y-8">
@@ -1146,6 +1311,29 @@ export default function EditListModal({
                   >
                     <Settings2 size={14} />
                     <span className="hidden sm:inline">Categorías</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectionMode((v) => !v);
+                      setSelectedImageIds([]);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border-2"
+                    style={{
+                      borderColor: selectionMode
+                        ? "#16a34a"
+                        : "var(--border-color)",
+                      backgroundColor: selectionMode
+                        ? "rgba(22,163,74,0.08)"
+                        : "transparent",
+                      color: selectionMode
+                        ? "#16a34a"
+                        : "var(--text-secondary)",
+                    }}
+                  >
+                    <Check size={14} />
+                    <span className="hidden sm:inline">
+                      {selectionMode ? "Listo" : "Seleccionar"}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -1399,6 +1587,37 @@ export default function EditListModal({
                                 )}
                               </span>
                             </button>
+                            {selectionMode && images.length > 0 && (
+                              <button
+                                onClick={() =>
+                                  selectAllInCategory(
+                                    category.name,
+                                    !images.every((img) =>
+                                      selectedImageIds.includes(img.id),
+                                    ),
+                                  )
+                                }
+                                className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95"
+                                style={{
+                                  backgroundColor: selectionMode
+                                    ? "rgba(22,163,74,0.1)"
+                                    : "rgba(37,99,235,0.1)",
+                                  color: selectionMode ? "#16a34a" : "#2563eb",
+                                }}
+                              >
+                                {images.every((img) =>
+                                  selectedImageIds.includes(img.id),
+                                ) ? (
+                                  <>
+                                    <Check size={13} /> Desmarcar
+                                  </>
+                                ) : (
+                                  <>
+                                    <Plus size={13} /> Todas
+                                  </>
+                                )}
+                              </button>
+                            )}
                             <button
                               onClick={() => openUploadModal(category.name)}
                               className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95"
@@ -1439,11 +1658,14 @@ export default function EditListModal({
                                         <SortableImageItem
                                           key={img.id}
                                           image={img}
-                                          isSelected={
-                                            backgroundImage === img.url
-                                          }
+                                          isActive={backgroundImage === img.url}
+                                          isChecked={selectedImageIds.includes(
+                                            img.id,
+                                          )}
+                                          selectionMode={selectionMode}
                                           category={category.name}
                                           onSelect={handleSelectBackground}
+                                          onToggle={toggleImageSelection}
                                           onDownload={handleDownloadImage}
                                           onDelete={setDeleteTarget}
                                           userId={user!.id}
@@ -1787,6 +2009,66 @@ export default function EditListModal({
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal
+        isOpen={showBulkMove}
+        onClose={() => !isSaving && setShowBulkMove(false)}
+        title="Mover imágenes seleccionadas"
+        size="sm"
+        disableClose={isSaving}
+        footer={
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setShowBulkMove(false)}
+              disabled={isSaving}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-[var(--bg-secondary)] text-[var(--text-secondary)]"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => handleBulkMove(bulkMoveTarget)}
+              disabled={!bulkMoveTarget || isSaving}
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-blue-500 text-white flex items-center justify-center gap-2"
+            >
+              {isSaving ? (
+                <span className="animate-spin">⟳</span>
+              ) : (
+                <FolderOpen size={14} />
+              )}{" "}
+              Mover
+            </button>
+          </div>
+        }
+      >
+        <div className="p-5 space-y-4">
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
+            Selecciona la categoría destino para{" "}
+            <strong>{selectedImageIds.length}</strong> imagen
+            {selectedImageIds.length === 1 ? "" : "es"}.
+          </p>
+          <select
+            value={bulkMoveTarget}
+            onChange={(e) => setBulkMoveTarget(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl text-sm border-2 focus:outline-none focus:border-blue-500"
+            style={{
+              backgroundColor: "var(--bg-secondary)",
+              borderColor: "var(--border-color)",
+              color: "var(--text-primary)",
+            }}
+          >
+            <option value="" disabled>
+              Selecciona una categoría
+            </option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.name}>
+                {c.emoji} {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </Modal>
     </>
   );

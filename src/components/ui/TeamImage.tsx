@@ -96,7 +96,7 @@ export default function TeamImage({
 
         // Delete old photo if exists
         if (currentPhoto) {
-          await deleteTeamPhoto(currentPhoto);
+          await deleteTeamPhoto(teamId);
         }
 
         // Upload new photo
@@ -131,7 +131,7 @@ export default function TeamImage({
     setError(null);
 
     try {
-      await deleteTeamPhoto(currentPhoto);
+      await deleteTeamPhoto(teamId);
       await updateTeam(teamId, { photoURL: undefined });
       setCurrentPhoto(undefined);
       onUpdate?.("");
