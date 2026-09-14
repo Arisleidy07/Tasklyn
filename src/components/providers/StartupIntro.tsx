@@ -59,6 +59,7 @@ export default function StartupIntro({
     void startPlayback();
     return () => {
       cancelled = true;
+      if (!video) return;
       video.pause();
       video.removeAttribute("src");
       video.load();

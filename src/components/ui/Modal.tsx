@@ -6,7 +6,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type ModalSize = "sm" | "md" | "lg" | "xl" | "task" | "full";
+export type ModalSize =
+  | "sm"
+  | "md"
+  | "lg"
+  | "xl"
+  | "task"
+  | "full"
+  | "fullscreen";
 
 interface ModalProps {
   isOpen: boolean;
@@ -32,6 +39,7 @@ const sizeMap: Record<ModalSize, string> = {
   xl: "max-w-4xl",
   task: "max-w-4xl",
   full: "max-w-full sm:max-w-[94vw] lg:max-w-[1280px]",
+  fullscreen: "h-full w-full rounded-none",
 };
 
 export default function Modal({
@@ -77,7 +85,12 @@ export default function Modal({
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-[2147483647] flex items-end sm:items-center justify-center sm:p-4"
+          className={cn(
+            "fixed inset-0 z-[2147483647] flex",
+            size === "fullscreen"
+              ? "flex-col"
+              : "items-end sm:items-center justify-center sm:p-4",
+          )}
           role="dialog"
           aria-modal="true"
           aria-labelledby={title ? "modal-title" : undefined}
@@ -100,8 +113,9 @@ export default function Modal({
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
               "relative z-10 flex flex-col w-full overflow-hidden",
-              "rounded-t-2xl sm:rounded-2xl",
-              "max-h-[92dvh] sm:max-h-[90dvh]",
+              size === "fullscreen"
+                ? "h-[100dvh] w-screen max-w-none rounded-none"
+                : "rounded-t-2xl sm:rounded-2xl max-h-[92dvh] sm:max-h-[90dvh]",
               "shadow-[var(--shadow-modal)]",
               sizeMap[size],
             )}

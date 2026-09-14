@@ -21,6 +21,8 @@ import Badge from "@/components/ui/Badge";
 import Input from "@/components/ui/Input";
 import Modal from "@/components/ui/Modal";
 import PhotoCropperModal from "@/components/profile/PhotoCropperModal";
+import InvoiceHistory from "@/components/profile/InvoiceHistory";
+import SubscriptionManager from "@/components/profile/SubscriptionManager";
 import {
   Mail,
   Calendar,
@@ -43,6 +45,7 @@ import {
   Sparkles,
   Sun,
   Moon,
+  Receipt,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -436,7 +439,7 @@ export default function ProfilePage() {
           </motion.div>
 
           {/* Secciones inferiores */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {/* Mis listas */}
             <motion.div
               initial={{ opacity: 0, y: 16 }}
@@ -604,6 +607,8 @@ export default function ProfilePage() {
                   </Badge>
                 </div>
 
+                {user && <SubscriptionManager userId={user.id} />}
+
                 {/* Toggle de tema rápido en el perfil */}
                 <div
                   className="flex items-center justify-between p-3 rounded-xl"
@@ -707,6 +712,27 @@ export default function ProfilePage() {
                   />
                 </Link>
               </div>
+            </motion.div>
+
+            {/* Historial de facturas */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="rounded-2xl border shadow-sm p-4 sm:p-6"
+              style={{
+                backgroundColor: "var(--bg-card)",
+                borderColor: "var(--border-color)",
+              }}
+            >
+              <h2
+                className="text-sm font-semibold flex items-center gap-2 mb-4"
+                style={{ color: "var(--text-primary)" }}
+              >
+                <Receipt size={16} className="text-blue-600" />
+                Historial de pagos
+              </h2>
+              <InvoiceHistory />
             </motion.div>
           </div>
         </div>

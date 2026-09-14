@@ -12,7 +12,7 @@ import {
   Crown,
   Plus,
   Settings,
-  Sparkles,
+  CreditCard,
   User,
   Bell,
   X,
@@ -22,6 +22,7 @@ import {
   Calendar,
   History,
   Activity,
+  Zap,
 } from "lucide-react";
 import { useNotificationStore } from "@/stores/notificationStore";
 import Logo from "@/components/shared/Logo";
@@ -271,7 +272,7 @@ export default function MobileSidebar() {
                   </p>
                   {[
                     { href: "/profile", icon: User, label: "Perfil" },
-                    { href: "/pricing", icon: Sparkles, label: "Planes" },
+                    { href: "/pricing", icon: CreditCard, label: "Planes" },
                     {
                       href: "/settings",
                       icon: Settings,
@@ -326,7 +327,7 @@ export default function MobileSidebar() {
                     <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
                     <div className="relative">
                       <div className="flex items-center gap-2 mb-2">
-                        <Sparkles size={14} className="text-blue-100" />
+                        <Zap size={14} className="text-blue-100" />
                         <span className="text-xs font-bold text-white">
                           Actualizar a PRO
                         </span>

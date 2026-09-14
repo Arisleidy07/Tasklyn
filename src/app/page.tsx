@@ -17,6 +17,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import SubscriptionUpgradeModal from "@/components/paypal/SubscriptionUpgradeModal";
 
 const DEMO_WIDTH = 580;
 const DEMO_HEIGHT = 480;
@@ -59,11 +60,44 @@ function ScaledDemo() {
 export default function LandingPage() {
   const router = useRouter();
   const { isAuthenticated, user, login, isLoading } = useAuthStore();
+  const [selectedPlan, setSelectedPlan] = useState<"pro" | "business" | null>(
+    null,
+  );
 
   const handlePrimaryAction = () => {
     if (isAuthenticated || user) {
       router.push("/dashboard");
       return;
+    }
+    if (typeof window !== "undefined") {
+      localStorage.setItem("tasklyn-redirect-after-login", "/dashboard");
+    }
+    login();
+  };
+
+  const handleSelectPlan = (planId: string) => {
+    if (planId === "free") {
+      if (isAuthenticated || user) {
+        router.push("/dashboard");
+      } else {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("tasklyn-redirect-after-login", "/dashboard");
+        }
+        login();
+      }
+      return;
+    }
+
+    if (isAuthenticated || user) {
+      setSelectedPlan(planId as "pro" | "business");
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(
+        "tasklyn-redirect-after-login",
+        `/pricing?plan=${planId}&subscribe=1`,
+      );
     }
     login();
   };
@@ -273,7 +307,13 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <PricingSection login={login} isLoading={isLoading} />
+      <PricingSection onSelectPlan={handleSelectPlan} isLoading={isLoading} />
+
+      <SubscriptionUpgradeModal
+        planId={selectedPlan ?? "pro"}
+        isOpen={!!selectedPlan}
+        onClose={() => setSelectedPlan(null)}
+      />
 
       {/* Final CTA */}
       <section className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden border-t border-slate-800/60 bg-slate-950">

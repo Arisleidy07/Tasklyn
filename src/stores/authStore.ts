@@ -70,6 +70,16 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
           });
+
+          // Handle post-login redirect if a landing-page plan was selected
+          const redirectTo =
+            typeof window !== "undefined"
+              ? localStorage.getItem("tasklyn-redirect-after-login")
+              : null;
+          if (redirectTo) {
+            localStorage.removeItem("tasklyn-redirect-after-login");
+            window.location.href = redirectTo;
+          }
         } catch (error) {
           console.error("Login error:", error);
           set({ isLoading: false });

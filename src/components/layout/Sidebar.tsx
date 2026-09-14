@@ -14,7 +14,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
+  CreditCard,
   User,
   Bell,
   Users,
@@ -24,6 +24,7 @@ import {
   BarChart3,
   History,
   Activity,
+  Zap,
 } from "lucide-react";
 import { useNotificationStore } from "@/stores/notificationStore";
 import Logo from "@/components/shared/Logo";
@@ -577,7 +578,7 @@ export default function Sidebar() {
               }}
             >
               {isActive("/pricing") && <div className="sidebar-indicator" />}
-              <Sparkles size={18} className="flex-shrink-0" />
+              <CreditCard size={18} className="flex-shrink-0" />
               {!collapsed && <span className="flex-1">Planes</span>}
             </Link>
             <Link
@@ -624,7 +625,7 @@ export default function Sidebar() {
               <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
               <div className="relative">
                 <div className="flex items-center gap-2 mb-2">
-                  <Sparkles size={14} className="text-blue-100" />
+                  <Zap size={14} className="text-blue-100" />
                   <span className="text-xs font-bold text-white">
                     Actualizar a PRO
                   </span>

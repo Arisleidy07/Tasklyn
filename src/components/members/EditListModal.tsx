@@ -528,7 +528,7 @@ export default function EditListModal({
     emoji: "",
   });
   const [newCategoryName, setNewCategoryName] = useState("");
-  const [newCategoryEmoji, setNewCategoryEmoji] = useState("📁");
+  const [newCategoryEmoji, setNewCategoryEmoji] = useState("");
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [isManagingCategories, setIsManagingCategories] = useState(false);
   const [bgImages, setBgImages] = useState<BackgroundImage[]>([]);
@@ -1053,7 +1053,7 @@ export default function EditListModal({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        size="full"
+        size="fullscreen"
         title="Editar lista"
         disableClose={isSaving || isDeleting}
         footer={
@@ -1209,17 +1209,16 @@ export default function EditListModal({
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="relative rounded-2xl overflow-hidden w-full border-2 shadow-lg"
+                  className="relative rounded-2xl overflow-hidden w-full border-2 shadow-lg h-80"
                   style={{
                     borderColor: "var(--border-color)",
                     backgroundColor: "var(--bg-secondary)",
                     boxShadow: "var(--shadow-card)",
-                    maxHeight: 420,
                   }}
                 >
                   {activeBgError ? (
                     <div
-                      className="w-full h-64 flex flex-col items-center justify-center gap-2"
+                      className="w-full h-80 flex flex-col items-center justify-center gap-2"
                       style={{ color: "var(--text-tertiary)" }}
                     >
                       <ImageIcon size={40} />
@@ -1232,8 +1231,7 @@ export default function EditListModal({
                       src={backgroundImage}
                       alt="Fondo activo"
                       onError={() => setActiveBgError(true)}
-                      className="w-full h-auto object-contain"
-                      style={{ maxHeight: 420 }}
+                      className="w-full h-80 object-contain"
                     />
                   )}
                   <div className="absolute top-3 left-3">
@@ -1574,9 +1572,11 @@ export default function EditListModal({
                               onClick={() => toggleCategory(category.name)}
                               className="flex items-center gap-3 min-w-0 group"
                             >
-                              <span className="text-2xl leading-none flex-shrink-0">
-                                {category.emoji}
-                              </span>
+                              {category.emoji && (
+                                <span className="text-2xl leading-none flex-shrink-0">
+                                  {category.emoji}
+                                </span>
+                              )}
                               <span
                                 className="font-bold text-base truncate"
                                 style={{ color: "var(--text-primary)" }}

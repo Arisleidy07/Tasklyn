@@ -938,8 +938,12 @@ export const updateTeam = async (
 ): Promise<void> => {
   const teamRef = doc(db, "teams", teamId);
   const { id, createdAt, updatedAt, ...rest } = updates;
+  const cleaned: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(rest)) {
+    cleaned[k] = v === undefined || v === "" ? deleteField() : v;
+  }
   await updateDoc(teamRef, {
-    ...rest,
+    ...cleaned,
     updatedAt: serverTimestamp(),
   });
 };
@@ -1859,7 +1863,10 @@ export const addBackgroundImage = async (
 ): Promise<BackgroundImage> => {
   const ref = doc(backgroundImagesCollection);
   const now = new Date().toISOString();
-  const data: Omit<BackgroundImage, "id"> = { ...image, createdAt: now };
+  const data: Omit<BackgroundImage, "id"> = {
+    ...stripUndefined(image as Record<string, unknown>),
+    createdAt: now,
+  } as Omit<BackgroundImage, "id">;
   await setDoc(ref, data);
   return { ...data, id: ref.id };
 };
