@@ -28,7 +28,7 @@ const MAX_DATA_URL_LENGTH = 750_000;
 
 export interface UploadResult {
   url: string;
-  storagePath: string;
+  storagePath?: string;
 }
 
 // --- Validation ----------------------------------------------------------
@@ -247,9 +247,20 @@ export async function uploadProfilePhoto(
       ? new Blob([file as unknown as BlobPart], { type: "image/jpeg" })
       : file;
 
-  const compressed = await compressImageToBlob(blob, 512, 0.88);
-  const path = `users/${userId}/profile/avatar.jpg`;
-  return uploadToStorage(path, compressed, "image/jpeg");
+  // Try Firebase Storage first. If the bucket is unavailable (e.g. 402
+  // payment/billing) or any other error occurs, fall back to a compressed
+  // data URL stored directly in Firestore so the app keeps working.
+  try {
+    const compressed = await compressImageToBlob(blob, 512, 0.88);
+    const path = `users/${userId}/profile/avatar.jpg`;
+    return await uploadToStorage(path, compressed, "image/jpeg");
+  } catch (error) {
+    console.warn(
+      "[uploadProfilePhoto] Storage upload failed, falling back to data URL:",
+      error,
+    );
+    return fileToCompressedDataUrl(blob, 512, MAX_DATA_URL_LENGTH);
+  }
 }
 
 export async function deleteProfilePhoto(userId: string): Promise<void> {
@@ -273,9 +284,18 @@ export async function uploadTeamPhoto(
       ? new Blob([file as unknown as BlobPart], { type: "image/jpeg" })
       : file;
 
-  const compressed = await compressImageToBlob(blob, 800, 0.88);
-  const path = `teams/${teamId}/photo/team-photo.jpg`;
-  return uploadToStorage(path, compressed, "image/jpeg");
+  // Try Firebase Storage first, fall back to a compressed data URL if it fails.
+  try {
+    const compressed = await compressImageToBlob(blob, 800, 0.88);
+    const path = `teams/${teamId}/photo/team-photo.jpg`;
+    return await uploadToStorage(path, compressed, "image/jpeg");
+  } catch (error) {
+    console.warn(
+      "[uploadTeamPhoto] Storage upload failed, falling back to data URL:",
+      error,
+    );
+    return fileToCompressedDataUrl(blob, 800, MAX_DATA_URL_LENGTH);
+  }
 }
 
 export async function deleteTeamPhoto(teamId: string): Promise<void> {
@@ -295,13 +315,27 @@ export async function uploadBackgroundImage(
   _category?: string,
 ): Promise<UploadResult> {
   // Backgrounds can be larger but still need a sane cap.
-  const compressed = await compressImageToBlob(file, 1920, 0.85);
-  const fileName = safeFileName(
-    file instanceof File ? file : new File([file], "background.jpg"),
-  );
-  const storagePath = `backgrounds/${userId}/${fileName}`;
-  const url = await uploadToStorage(storagePath, compressed, "image/jpeg");
-  return { url, storagePath };
+  // Try Firebase Storage first, fall back to a compressed data URL if it fails.
+  try {
+    const compressed = await compressImageToBlob(file, 1920, 0.85);
+    const fileName = safeFileName(
+      file instanceof File ? file : new File([file], "background.jpg"),
+    );
+    const storagePath = `backgrounds/${userId}/${fileName}`;
+    const url = await uploadToStorage(storagePath, compressed, "image/jpeg");
+    return { url, storagePath };
+  } catch (error) {
+    console.warn(
+      "[uploadBackgroundImage] Storage upload failed, falling back to data URL:",
+      error,
+    );
+    const dataUrl = await fileToCompressedDataUrl(
+      file,
+      1920,
+      MAX_DATA_URL_LENGTH,
+    );
+    return { url: dataUrl, storagePath: undefined };
+  }
 }
 
 export async function deleteBackgroundImage(
