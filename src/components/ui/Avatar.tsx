@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { cn, getInitials } from "@/lib/utils";
 
 interface AvatarProps {
@@ -42,11 +42,21 @@ export default function Avatar({
   size = "md",
   className,
 }: AvatarProps) {
-  if (photoURL) {
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    setError(false);
+  }, [photoURL]);
+
+  if (photoURL && !error) {
     return (
       <img
         src={photoURL}
         alt={name}
+        onError={() => {
+          console.warn("[Avatar] Failed to load photoURL:", photoURL);
+          setError(true);
+        }}
         className={cn("rounded-full object-cover", sizeMap[size], className)}
       />
     );

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Camera, X, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -80,7 +80,13 @@ export default function TeamImage({
   const [isUploading, setIsUploading] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setCurrentPhoto(photoURL);
+    setImageError(false);
+  }, [photoURL]);
 
   const handleFileSelect = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,10 +173,17 @@ export default function TeamImage({
         whileHover={editable ? { scale: 1.02 } : undefined}
         whileTap={editable ? { scale: 0.98 } : undefined}
       >
-        {currentPhoto ? (
+        {currentPhoto && !imageError ? (
           <img
             src={currentPhoto}
             alt={name}
+            onError={() => {
+              console.warn(
+                "[TeamImage] Failed to load photoURL:",
+                currentPhoto,
+              );
+              setImageError(true);
+            }}
             className="w-full h-full object-cover"
           />
         ) : (

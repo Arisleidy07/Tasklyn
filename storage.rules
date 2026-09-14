@@ -72,6 +72,26 @@ service firebase.storage {
       allow delete: if isAuth() && isListOwner(listId);
     }
 
+    // Legacy image paths (old uploads before the organized structure).
+    // Keep read access so existing profile/team/background photos keep loading.
+    match /profile-photos/{userId}/{allPaths=**} {
+      allow read: if isAuth();
+      allow write: if isAuth() && getAuthUid() == userId;
+      allow delete: if isAuth() && getAuthUid() == userId;
+    }
+
+    match /team-photos/{teamId}/{allPaths=**} {
+      allow read: if isAuth();
+      allow write: if isAuth();
+      allow delete: if isAuth();
+    }
+
+    match /background-images/{userId}/{allPaths=**} {
+      allow read: if isAuth();
+      allow write: if isAuth() && getAuthUid() == userId;
+      allow delete: if isAuth() && getAuthUid() == userId;
+    }
+
     // Fallback: read for any auth user, write denied
     match /{allPaths=**} {
       allow read: if isAuth();

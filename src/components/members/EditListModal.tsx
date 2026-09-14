@@ -561,6 +561,7 @@ export default function EditListModal({
   const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
   const [showBulkMove, setShowBulkMove] = useState(false);
   const [bulkMoveTarget, setBulkMoveTarget] = useState<string>("");
+  const [activeBgError, setActiveBgError] = useState(false);
 
   const isMountedRef = useRef(true);
   const { updateList, removeMember, updateMemberRole, deleteList } =
@@ -637,6 +638,7 @@ export default function EditListModal({
       setSelectionMode(false);
       setSelectedImageIds([]);
       setShowBulkMove(false);
+      setActiveBgError(false);
       // Lock body scroll
       document.body.style.overflow = "hidden";
     }
@@ -1008,6 +1010,11 @@ export default function EditListModal({
     }
   };
 
+  // Reset background preview error when the selected image changes
+  useEffect(() => {
+    setActiveBgError(false);
+  }, [backgroundImage]);
+
   // Grouped images — every image must render, even if its category
   // no longer exists in bgCategories (otherwise photos "disappear")
   const groupedImages = useMemo(() => {
@@ -1210,12 +1217,25 @@ export default function EditListModal({
                     maxHeight: 420,
                   }}
                 >
-                  <img
-                    src={backgroundImage}
-                    alt="Fondo activo"
-                    className="w-full h-auto object-contain"
-                    style={{ maxHeight: 420 }}
-                  />
+                  {activeBgError ? (
+                    <div
+                      className="w-full h-64 flex flex-col items-center justify-center gap-2"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      <ImageIcon size={40} />
+                      <p className="text-sm font-medium">
+                        No se pudo cargar el fondo
+                      </p>
+                    </div>
+                  ) : (
+                    <img
+                      src={backgroundImage}
+                      alt="Fondo activo"
+                      onError={() => setActiveBgError(true)}
+                      className="w-full h-auto object-contain"
+                      style={{ maxHeight: 420 }}
+                    />
+                  )}
                   <div className="absolute top-3 left-3">
                     <span
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest text-white"
