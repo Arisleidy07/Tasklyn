@@ -23,10 +23,9 @@ service firebase.storage {
 
     function isTeamAdminOrOwner(teamId) {
       let t = firestoreTeam(teamId);
-      if (t == null) return false;
-      if (t.owner != null && t.owner == getAuthUid()) return true;
       let m = firestore.get(/databases/(default)/documents/teams/$(teamId)/members/$(getAuthUid())).data;
-      return m != null && (m.role == "owner" || m.role == "admin");
+      return (t != null && t.owner == getAuthUid()) ||
+        (m != null && (m.role == "owner" || m.role == "admin"));
     }
 
     function firestoreList(listId) {
