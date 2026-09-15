@@ -689,8 +689,7 @@ export default function EditListModal({
       console.log("[DeleteCategory] deleting category id:", id);
       await deleteBgCategory(id);
       console.log("[DeleteCategory] deleted successfully:", id);
-      // Optimistic: remove from local state immediately
-      setCategories((prev) => prev.filter((c) => c.id !== id));
+      // Real-time listener will update the categories list; no optimistic state here
     } catch (e) {
       console.error("[DeleteCategory] error:", e);
       alert(
@@ -1024,7 +1023,7 @@ export default function EditListModal({
           )
         }
       >
-        <div className="w-full h-full p-2 space-y-1">
+        <div className="w-full h-full px-2 pb-2 pt-0 space-y-1">
           {/* DETAILS SECTION */}
           {
             <div className="w-full h-full space-y-0.5">
