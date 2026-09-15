@@ -65,8 +65,6 @@ import {
   updateBackgroundImage,
   reorderBackgroundImages,
   renameCategoryOnImages,
-  moveImagesToCategoryBatch,
-  deleteImagesByCategory,
   type BackgroundImage,
 } from "@/lib/firestore";
 import { deleteBackgroundImage } from "@/lib/storage";
@@ -502,10 +500,6 @@ export default function EditListModal({
     name: string;
     imageCount: number;
   } | null>(null);
-  const [deleteCategoryAction, setDeleteCategoryAction] = useState<
-    "move" | "delete"
-  >("move");
-  const [deleteCategoryMoveTo, setDeleteCategoryMoveTo] = useState<string>("");
   const [isDeletingCategory, setIsDeletingCategory] = useState(false);
 
   // Image manager selection mode
@@ -684,41 +678,21 @@ export default function EditListModal({
     const imageCount = bgImages.filter(
       (img) => (img.category || "Sin categoría") === cat.name,
     ).length;
-    const otherCats = categories.filter((c) => c.id !== id);
     setDeleteCategoryTarget({ id, name: cat.name, imageCount });
-    // If there are no other categories, the only viable action is to delete
-    // the images along with the category.
-    setDeleteCategoryAction(
-      imageCount > 0 && otherCats.length > 0 ? "move" : "delete",
-    );
-    setDeleteCategoryMoveTo(otherCats[0]?.name || "");
   };
 
   const handleConfirmDeleteCategory = async () => {
     if (!deleteCategoryTarget) return;
     setIsDeletingCategory(true);
     try {
-      const { id, name, imageCount } = deleteCategoryTarget;
-      // Delete the category doc first so it disappears from the UI
-      // immediately. Image cleanup is secondary.
+      const { id } = deleteCategoryTarget;
+      console.log("[DeleteCategory] deleting category id:", id);
       await deleteBgCategory(id);
+      console.log("[DeleteCategory] deleted successfully:", id);
       // Optimistic: remove from local state immediately
       setCategories((prev) => prev.filter((c) => c.id !== id));
-      // Try to move/delete images, but never let that block the
-      // category deletion. If images fail (e.g. permissions), just log it.
-      if (imageCount > 0) {
-        try {
-          if (deleteCategoryAction === "move" && deleteCategoryMoveTo) {
-            await moveImagesToCategoryBatch(name, deleteCategoryMoveTo);
-          } else {
-            await deleteImagesByCategory(name);
-          }
-        } catch (imgErr) {
-          console.error("Error cleaning up images for category:", imgErr);
-        }
-      }
     } catch (e) {
-      console.error("Error deleting category:", e);
+      console.error("[DeleteCategory] error:", e);
       alert(
         `Error al eliminar la categoría: ${e instanceof Error ? e.message : String(e)}`,
       );
@@ -1717,15 +1691,7 @@ export default function EditListModal({
             <button
               type="button"
               onClick={handleConfirmDeleteCategory}
-              disabled={
-                isDeletingCategory ||
-                !!(
-                  deleteCategoryTarget &&
-                  deleteCategoryTarget.imageCount > 0 &&
-                  deleteCategoryAction === "move" &&
-                  !deleteCategoryMoveTo
-                )
-              }
+              disabled={isDeletingCategory}
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-500 text-white flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {isDeletingCategory ? (
@@ -1761,120 +1727,25 @@ export default function EditListModal({
                   >
                     Eliminar categoría "{deleteCategoryTarget.name}"
                   </p>
-                  {deleteCategoryTarget.imageCount > 0 ? (
-                    <p
-                      className="text-sm mt-1"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      Esta categoría contiene{" "}
-                      <strong>{deleteCategoryTarget.imageCount}</strong> imagen
-                      {deleteCategoryTarget.imageCount !== 1 ? "es" : ""}. ¿Qué
-                      deseas hacer con ellas?
-                    </p>
-                  ) : (
-                    <p
-                      className="text-sm mt-1"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      La categoría está vacía. Se eliminará sin afectar
-                      imágenes.
-                    </p>
-                  )}
+                  <p
+                    className="text-sm mt-1"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    {deleteCategoryTarget.imageCount > 0 ? (
+                      <>
+                        Esta categoría contiene{" "}
+                        <strong>{deleteCategoryTarget.imageCount}</strong>{" "}
+                        imagen
+                        {deleteCategoryTarget.imageCount !== 1 ? "es" : ""}. Las
+                        imágenes quedarán sin categoría y podrás reorganizarlas
+                        después.
+                      </>
+                    ) : (
+                      "La categoría está vacía. Se eliminará sin afectar imágenes."
+                    )}
+                  </p>
                 </div>
               </div>
-
-              {deleteCategoryTarget.imageCount > 0 && (
-                <div className="space-y-2 mb-5">
-                  {/* Option: Move */}
-                  <label
-                    className={`flex items-start gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${deleteCategoryAction === "move" ? "border-blue-500 bg-blue-500/5" : "border-transparent"}`}
-                    style={{
-                      backgroundColor:
-                        deleteCategoryAction === "move"
-                          ? undefined
-                          : "var(--bg-secondary)",
-                    }}
-                    onClick={() => setDeleteCategoryAction("move")}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${deleteCategoryAction === "move" ? "border-blue-500 bg-blue-500" : "border-[var(--border-color)]"}`}
-                    >
-                      {deleteCategoryAction === "move" && (
-                        <Check
-                          size={11}
-                          className="text-white"
-                          strokeWidth={3}
-                        />
-                      )}
-                    </div>
-                    <div>
-                      <p
-                        className="font-semibold text-sm"
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        Mover imágenes a otra categoría
-                      </p>
-                      {deleteCategoryAction === "move" && (
-                        <select
-                          value={deleteCategoryMoveTo}
-                          onChange={(e) =>
-                            setDeleteCategoryMoveTo(e.target.value)
-                          }
-                          onClick={(e) => e.stopPropagation()}
-                          className="mt-2 w-full px-3 py-2 rounded-xl text-sm border-2 focus:outline-none focus:border-blue-500"
-                          style={{
-                            backgroundColor: "var(--bg-secondary)",
-                            borderColor: "var(--border-color)",
-                            color: "var(--text-primary)",
-                          }}
-                        >
-                          {categories
-                            .filter((c) => c.id !== deleteCategoryTarget.id)
-                            .map((c) => (
-                              <option key={c.id} value={c.name}>
-                                {c.emoji} {c.name}
-                              </option>
-                            ))}
-                        </select>
-                      )}
-                    </div>
-                  </label>
-                  {/* Option: Delete */}
-                  <label
-                    className={`flex items-start gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${deleteCategoryAction === "delete" ? "border-red-500 bg-red-500/5" : "border-transparent"}`}
-                    style={{
-                      backgroundColor:
-                        deleteCategoryAction === "delete"
-                          ? undefined
-                          : "var(--bg-secondary)",
-                    }}
-                    onClick={() => setDeleteCategoryAction("delete")}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${deleteCategoryAction === "delete" ? "border-red-500 bg-red-500" : "border-[var(--border-color)]"}`}
-                    >
-                      {deleteCategoryAction === "delete" && (
-                        <Check
-                          size={11}
-                          className="text-white"
-                          strokeWidth={3}
-                        />
-                      )}
-                    </div>
-                    <div>
-                      <p
-                        className="font-semibold text-sm"
-                        style={{ color: "var(--text-primary)" }}
-                      >
-                        Eliminar imágenes también
-                      </p>
-                      <p className="text-xs mt-0.5 text-red-500">
-                        Esta acción no se puede deshacer
-                      </p>
-                    </div>
-                  </label>
-                </div>
-              )}
             </div>
           </motion.div>
         )}

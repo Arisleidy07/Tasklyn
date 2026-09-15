@@ -1,26 +1,26 @@
-const CACHE_NAME = "tasklyn-v7";
+const CACHE_NAME = "tasklyn-v8";
 const STATIC_ASSETS = [
   "/",
-  "/dashboard",
-  "/ranking",
-  "/teams",
-  "/profile",
-  "/settings",
-  "/notifications",
   "/manifest.json",
+  "/favicon.svg",
   "/T.PNG",
   "/TA.PNG",
+  "/ANIMACION-TASKLYN.mp4",
   "/ANIMACION-TASKLYN-WHITE.mp4",
 ];
 
 // Force skip waiting on install — activate immediately
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    }),
+    caches
+      .open(CACHE_NAME)
+      .then((cache) =>
+        cache.addAll(STATIC_ASSETS).catch((err) => {
+          console.error("[SW] Failed to pre-cache assets:", err);
+        }),
+      )
+      .then(() => self.skipWaiting()),
   );
-  self.skipWaiting();
 });
 
 // Clean up ALL old caches and claim all clients
@@ -46,68 +46,80 @@ self.addEventListener("message", (event) => {
   }
 });
 
+// Cache network responses for same-origin GET requests, but never intercept
+// external scripts or API calls.
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-  if (event.request.url.includes("firestore.googleapis.com")) return;
-  if (event.request.url.includes("identitytoolkit.googleapis.com")) return;
+  const url = event.request.url;
+  if (url.includes("firestore.googleapis.com")) return;
+  if (url.includes("identitytoolkit.googleapis.com")) return;
+  if (url.includes("gstatic.com")) return;
+  if (url.includes("googleapis.com")) return;
+  if (!url.startsWith(self.location.origin)) return;
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response && response.status === 200) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, clone);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, clone);
+            });
           }
-          // Return a simple 404 response if nothing found in cache
+          return response;
+        })
+        .catch((err) => {
+          console.error("[SW] Fetch failed:", err);
           return new Response("Not found in cache", {
             status: 404,
             statusText: "Not Found",
             headers: { "Content-Type": "text/plain" },
           });
         });
-      }),
+    }),
   );
 });
 
-// Firebase Cloud Messaging
-importScripts(
-  "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js",
-);
-importScripts(
-  "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js",
-);
+// Optional: Firebase Cloud Messaging — only load if scripts are available.
+// A 404 on these external scripts was spamming the console and breaking SW.
+let messaging = null;
+try {
+  self.importScripts(
+    "https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js",
+  );
+  self.importScripts(
+    "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js",
+  );
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCKZQKXkOw2rTTuDd16hR6f9xa2m8qIQhM",
-  authDomain: "tasklyn-51996.firebaseapp.com",
-  projectId: "tasklyn-51996",
-  storageBucket: "tasklyn-51996.firebasestorage.app",
-  messagingSenderId: "594302321618",
-  appId: "1:594302321618:web:8c275079dc68bcd3acfe0b",
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyCKZQKXkOw2rTTuDd16hR6f9xa2m8qIQhM",
+    authDomain: "tasklyn-51996.firebaseapp.com",
+    projectId: "tasklyn-51996",
+    storageBucket: "tasklyn-51996.firebasestorage.app",
+    messagingSenderId: "594302321618",
+    appId: "1:594302321618:web:8c275079dc68bcd3acfe0b",
+  };
 
-firebase.initializeApp(firebaseConfig);
-const messaging = firebase.messaging();
+  firebase.initializeApp(firebaseConfig);
+  messaging = firebase.messaging();
 
-messaging.onBackgroundMessage((payload) => {
-  const { title, body, icon } = payload.notification || {};
-  self.registration.showNotification(title || "Tasklyn", {
-    body: body || "",
-    icon: icon || "/T.PNG",
-    badge: "/T.PNG",
-    tag: payload.data?.taskId || "tasklyn",
-    data: payload.data,
+  messaging.onBackgroundMessage((payload) => {
+    const { title, body, icon } = payload.notification || {};
+    self.registration.showNotification(title || "Tasklyn", {
+      body: body || "",
+      icon: icon || "/T.PNG",
+      badge: "/T.PNG",
+      tag: payload.data?.taskId || "tasklyn",
+      data: payload.data,
+    });
   });
-});
+} catch (swErr) {
+  console.warn("[SW] Firebase messaging scripts not loaded:", swErr);
+}
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
