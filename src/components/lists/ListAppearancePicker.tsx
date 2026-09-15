@@ -56,7 +56,7 @@ export default function ListAppearancePicker({
         type="button"
         onClick={() => onIconChange(em)}
         className={cn(
-          "w-full aspect-square max-w-[56px] mx-auto rounded-xl text-2xl flex items-center justify-center transition-all duration-150",
+          "w-full aspect-square max-w-[64px] mx-auto rounded-xl text-2xl flex items-center justify-center transition-all duration-150",
           "active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50",
           !selected && "hover:scale-105",
         )}
@@ -73,7 +73,7 @@ export default function ListAppearancePicker({
   };
 
   return (
-    <div className="space-y-0.5">
+    <div className="space-y-2 sm:space-y-1">
       {showIcon && (
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -128,7 +128,7 @@ export default function ListAppearancePicker({
                         <cat.icon size={11} />
                         {cat.name}
                       </p>
-                      <div className="grid grid-cols-6 sm:grid-cols-[repeat(auto-fill,minmax(52px,1fr))] gap-1.5">
+                      <div className="grid grid-cols-4 sm:grid-cols-[repeat(auto-fill,minmax(60px,1fr))] gap-1.5">
                         {cat.emojis.map((em) =>
                           renderEmoji(em, `${cat.id}-${em}`),
                         )}
@@ -144,7 +144,7 @@ export default function ListAppearancePicker({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
-                className="grid grid-cols-6 sm:grid-cols-[repeat(auto-fill,minmax(52px,1fr))] gap-1.5"
+                className="grid grid-cols-4 sm:grid-cols-[repeat(auto-fill,minmax(60px,1fr))] gap-1.5"
               >
                 {previewEmojis.map((em) => renderEmoji(em, `p-${em}`))}
               </motion.div>
@@ -161,7 +161,7 @@ export default function ListAppearancePicker({
           >
             Color
           </label>
-          <div className="grid grid-cols-8 gap-2 sm:gap-2.5">
+          <div className="grid grid-cols-5 sm:grid-cols-8 gap-2 sm:gap-2.5">
             {LIST_COLORS.map((c) => {
               const selected = color === c.value;
               return (
@@ -172,7 +172,7 @@ export default function ListAppearancePicker({
                   title={c.label}
                   aria-label={c.label}
                   aria-pressed={selected}
-                  className="aspect-square w-full max-w-[36px] mx-auto rounded-full flex items-center justify-center transition-transform duration-150 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500/50"
+                  className="aspect-square w-full max-w-[44px] mx-auto rounded-full flex items-center justify-center transition-transform duration-150 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500/50"
                   style={{
                     backgroundColor: c.value,
                     boxShadow: selected
