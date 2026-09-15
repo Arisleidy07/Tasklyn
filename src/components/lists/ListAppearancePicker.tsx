@@ -73,7 +73,7 @@ export default function ListAppearancePicker({
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {showIcon && (
         <div>
           <div className="flex items-center justify-between mb-2">
