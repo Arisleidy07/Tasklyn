@@ -699,7 +699,12 @@ export default function EditListModal({
     setIsDeletingCategory(true);
     try {
       const { id, name, imageCount } = deleteCategoryTarget;
-      // Try to move/delete images first, but never let that block the
+      // Delete the category doc first so it disappears from the UI
+      // immediately. Image cleanup is secondary.
+      await deleteBgCategory(id);
+      // Optimistic: remove from local state immediately
+      setCategories((prev) => prev.filter((c) => c.id !== id));
+      // Try to move/delete images, but never let that block the
       // category deletion. If images fail (e.g. permissions), just log it.
       if (imageCount > 0) {
         try {
@@ -712,12 +717,11 @@ export default function EditListModal({
           console.error("Error cleaning up images for category:", imgErr);
         }
       }
-      await deleteBgCategory(id);
-      // Optimistic: remove from local state immediately
-      setCategories((prev) => prev.filter((c) => c.id !== id));
     } catch (e) {
       console.error("Error deleting category:", e);
-      alert("Error al eliminar la categoría. Revisa la consola.");
+      alert(
+        `Error al eliminar la categoría: ${e instanceof Error ? e.message : String(e)}`,
+      );
     } finally {
       setIsDeletingCategory(false);
       setDeleteCategoryTarget(null);
