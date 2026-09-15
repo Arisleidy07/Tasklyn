@@ -1090,11 +1090,10 @@ export default function EditListModal({
               {/* ── ACTIVE BACKGROUND HERO ── */}
               {backgroundImage ? (
                 <motion.div
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="relative rounded-2xl overflow-hidden w-full border-2 shadow-lg h-56 sm:h-80 lg:h-96"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="relative rounded-2xl overflow-hidden w-full h-64 sm:h-80 lg:h-96 shadow-lg"
                   style={{
-                    borderColor: "var(--border-color)",
                     backgroundColor: "var(--bg-secondary)",
                     boxShadow: "var(--shadow-card)",
                   }}
@@ -1114,7 +1113,7 @@ export default function EditListModal({
                       src={backgroundImage}
                       alt="Fondo activo"
                       onError={() => setActiveBgError(true)}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-cover"
                     />
                   )}
                   <div className="absolute top-3 left-3">
