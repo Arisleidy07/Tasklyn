@@ -73,7 +73,7 @@ export default function ListAppearancePicker({
   };
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       {showIcon && (
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -113,7 +113,7 @@ export default function ListAppearancePicker({
                 className="overflow-hidden"
               >
                 <div
-                  className="space-y-4 max-h-[280px] overflow-y-auto overscroll-contain pr-1 rounded-xl p-3"
+                  className="space-y-2 max-h-[280px] overflow-y-auto overscroll-contain pr-1 rounded-xl p-2"
                   style={{
                     border: "1px solid var(--border-color)",
                     backgroundColor: "var(--bg-primary)",
