@@ -1024,7 +1024,7 @@ export default function EditListModal({
           )
         }
       >
-        <div className="p-4 sm:p-5 space-y-5">
+        <div className="w-full h-full p-4 sm:p-5 space-y-5">
           {/* DETAILS SECTION */}
           {
             <div className="w-full h-full space-y-6">
@@ -1086,13 +1086,13 @@ export default function EditListModal({
           {/* BACKGROUNDS TAB — PREMIUM */}
           {/* BACKGROUNDS SECTION */}
           {
-            <div className="space-y-8 pb-4">
+            <div className="w-full h-full space-y-5 pb-4">
               {/* ── ACTIVE BACKGROUND HERO ── */}
               {backgroundImage ? (
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="relative rounded-2xl overflow-hidden w-full border-2 shadow-lg h-48 sm:h-80"
+                  className="relative rounded-2xl overflow-hidden w-full border-2 shadow-lg h-56 sm:h-80 lg:h-96"
                   style={{
                     borderColor: "var(--border-color)",
                     backgroundColor: "var(--bg-secondary)",

@@ -39,7 +39,7 @@ const sizeMap: Record<ModalSize, string> = {
   xl: "max-w-4xl",
   task: "max-w-4xl",
   full: "max-w-full sm:max-w-[94vw] lg:max-w-[1280px]",
-  fullscreen: "h-full w-full rounded-none",
+  fullscreen: "h-[100dvh] w-screen max-w-none rounded-none",
 };
 
 export default function Modal({
@@ -107,22 +107,30 @@ export default function Modal({
 
           {/* Modal panel */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 24 }}
+            initial={
+              size === "fullscreen"
+                ? { opacity: 0 }
+                : { opacity: 0, scale: 0.96, y: 24 }
+            }
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: 24 }}
+            exit={
+              size === "fullscreen"
+                ? { opacity: 0 }
+                : { opacity: 0, scale: 0.96, y: 24 }
+            }
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
               "relative z-10 flex flex-col w-full overflow-hidden",
               size === "fullscreen"
-                ? "h-[100dvh] w-screen max-w-none rounded-none"
-                : "rounded-t-2xl sm:rounded-2xl max-h-[92dvh] sm:max-h-[90dvh]",
-              "shadow-[var(--shadow-modal)]",
+                ? "rounded-none"
+                : "rounded-t-2xl sm:rounded-2xl max-h-[92dvh] sm:max-h-[90dvh] shadow-[var(--shadow-modal)]",
               sizeMap[size],
             )}
             style={{
               backgroundColor: "var(--bg-modal)",
-              borderColor: "var(--border-color)",
-              borderWidth: "1px",
+              borderColor:
+                size === "fullscreen" ? undefined : "var(--border-color)",
+              borderWidth: size === "fullscreen" ? undefined : "1px",
             }}
           >
             {/* Header */}
