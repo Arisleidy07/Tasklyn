@@ -686,7 +686,11 @@ export default function EditListModal({
     ).length;
     const otherCats = categories.filter((c) => c.id !== id);
     setDeleteCategoryTarget({ id, name: cat.name, imageCount });
-    setDeleteCategoryAction(imageCount > 0 ? "move" : "delete");
+    // If there are no other categories, the only viable action is to delete
+    // the images along with the category.
+    setDeleteCategoryAction(
+      imageCount > 0 && otherCats.length > 0 ? "move" : "delete",
+    );
     setDeleteCategoryMoveTo(otherCats[0]?.name || "");
   };
 
