@@ -1023,11 +1023,132 @@ export default function EditListModal({
           )
         }
       >
-        <div className="w-full h-full p-3 sm:p-2 pt-2 sm:pt-0 grid grid-cols-1 lg:grid-cols-2 gap-3 overflow-y-auto">
+        <div className="w-full h-full p-3 sm:p-2 pt-2 sm:pt-0 flex flex-col gap-2 overflow-y-auto">
           {/* DETAILS SECTION */}
           {
-            <div className="w-full h-full space-y-2 sm:space-y-0.5">
-              {/* Active background preview */}
+            <div className="w-full h-auto space-y-2 sm:space-y-0.5">
+              {/* Two-column grid: name/description | emoji/color */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-2">
+                {/* Left column */}
+                <div className="space-y-2 sm:space-y-0.5">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-[var(--text-primary)]">
+                      Nombre
+                    </label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border-2 border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-input-focus)] transition-all"
+                      placeholder="Mi Lista"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-[var(--text-primary)]">
+                      Descripción
+                    </label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows={3}
+                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border-2 border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-input-focus)] transition-all resize-none"
+                      placeholder="Describe el propósito..."
+                    />
+                  </div>
+                  <div className="flex items-center gap-3 p-4 bg-[var(--bg-secondary)] rounded-xl">
+                    <input
+                      type="checkbox"
+                      id="isPublic"
+                      checked={isPublic}
+                      onChange={(e) => setIsPublic(e.target.checked)}
+                      className="w-5 h-5 rounded border-[var(--border-color)] text-[var(--text-info)] focus:ring-[var(--border-input-focus)]"
+                    />
+                    <label
+                      htmlFor="isPublic"
+                      className="text-sm font-medium text-[var(--text-primary)] cursor-pointer"
+                    >
+                      Lista pública
+                    </label>
+                  </div>
+                </div>
+
+                <ListAppearancePicker
+                  icon={emoji}
+                  color={color}
+                  onIconChange={setEmoji}
+                  onColorChange={setColor}
+                />
+              </div>
+            </div>
+          }
+
+          {/* BACKGROUNDS TAB — PREMIUM */}
+          {/* BACKGROUNDS SECTION */}
+          {
+            <div className="w-full h-auto space-y-2 sm:space-y-0.5 pb-2 sm:pb-1">
+              {/* ACTIVE BACKGROUND HERO MOVED TO DETAILS SECTION */}
+              {/* ── TOOLBAR ── */}
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <p
+                  className="text-[11px] font-bold uppercase tracking-widest"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Galería · {bgImages.length}{" "}
+                  {bgImages.length === 1 ? "imagen" : "imágenes"}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => openUploadModal(categories[0]?.name || "")}
+                    disabled={categories.length === 0}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus size={14} /> Subir
+                  </button>
+                  <button
+                    onClick={() => setIsManagingCategories((v) => !v)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border-2"
+                    style={{
+                      borderColor: isManagingCategories
+                        ? "#3b82f6"
+                        : "var(--border-color)",
+                      backgroundColor: isManagingCategories
+                        ? "rgba(59,130,246,0.08)"
+                        : "transparent",
+                      color: isManagingCategories
+                        ? "#3b82f6"
+                        : "var(--text-secondary)",
+                    }}
+                  >
+                    <Settings2 size={14} />
+                    <span className="hidden sm:inline">Categorías</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setSelectionMode((v) => !v);
+                      setSelectedImageIds([]);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border-2"
+                    style={{
+                      borderColor: selectionMode
+                        ? "#16a34a"
+                        : "var(--border-color)",
+                      backgroundColor: selectionMode
+                        ? "rgba(22,163,74,0.08)"
+                        : "transparent",
+                      color: selectionMode
+                        ? "#16a34a"
+                        : "var(--text-secondary)",
+                    }}
+                  >
+                    <Check size={14} />
+                    <span className="hidden sm:inline">
+                      {selectionMode ? "Listo" : "Seleccionar"}
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              {/* ── ACTIVE BACKGROUND ── */}
               {backgroundImage ? (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -1097,127 +1218,6 @@ export default function EditListModal({
                   </p>
                 </div>
               )}
-
-              {/* Two-column grid: name/description | emoji/color */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-2">
-                {/* Left column */}
-                <div className="space-y-2 sm:space-y-0.5">
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-[var(--text-primary)]">
-                      Nombre
-                    </label>
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border-2 border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-input-focus)] transition-all"
-                      placeholder="Mi Lista"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-[var(--text-primary)]">
-                      Descripción
-                    </label>
-                    <textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      rows={3}
-                      className="w-full px-4 py-3 bg-[var(--bg-secondary)] border-2 border-[var(--border-color)] rounded-xl text-[var(--text-primary)] focus:outline-none focus:border-[var(--border-input-focus)] transition-all resize-none"
-                      placeholder="Describe el propósito..."
-                    />
-                  </div>
-                  <div className="flex items-center gap-3 p-4 bg-[var(--bg-secondary)] rounded-xl">
-                    <input
-                      type="checkbox"
-                      id="isPublic"
-                      checked={isPublic}
-                      onChange={(e) => setIsPublic(e.target.checked)}
-                      className="w-5 h-5 rounded border-[var(--border-color)] text-[var(--text-info)] focus:ring-[var(--border-input-focus)]"
-                    />
-                    <label
-                      htmlFor="isPublic"
-                      className="text-sm font-medium text-[var(--text-primary)] cursor-pointer"
-                    >
-                      Lista pública
-                    </label>
-                  </div>
-                </div>
-
-                <ListAppearancePicker
-                  icon={emoji}
-                  color={color}
-                  onIconChange={setEmoji}
-                  onColorChange={setColor}
-                />
-              </div>
-            </div>
-          }
-
-          {/* BACKGROUNDS TAB — PREMIUM */}
-          {/* BACKGROUNDS SECTION */}
-          {
-            <div className="w-full h-full space-y-2 sm:space-y-0.5 pb-2 sm:pb-1">
-              {/* ACTIVE BACKGROUND HERO MOVED TO DETAILS SECTION */}
-              {/* ── TOOLBAR ── */}
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <p
-                  className="text-[11px] font-bold uppercase tracking-widest"
-                  style={{ color: "var(--text-tertiary)" }}
-                >
-                  Galería · {bgImages.length}{" "}
-                  {bgImages.length === 1 ? "imagen" : "imágenes"}
-                </p>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => openUploadModal(categories[0]?.name || "")}
-                    disabled={categories.length === 0}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Plus size={14} /> Subir
-                  </button>
-                  <button
-                    onClick={() => setIsManagingCategories((v) => !v)}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border-2"
-                    style={{
-                      borderColor: isManagingCategories
-                        ? "#3b82f6"
-                        : "var(--border-color)",
-                      backgroundColor: isManagingCategories
-                        ? "rgba(59,130,246,0.08)"
-                        : "transparent",
-                      color: isManagingCategories
-                        ? "#3b82f6"
-                        : "var(--text-secondary)",
-                    }}
-                  >
-                    <Settings2 size={14} />
-                    <span className="hidden sm:inline">Categorías</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectionMode((v) => !v);
-                      setSelectedImageIds([]);
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all border-2"
-                    style={{
-                      borderColor: selectionMode
-                        ? "#16a34a"
-                        : "var(--border-color)",
-                      backgroundColor: selectionMode
-                        ? "rgba(22,163,74,0.08)"
-                        : "transparent",
-                      color: selectionMode
-                        ? "#16a34a"
-                        : "var(--text-secondary)",
-                    }}
-                  >
-                    <Check size={14} />
-                    <span className="hidden sm:inline">
-                      {selectionMode ? "Listo" : "Seleccionar"}
-                    </span>
-                  </button>
-                </div>
-              </div>
 
               {/* ── CATEGORY MANAGER (collapsible) ── */}
               <AnimatePresence>
@@ -1350,10 +1350,10 @@ export default function EditListModal({
                 onDragStart={handleImageDragStart}
                 onDragEnd={handleImageDragEnd}
               >
-                <div className="space-y-10">
+                <div className="space-y-4">
                   {/* Skeleton while loading */}
                   {loadingImages ? (
-                    <div className="space-y-8">
+                    <div className="space-y-4">
                       {[1, 2].map((s) => (
                         <div key={s} className="space-y-4">
                           <div
@@ -1378,7 +1378,7 @@ export default function EditListModal({
                     </div>
                   ) : displayCategories.length === 0 ? (
                     <div
-                      className="flex flex-col items-center justify-center gap-5 py-24 rounded-3xl border-2 border-dashed"
+                      className="flex flex-col items-center justify-center gap-5 py-12 rounded-3xl border-2 border-dashed"
                       style={{
                         borderColor: "var(--border-color)",
                         backgroundColor: "var(--bg-secondary)",
@@ -1430,7 +1430,7 @@ export default function EditListModal({
                       return (
                         <div key={category.id}>
                           {/* Category header */}
-                          <div className="flex items-center justify-between mb-5">
+                          <div className="flex items-center justify-between mb-2">
                             <button
                               onClick={() => toggleCategory(category.name)}
                               className="flex items-center gap-3 min-w-0 group"
@@ -1587,7 +1587,7 @@ export default function EditListModal({
                                   )}
                                 </SortableContext>
                                 <div
-                                  className="mt-8 border-t"
+                                  className="mt-4 border-t"
                                   style={{
                                     borderColor: "var(--border-color)",
                                   }}
