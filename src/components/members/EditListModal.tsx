@@ -1053,7 +1053,7 @@ export default function EditListModal({
         <div className="p-4 sm:p-5 space-y-5">
           {/* DETAILS SECTION */}
           {
-            <div className="max-w-4xl mx-auto space-y-6">
+            <div className="w-full h-full space-y-6">
               {/* Two-column grid: name/description | emoji/color */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left column */}
