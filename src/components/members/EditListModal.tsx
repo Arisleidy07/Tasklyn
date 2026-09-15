@@ -1024,10 +1024,10 @@ export default function EditListModal({
           )
         }
       >
-        <div className="w-full h-full p-3 sm:p-4 space-y-4">
+        <div className="w-full h-full p-2 sm:p-3 space-y-3">
           {/* DETAILS SECTION */}
           {
-            <div className="w-full h-full space-y-3">
+            <div className="w-full h-full space-y-2">
               {/* Active background preview */}
               {backgroundImage ? (
                 <motion.div
@@ -1100,9 +1100,9 @@ export default function EditListModal({
               )}
 
               {/* Two-column grid: name/description | emoji/color */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Left column */}
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-[var(--text-primary)]">
                       Nombre
@@ -1157,7 +1157,7 @@ export default function EditListModal({
           {/* BACKGROUNDS TAB — PREMIUM */}
           {/* BACKGROUNDS SECTION */}
           {
-            <div className="w-full h-full space-y-3 pb-4">
+            <div className="w-full h-full space-y-2 pb-2">
               {/* ACTIVE BACKGROUND HERO MOVED TO DETAILS SECTION */}
               {/* ── TOOLBAR ── */}
               <div className="flex items-center justify-between gap-3 flex-wrap">
