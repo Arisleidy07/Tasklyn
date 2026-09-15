@@ -48,29 +48,31 @@ export default function ImageUploadModal({
   const isMountedRef = useRef(true);
 
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
-  const [selectedCategory, setSelectedCategory] =
-    useState<string>(defaultCategory);
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [showCategoryMenu, setShowCategoryMenu] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Build category list from availableCategories, ensuring defaultCategory is included
-  const categoryList =
-    availableCategories.length > 0 ? availableCategories : [defaultCategory];
+  // Build category list from availableCategories only
+  const categoryList = availableCategories;
 
-  // ── KEY FIX: every time the modal opens, sync category to the prop ──
+  // Sync selected category to a real available category when the modal opens
   useEffect(() => {
     isMountedRef.current = true;
     if (isOpen) {
-      setSelectedCategory(defaultCategory);
+      const valid =
+        (defaultCategory && categoryList.includes(defaultCategory)
+          ? defaultCategory
+          : categoryList[0]) || "";
+      setSelectedCategory(valid);
       setUploadError(null);
       setShowCategoryMenu(false);
     }
     return () => {
       isMountedRef.current = false;
     };
-  }, [isOpen, defaultCategory]);
+  }, [isOpen, defaultCategory, categoryList]);
 
   const addFiles = useCallback((files: FileList | File[]) => {
     const fileList = Array.from(files);
@@ -137,6 +139,10 @@ export default function ImageUploadModal({
 
   const handleUpload = async () => {
     if (pendingImages.length === 0 || isUploading) return;
+    if (!selectedCategory) {
+      setUploadError("Selecciona o crea una categoría primero.");
+      return;
+    }
     setIsUploading(true);
     setUploadError(null);
     let lastUrl = "";
@@ -172,7 +178,9 @@ export default function ImageUploadModal({
         setUploadError(
           err instanceof Error
             ? err.message
-            : "Error al subir. Verifica tu conexión, el formato y el tamaño.",
+            : typeof err === "string"
+              ? err
+              : "Error del servidor de imágenes. Revisa la consola para más detalles.",
         );
       }
     } finally {
@@ -215,7 +223,7 @@ export default function ImageUploadModal({
           </button>
           <button
             onClick={handleUpload}
-            disabled={isUploading || uploadCount === 0}
+            disabled={isUploading || uploadCount === 0 || !selectedCategory}
             className="flex-1 min-h-[44px] rounded-2xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
             style={{
               background:
@@ -295,8 +303,8 @@ export default function ImageUploadModal({
                 style={{ color: "var(--text-tertiary)" }}
               >
                 {uploadCount > 0
-                  ? `${uploadCount} imagen${uploadCount > 1 ? "es" : ""} seleccionada${uploadCount > 1 ? "s" : ""} · ${selectedCategory}`
-                  : `Categoría: ${selectedCategory}`}
+                  ? `${uploadCount} imagen${uploadCount > 1 ? "es" : ""} seleccionada${uploadCount > 1 ? "s" : ""} · ${selectedCategory || "Sin categoría"}`
+                  : `Categoría: ${selectedCategory || "Sin categoría"}`}
               </p>
             </div>
           </div>
@@ -337,7 +345,9 @@ export default function ImageUploadModal({
                   color: "var(--text-primary)",
                 }}
               >
-                <span className="font-semibold">{selectedCategory}</span>
+                <span className="font-semibold">
+                  {selectedCategory || "Sin categorías"}
+                </span>
                 <ChevronDown
                   size={16}
                   style={{
@@ -362,43 +372,52 @@ export default function ImageUploadModal({
                       border: "1px solid var(--border-color)",
                     }}
                   >
-                    {categoryList.map((cat) => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => {
-                          setSelectedCategory(cat);
-                          setShowCategoryMenu(false);
-                        }}
-                        className="w-full flex items-center justify-between px-4 py-3 text-sm transition-colors"
-                        style={{
-                          color:
-                            selectedCategory === cat
-                              ? "#2563eb"
-                              : "var(--text-primary)",
-                          backgroundColor:
-                            selectedCategory === cat
-                              ? "rgba(37,99,235,0.07)"
-                              : "transparent",
-                          fontWeight: selectedCategory === cat ? 600 : 400,
-                        }}
-                        onMouseEnter={(e) => {
-                          if (selectedCategory !== cat)
-                            e.currentTarget.style.backgroundColor =
-                              "var(--bg-secondary)";
-                        }}
-                        onMouseLeave={(e) => {
-                          if (selectedCategory !== cat)
-                            e.currentTarget.style.backgroundColor =
-                              "transparent";
-                        }}
+                    {categoryList.length === 0 ? (
+                      <div
+                        className="px-4 py-3 text-sm"
+                        style={{ color: "var(--text-tertiary)" }}
                       >
-                        {cat}
-                        {selectedCategory === cat && (
-                          <Check size={14} style={{ color: "#2563eb" }} />
-                        )}
-                      </button>
-                    ))}
+                        No hay categorías. Crea una primero.
+                      </div>
+                    ) : (
+                      categoryList.map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory(cat);
+                            setShowCategoryMenu(false);
+                          }}
+                          className="w-full flex items-center justify-between px-4 py-3 text-sm transition-colors"
+                          style={{
+                            color:
+                              selectedCategory === cat
+                                ? "#2563eb"
+                                : "var(--text-primary)",
+                            backgroundColor:
+                              selectedCategory === cat
+                                ? "rgba(37,99,235,0.07)"
+                                : "transparent",
+                            fontWeight: selectedCategory === cat ? 600 : 400,
+                          }}
+                          onMouseEnter={(e) => {
+                            if (selectedCategory !== cat)
+                              e.currentTarget.style.backgroundColor =
+                                "var(--bg-secondary)";
+                          }}
+                          onMouseLeave={(e) => {
+                            if (selectedCategory !== cat)
+                              e.currentTarget.style.backgroundColor =
+                                "transparent";
+                          }}
+                        >
+                          {cat}
+                          {selectedCategory === cat && (
+                            <Check size={14} style={{ color: "#2563eb" }} />
+                          )}
+                        </button>
+                      ))
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

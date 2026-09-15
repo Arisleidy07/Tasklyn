@@ -331,7 +331,7 @@ export async function uploadBackgroundImage(
     );
     const dataUrl = await fileToCompressedDataUrl(
       file,
-      1920,
+      1400,
       MAX_DATA_URL_LENGTH,
     );
     return { url: dataUrl, storagePath: undefined };

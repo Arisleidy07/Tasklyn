@@ -79,54 +79,6 @@ interface EditListModalProps {
   onClose: () => void;
 }
 
-const DEFAULT_CATEGORIES: BgCategoryConfig[] = [
-  {
-    id: "default-1",
-    name: "Personalizadas",
-    emoji: "⭐",
-    order: 0,
-    createdBy: "system",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "default-2",
-    name: "Naturaleza",
-    emoji: "🌿",
-    order: 1,
-    createdBy: "system",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "default-3",
-    name: "Paisajes",
-    emoji: "🏔️",
-    order: 2,
-    createdBy: "system",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "default-4",
-    name: "Ciudad",
-    emoji: "🏙️",
-    order: 3,
-    createdBy: "system",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "default-5",
-    name: "Abstracto",
-    emoji: "🎨",
-    order: 4,
-    createdBy: "system",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
-
 // Shared list appearance picker (icon + color) is used from @/components/lists/ListAppearancePicker
 
 // =====================================================
@@ -559,8 +511,6 @@ export default function EditListModal({
   // Image manager selection mode
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedImageIds, setSelectedImageIds] = useState<string[]>([]);
-  const [showBulkMove, setShowBulkMove] = useState(false);
-  const [bulkMoveTarget, setBulkMoveTarget] = useState<string>("");
   const [activeBgError, setActiveBgError] = useState(false);
 
   const isMountedRef = useRef(true);
@@ -581,31 +531,11 @@ export default function EditListModal({
     }),
   );
 
-  // Subscribe to categories — if empty, seed defaults into Firestore (real IDs)
-  const seedingRef = useRef(false);
+  // Subscribe to categories — no auto-seed so users have full control
   useEffect(() => {
     if (!isOpen) return;
     setLoadingCategories(true);
-    const unsubscribe = subscribeToBgCategories(async (cats) => {
-      if (cats.length === 0 && !seedingRef.current) {
-        seedingRef.current = true;
-        try {
-          for (const cat of DEFAULT_CATEGORIES) {
-            await addBgCategory({
-              name: cat.name,
-              emoji: cat.emoji,
-              order: cat.order,
-              createdBy: "system",
-            });
-          }
-        } catch (e) {
-          console.error("Error seeding default categories:", e);
-          seedingRef.current = false;
-        }
-        // snapshot will fire again with real docs
-        return;
-      }
-      if (cats.length > 0) seedingRef.current = false;
+    const unsubscribe = subscribeToBgCategories((cats) => {
       setCategories(cats.sort((a, b) => a.order - b.order));
       setLoadingCategories(false);
     });
@@ -637,7 +567,6 @@ export default function EditListModal({
       setIsManagingCategories(false);
       setSelectionMode(false);
       setSelectedImageIds([]);
-      setShowBulkMove(false);
       setActiveBgError(false);
       // Lock body scroll
       document.body.style.overflow = "hidden";
@@ -753,7 +682,7 @@ export default function EditListModal({
     if (!cat) return;
     // Count images directly from bgImages state (not groupedImages useMemo which may be stale)
     const imageCount = bgImages.filter(
-      (img) => (img.category || "Personalizadas") === cat.name,
+      (img) => (img.category || "Sin categoría") === cat.name,
     ).length;
     const otherCats = categories.filter((c) => c.id !== id);
     setDeleteCategoryTarget({ id, name: cat.name, imageCount });
@@ -907,22 +836,6 @@ export default function EditListModal({
     });
   };
 
-  const handleBulkMove = async (targetCategory: string) => {
-    if (!targetCategory || selectedImageIds.length === 0) return;
-    setIsSaving(true);
-    try {
-      for (const id of selectedImageIds) {
-        await handleMoveImageToCategory(id, targetCategory);
-      }
-      setSelectedImageIds([]);
-      setShowBulkMove(false);
-    } catch (e) {
-      console.error("Error moving images:", e);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const openUploadModal = (categoryName: string) => {
     setUploadModalCategory(categoryName);
     setShowUploadModal(true);
@@ -1023,7 +936,7 @@ export default function EditListModal({
       grouped[cat.name] = [];
     });
     bgImages.forEach((img) => {
-      const catName = img.category || "Personalizadas";
+      const catName = img.category || "Sin categoría";
       if (!grouped[catName]) grouped[catName] = [];
       grouped[catName].push(img);
     });
@@ -1039,7 +952,7 @@ export default function EditListModal({
       .map((name, i) => ({
         id: `orphan-${name}`,
         name,
-        emoji: "🖼️",
+        emoji: "",
         order: 1000 + i,
       }));
     return [...categories, ...orphans];
@@ -1076,24 +989,6 @@ export default function EditListModal({
                   style={{ backgroundColor: "#2563eb" }}
                 >
                   <Download size={15} /> Descargar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBulkMoveTarget(
-                      categories.find((c) => c.name !== uploadModalCategory)
-                        ?.name || "",
-                    );
-                    setShowBulkMove(true);
-                  }}
-                  disabled={isDeleting}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95 disabled:opacity-50"
-                  style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  <FolderOpen size={15} /> Mover a carpeta
                 </button>
                 <button
                   type="button"
@@ -1141,7 +1036,7 @@ export default function EditListModal({
           )
         }
       >
-        <div className="p-5 sm:p-6 space-y-8">
+        <div className="p-4 sm:p-5 space-y-5">
           {/* DETAILS SECTION */}
           {
             <div className="max-w-4xl mx-auto space-y-6">
@@ -1209,7 +1104,7 @@ export default function EditListModal({
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="relative rounded-2xl overflow-hidden w-full border-2 shadow-lg h-80"
+                  className="relative rounded-2xl overflow-hidden w-full border-2 shadow-lg h-48 sm:h-80"
                   style={{
                     borderColor: "var(--border-color)",
                     backgroundColor: "var(--bg-secondary)",
@@ -1218,7 +1113,7 @@ export default function EditListModal({
                 >
                   {activeBgError ? (
                     <div
-                      className="w-full h-80 flex flex-col items-center justify-center gap-2"
+                      className="w-full h-full flex flex-col items-center justify-center gap-2"
                       style={{ color: "var(--text-tertiary)" }}
                     >
                       <ImageIcon size={40} />
@@ -1231,7 +1126,7 @@ export default function EditListModal({
                       src={backgroundImage}
                       alt="Fondo activo"
                       onError={() => setActiveBgError(true)}
-                      className="w-full h-80 object-contain"
+                      className="w-full h-full object-contain"
                     />
                   )}
                   <div className="absolute top-3 left-3">
@@ -1288,8 +1183,9 @@ export default function EditListModal({
                     </p>
                   </div>
                   <button
-                    onClick={() => openUploadModal("Personalizadas")}
-                    className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                    onClick={() => openUploadModal(categories[0]?.name || "")}
+                    disabled={categories.length === 0}
+                    className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus size={16} /> Subir imagen
                   </button>
@@ -1307,8 +1203,9 @@ export default function EditListModal({
                 </p>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => openUploadModal("Personalizadas")}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95"
+                    onClick={() => openUploadModal(categories[0]?.name || "")}
+                    disabled={categories.length === 0}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus size={14} /> Subir
                   </button>
@@ -2029,66 +1926,6 @@ export default function EditListModal({
             </div>
           </div>
         )}
-      </Modal>
-
-      <Modal
-        isOpen={showBulkMove}
-        onClose={() => !isSaving && setShowBulkMove(false)}
-        title="Mover imágenes seleccionadas"
-        size="sm"
-        disableClose={isSaving}
-        footer={
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={() => setShowBulkMove(false)}
-              disabled={isSaving}
-              className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-[var(--bg-secondary)] text-[var(--text-secondary)]"
-            >
-              Cancelar
-            </button>
-            <button
-              type="button"
-              onClick={() => handleBulkMove(bulkMoveTarget)}
-              disabled={!bulkMoveTarget || isSaving}
-              className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-blue-500 text-white flex items-center justify-center gap-2"
-            >
-              {isSaving ? (
-                <span className="animate-spin">⟳</span>
-              ) : (
-                <FolderOpen size={14} />
-              )}{" "}
-              Mover
-            </button>
-          </div>
-        }
-      >
-        <div className="p-5 space-y-4">
-          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-            Selecciona la categoría destino para{" "}
-            <strong>{selectedImageIds.length}</strong> imagen
-            {selectedImageIds.length === 1 ? "" : "es"}.
-          </p>
-          <select
-            value={bulkMoveTarget}
-            onChange={(e) => setBulkMoveTarget(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl text-sm border-2 focus:outline-none focus:border-blue-500"
-            style={{
-              backgroundColor: "var(--bg-secondary)",
-              borderColor: "var(--border-color)",
-              color: "var(--text-primary)",
-            }}
-          >
-            <option value="" disabled>
-              Selecciona una categoría
-            </option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.name}>
-                {c.emoji} {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
       </Modal>
     </>
   );
