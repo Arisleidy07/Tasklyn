@@ -699,22 +699,28 @@ export default function EditListModal({
     setIsDeletingCategory(true);
     try {
       const { id, name, imageCount } = deleteCategoryTarget;
+      // Try to move/delete images first, but never let that block the
+      // category deletion. If images fail (e.g. permissions), just log it.
       if (imageCount > 0) {
-        if (deleteCategoryAction === "move" && deleteCategoryMoveTo) {
-          await moveImagesToCategoryBatch(name, deleteCategoryMoveTo);
-        } else {
-          await deleteImagesByCategory(name);
+        try {
+          if (deleteCategoryAction === "move" && deleteCategoryMoveTo) {
+            await moveImagesToCategoryBatch(name, deleteCategoryMoveTo);
+          } else {
+            await deleteImagesByCategory(name);
+          }
+        } catch (imgErr) {
+          console.error("Error cleaning up images for category:", imgErr);
         }
       }
       await deleteBgCategory(id);
       // Optimistic: remove from local state immediately
       setCategories((prev) => prev.filter((c) => c.id !== id));
-      setDeleteCategoryTarget(null);
     } catch (e) {
       console.error("Error deleting category:", e);
       alert("Error al eliminar la categoría. Revisa la consola.");
     } finally {
       setIsDeletingCategory(false);
+      setDeleteCategoryTarget(null);
     }
   };
 
