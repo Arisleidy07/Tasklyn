@@ -39,7 +39,7 @@ const sizeMap: Record<ModalSize, string> = {
   xl: "max-w-4xl",
   task: "max-w-4xl",
   full: "max-w-full sm:max-w-[94vw] lg:max-w-[1280px]",
-  fullscreen: "h-[100dvh] w-screen max-w-none rounded-none",
+  fullscreen: "fixed inset-0 h-full w-full max-w-none rounded-none",
 };
 
 export default function Modal({
@@ -120,7 +120,7 @@ export default function Modal({
             }
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className={cn(
-              "relative z-10 flex flex-col w-full overflow-hidden",
+              "z-10 flex flex-col w-full h-full overflow-hidden",
               size === "fullscreen"
                 ? "rounded-none"
                 : "rounded-t-2xl sm:rounded-2xl max-h-[92dvh] sm:max-h-[90dvh] shadow-[var(--shadow-modal)]",
