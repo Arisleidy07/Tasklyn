@@ -1023,7 +1023,7 @@ export default function EditListModal({
           )
         }
       >
-        <div className="w-full h-full p-3 sm:p-2 pt-2 sm:pt-0 space-y-3 sm:space-y-1">
+        <div className="w-full h-full p-3 sm:p-2 pt-2 sm:pt-0 grid grid-cols-1 lg:grid-cols-2 gap-3 overflow-y-auto">
           {/* DETAILS SECTION */}
           {
             <div className="w-full h-full space-y-2 sm:space-y-0.5">
