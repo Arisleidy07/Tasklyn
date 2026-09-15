@@ -1027,7 +1027,78 @@ export default function EditListModal({
         <div className="w-full h-full p-4 sm:p-5 space-y-5">
           {/* DETAILS SECTION */}
           {
-            <div className="w-full h-full space-y-6">
+            <div className="w-full h-full space-y-5">
+              {/* Active background preview */}
+              {backgroundImage ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="w-full h-auto flex items-start justify-center"
+                >
+                  <div className="relative w-auto h-auto">
+                    {activeBgError ? (
+                      <div
+                        className="w-64 h-64 flex flex-col items-center justify-center gap-2 rounded-2xl"
+                        style={{
+                          backgroundColor: "var(--bg-secondary)",
+                          color: "var(--text-tertiary)",
+                        }}
+                      >
+                        <ImageIcon size={40} />
+                        <p className="text-sm font-medium">
+                          No se pudo cargar el fondo
+                        </p>
+                      </div>
+                    ) : (
+                      <img
+                        src={backgroundImage}
+                        alt="Fondo activo"
+                        onError={() => setActiveBgError(true)}
+                        className="w-auto h-auto max-w-full max-h-[80dvh] rounded-2xl"
+                      />
+                    )}
+                    <div className="absolute top-3 left-3">
+                      <span
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest text-white"
+                        style={{
+                          backgroundColor: "var(--text-success)",
+                          boxShadow: "var(--shadow-sm)",
+                        }}
+                      >
+                        <Check size={10} strokeWidth={3} /> Fondo activo
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleSelectBackground(backgroundImage)}
+                      className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white transition-all hover:scale-105 active:scale-95"
+                      style={{
+                        backgroundColor: "var(--text-error)",
+                        boxShadow: "var(--shadow-sm)",
+                      }}
+                    >
+                      <X size={13} /> Quitar
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <div
+                  className="w-full h-48 flex flex-col items-center justify-center gap-3 rounded-2xl"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    color: "var(--text-tertiary)",
+                  }}
+                >
+                  <ImageIcon size={40} />
+                  <p className="text-sm font-medium">Sin fondo seleccionado</p>
+                  <p
+                    className="text-xs"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    Elige una imagen de la galería o sube la tuya
+                  </p>
+                </div>
+              )}
+
               {/* Two-column grid: name/description | emoji/color */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left column */}
@@ -1087,98 +1158,7 @@ export default function EditListModal({
           {/* BACKGROUNDS SECTION */}
           {
             <div className="w-full h-full space-y-5 pb-4">
-              {/* ── ACTIVE BACKGROUND HERO ── */}
-              {backgroundImage ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="relative rounded-2xl overflow-hidden w-full h-64 sm:h-80 lg:h-96 shadow-lg"
-                  style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    boxShadow: "var(--shadow-card)",
-                  }}
-                >
-                  {activeBgError ? (
-                    <div
-                      className="w-full h-full flex flex-col items-center justify-center gap-2"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
-                      <ImageIcon size={40} />
-                      <p className="text-sm font-medium">
-                        No se pudo cargar el fondo
-                      </p>
-                    </div>
-                  ) : (
-                    <img
-                      src={backgroundImage}
-                      alt="Fondo activo"
-                      onError={() => setActiveBgError(true)}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
-                  <div className="absolute top-3 left-3">
-                    <span
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest text-white"
-                      style={{
-                        backgroundColor: "var(--text-success)",
-                        boxShadow: "var(--shadow-sm)",
-                      }}
-                    >
-                      <Check size={10} strokeWidth={3} /> Fondo activo
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleSelectBackground(backgroundImage)}
-                    className="absolute top-3 right-3 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white transition-all hover:scale-105 active:scale-95"
-                    style={{
-                      backgroundColor: "var(--text-error)",
-                      boxShadow: "var(--shadow-sm)",
-                    }}
-                  >
-                    <X size={13} /> Quitar
-                  </button>
-                </motion.div>
-              ) : (
-                <div
-                  className="relative rounded-3xl border-2 border-dashed flex flex-col items-center justify-center gap-5 py-20 overflow-hidden"
-                  style={{
-                    borderColor: "var(--border-color)",
-                    backgroundColor: "var(--bg-secondary)",
-                  }}
-                >
-                  <div
-                    className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-xl"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0.15) 100%)",
-                    }}
-                  >
-                    <ImageIcon size={34} className="text-blue-400" />
-                  </div>
-                  <div className="text-center space-y-1.5">
-                    <p
-                      className="font-bold text-lg"
-                      style={{ color: "var(--text-primary)" }}
-                    >
-                      Sin fondo seleccionado
-                    </p>
-                    <p
-                      className="text-sm"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
-                      Elige una imagen de la galería o sube la tuya
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => openUploadModal(categories[0]?.name || "")}
-                    disabled={categories.length === 0}
-                    className="flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Plus size={16} /> Subir imagen
-                  </button>
-                </div>
-              )}
-
+              {/* ACTIVE BACKGROUND HERO MOVED TO DETAILS SECTION */}
               {/* ── TOOLBAR ── */}
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <p
