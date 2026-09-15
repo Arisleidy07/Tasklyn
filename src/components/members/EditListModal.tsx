@@ -1024,10 +1024,10 @@ export default function EditListModal({
           )
         }
       >
-        <div className="w-full h-full p-4 sm:p-5 space-y-5">
+        <div className="w-full h-full p-3 sm:p-4 space-y-4">
           {/* DETAILS SECTION */}
           {
-            <div className="w-full h-full space-y-5">
+            <div className="w-full h-full space-y-3">
               {/* Active background preview */}
               {backgroundImage ? (
                 <motion.div
@@ -1054,7 +1054,7 @@ export default function EditListModal({
                         src={backgroundImage}
                         alt="Fondo activo"
                         onError={() => setActiveBgError(true)}
-                        className="w-auto h-auto max-w-full max-h-[80dvh] rounded-2xl"
+                        className="w-auto h-auto max-w-full max-h-[50dvh] rounded-2xl"
                       />
                     )}
                     <div className="absolute top-3 left-3">
@@ -1082,7 +1082,7 @@ export default function EditListModal({
                 </motion.div>
               ) : (
                 <div
-                  className="w-full h-48 flex flex-col items-center justify-center gap-3 rounded-2xl"
+                  className="w-full h-32 flex flex-col items-center justify-center gap-3 rounded-2xl"
                   style={{
                     backgroundColor: "var(--bg-secondary)",
                     color: "var(--text-tertiary)",
@@ -1100,9 +1100,9 @@ export default function EditListModal({
               )}
 
               {/* Two-column grid: name/description | emoji/color */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Left column */}
-                <div className="space-y-5">
+                <div className="space-y-3">
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-[var(--text-primary)]">
                       Nombre
@@ -1157,7 +1157,7 @@ export default function EditListModal({
           {/* BACKGROUNDS TAB — PREMIUM */}
           {/* BACKGROUNDS SECTION */}
           {
-            <div className="w-full h-full space-y-5 pb-4">
+            <div className="w-full h-full space-y-3 pb-4">
               {/* ACTIVE BACKGROUND HERO MOVED TO DETAILS SECTION */}
               {/* ── TOOLBAR ── */}
               <div className="flex items-center justify-between gap-3 flex-wrap">
