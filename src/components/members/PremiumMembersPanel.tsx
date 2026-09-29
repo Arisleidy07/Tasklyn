@@ -52,7 +52,7 @@ export default function PremiumMembersPanel({
         setInviteLink(url);
       }
 
-      const text = `¡Te invito a mi lista “${list.name}” en TASKLYN! 🎉`;
+      const text = `Te invito a unirte a mi lista “${list.name}” en TASKLYN.`;
       if (navigator.share) {
         await navigator.share({
           title: `Invitación a ${list.name}`,

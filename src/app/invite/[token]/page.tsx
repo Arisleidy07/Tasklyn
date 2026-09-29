@@ -34,6 +34,8 @@ export default function InvitePage() {
     | "loading"
     | "invalid"
     | "expired"
+    | "used"
+    | "error"
     | "not-logged-in"
     | "already-member"
     | "ready"
@@ -46,19 +48,39 @@ export default function InvitePage() {
 
   // Load invitation
   useEffect(() => {
+    let cancelled = false;
+
     const load = async () => {
-      const inv = await getInvitation(token);
+      let inv: Awaited<ReturnType<typeof getInvitation>>;
+      try {
+        inv = await getInvitation(token);
+      } catch (err) {
+        console.error("[InvitePage] Error fetching invitation:", err);
+        if (!cancelled) setStatus("error");
+        return;
+      }
+
+      if (cancelled) return;
+
       if (!inv) {
         setStatus("invalid");
         return;
       }
 
-      if (inv.status && inv.status !== "pending") {
-        setStatus("invalid");
+      // A team token opened on the list-invite route: forward to the right page.
+      if (inv.type === "team") {
+        router.replace(`/invite/team/${token}`);
         return;
       }
 
-      if (new Date(inv.expiresAt) < new Date()) {
+      if (inv.status === "accepted" || inv.status === "declined") {
+        setInvitation(inv);
+        setListName(inv.targetName ?? "");
+        setStatus("used");
+        return;
+      }
+
+      if (inv.status === "expired" || new Date(inv.expiresAt) < new Date()) {
         setStatus("expired");
         return;
       }
@@ -80,7 +102,7 @@ export default function InvitePage() {
       if (list) setListName(list.name);
 
       // Check if already member
-      if (list?.members.some((m) => m.userId === user?.id)) {
+      if (list?.members?.some((m) => m.userId === user?.id)) {
         setStatus("already-member");
         return;
       }
@@ -89,7 +111,18 @@ export default function InvitePage() {
     };
 
     load();
-  }, [token, getInvitation, getList, isAuthenticated, isAuthReady, user?.id]);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    token,
+    getInvitation,
+    getList,
+    isAuthenticated,
+    isAuthReady,
+    user?.id,
+    router,
+  ]);
 
   const handleLogin = async () => {
     try {
@@ -170,6 +203,52 @@ export default function InvitePage() {
                 </p>
                 <Button onClick={() => router.push("/")} className="w-full">
                   Ir al inicio
+                </Button>
+              </div>
+            )}
+
+            {status === "used" && (
+              <div className="text-center py-8">
+                <CheckCircle
+                  size={48}
+                  className="mx-auto text-slate-400 mb-4"
+                />
+                <h2 className="text-xl font-bold text-slate-100 mb-2">
+                  Invitación ya utilizada
+                </h2>
+                <p className="text-slate-400 mb-6">
+                  Este enlace de invitación ya fue aceptado o rechazado
+                  anteriormente.
+                </p>
+                <Button
+                  onClick={() =>
+                    router.push(isAuthenticated ? "/dashboard" : "/")
+                  }
+                  className="w-full"
+                >
+                  {isAuthenticated ? "Ir a mis listas" : "Ir al inicio"}
+                </Button>
+              </div>
+            )}
+
+            {status === "error" && (
+              <div className="text-center py-8">
+                <AlertCircle
+                  size={48}
+                  className="mx-auto text-amber-400 mb-4"
+                />
+                <h2 className="text-xl font-bold text-slate-100 mb-2">
+                  No se pudo cargar la invitación
+                </h2>
+                <p className="text-slate-400 mb-6">
+                  Hubo un problema de conexión. Revisa tu internet e inténtalo
+                  de nuevo.
+                </p>
+                <Button
+                  onClick={() => window.location.reload()}
+                  className="w-full"
+                >
+                  Reintentar
                 </Button>
               </div>
             )}
@@ -301,13 +380,13 @@ export default function InvitePage() {
                     className="mx-auto text-blue-500 mb-4"
                   />
                 </motion.div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">
+                <h2 className="text-xl font-bold text-slate-100 mb-2">
                   ¡Bienvenido!
                 </h2>
-                <p className="text-gray-500">
+                <p className="text-slate-400">
                   Te has unido a la lista correctamente.
                 </p>
-                <p className="text-sm text-gray-400 mt-2">Redirigiendo...</p>
+                <p className="text-sm text-slate-500 mt-2">Redirigiendo...</p>
               </div>
             )}
           </div>
