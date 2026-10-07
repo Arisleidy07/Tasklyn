@@ -72,6 +72,14 @@ service firebase.storage {
       allow delete: if isAuth() && isListOwner(listId);
     }
 
+    // Task attachments — read for authenticated users (access controlled via Firestore metadata)
+    // Write/delete is handled through backend functions that check Firestore permissions
+    match /tasks/{taskId}/{allPaths=**} {
+      allow read: if isAuth();
+      allow write: if false;
+      allow delete: if false;
+    }
+
     // Legacy image paths (old uploads before the organized structure).
     // Keep read access so existing profile/team/background photos keep loading.
     match /profile-photos/{userId}/{allPaths=**} {

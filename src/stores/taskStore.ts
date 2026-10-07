@@ -7,7 +7,14 @@ import {
   deleteTask as deleteTaskInDb,
   subscribeToListTasks,
   addTaskHistoryEntry,
+  addTaskAttachment,
+  deleteTaskAttachmentMetadata,
+  subscribeToTaskAttachments,
 } from "@/lib/firestore";
+import {
+  uploadTaskAttachment,
+  deleteTaskAttachment as deleteTaskAttachmentFromStorage,
+} from "@/lib/storage";
 import { canAddMoreTasks } from "@/lib/permissions";
 import { PLAN_FEATURES } from "@/types";
 import type {
@@ -17,6 +24,7 @@ import type {
   TaskHistoryEntry,
   RecurrenceConfig,
   TaskReminder,
+  TaskAttachment,
 } from "@/types";
 import { Unsubscribe } from "firebase/firestore";
 import {
@@ -59,6 +67,11 @@ interface TaskState {
     recurrence?: RecurrenceConfig | null;
     priority?: "low" | "normal" | "medium" | "high" | "urgent";
     tags?: string[];
+    attachments?: Array<{
+      file: File;
+      uploadedBy: string;
+      uploadedByName: string;
+    }>;
   }) => Promise<Task>;
   updateTask: (
     id: string,
@@ -98,6 +111,23 @@ interface TaskState {
   unsubscribeFromList: (listId: string) => void;
   unsubscribeAll: () => void;
   reorderTasks: (taskIds: string[]) => Promise<void>;
+  // Attachment methods
+  addAttachment: (
+    taskId: string,
+    file: File,
+    uploadedBy: string,
+    uploadedByName: string,
+    onProgress?: (progress: number) => void,
+  ) => Promise<string>;
+  deleteAttachment: (
+    taskId: string,
+    attachmentId: string,
+    storagePath: string,
+  ) => Promise<void>;
+  subscribeToAttachments: (
+    taskId: string,
+    callback: (attachments: TaskAttachment[]) => void,
+  ) => Unsubscribe;
 }
 
 // ---- Helper functions ----
@@ -266,6 +296,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     recurrence,
     priority,
     tags,
+    attachments,
   }) => {
     const plan = (useAuthStore.getState().user?.plan || "free") as Plan;
     // El límite se aplica por lista, no de forma global
@@ -309,6 +340,26 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     };
 
     const id = await createTaskInDb(newTaskData);
+
+    // Upload attachments if provided
+    if (attachments && attachments.length > 0) {
+      for (const attachment of attachments) {
+        try {
+          await get().addAttachment(
+            id,
+            attachment.file,
+            attachment.uploadedBy,
+            attachment.uploadedByName,
+          );
+        } catch (error) {
+          console.error(
+            `[createTask] Failed to upload attachment: ${attachment.file.name}`,
+            error,
+          );
+          // Continue with other attachments even if one fails
+        }
+      }
+    }
 
     const createdEntry = createHistoryEntry(
       "created",
@@ -944,5 +995,59 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         return { pendingOrder: newPending };
       });
     }
+  },
+
+  // ---- Attachment methods ----
+
+  addAttachment: async (
+    taskId,
+    file,
+    uploadedBy,
+    uploadedByName,
+    onProgress,
+  ) => {
+    try {
+      // Upload to Storage
+      const { url, storagePath, category } = await uploadTaskAttachment(
+        taskId,
+        file,
+        onProgress,
+      );
+
+      // Save metadata to Firestore
+      const attachmentId = await addTaskAttachment(taskId, {
+        taskId,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        category,
+        url,
+        storagePath,
+        uploadedBy,
+        uploadedByName,
+      });
+
+      return attachmentId;
+    } catch (error) {
+      console.error("[addAttachment] Failed to add attachment:", error);
+      throw error;
+    }
+  },
+
+  deleteAttachment: async (taskId, attachmentId, storagePath) => {
+    try {
+      // Delete from Storage
+      await deleteTaskAttachmentFromStorage(storagePath);
+
+      // Delete metadata from Firestore
+      await deleteTaskAttachmentMetadata(taskId, attachmentId);
+    } catch (error) {
+      console.error("[deleteAttachment] Failed to delete attachment:", error);
+      throw error;
+    }
+  },
+
+  subscribeToAttachments: (taskId, callback) => {
+    return subscribeToTaskAttachments(taskId, callback);
   },
 }));

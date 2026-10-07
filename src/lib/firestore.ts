@@ -61,6 +61,7 @@ import type {
   Client,
   TeamScore,
   Background,
+  TaskAttachment,
 } from "@/types";
 
 // ---- SubcollectionTeamMember (stored at teams/{teamId}/members/{userId}) ----
@@ -2230,6 +2231,49 @@ export const subscribeToTaskCommentsSubcollection = (
         updatedAt: toDate(d.data().updatedAt),
       })) as unknown as TaskComment[];
       callback(comments);
+    },
+    () => callback([]),
+  );
+};
+
+// ---- Task Attachments subcollection ----
+
+export const addTaskAttachment = async (
+  taskId: string,
+  attachment: Omit<TaskAttachment, "id" | "createdAt">,
+): Promise<string> => {
+  const ref = doc(collection(db, "tasks", taskId, "attachments"));
+  await setDoc(ref, {
+    ...stripUndefined(attachment),
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
+export const deleteTaskAttachmentMetadata = async (
+  taskId: string,
+  attachmentId: string,
+): Promise<void> => {
+  await deleteDoc(doc(db, "tasks", taskId, "attachments", attachmentId));
+};
+
+export const subscribeToTaskAttachments = (
+  taskId: string,
+  callback: (attachments: TaskAttachment[]) => void,
+): Unsubscribe => {
+  const q = query(
+    collection(db, "tasks", taskId, "attachments"),
+    orderBy("createdAt", "desc"),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const attachments = snap.docs.map((d) => ({
+        ...d.data(),
+        id: d.id,
+        createdAt: toDate(d.data().createdAt),
+      })) as unknown as TaskAttachment[];
+      callback(attachments);
     },
     () => callback([]),
   );

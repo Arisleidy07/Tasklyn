@@ -7,6 +7,7 @@
 import {
   ref,
   uploadBytes,
+  uploadBytesResumable,
   getDownloadURL,
   deleteObject,
 } from "firebase/storage";
@@ -22,6 +23,41 @@ const ALLOWED_TYPES = [
 ];
 
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+
+// Task attachment allowed types
+const ALLOWED_ATTACHMENT_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "video/mp4",
+  "video/quicktime",
+  "video/webm",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/plain",
+];
+
+const ALLOWED_ATTACHMENT_EXTENSIONS = [
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".gif",
+  ".mp4",
+  ".mov",
+  ".webm",
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".txt",
+];
 
 // Firestore documents have a ~1 MiB limit; keep data URLs well below it.
 const MAX_DATA_URL_LENGTH = 750_000;
@@ -347,5 +383,144 @@ export async function deleteBackgroundImage(
     await deleteObject(storageRef);
   } catch (error) {
     console.warn("Failed to delete background image from Storage:", error);
+  }
+}
+
+// --- Task attachments -----------------------------------------------------
+
+export interface AttachmentValidationOptions {
+  maxSizeBytes?: number;
+  allowedTypes?: string[];
+}
+
+/**
+ * Validate and prepare attachment file for upload.
+ * Checks MIME type and file size. Returns the file unchanged if valid.
+ */
+export async function prepareAttachmentFile(
+  file: File,
+  options: AttachmentValidationOptions = {},
+): Promise<File> {
+  const {
+    maxSizeBytes = 50 * 1024 * 1024, // 50MB default
+    allowedTypes = ALLOWED_ATTACHMENT_TYPES,
+  } = options;
+
+  if (file.size === 0) {
+    throw new Error("El archivo está vacío");
+  }
+
+  if (file.size > maxSizeBytes) {
+    throw new Error(
+      `El archivo es demasiado grande. Máximo ${(maxSizeBytes / 1024 / 1024).toFixed(0)} MB.`,
+    );
+  }
+
+  if (!allowedTypes.includes(file.type.toLowerCase())) {
+    throw new Error(
+      `Formato no soportado. Usa: ${allowedTypes
+        .map((t) => t.split("/")[1])
+        .join(", ")}`,
+    );
+  }
+
+  return file;
+}
+
+function attachmentFileExtension(fileName: string): string {
+  const ext = fileName.split(".").pop()?.toLowerCase() || "";
+  return ALLOWED_ATTACHMENT_EXTENSIONS.includes(`.${ext}`) ? ext : "bin";
+}
+
+function safeAttachmentFileName(file: File): string {
+  const base = file.name
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9_.-]/g, "")
+    .replace(/\.[^/.]+$/, "");
+  const id = nanoid(10);
+  return `${base || "file"}_${id}.${attachmentFileExtension(file.name)}`;
+}
+
+function getAttachmentCategory(file: File): "image" | "video" | "file" {
+  if (file.type.startsWith("image/")) return "image";
+  if (file.type.startsWith("video/")) return "video";
+  return "file";
+}
+
+export interface TaskAttachmentUploadResult {
+  url: string;
+  storagePath: string;
+  category: "image" | "video" | "file";
+}
+
+/**
+ * Upload a task attachment to Firebase Storage.
+ * Supports images, videos, and documents.
+ */
+export async function uploadTaskAttachment(
+  taskId: string,
+  file: File,
+  onProgress?: (progress: number) => void,
+): Promise<TaskAttachmentUploadResult> {
+  const validatedFile = await prepareAttachmentFile(file);
+  const category = getAttachmentCategory(validatedFile);
+  const fileName = safeAttachmentFileName(validatedFile);
+  const storagePath = `tasks/${taskId}/attachments/${fileName}`;
+
+  const storageRef = ref(storage, storagePath);
+
+  // Upload with progress tracking if callback provided
+  if (onProgress) {
+    const uploadTask = uploadBytesResumable(storageRef, validatedFile, {
+      contentType: validatedFile.type,
+    });
+
+    return new Promise((resolve, reject) => {
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          onProgress(progress);
+        },
+        (error) => {
+          console.error("[uploadTaskAttachment] Upload failed:", error);
+          reject(error);
+        },
+        async () => {
+          try {
+            const url = await getDownloadURL(storageRef);
+            resolve({ url, storagePath, category });
+          } catch (error) {
+            console.error(
+              "[uploadTaskAttachment] Failed to get download URL:",
+              error,
+            );
+            reject(error);
+          }
+        },
+      );
+    });
+  } else {
+    // Simple upload without progress tracking
+    await uploadBytes(storageRef, validatedFile, {
+      contentType: validatedFile.type,
+    });
+    const url = await getDownloadURL(storageRef);
+    return { url, storagePath, category };
+  }
+}
+
+/**
+ * Delete a task attachment from Firebase Storage.
+ */
+export async function deleteTaskAttachment(storagePath: string): Promise<void> {
+  if (!storagePath || storagePath.startsWith("data:")) return;
+  try {
+    const storageRef = ref(storage, storagePath);
+    await deleteObject(storageRef);
+  } catch (error) {
+    console.warn("Failed to delete task attachment from Storage:", error);
+    throw error;
   }
 }

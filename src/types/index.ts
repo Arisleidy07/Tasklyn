@@ -382,6 +382,23 @@ export interface TaskComment {
   editedBy?: string;
 }
 
+// ---- Task Attachments ----
+export type AttachmentCategory = "image" | "video" | "file";
+
+export interface TaskAttachment {
+  id: string;
+  taskId: string;
+  name: string;
+  type: string; // MIME type
+  size: number; // bytes
+  category: AttachmentCategory;
+  url: string;
+  storagePath: string;
+  uploadedBy: string;
+  uploadedByName?: string;
+  createdAt: string;
+}
+
 // ---- Clients ----
 export interface Client {
   id: string;

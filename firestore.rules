@@ -157,6 +157,14 @@ service cloud.firestore {
         allow update: if isAuth() && resource.data.userId == uid();
         allow delete: if isAuth() && resource.data.userId == uid();
       }
+
+      // Task attachments subcollection
+      match /attachments/{attachmentId} {
+        allow read: if isAuth();
+        allow create: if isAuth() && request.resource.data.uploadedBy == uid();
+        allow update: if false; // Attachments are immutable
+        allow delete: if isAuth() && resource.data.uploadedBy == uid();
+      }
     }
 
     match /invitations/{invitationId} {

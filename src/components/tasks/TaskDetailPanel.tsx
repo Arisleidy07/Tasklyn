@@ -10,7 +10,7 @@ import React, {
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { Task, MemberRole, TaskHistoryEntry } from "@/types";
+import { Task, MemberRole, TaskHistoryEntry, TaskAttachment } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import { canEditTask, canDeleteTask, canArchiveTask } from "@/lib/permissions";
@@ -41,6 +41,12 @@ import {
   ChevronDown,
   Plus,
   AlertCircle,
+  Paperclip,
+  Upload,
+  Image as ImageIcon,
+  Video,
+  Download,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -314,6 +320,12 @@ export default function TaskDetailPanel({
   const [historyLimit, setHistoryLimit] = useState(5);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
+    {},
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const pendingSaveRef = useRef<{
     field: string;
@@ -458,6 +470,17 @@ export default function TaskDetailPanel({
     const unsubscribe = subscribeToTaskHistory(task.id, (entries) => {
       setHistory(entries);
     });
+    return () => unsubscribe();
+  }, [task?.id, isOpen]);
+
+  // Subscribe to attachments subcollection
+  useEffect(() => {
+    if (!task?.id || !isOpen) return;
+    const unsubscribe = useTaskStore
+      .getState()
+      .subscribeToAttachments(task.id, (atts) => {
+        setAttachments(atts);
+      });
     return () => unsubscribe();
   }, [task?.id, isOpen]);
 
@@ -607,6 +630,64 @@ export default function TaskDetailPanel({
   };
 
   const assignedName = localAssignedTo ? resolveName(localAssignedTo) : null;
+
+  // Attachment handlers
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length || !user || !task) return;
+
+    setIsUploading(true);
+    const newProgress: Record<string, number> = {};
+
+    try {
+      for (const file of files) {
+        const fileId = `${file.name}-${file.size}`;
+        newProgress[fileId] = 0;
+        setUploadProgress({ ...newProgress });
+
+        await useTaskStore
+          .getState()
+          .addAttachment(task.id, file, user.id, user.name, (progress) => {
+            setUploadProgress((prev) => ({
+              ...prev,
+              [fileId]: progress,
+            }));
+          });
+
+        newProgress[fileId] = 100;
+        setUploadProgress({ ...newProgress });
+      }
+      showToast("Archivos subidos correctamente");
+    } catch (error) {
+      console.error("[handleFileSelect] Failed to upload:", error);
+      showToast("Error al subir archivos");
+    } finally {
+      setIsUploading(false);
+      setUploadProgress({});
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleDeleteAttachment = async (attachment: TaskAttachment) => {
+    if (!task || !user) return;
+
+    try {
+      await useTaskStore
+        .getState()
+        .deleteAttachment(task.id, attachment.id, attachment.storagePath);
+      showToast("Archivo eliminado");
+    } catch (error) {
+      console.error("[handleDeleteAttachment] Failed to delete:", error);
+      showToast("Error al eliminar archivo");
+    }
+  };
+
+  // Group attachments by category
+  const images = attachments.filter((a) => a.category === "image");
+  const videos = attachments.filter((a) => a.category === "video");
+  const files = attachments.filter((a) => a.category === "file");
 
   // ─── PANEL CONTENT ─────────────────────────────────────────────
   const panelContent = (
@@ -1271,6 +1352,229 @@ export default function TaskDetailPanel({
               </AnimatePresence>
             </div>
           </Section>
+
+          {/* Attachments */}
+          {(canEdit || attachments.length > 0) && (
+            <Section
+              icon={
+                <Paperclip
+                  size={16}
+                  style={{ color: "var(--text-tertiary)" }}
+                />
+              }
+              label="Archivos"
+              action={
+                canEdit && (
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                )
+              }
+            >
+              <div className="space-y-4">
+                {/* Upload button */}
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="w-full h-10 px-4 rounded-lg text-sm flex items-center justify-center gap-2 border border-dashed transition-all hover:border-[var(--border-input-focus)] disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{
+                      borderColor: "var(--border-color)",
+                      backgroundColor: "var(--bg-secondary)",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Subiendo...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={16} />
+                        <span>Agregar archivos</span>
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {/* Images */}
+                {images.length > 0 && (
+                  <div>
+                    <p
+                      className="text-[11px] font-semibold uppercase tracking-wide mb-2"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      Imágenes
+                    </p>
+                    <div className="grid grid-cols-3 gap-2">
+                      {images.map((img) => (
+                        <div
+                          key={img.id}
+                          className="relative aspect-square rounded-lg overflow-hidden group"
+                          style={{
+                            backgroundColor: "var(--bg-secondary)",
+                            border: "1px solid var(--border-color)",
+                          }}
+                        >
+                          <img
+                            src={img.url}
+                            alt={img.name}
+                            className="w-full h-full object-cover cursor-pointer"
+                            onClick={() => window.open(img.url, "_blank")}
+                          />
+                          {canEdit && (
+                            <button
+                              onClick={() => handleDeleteAttachment(img)}
+                              className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                              style={{
+                                backgroundColor: "rgba(0,0,0,0.6)",
+                                color: "white",
+                              }}
+                            >
+                              <X size={12} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Videos */}
+                {videos.length > 0 && (
+                  <div>
+                    <p
+                      className="text-[11px] font-semibold uppercase tracking-wide mb-2"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      Videos
+                    </p>
+                    <div className="space-y-2">
+                      {videos.map((vid) => (
+                        <div
+                          key={vid.id}
+                          className="relative rounded-lg overflow-hidden"
+                          style={{
+                            backgroundColor: "var(--bg-secondary)",
+                            border: "1px solid var(--border-color)",
+                          }}
+                        >
+                          <video
+                            src={vid.url}
+                            controls
+                            className="w-full max-h-64"
+                          />
+                          {canEdit && (
+                            <button
+                              onClick={() => handleDeleteAttachment(vid)}
+                              className="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center"
+                              style={{
+                                backgroundColor: "rgba(0,0,0,0.6)",
+                                color: "white",
+                              }}
+                            >
+                              <X size={16} />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Files */}
+                {files.length > 0 && (
+                  <div>
+                    <p
+                      className="text-[11px] font-semibold uppercase tracking-wide mb-2"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      Archivos
+                    </p>
+                    <div className="space-y-2">
+                      {files.map((file) => (
+                        <div
+                          key={file.id}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                          style={{
+                            backgroundColor: "var(--bg-secondary)",
+                            border: "1px solid var(--border-color)",
+                          }}
+                        >
+                          <FileText
+                            size={16}
+                            style={{ color: "var(--text-tertiary)" }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className="text-sm truncate"
+                              style={{ color: "var(--text-primary)" }}
+                            >
+                              {file.name}
+                            </p>
+                            <p
+                              className="text-xs"
+                              style={{ color: "var(--text-tertiary)" }}
+                            >
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <a
+                              href={file.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-md transition-colors hover:bg-[var(--bg-hover)]"
+                              style={{ color: "var(--text-secondary)" }}
+                              title="Abrir"
+                            >
+                              <ExternalLink size={14} />
+                            </a>
+                            <a
+                              href={file.url}
+                              download={file.name}
+                              className="p-1.5 rounded-md transition-colors hover:bg-[var(--bg-hover)]"
+                              style={{ color: "var(--text-secondary)" }}
+                              title="Descargar"
+                            >
+                              <Download size={14} />
+                            </a>
+                            {canEdit && (
+                              <button
+                                onClick={() => handleDeleteAttachment(file)}
+                                className="p-1.5 rounded-md transition-colors hover:bg-[var(--bg-hover)]"
+                                style={{ color: "var(--text-error)" }}
+                                title="Eliminar"
+                              >
+                                <X size={14} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* No attachments message */}
+                {attachments.length === 0 && !isUploading && (
+                  <p
+                    className="text-sm text-center py-4"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    Sin archivos adjuntos
+                  </p>
+                )}
+              </div>
+            </Section>
+          )}
 
           {/* Divider */}
           <div

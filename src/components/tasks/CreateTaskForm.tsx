@@ -1,12 +1,22 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Button from "@/components/ui/Button";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import type { Task } from "@/types";
-import { Plus, X, Phone, MapPin, Tag, Flag, AlertCircle } from "lucide-react";
+import {
+  Plus,
+  X,
+  Phone,
+  MapPin,
+  Tag,
+  Flag,
+  AlertCircle,
+  Paperclip,
+  Upload,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface CreateTaskFormProps {
@@ -29,6 +39,11 @@ export default function CreateTaskForm({
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
+    {},
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { user } = useAuthStore();
   const { createTask } = useTaskStore();
@@ -42,6 +57,8 @@ export default function CreateTaskForm({
     setTags([]);
     setTagInput("");
     setError(null);
+    setSelectedFiles([]);
+    setUploadProgress({});
   };
 
   const handleAddPhone = () => setPhoneNumbers((p) => [...p, ""]);
@@ -53,12 +70,27 @@ export default function CreateTaskForm({
     setPhoneNumbers(next);
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setSelectedFiles((prev) => [...prev, ...files]);
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !user) return;
 
     const validPhones = phoneNumbers.filter((p) => p.trim());
     try {
+      const attachments = selectedFiles.map((file) => ({
+        file,
+        uploadedBy: user.id,
+        uploadedByName: user.name,
+      }));
+
       await createTask({
         listId,
         title: title.trim(),
@@ -68,6 +100,7 @@ export default function CreateTaskForm({
         phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
         priority: priority || undefined,
         tags: tags.length > 0 ? tags : undefined,
+        attachments,
       });
       reset();
       setIsOpen(false);
@@ -367,6 +400,84 @@ export default function CreateTaskForm({
                       <X size={10} />
                     </button>
                   </span>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* File Attachments */}
+        <div>
+          <label
+            className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide mb-1.5"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            <Paperclip size={12} />
+            Archivos adjuntos
+          </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full h-11 px-4 rounded-xl text-sm flex items-center justify-center gap-2 border border-dashed transition-all hover:border-[var(--border-input-focus)]"
+            style={{
+              borderColor: "var(--border-color)",
+              backgroundColor: "var(--bg-secondary)",
+              color: "var(--text-secondary)",
+            }}
+          >
+            <Upload size={16} />
+            <span>Seleccionar archivos</span>
+          </button>
+          <AnimatePresence>
+            {selectedFiles.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex flex-col gap-2 mt-2"
+              >
+                {selectedFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      border: "1px solid var(--border-color)",
+                    }}
+                  >
+                    <Paperclip
+                      size={14}
+                      style={{ color: "var(--text-tertiary)" }}
+                    />
+                    <span
+                      className="flex-1 truncate"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      {file.name}
+                    </span>
+                    <span
+                      className="text-xs"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(index)}
+                      className="hover:opacity-70 transition-opacity"
+                      style={{ color: "var(--text-error)" }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                 ))}
               </motion.div>
             )}
