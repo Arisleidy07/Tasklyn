@@ -325,6 +325,8 @@ export default function TaskDetailPanel({
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
     {},
   );
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const pendingSaveRef = useRef<{
@@ -664,9 +666,9 @@ export default function TaskDetailPanel({
     } finally {
       setIsUploading(false);
       setUploadProgress({});
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      if (imageInputRef.current) imageInputRef.current.value = "";
+      if (videoInputRef.current) videoInputRef.current.value = "";
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -1363,45 +1365,101 @@ export default function TaskDetailPanel({
                 />
               }
               label="Archivos"
-              action={
-                canEdit && (
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                  />
-                )
-              }
             >
               <div className="space-y-4">
-                {/* Upload button */}
+                {/* Hidden file inputs */}
                 {canEdit && (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="w-full h-10 px-4 rounded-lg text-sm flex items-center justify-center gap-2 border border-dashed transition-all hover:border-[var(--border-input-focus)] disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{
-                      borderColor: "var(--border-color)",
-                      backgroundColor: "var(--bg-secondary)",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    {isUploading ? (
-                      <>
+                  <>
+                    <input
+                      ref={imageInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <input
+                      ref={videoInputRef}
+                      type="file"
+                      multiple
+                      accept="video/*"
+                      capture="environment"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                  </>
+                )}
+
+                {/* Upload buttons */}
+                {canEdit && (
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => imageInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        color: "var(--text-secondary)",
+                        border: "1px solid var(--border-color)",
+                      }}
+                    >
+                      {isUploading ? (
                         <Loader2 size={16} className="animate-spin" />
-                        <span>Subiendo...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Upload size={16} />
-                        <span>Agregar archivos</span>
-                      </>
-                    )}
-                  </button>
+                      ) : (
+                        <ImageIcon size={16} />
+                      )}
+                      <span className="hidden sm:inline">Fotos</span>
+                      <span className="sm:hidden">Fotos</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => videoInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        color: "var(--text-secondary)",
+                        border: "1px solid var(--border-color)",
+                      }}
+                    >
+                      {isUploading ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Video size={16} />
+                      )}
+                      <span className="hidden sm:inline">Videos</span>
+                      <span className="sm:hidden">Videos</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        color: "var(--text-secondary)",
+                        border: "1px solid var(--border-color)",
+                      }}
+                    >
+                      {isUploading ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <FileText size={16} />
+                      )}
+                      <span className="hidden sm:inline">Archivos</span>
+                      <span className="sm:hidden">Archivos</span>
+                    </button>
+                  </div>
                 )}
 
                 {/* Images */}
