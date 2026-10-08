@@ -9,11 +9,9 @@ export async function GET() {
   const businessPlanId = process.env.PAYPAL_BUSINESS_PLAN_ID;
   const productId = process.env.PAYPAL_PRODUCT_ID;
 
+  // Return empty object if PayPal is not configured (plan restrictions are disabled)
   if (!proPlanId || !businessPlanId) {
-    return NextResponse.json(
-      { error: "PayPal plans not configured" },
-      { status: 500 },
-    );
+    return NextResponse.json({});
   }
 
   return NextResponse.json({
