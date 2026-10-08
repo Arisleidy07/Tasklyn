@@ -298,21 +298,6 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     tags,
     attachments,
   }) => {
-    const plan = (useAuthStore.getState().user?.plan || "free") as Plan;
-    // El límite se aplica por lista, no de forma global
-    const activeTaskCount = get().tasks.filter(
-      (task) =>
-        task.listId === listId &&
-        task.createdBy === createdBy &&
-        task.isDeleted !== true,
-    ).length;
-    if (!canAddMoreTasks(activeTaskCount, plan)) {
-      const planFeatures = PLAN_FEATURES[plan] || PLAN_FEATURES["free"];
-      throw new Error(
-        `Has alcanzado el límite de ${planFeatures.maxTasksPerList} tareas en esta lista para tu plan.`,
-      );
-    }
-
     const list = useListStore
       .getState()
       .lists.find((item) => item.id === listId);

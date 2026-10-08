@@ -33,6 +33,10 @@ import {
   UserPlus,
   Flag,
   ListChecks,
+  Paperclip,
+  Image as ImageIcon,
+  Video,
+  FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -68,11 +72,15 @@ export default function ListDetailPage() {
   const [newTaskReminder, setNewTaskReminder] = useState("");
   const [newTaskAssignee, setNewTaskAssignee] = useState("");
   const [showMoreFields, setShowMoreFields] = useState(false);
+  const [newTaskFiles, setNewTaskFiles] = useState<File[]>([]);
   const limits = usePlanLimits();
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [createTaskError, setCreateTaskError] = useState<string | null>(null);
   const [bgError, setBgError] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const list = getList(listId);
 
@@ -218,7 +226,11 @@ export default function ListDetailPage() {
     setNewTaskReminder("");
     setNewTaskAssignee("");
     setShowMoreFields(false);
+    setNewTaskFiles([]);
     setCreateTaskError(null);
+    if (imageInputRef.current) imageInputRef.current.value = "";
+    if (videoInputRef.current) videoInputRef.current.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const closeTaskModal = () => {
@@ -235,6 +247,12 @@ export default function ListDetailPage() {
     try {
       // Filter out empty phone numbers
       const validPhones = newTaskPhones.filter((p) => p.trim());
+
+      const attachments = newTaskFiles.map((file) => ({
+        file,
+        uploadedBy: user.id,
+        uploadedByName: user.name,
+      }));
 
       await createTask({
         listId,
@@ -260,6 +278,7 @@ export default function ListDetailPage() {
           limits.features.canAssign && newTaskAssignee
             ? newTaskAssignee
             : undefined,
+        attachments,
       });
 
       closeTaskModal();
@@ -287,6 +306,25 @@ export default function ListDetailPage() {
     const newPhones = [...newTaskPhones];
     newPhones[index] = value;
     setNewTaskPhones(newPhones);
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setNewTaskFiles((prev) => [...prev, ...files]);
+  };
+
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setNewTaskFiles((prev) => [...prev, ...files]);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    setNewTaskFiles((prev) => [...prev, ...files]);
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setNewTaskFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleBackClick = () => {
@@ -1179,6 +1217,161 @@ export default function ListDetailPage() {
                           color: "var(--text-primary)",
                         }}
                       />
+                    </div>
+
+                    {/* Archivos adjuntos */}
+                    <div>
+                      <label
+                        className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide mb-2"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        <Paperclip size={12} />
+                        Archivos adjuntos
+                      </label>
+
+                      {/* Hidden file inputs */}
+                      <input
+                        ref={imageInputRef}
+                        type="file"
+                        multiple
+                        accept="image/*"
+                        capture="environment"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                      />
+                      <input
+                        ref={videoInputRef}
+                        type="file"
+                        multiple
+                        accept="video/*"
+                        capture="environment"
+                        onChange={handleVideoSelect}
+                        className="hidden"
+                      />
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+
+                      {/* Action buttons */}
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => imageInputRef.current?.click()}
+                          className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+                          style={{
+                            backgroundColor: "var(--bg-secondary)",
+                            color: "var(--text-secondary)",
+                            border: "1px solid var(--border-color)",
+                          }}
+                        >
+                          <ImageIcon size={16} />
+                          <span className="hidden sm:inline">Fotos</span>
+                          <span className="sm:hidden">Fotos</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => videoInputRef.current?.click()}
+                          className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+                          style={{
+                            backgroundColor: "var(--bg-secondary)",
+                            color: "var(--text-secondary)",
+                            border: "1px solid var(--border-color)",
+                          }}
+                        >
+                          <Video size={16} />
+                          <span className="hidden sm:inline">Videos</span>
+                          <span className="sm:hidden">Videos</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+                          style={{
+                            backgroundColor: "var(--bg-secondary)",
+                            color: "var(--text-secondary)",
+                            border: "1px solid var(--border-color)",
+                          }}
+                        >
+                          <FileText size={16} />
+                          <span className="hidden sm:inline">Archivos</span>
+                          <span className="sm:hidden">Archivos</span>
+                        </button>
+                      </div>
+
+                      {/* Selected files preview */}
+                      <AnimatePresence>
+                        {newTaskFiles.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="flex flex-col gap-2 mt-3"
+                          >
+                            {newTaskFiles.map((file, index) => {
+                              const isImage = file.type.startsWith("image/");
+                              const isVideo = file.type.startsWith("video/");
+
+                              return (
+                                <div
+                                  key={index}
+                                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
+                                  style={{
+                                    backgroundColor: "var(--bg-secondary)",
+                                    border: "1px solid var(--border-color)",
+                                  }}
+                                >
+                                  {isImage ? (
+                                    <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0 bg-gray-100">
+                                      <img
+                                        src={URL.createObjectURL(file)}
+                                        alt={file.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                  ) : isVideo ? (
+                                    <Video
+                                      size={20}
+                                      style={{ color: "var(--text-tertiary)" }}
+                                    />
+                                  ) : (
+                                    <FileText
+                                      size={20}
+                                      style={{ color: "var(--text-tertiary)" }}
+                                    />
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <p
+                                      className="text-sm truncate"
+                                      style={{ color: "var(--text-primary)" }}
+                                    >
+                                      {file.name}
+                                    </p>
+                                    <p
+                                      className="text-xs"
+                                      style={{ color: "var(--text-tertiary)" }}
+                                    >
+                                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                                    </p>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveFile(index)}
+                                    className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 transition-colors hover:bg-[var(--bg-hover)]"
+                                    style={{ color: "var(--text-error)" }}
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </div>
                 </motion.div>

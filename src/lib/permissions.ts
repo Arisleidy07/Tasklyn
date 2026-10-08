@@ -69,48 +69,42 @@ function getPlanFeatures(plan: Plan | string | undefined): PlanFeatures {
   return PLAN_FEATURES[validPlan] || PLAN_FEATURES["free"];
 }
 
-// Plan-based checks
+// Plan-based checks - Temporarily disabled all restrictions
 export function canCreateMoreLists(
   currentCount: number,
   plan: Plan | string | undefined,
 ): boolean {
-  const features = getPlanFeatures(plan);
-  return currentCount < features.maxLists;
+  return true;
 }
 
 export function canAddMoreTasks(
   currentCount: number,
   plan: Plan | string | undefined,
 ): boolean {
-  const features = getPlanFeatures(plan);
-  return currentCount < features.maxTasksPerList;
+  return true;
 }
 
 export function canAddMoreMembers(
   currentCount: number,
   plan: Plan | string | undefined,
 ): boolean {
-  const features = getPlanFeatures(plan);
-  return currentCount < features.maxCollaborators;
+  return true;
 }
 
 export function canAssignTasks(plan: Plan | string | undefined): boolean {
-  const features = getPlanFeatures(plan);
-  return features.canAssign;
+  return true;
 }
 
 export function canCreateMoreTeams(
   currentCount: number,
   plan: Plan | string | undefined,
 ): boolean {
-  const features = getPlanFeatures(plan);
-  return currentCount < features.maxTeams;
+  return true;
 }
 
 export function canAddMoreTeamMembers(
   currentCount: number,
   plan: Plan | string | undefined,
 ): boolean {
-  const features = getPlanFeatures(plan);
-  return currentCount < features.maxTeamMembers;
+  return true;
 }

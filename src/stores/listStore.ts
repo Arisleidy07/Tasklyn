@@ -95,17 +95,6 @@ export const useListStore = create<ListState>((set, get) => ({
     ),
 
   createList: async (name, owner, type, description, teamId, appearance) => {
-    const plan = (useAuthStore.getState().user?.plan || "free") as Plan;
-    const ownedListCount = get().lists.filter(
-      (list) => list.owner === owner,
-    ).length;
-    if (!canCreateMoreLists(ownedListCount, plan)) {
-      const planFeatures = PLAN_FEATURES[plan] || PLAN_FEATURES["free"];
-      throw new Error(
-        `Has alcanzado el límite de ${planFeatures.maxLists} listas de tu plan.`,
-      );
-    }
-
     const newListData: Omit<TaskList, "id" | "createdAt"> = {
       name,
       owner,

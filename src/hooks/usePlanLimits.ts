@@ -24,106 +24,84 @@ export function usePlanLimits() {
       plan,
       features,
 
-      // Check if user can create a new list
+      // Check if user can create a new list - No restrictions
       canCreateList: (currentListCount: number): LimitCheck => {
-        const limit = features.maxLists;
-        const allowed = limit === Infinity || currentListCount < limit;
         return {
-          allowed,
+          allowed: true,
           current: currentListCount,
-          limit,
-          message: allowed
-            ? ""
-            : `Has alcanzado el límite de ${limit} listas. Actualiza a Pro para listas ilimitadas.`,
+          limit: Infinity,
+          message: "",
         };
       },
 
-      // Check if user can create a new task
+      // Check if user can create a new task - No restrictions
       canCreateTask: (currentTaskCount: number): LimitCheck => {
-        const limit = features.maxTasksPerList;
-        const allowed = limit === Infinity || currentTaskCount < limit;
         return {
-          allowed,
+          allowed: true,
           current: currentTaskCount,
-          limit,
-          message: allowed
-            ? ""
-            : `Has alcanzado el límite de ${limit} tareas. Actualiza a Pro para tareas ilimitadas.`,
+          limit: Infinity,
+          message: "",
         };
       },
 
-      // Check if user can add a collaborator
+      // Check if user can add a collaborator - No restrictions
       canAddCollaborator: (currentMemberCount: number): LimitCheck => {
-        const limit = features.maxCollaborators;
-        const allowed = limit === Infinity || currentMemberCount < limit;
         return {
-          allowed,
+          allowed: true,
           current: currentMemberCount,
-          limit,
-          message: allowed
-            ? ""
-            : `Has alcanzado el límite de ${limit} colaboradores. Actualiza a Pro para colaboradores ilimitados.`,
+          limit: Infinity,
+          message: "",
         };
       },
 
-      // Check if user can create a team
+      // Check if user can create a team - No restrictions
       canCreateTeam: (currentTeamCount: number): LimitCheck => {
-        const limit = features.maxTeams;
-        const allowed = limit === Infinity || currentTeamCount < limit;
         return {
-          allowed,
+          allowed: true,
           current: currentTeamCount,
-          limit,
-          message: allowed
-            ? ""
-            : `Has alcanzado el límite de ${limit} equipos. Actualiza a Business para equipos ilimitados.`,
+          limit: Infinity,
+          message: "",
         };
       },
 
-      // Check if user can add team member
+      // Check if user can add team member - No restrictions
       canAddTeamMember: (currentMemberCount: number): LimitCheck => {
-        const limit = features.maxTeamMembers;
-        const allowed = limit === Infinity || currentMemberCount < limit;
         return {
-          allowed,
+          allowed: true,
           current: currentMemberCount,
-          limit,
-          message: allowed
-            ? ""
-            : `Has alcanzado el límite de ${limit} miembros por equipo.`,
+          limit: Infinity,
+          message: "",
         };
       },
 
-      // Check if feature is available
+      // Check if feature is available - All features available
       canUseFeature: (
         featureName: keyof (typeof PLAN_FEATURES)["free"],
       ): boolean => {
-        const value = features[featureName];
-        return typeof value === "boolean" ? value : value > 0;
+        return true;
       },
 
-      // Get numeric limit for a feature
+      // Get numeric limit for a feature - All limits are infinite
       getLimit: (
         featureName: keyof (typeof PLAN_FEATURES)["free"],
       ): number | typeof Infinity => {
-        const value = features[featureName];
-        return typeof value === "number" ? value : value ? Infinity : 0;
+        return Infinity;
       },
 
       // Check if plan allows dark mode
-      hasDarkMode: features.hasDarkMode,
+      hasDarkMode: true,
 
       // Check if plan allows advanced calendar
-      hasAdvancedCalendar: features.hasAdvancedCalendar,
+      hasAdvancedCalendar: true,
 
       // Check if plan allows team features
-      hasTeamFeatures: features.hasTeamDashboard,
+      hasTeamFeatures: true,
 
       // Check if plan allows reports
-      hasReports: features.hasReports,
+      hasReports: true,
 
       // Check if plan allows recurrence
-      canSetRecurrence: features.canSetRecurrence,
+      canSetRecurrence: true,
     }),
     [plan, features],
   );
