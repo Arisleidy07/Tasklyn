@@ -22,11 +22,21 @@ export function usePayPalPlans() {
         const res = await fetch("/api/paypal/plans");
         if (!res.ok) throw new Error("Failed to load PayPal plans");
         const data = (await res.json()) as {
-          pro: string;
-          business: string;
-          productId: string;
+          pro?: string;
+          business?: string;
+          productId?: string;
         };
-        if (!cancelled) setPlans(data);
+        // Only set plans if PayPal is configured
+        if (data.pro && data.business && !cancelled) {
+          setPlans({
+            pro: data.pro,
+            business: data.business,
+            productId: data.productId || "",
+          });
+        } else if (!cancelled) {
+          // PayPal not configured, don't set plans but don't error
+          setLoading(false);
+        }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Error");
