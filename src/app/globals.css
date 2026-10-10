@@ -849,7 +849,7 @@ html.dark {
 }
 
 .app-theme-glass body {
-  background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #e0e7ff 100%);
+  background: linear-gradient(180deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%);
   background-attachment: fixed;
 }
 
@@ -1024,9 +1024,9 @@ html.dark {
 }
 
 .app-theme-glass .nav-mobile {
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--bg-sidebar);
   backdrop-filter: blur(16px);
-  border-color: rgba(255, 255, 255, 0.9);
+  border-color: var(--border-color);
 }
 
 .app-theme-glass .modal-panel {

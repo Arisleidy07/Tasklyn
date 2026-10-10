@@ -43,7 +43,7 @@ export default function MobileNav() {
 
   return (
     <nav
-      className="nav-mobile fixed bottom-0 left-0 right-0 z-50 md:hidden mobile-nav-safe border-t backdrop-blur-xl"
+      className="nav-mobile fixed bottom-0 left-0 right-0 z-50 md:hidden mobile-nav-safe border-t"
       style={{
         backgroundColor: "var(--bg-sidebar)",
         borderColor: "var(--border-color)",

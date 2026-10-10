@@ -257,25 +257,27 @@ export default function TaskComments({
                 }
               }}
               placeholder="Escribe un comentario... @nombre"
-              rows={1}
-              className="w-full text-[var(--text-sm)] px-3 py-2 rounded-[var(--radius-lg)] focus:outline-none focus:ring-2 focus:ring-[var(--border-input-focus)]/20 resize-none pr-9"
+              rows={2}
+              className="w-full text-[var(--text-sm)] px-3 py-2.5 rounded-[var(--radius-lg)] focus:outline-none focus:ring-2 focus:ring-[var(--border-input-focus)]/20 resize-none pr-12"
               style={{
                 border: "1px solid var(--border-input)",
                 backgroundColor: "var(--bg-input)",
                 color: "var(--text-primary)",
-                minHeight: "32px",
-                maxHeight: "72px",
+                minHeight: "80px",
+                maxHeight: "150px",
               }}
             />
             <button
               onClick={handleSend}
               disabled={!text.trim() || sending}
               className={cn(
-                "absolute right-2 bottom-1.5 p-1 rounded-md transition-colors",
-                text.trim() ? "text-[var(--text-link)]" : "cursor-not-allowed",
+                "absolute right-2 bottom-2.5 p-2 rounded-md transition-colors",
+                text.trim()
+                  ? "text-[var(--text-link)]"
+                  : "cursor-not-allowed opacity-50",
               )}
             >
-              <Send size={12} />
+              <Send size={16} />
             </button>
           </div>
         </div>

@@ -992,49 +992,41 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     uploadedByName,
     onProgress,
   ) => {
-    try {
-      console.log(
-        "[addAttachment] Starting upload for task:",
-        taskId,
-        "file:",
-        file.name,
-      );
+    console.log(
+      "[addAttachment] Starting upload for task:",
+      taskId,
+      "file:",
+      file.name,
+    );
 
-      // Upload to Storage
-      const { url, storagePath, category } = await uploadTaskAttachment(
-        taskId,
-        file,
-        onProgress,
-      );
+    // Upload to Storage
+    const { url, storagePath, category } = await uploadTaskAttachment(
+      taskId,
+      file,
+      onProgress,
+    );
 
-      console.log("[addAttachment] Storage upload complete:", {
-        url,
-        storagePath,
-        category,
-      });
+    console.log("[addAttachment] Storage upload complete:", {
+      url,
+      storagePath,
+      category,
+    });
 
-      // Save metadata to Firestore
-      const attachmentId = await addTaskAttachment(taskId, {
-        taskId,
-        name: file.name,
-        type: file.type,
-        size: file.size,
-        category,
-        url,
-        storagePath,
-        uploadedBy,
-        uploadedByName,
-      });
+    // Save metadata to Firestore
+    const attachmentId = await addTaskAttachment(taskId, {
+      taskId,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      category,
+      url,
+      storagePath,
+      uploadedBy,
+      uploadedByName,
+    });
 
-      console.log(
-        "[addAttachment] Firestore metadata saved, ID:",
-        attachmentId,
-      );
-      return attachmentId;
-    } catch (error) {
-      console.error("[addAttachment] Failed to add attachment:", error);
-      throw error;
-    }
+    console.log("[addAttachment] Firestore metadata saved, ID:", attachmentId);
+    return attachmentId;
   },
 
   deleteAttachment: async (taskId, attachmentId, storagePath) => {

@@ -462,52 +462,83 @@ export async function uploadTaskAttachment(
   file: File,
   onProgress?: (progress: number) => void,
 ): Promise<TaskAttachmentUploadResult> {
-  const validatedFile = await prepareAttachmentFile(file);
-  const category = getAttachmentCategory(validatedFile);
-  const fileName = safeAttachmentFileName(validatedFile);
-  const storagePath = `tasks/${taskId}/attachments/${fileName}`;
+  try {
+    const validatedFile = await prepareAttachmentFile(file);
+    const category = getAttachmentCategory(validatedFile);
+    const fileName = safeAttachmentFileName(validatedFile);
+    const storagePath = `tasks/${taskId}/attachments/${fileName}`;
 
-  const storageRef = ref(storage, storagePath);
+    const storageRef = ref(storage, storagePath);
 
-  // Upload with progress tracking if callback provided
-  if (onProgress) {
-    const uploadTask = uploadBytesResumable(storageRef, validatedFile, {
-      contentType: validatedFile.type,
-    });
+    // Upload with progress tracking if callback provided
+    if (onProgress) {
+      const uploadTask = uploadBytesResumable(storageRef, validatedFile, {
+        contentType: validatedFile.type,
+      });
 
-    return new Promise((resolve, reject) => {
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          onProgress(progress);
-        },
-        (error) => {
-          console.error("[uploadTaskAttachment] Upload failed:", error);
-          reject(error);
-        },
-        async () => {
-          try {
-            const url = await getDownloadURL(storageRef);
-            resolve({ url, storagePath, category });
-          } catch (error) {
-            console.error(
-              "[uploadTaskAttachment] Failed to get download URL:",
-              error,
-            );
-            reject(error);
-          }
-        },
-      );
-    });
-  } else {
-    // Simple upload without progress tracking
-    await uploadBytes(storageRef, validatedFile, {
-      contentType: validatedFile.type,
-    });
-    const url = await getDownloadURL(storageRef);
-    return { url, storagePath, category };
+      return new Promise((resolve, reject) => {
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            const progress =
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            onProgress(progress);
+          },
+          (error) => {
+            console.error("[uploadTaskAttachment] Upload failed:", error);
+            // Provide user-friendly error messages
+            if (error.code === "storage/unauthorized") {
+              reject(new Error("No tienes permiso para subir archivos"));
+            } else if (error.code === "storage/canceled") {
+              reject(new Error("Subida cancelada"));
+            } else if (error.code === "storage/unknown") {
+              reject(new Error("Error desconocido al subir el archivo"));
+            } else {
+              reject(
+                new Error(
+                  `Error al subir: ${error.message || "Error de conexión"}`,
+                ),
+              );
+            }
+          },
+          async () => {
+            try {
+              const url = await getDownloadURL(storageRef);
+              console.log("[uploadTaskAttachment] Upload successful:", {
+                url,
+                storagePath,
+                category,
+              });
+              resolve({ url, storagePath, category });
+            } catch (error) {
+              console.error(
+                "[uploadTaskAttachment] Failed to get download URL:",
+                error,
+              );
+              reject(new Error("No se pudo obtener la URL del archivo"));
+            }
+          },
+        );
+      });
+    } else {
+      // Simple upload without progress tracking
+      await uploadBytes(storageRef, validatedFile, {
+        contentType: validatedFile.type,
+      });
+      const url = await getDownloadURL(storageRef);
+      console.log("[uploadTaskAttachment] Upload successful:", {
+        url,
+        storagePath,
+        category,
+      });
+      return { url, storagePath, category };
+    }
+  } catch (error) {
+    console.error("[uploadTaskAttachment] Validation or upload error:", error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Error al subir el archivo");
   }
 }
 

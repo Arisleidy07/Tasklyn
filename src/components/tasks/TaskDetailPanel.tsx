@@ -10,7 +10,13 @@ import React, {
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { Task, MemberRole, TaskHistoryEntry, TaskAttachment } from "@/types";
+import {
+  Task,
+  MemberRole,
+  TaskHistoryEntry,
+  TaskAttachment,
+  TaskReminder,
+} from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import { canEditTask, canDeleteTask, canArchiveTask } from "@/lib/permissions";
@@ -169,6 +175,12 @@ function formatReminderLabel(at?: string): string | null {
   if (!at) return null;
   const d = new Date(at);
   if (isNaN(d.getTime())) return null;
+
+  // Check if the date is too old (more than 1 year ago) - likely corrupted data
+  const now = new Date();
+  const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+  if (d < oneYearAgo) return null;
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const target = new Date(d);
@@ -423,8 +435,31 @@ export default function TaskDetailPanel({
   const resolveName = useCallback(
     (uid: string | null | undefined, fallback?: string): string => {
       if (!uid) return fallback || "—";
-      if (user && uid === user.id) return user.name;
-      return memberNames[uid] || getProfile(uid).name || fallback || uid;
+      if (user && uid === user.id) return user.name || "Tú";
+
+      // Check memberNames first
+      const name = memberNames[uid];
+      if (
+        name &&
+        name !== uid &&
+        !uid.startsWith("user_") &&
+        !uid.match(/^[a-f0-9]{32}$/i)
+      ) {
+        return name;
+      }
+
+      // Check profile cache
+      const profile = getProfile(uid);
+      if (
+        profile?.name &&
+        profile.name !== uid &&
+        !profile.name.match(/^[a-f0-9]{32}$/i)
+      ) {
+        return profile.name;
+      }
+
+      // Never return a raw UID as a name
+      return fallback || "Usuario";
     },
     [user, memberNames, getProfile],
   );
@@ -530,7 +565,8 @@ export default function TaskDetailPanel({
   const assignOptions = useMemo(() => {
     const options = [{ userId: "", name: "Sin asignar" }];
     (listMembers || []).forEach((m) => {
-      options.push({ userId: m.userId, name: resolveName(m.userId) });
+      const name = resolveName(m.userId);
+      options.push({ userId: m.userId, name });
     });
     return options;
   }, [listMembers, resolveName]);
@@ -682,7 +718,12 @@ export default function TaskDetailPanel({
   const handleClearReminder = async () => {
     if (!user || !task) return;
     try {
-      await updateTask(task.id, { reminders: undefined }, user.id, user.name);
+      await updateTask(
+        task.id,
+        { reminders: [] as TaskReminder[] },
+        user.id,
+        user.name,
+      );
     } catch (error) {
       console.error("[handleClearReminder] Failed:", error);
       showToast("Error al eliminar recordatorio");
@@ -691,6 +732,14 @@ export default function TaskDetailPanel({
 
   const assignedName = localAssignedTo ? resolveName(localAssignedTo) : null;
 
+  // Filter out corrupted or old reminders (more than 1 year old)
+  const validReminder = task.reminders?.[0]
+    ? (() => {
+        const label = formatReminderLabel(task.reminders[0].at);
+        return label ? task.reminders[0] : null;
+      })()
+    : null;
+
   // Attachment handlers
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -698,6 +747,9 @@ export default function TaskDetailPanel({
 
     setIsUploading(true);
     const newProgress: Record<string, number> = {};
+    let successCount = 0;
+    let errorCount = 0;
+    const errors: string[] = [];
 
     try {
       for (const file of files) {
@@ -705,22 +757,52 @@ export default function TaskDetailPanel({
         newProgress[fileId] = 0;
         setUploadProgress({ ...newProgress });
 
-        await useTaskStore
-          .getState()
-          .addAttachment(task.id, file, user.id, user.name, (progress) => {
-            setUploadProgress((prev) => ({
-              ...prev,
-              [fileId]: progress,
-            }));
-          });
+        try {
+          await useTaskStore
+            .getState()
+            .addAttachment(task.id, file, user.id, user.name, (progress) => {
+              setUploadProgress((prev) => ({
+                ...prev,
+                [fileId]: progress,
+              }));
+            });
 
-        newProgress[fileId] = 100;
-        setUploadProgress({ ...newProgress });
+          newProgress[fileId] = 100;
+          setUploadProgress({ ...newProgress });
+          successCount++;
+        } catch (fileError) {
+          console.error(
+            `[handleFileSelect] Failed to upload ${file.name}:`,
+            fileError,
+          );
+          errorCount++;
+          const errorMsg =
+            fileError instanceof Error
+              ? fileError.message
+              : "Error desconocido";
+          errors.push(`${file.name}: ${errorMsg}`);
+          // Continue with other files even if one fails
+        }
       }
-      showToast("Archivos subidos correctamente");
+
+      if (successCount > 0 && errorCount === 0) {
+        showToast("Archivos subidos correctamente");
+      } else if (successCount > 0 && errorCount > 0) {
+        showToast(
+          `${successCount} de ${files.length} archivos subidos. ${errorCount} fallaron.`,
+        );
+        // Log specific errors to console for debugging
+        console.error("[handleFileSelect] File errors:", errors);
+      } else if (errorCount > 0) {
+        showToast(
+          "Error: No se pudo subir ningún archivo. " + errors[0] ||
+            "Verifica tu conexión y vuelve a intentar.",
+        );
+        console.error("[handleFileSelect] All files failed:", errors);
+      }
     } catch (error) {
-      console.error("[handleFileSelect] Failed to upload:", error);
-      showToast("Error al subir archivos");
+      console.error("[handleFileSelect] Unexpected error:", error);
+      showToast("Error inesperado al subir archivos");
     } finally {
       setIsUploading(false);
       setUploadProgress({});
@@ -816,7 +898,7 @@ export default function TaskDetailPanel({
       <div
         className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 100px)",
           touchAction: "pan-y",
           WebkitOverflowScrolling: "touch",
         }}
@@ -1138,17 +1220,17 @@ export default function TaskDetailPanel({
                   >
                     <span
                       style={{
-                        color: task.reminders?.[0]
+                        color: validReminder
                           ? "var(--text-primary)"
                           : "var(--text-tertiary)",
                       }}
                     >
-                      {task.reminders?.[0]
-                        ? formatReminderLabel(task.reminders[0].at)
+                      {validReminder
+                        ? formatReminderLabel(validReminder.at)
                         : "Sin recordatorio"}
                     </span>
                   </div>
-                  {canEdit && task.reminders?.[0] && (
+                  {canEdit && validReminder && (
                     <IconButton
                       icon={<X size={14} />}
                       title="Eliminar recordatorio"
@@ -1486,7 +1568,7 @@ export default function TaskDetailPanel({
                       type="button"
                       onClick={() => imageInputRef.current?.click()}
                       disabled={isUploading}
-                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed min-w-0"
                       style={{
                         backgroundColor: "var(--bg-secondary)",
                         color: "var(--text-secondary)",
@@ -1494,18 +1576,20 @@ export default function TaskDetailPanel({
                       }}
                     >
                       {isUploading ? (
-                        <Loader2 size={16} className="animate-spin" />
+                        <Loader2
+                          size={16}
+                          className="animate-spin flex-shrink-0"
+                        />
                       ) : (
-                        <ImageIcon size={16} />
+                        <ImageIcon size={16} className="flex-shrink-0" />
                       )}
-                      <span className="hidden sm:inline">Galería</span>
-                      <span className="sm:hidden">Galería</span>
+                      <span className="truncate">Galería</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => cameraInputRef.current?.click()}
                       disabled={isUploading}
-                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed min-w-0"
                       style={{
                         backgroundColor: "var(--bg-secondary)",
                         color: "var(--text-secondary)",
@@ -1513,18 +1597,20 @@ export default function TaskDetailPanel({
                       }}
                     >
                       {isUploading ? (
-                        <Loader2 size={16} className="animate-spin" />
+                        <Loader2
+                          size={16}
+                          className="animate-spin flex-shrink-0"
+                        />
                       ) : (
-                        <Upload size={16} />
+                        <Upload size={16} className="flex-shrink-0" />
                       )}
-                      <span className="hidden sm:inline">Cámara</span>
-                      <span className="sm:hidden">Cámara</span>
+                      <span className="truncate">Cámara</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => videoInputRef.current?.click()}
                       disabled={isUploading}
-                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed min-w-0"
                       style={{
                         backgroundColor: "var(--bg-secondary)",
                         color: "var(--text-secondary)",
@@ -1532,18 +1618,20 @@ export default function TaskDetailPanel({
                       }}
                     >
                       {isUploading ? (
-                        <Loader2 size={16} className="animate-spin" />
+                        <Loader2
+                          size={16}
+                          className="animate-spin flex-shrink-0"
+                        />
                       ) : (
-                        <Video size={16} />
+                        <Video size={16} className="flex-shrink-0" />
                       )}
-                      <span className="hidden sm:inline">Videos</span>
-                      <span className="sm:hidden">Videos</span>
+                      <span className="truncate">Videos</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploading}
-                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed min-w-0"
                       style={{
                         backgroundColor: "var(--bg-secondary)",
                         color: "var(--text-secondary)",
@@ -1551,12 +1639,14 @@ export default function TaskDetailPanel({
                       }}
                     >
                       {isUploading ? (
-                        <Loader2 size={16} className="animate-spin" />
+                        <Loader2
+                          size={16}
+                          className="animate-spin flex-shrink-0"
+                        />
                       ) : (
-                        <FileText size={16} />
+                        <FileText size={16} className="flex-shrink-0" />
                       )}
-                      <span className="hidden sm:inline">Archivos</span>
-                      <span className="sm:hidden">Archivos</span>
+                      <span className="truncate">Archivos</span>
                     </button>
                   </div>
                 )}
@@ -1639,6 +1729,11 @@ export default function TaskDetailPanel({
                             user.id,
                             user.name,
                           );
+                          showToast(
+                            e.target.checked
+                              ? "Vista previa activada"
+                              : "Vista previa desactivada",
+                          );
                         } catch (error) {
                           console.error("[showPreviewInCard] Failed:", error);
                           showToast("Error al actualizar preferencia");
@@ -1651,7 +1746,7 @@ export default function TaskDetailPanel({
                     />
                     <label
                       htmlFor="showPreviewInCard"
-                      className="text-xs"
+                      className="text-xs cursor-pointer"
                       style={{ color: "var(--text-secondary)" }}
                     >
                       Mostrar vista previa en la tarjeta
@@ -1884,33 +1979,39 @@ export default function TaskDetailPanel({
                   const { label, showDiff } = formatHistoryAction(entry.action);
                   return (
                     <div key={entry.id || i} className="space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: "var(--bg-secondary)" }}
-                        >
-                          <History
-                            size={8}
-                            style={{ color: "var(--text-tertiary)" }}
-                          />
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-start gap-2">
+                          <div
+                            className="flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center mt-0.5"
+                            style={{ backgroundColor: "var(--bg-secondary)" }}
+                          >
+                            <History
+                              size={8}
+                              style={{ color: "var(--text-tertiary)" }}
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className="text-[var(--text-sm)] leading-snug"
+                              style={{ color: "var(--text-primary)" }}
+                            >
+                              <span className="font-medium">{name}</span>{" "}
+                              <span>{label}</span>
+                            </p>
+                          </div>
                         </div>
-                        <p
-                          className="text-[var(--text-sm)] min-w-0 flex-1"
-                          style={{ color: "var(--text-primary)" }}
-                        >
-                          <span className="font-medium truncate">{name}</span>{" "}
-                          <span className="truncate">{label}</span>
-                        </p>
-                        <span
-                          className="ml-auto text-[var(--text-2xs)] flex-shrink-0"
-                          style={{ color: "var(--text-tertiary)" }}
-                        >
-                          {formatDateTime(
-                            entry.performedAt ||
-                              (entry as unknown as { createdAt?: string })
-                                .createdAt,
-                          )}
-                        </span>
+                        <div className="pl-6">
+                          <span
+                            className="text-[var(--text-2xs)]"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
+                            {formatDateTime(
+                              entry.performedAt ||
+                                (entry as unknown as { createdAt?: string })
+                                  .createdAt,
+                            )}
+                          </span>
+                        </div>
                       </div>
                       {showDiff && (
                         <div className="pl-6 space-y-1.5">

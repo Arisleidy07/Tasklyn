@@ -148,12 +148,12 @@ function TaskItem({
 
   // Subscribe to attachments
   useEffect(() => {
-    if (!task?.id || !task.showPreviewInCard) return;
+    if (!task?.id) return;
     const unsubscribe = subscribeToAttachments(task.id, (atts) => {
       setAttachments(atts);
     });
     return () => unsubscribe();
-  }, [task?.id, task.showPreviewInCard, subscribeToAttachments]);
+  }, [task?.id, subscribeToAttachments]);
 
   // Suppress the click event that sometimes fires after a drag ends.
   useEffect(() => {
@@ -362,10 +362,14 @@ function TaskItem({
                 {attachments.slice(0, 3).map((att) => (
                   <div
                     key={att.id}
-                    className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden"
+                    className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden cursor-pointer"
                     style={{
                       backgroundColor: "var(--bg-secondary)",
                       border: "1px solid var(--border-color)",
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      window.open(att.url, "_blank");
                     }}
                   >
                     {att.category === "image" ? (
@@ -373,6 +377,7 @@ function TaskItem({
                         src={att.url}
                         alt={att.name}
                         className="w-full h-full object-cover"
+                        loading="lazy"
                       />
                     ) : att.category === "video" ? (
                       <div className="w-full h-full flex items-center justify-center">
@@ -393,11 +398,15 @@ function TaskItem({
                 ))}
                 {attachments.length > 3 && (
                   <div
-                    className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center text-xs font-medium"
+                    className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center text-xs font-medium cursor-pointer"
                     style={{
                       backgroundColor: "var(--bg-secondary)",
                       border: "1px solid var(--border-color)",
                       color: "var(--text-tertiary)",
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDetailPanel(true);
                     }}
                   >
                     +{attachments.length - 3}
