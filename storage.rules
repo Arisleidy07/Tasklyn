@@ -72,12 +72,11 @@ service firebase.storage {
       allow delete: if isAuth() && isListOwner(listId);
     }
 
-    // Task attachments — read for list members (verified via Firestore)
-    // Write/delete is handled through backend functions that check Firestore permissions
+    // Task attachments — read/write/delete for list members (verified via Firestore)
     match /tasks/{taskId}/attachments/{attachmentId} {
       allow read: if isAuth() && isListMember(firestore.get(/databases/(default)/documents/tasks/$(taskId)).data.listId);
-      allow write: if false;
-      allow delete: if false;
+      allow write: if isAuth() && isListMember(firestore.get(/databases/(default)/documents/tasks/$(taskId)).data.listId);
+      allow delete: if isAuth() && isListMember(firestore.get(/databases/(default)/documents/tasks/$(taskId)).data.listId);
     }
 
     // Legacy image paths (old uploads before the organized structure).
