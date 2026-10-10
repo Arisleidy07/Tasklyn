@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useRef, useEffect } from "react";
-import { Task, MemberRole } from "@/types";
+import { Task, MemberRole, TaskAttachment } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import { canCompleteTask } from "@/lib/permissions";
@@ -18,6 +18,9 @@ import {
   Phone,
   CalendarDays,
   Bell,
+  Image as ImageIcon,
+  Video,
+  FileText,
 } from "lucide-react";
 import type { DragHandleProps } from "./SortableTaskContainer";
 import { cn } from "@/lib/utils";
@@ -125,10 +128,11 @@ function TaskItem({
 }: TaskItemProps) {
   const [showDetailPanel, setShowDetailPanel] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
   const skipClickRef = useRef(false);
 
   const { user } = useAuthStore();
-  const { uncompleteTask } = useTaskStore();
+  const { uncompleteTask, subscribeToAttachments } = useTaskStore();
 
   const isCompleted = task.status === "completed";
   const canComplete = canCompleteTask(role);
@@ -141,6 +145,15 @@ function TaskItem({
     const r = task.reminders?.[0];
     return r ? formatReminder(r.at) : null;
   }, [task.reminders]);
+
+  // Subscribe to attachments
+  useEffect(() => {
+    if (!task?.id || !task.showPreviewInCard) return;
+    const unsubscribe = subscribeToAttachments(task.id, (atts) => {
+      setAttachments(atts);
+    });
+    return () => unsubscribe();
+  }, [task?.id, task.showPreviewInCard, subscribeToAttachments]);
 
   // Suppress the click event that sometimes fires after a drag ends.
   useEffect(() => {
@@ -341,6 +354,58 @@ function TaskItem({
               )}
             </div>
           )}
+
+          {/* Attachment preview thumbnail */}
+          {task.showPreviewInCard && attachments.length > 0 && (
+            <div className="sm:pl-7 mt-1">
+              <div className="flex items-center gap-2">
+                {attachments.slice(0, 3).map((att) => (
+                  <div
+                    key={att.id}
+                    className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      border: "1px solid var(--border-color)",
+                    }}
+                  >
+                    {att.category === "image" ? (
+                      <img
+                        src={att.url}
+                        alt={att.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : att.category === "video" ? (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Video
+                          size={16}
+                          style={{ color: "var(--text-tertiary)" }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <FileText
+                          size={16}
+                          style={{ color: "var(--text-tertiary)" }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {attachments.length > 3 && (
+                  <div
+                    className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center text-xs font-medium"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      border: "1px solid var(--border-color)",
+                      color: "var(--text-tertiary)",
+                    }}
+                  >
+                    +{attachments.length - 3}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </motion.div>
       </div>
 
@@ -374,19 +439,6 @@ export default React.memo(TaskItem, (prev, next) => {
     prev.task.dueDate === next.task.dueDate &&
     prev.task.dueTime === next.task.dueTime &&
     prev.task.assignedTo === next.task.assignedTo &&
-    prev.task.location === next.task.location &&
-    prev.task.phoneNumbers?.join(",") === next.task.phoneNumbers?.join(",") &&
-    prev.task.tags?.join(",") === next.task.tags?.join(",") &&
-    prev.task.description === next.task.description &&
-    prev.task.recurrence?.type === next.task.recurrence?.type &&
-    prev.task.reminders?.length === next.task.reminders?.length &&
-    prev.task.completedBy === next.task.completedBy &&
-    prev.task.performedBy === next.task.performedBy &&
-    prev.role === next.role &&
-    prev.isDragging === next.isDragging &&
-    prev.memberNames[prev.task.assignedTo || ""] ===
-      next.memberNames[next.task.assignedTo || ""] &&
-    prev.memberNames[prev.task.completedBy || ""] ===
-      next.memberNames[next.task.completedBy || ""]
+    prev.task.showPreviewInCard === next.task.showPreviewInCard
   );
 });

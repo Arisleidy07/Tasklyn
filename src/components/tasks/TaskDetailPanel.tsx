@@ -204,18 +204,49 @@ function genReminderId(): string {
 
 function reminderQuickOptions() {
   const now = new Date();
-  const later = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+
+  // En 15 minutos
+  const in15Min = new Date(now.getTime() + 15 * 60 * 1000);
+
+  // En 30 minutos
+  const in30Min = new Date(now.getTime() + 30 * 60 * 1000);
+
+  // En 1 hora
+  const in1Hour = new Date(now.getTime() + 60 * 60 * 1000);
+
+  // En 2 horas
+  const in2Hours = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+
+  // Esta noche (8 PM)
   const tonight = new Date(now);
   tonight.setHours(20, 0, 0, 0);
+  if (tonight <= now) {
+    // Si ya pasó las 8 PM hoy, mover a mañana 8 PM
+    tonight.setDate(tonight.getDate() + 1);
+  }
+
+  // Mañana mañana (9 AM)
+  const tomorrowMorning = new Date(now);
+  tomorrowMorning.setDate(tomorrowMorning.getDate() + 1);
+  tomorrowMorning.setHours(9, 0, 0, 0);
+
+  // Mañana (9 AM)
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(9, 0, 0, 0);
+
+  // Próxima semana (9 AM)
   const nextWeek = new Date(now);
   nextWeek.setDate(nextWeek.getDate() + 7);
   nextWeek.setHours(9, 0, 0, 0);
+
   return [
-    { label: "Más tarde", value: later.toISOString() },
-    { label: "Esta noche", value: tonight.toISOString() },
+    { label: "En 15 minutos", value: in15Min.toISOString() },
+    { label: "En 30 minutos", value: in30Min.toISOString() },
+    { label: "En 1 hora", value: in1Hour.toISOString() },
+    { label: "En 2 horas", value: in2Hours.toISOString() },
+    { label: "Esta noche (8 PM)", value: tonight.toISOString() },
+    { label: "Mañana mañana (9 AM)", value: tomorrowMorning.toISOString() },
     { label: "Mañana", value: tomorrow.toISOString() },
     { label: "Próxima semana", value: nextWeek.toISOString() },
   ];
@@ -326,6 +357,7 @@ export default function TaskDetailPanel({
     {},
   );
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -478,9 +510,18 @@ export default function TaskDetailPanel({
   // Subscribe to attachments subcollection
   useEffect(() => {
     if (!task?.id || !isOpen) return;
+    console.log(
+      "[TaskDetailPanel] Subscribing to attachments for task:",
+      task.id,
+    );
     const unsubscribe = useTaskStore
       .getState()
       .subscribeToAttachments(task.id, (atts) => {
+        console.log(
+          "[TaskDetailPanel] Received attachments:",
+          atts.length,
+          atts,
+        );
         setAttachments(atts);
       });
     return () => unsubscribe();
@@ -606,29 +647,46 @@ export default function TaskDetailPanel({
     });
   };
 
-  const handleQuickReminder = (at: string) => {
-    const reminder: import("@/types").TaskReminder = {
-      id: genReminderId(),
-      at,
-      sent: false,
-      recipientType: "me",
-    };
-    queueSave("reminders", { reminders: [reminder] });
+  const handleQuickReminder = async (at: string) => {
+    if (!user || !task) return;
+    try {
+      const reminder: import("@/types").TaskReminder = {
+        id: genReminderId(),
+        at,
+        sent: false,
+        recipientType: "me",
+      };
+      await updateTask(task.id, { reminders: [reminder] }, user.id, user.name);
+    } catch (error) {
+      console.error("[handleQuickReminder] Failed:", error);
+      showToast("Error al establecer recordatorio");
+    }
   };
 
-  const handleCustomReminder = (value: string) => {
-    if (!value) return;
-    const reminder: import("@/types").TaskReminder = {
-      id: genReminderId(),
-      at: new Date(value).toISOString(),
-      sent: false,
-      recipientType: "me",
-    };
-    queueSave("reminders", { reminders: [reminder] });
+  const handleCustomReminder = async (value: string) => {
+    if (!value || !user || !task) return;
+    try {
+      const reminder: import("@/types").TaskReminder = {
+        id: genReminderId(),
+        at: new Date(value).toISOString(),
+        sent: false,
+        recipientType: "me",
+      };
+      await updateTask(task.id, { reminders: [reminder] }, user.id, user.name);
+    } catch (error) {
+      console.error("[handleCustomReminder] Failed:", error);
+      showToast("Error al establecer recordatorio");
+    }
   };
 
-  const handleClearReminder = () => {
-    queueSave("reminders", { reminders: undefined });
+  const handleClearReminder = async () => {
+    if (!user || !task) return;
+    try {
+      await updateTask(task.id, { reminders: undefined }, user.id, user.name);
+    } catch (error) {
+      console.error("[handleClearReminder] Failed:", error);
+      showToast("Error al eliminar recordatorio");
+    }
   };
 
   const assignedName = localAssignedTo ? resolveName(localAssignedTo) : null;
@@ -667,9 +725,24 @@ export default function TaskDetailPanel({
       setIsUploading(false);
       setUploadProgress({});
       if (imageInputRef.current) imageInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
       if (videoInputRef.current) videoInputRef.current.value = "";
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  // Helper to get file category
+  const getFileCategory = (file: File): "image" | "video" | "file" => {
+    if (file.type.startsWith("image/")) return "image";
+    if (file.type.startsWith("video/")) return "video";
+    return "file";
+  };
+
+  // Helper to format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
   const handleDeleteAttachment = async (attachment: TaskAttachment) => {
@@ -745,6 +818,7 @@ export default function TaskDetailPanel({
         style={{
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
           touchAction: "pan-y",
+          WebkitOverflowScrolling: "touch",
         }}
       >
         <div className="px-4 py-5 space-y-5">
@@ -1375,6 +1449,13 @@ export default function TaskDetailPanel({
                       type="file"
                       multiple
                       accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
                       capture="environment"
                       onChange={handleFileSelect}
                       className="hidden"
@@ -1384,7 +1465,6 @@ export default function TaskDetailPanel({
                       type="file"
                       multiple
                       accept="video/*"
-                      capture="environment"
                       onChange={handleFileSelect}
                       className="hidden"
                     />
@@ -1401,7 +1481,7 @@ export default function TaskDetailPanel({
 
                 {/* Upload buttons */}
                 {canEdit && (
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <button
                       type="button"
                       onClick={() => imageInputRef.current?.click()}
@@ -1418,8 +1498,27 @@ export default function TaskDetailPanel({
                       ) : (
                         <ImageIcon size={16} />
                       )}
-                      <span className="hidden sm:inline">Fotos</span>
-                      <span className="sm:hidden">Fotos</span>
+                      <span className="hidden sm:inline">Galería</span>
+                      <span className="sm:hidden">Galería</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        color: "var(--text-secondary)",
+                        border: "1px solid var(--border-color)",
+                      }}
+                    >
+                      {isUploading ? (
+                        <Loader2 size={16} className="animate-spin" />
+                      ) : (
+                        <Upload size={16} />
+                      )}
+                      <span className="hidden sm:inline">Cámara</span>
+                      <span className="sm:hidden">Cámara</span>
                     </button>
                     <button
                       type="button"
@@ -1459,6 +1558,104 @@ export default function TaskDetailPanel({
                       <span className="hidden sm:inline">Archivos</span>
                       <span className="sm:hidden">Archivos</span>
                     </button>
+                  </div>
+                )}
+
+                {/* Upload progress */}
+                {isUploading && Object.keys(uploadProgress).length > 0 && (
+                  <div className="space-y-2">
+                    <p
+                      className="text-[11px] font-semibold uppercase tracking-wide"
+                      style={{ color: "var(--text-tertiary)" }}
+                    >
+                      Subiendo archivos...
+                    </p>
+                    {Object.entries(uploadProgress).map(
+                      ([fileId, progress]) => {
+                        const [fileName] = fileId.split("-").slice(0, -1);
+                        return (
+                          <div
+                            key={fileId}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                            style={{
+                              backgroundColor: "var(--bg-secondary)",
+                              border: "1px solid var(--border-color)",
+                            }}
+                          >
+                            <Loader2
+                              size={14}
+                              className="animate-spin"
+                              style={{ color: "var(--text-secondary)" }}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p
+                                className="text-sm truncate"
+                                style={{ color: "var(--text-primary)" }}
+                              >
+                                {fileName}
+                              </p>
+                              <div
+                                className="h-1 rounded-full mt-1"
+                                style={{
+                                  backgroundColor: "var(--bg-hover)",
+                                  width: "100%",
+                                }}
+                              >
+                                <div
+                                  className="h-full rounded-full transition-all"
+                                  style={{
+                                    backgroundColor: "var(--text-link)",
+                                    width: `${progress}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                            <p
+                              className="text-xs"
+                              style={{ color: "var(--text-tertiary)" }}
+                            >
+                              {Math.round(progress)}%
+                            </p>
+                          </div>
+                        );
+                      },
+                    )}
+                  </div>
+                )}
+
+                {/* Show preview in card toggle */}
+                {canEdit && (
+                  <div className="flex items-center gap-2 pt-2">
+                    <input
+                      type="checkbox"
+                      id="showPreviewInCard"
+                      checked={task.showPreviewInCard || false}
+                      onChange={async (e) => {
+                        if (!user || !task) return;
+                        try {
+                          await updateTask(
+                            task.id,
+                            { showPreviewInCard: e.target.checked },
+                            user.id,
+                            user.name,
+                          );
+                        } catch (error) {
+                          console.error("[showPreviewInCard] Failed:", error);
+                          showToast("Error al actualizar preferencia");
+                        }
+                      }}
+                      className="w-4 h-4 rounded"
+                      style={{
+                        accentColor: "var(--text-link)",
+                      }}
+                    />
+                    <label
+                      htmlFor="showPreviewInCard"
+                      className="text-xs"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      Mostrar vista previa en la tarjeta
+                    </label>
                   </div>
                 )}
 
@@ -1581,7 +1778,7 @@ export default function TaskDetailPanel({
                               className="text-xs"
                               style={{ color: "var(--text-tertiary)" }}
                             >
-                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                              {formatFileSize(file.size)}
                             </p>
                           </div>
                           <div className="flex items-center gap-1">
@@ -1852,21 +2049,24 @@ export default function TaskDetailPanel({
 
           {/* Mobile sheet — full-screen, horizontally locked */}
           <div
-            className="sm:hidden fixed inset-x-0 top-0 z-[9001]"
-            style={{ bottom: 0, width: "100vw", maxWidth: "100vw" }}
+            className="sm:hidden fixed inset-0 z-[9001]"
+            style={{
+              width: "100vw",
+              maxWidth: "100vw",
+              height: "100dvh",
+              maxHeight: "100dvh",
+            }}
           >
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 32, stiffness: 320 }}
-              className="absolute inset-x-0 bottom-0 overflow-hidden shadow-[var(--shadow-modal)] flex flex-col"
+              className="h-full flex flex-col shadow-[var(--shadow-modal)]"
               style={{
-                top: 0,
                 backgroundColor: "var(--bg-card)",
-                width: "100vw",
-                maxWidth: "100vw",
                 touchAction: "pan-y",
+                paddingBottom: "env(safe-area-inset-bottom, 0px)",
               }}
             >
               <div className="flex justify-center pt-2.5 pb-0 flex-shrink-0">

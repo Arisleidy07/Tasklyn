@@ -72,10 +72,10 @@ service firebase.storage {
       allow delete: if isAuth() && isListOwner(listId);
     }
 
-    // Task attachments — read for authenticated users (access controlled via Firestore metadata)
+    // Task attachments — read for list members (verified via Firestore)
     // Write/delete is handled through backend functions that check Firestore permissions
-    match /tasks/{taskId}/{allPaths=**} {
-      allow read: if isAuth();
+    match /tasks/{taskId}/attachments/{attachmentId} {
+      allow read: if isAuth() && isListMember(firestore.get(/databases/(default)/documents/tasks/$(taskId)).data.listId);
       allow write: if false;
       allow delete: if false;
     }

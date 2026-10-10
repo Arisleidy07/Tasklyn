@@ -220,6 +220,7 @@ export interface Task {
   estimatedTime?: number;
   actualTime?: number;
   order?: number;
+  showPreviewInCard?: boolean;
 }
 
 // ---- TaskList ----

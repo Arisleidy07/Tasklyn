@@ -90,6 +90,7 @@ interface TaskState {
         | "priority"
         | "tags"
         | "order"
+        | "showPreviewInCard"
       >
     >,
     performedBy: string,
@@ -992,12 +993,25 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     onProgress,
   ) => {
     try {
+      console.log(
+        "[addAttachment] Starting upload for task:",
+        taskId,
+        "file:",
+        file.name,
+      );
+
       // Upload to Storage
       const { url, storagePath, category } = await uploadTaskAttachment(
         taskId,
         file,
         onProgress,
       );
+
+      console.log("[addAttachment] Storage upload complete:", {
+        url,
+        storagePath,
+        category,
+      });
 
       // Save metadata to Firestore
       const attachmentId = await addTaskAttachment(taskId, {
@@ -1012,6 +1026,10 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         uploadedByName,
       });
 
+      console.log(
+        "[addAttachment] Firestore metadata saved, ID:",
+        attachmentId,
+      );
       return attachmentId;
     } catch (error) {
       console.error("[addAttachment] Failed to add attachment:", error);
