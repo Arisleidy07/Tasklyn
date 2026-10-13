@@ -289,62 +289,58 @@ export default function CreateTaskForm({
           />
 
           {/* Action buttons */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 !important">
             <button
               type="button"
               onClick={() => imageInputRef.current?.click()}
-              className="h-11 px-3 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+              className="h-12 px-3 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] !important"
               style={{
                 backgroundColor: "var(--bg-secondary)",
                 color: "var(--text-secondary)",
                 border: "1px solid var(--border-color)",
               }}
             >
-              <ImageIcon size={16} />
-              <span className="hidden sm:inline">Galería</span>
-              <span className="sm:hidden">Galería</span>
+              <ImageIcon size={18} className="flex-shrink-0" />
+              <span className="!block">Galería</span>
             </button>
             <button
               type="button"
               onClick={() => cameraInputRef.current?.click()}
-              className="h-11 px-3 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+              className="h-12 px-3 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] !important"
               style={{
                 backgroundColor: "var(--bg-secondary)",
                 color: "var(--text-secondary)",
                 border: "1px solid var(--border-color)",
               }}
             >
-              <Upload size={16} />
-              <span className="hidden sm:inline">Cámara</span>
-              <span className="sm:hidden">Cámara</span>
+              <Upload size={18} className="flex-shrink-0" />
+              <span className="!block">Cámara</span>
             </button>
             <button
               type="button"
               onClick={() => videoInputRef.current?.click()}
-              className="h-11 px-3 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+              className="h-12 px-3 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] !important"
               style={{
                 backgroundColor: "var(--bg-secondary)",
                 color: "var(--text-secondary)",
                 border: "1px solid var(--border-color)",
               }}
             >
-              <Video size={16} />
-              <span className="hidden sm:inline">Videos</span>
-              <span className="sm:hidden">Videos</span>
+              <Video size={18} className="flex-shrink-0" />
+              <span className="!block">Videos</span>
             </button>
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="h-11 px-3 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+              className="h-12 px-3 rounded-xl text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] !important"
               style={{
                 backgroundColor: "var(--bg-secondary)",
                 color: "var(--text-secondary)",
                 border: "1px solid var(--border-color)",
               }}
             >
-              <FileText size={16} />
-              <span className="hidden sm:inline">Archivos</span>
-              <span className="sm:hidden">Archivos</span>
+              <FileText size={18} className="flex-shrink-0" />
+              <span className="!block">Archivos</span>
             </button>
           </div>
 

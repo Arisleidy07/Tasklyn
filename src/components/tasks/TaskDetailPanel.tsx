@@ -1563,12 +1563,12 @@ export default function TaskDetailPanel({
 
                 {/* Upload buttons */}
                 {canEdit && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 !important">
                     <button
                       type="button"
                       onClick={() => imageInputRef.current?.click()}
                       disabled={isUploading}
-                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed min-w-0"
+                      className="h-12 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed !important"
                       style={{
                         backgroundColor: "var(--bg-secondary)",
                         color: "var(--text-secondary)",
@@ -1577,19 +1577,19 @@ export default function TaskDetailPanel({
                     >
                       {isUploading ? (
                         <Loader2
-                          size={16}
+                          size={18}
                           className="animate-spin flex-shrink-0"
                         />
                       ) : (
-                        <ImageIcon size={16} className="flex-shrink-0" />
+                        <ImageIcon size={18} className="flex-shrink-0" />
                       )}
-                      <span className="truncate">Galería</span>
+                      <span className="!block">Galería</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => cameraInputRef.current?.click()}
                       disabled={isUploading}
-                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed min-w-0"
+                      className="h-12 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed !important"
                       style={{
                         backgroundColor: "var(--bg-secondary)",
                         color: "var(--text-secondary)",
@@ -1598,19 +1598,19 @@ export default function TaskDetailPanel({
                     >
                       {isUploading ? (
                         <Loader2
-                          size={16}
+                          size={18}
                           className="animate-spin flex-shrink-0"
                         />
                       ) : (
-                        <Upload size={16} className="flex-shrink-0" />
+                        <Upload size={18} className="flex-shrink-0" />
                       )}
-                      <span className="truncate">Cámara</span>
+                      <span className="!block">Cámara</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => videoInputRef.current?.click()}
                       disabled={isUploading}
-                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed min-w-0"
+                      className="h-12 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed !important"
                       style={{
                         backgroundColor: "var(--bg-secondary)",
                         color: "var(--text-secondary)",
@@ -1619,19 +1619,19 @@ export default function TaskDetailPanel({
                     >
                       {isUploading ? (
                         <Loader2
-                          size={16}
+                          size={18}
                           className="animate-spin flex-shrink-0"
                         />
                       ) : (
-                        <Video size={16} className="flex-shrink-0" />
+                        <Video size={18} className="flex-shrink-0" />
                       )}
-                      <span className="truncate">Videos</span>
+                      <span className="!block">Videos</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploading}
-                      className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed min-w-0"
+                      className="h-12 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed !important"
                       style={{
                         backgroundColor: "var(--bg-secondary)",
                         color: "var(--text-secondary)",
@@ -1640,13 +1640,13 @@ export default function TaskDetailPanel({
                     >
                       {isUploading ? (
                         <Loader2
-                          size={16}
+                          size={18}
                           className="animate-spin flex-shrink-0"
                         />
                       ) : (
-                        <FileText size={16} className="flex-shrink-0" />
+                        <FileText size={18} className="flex-shrink-0" />
                       )}
-                      <span className="truncate">Archivos</span>
+                      <span className="!block">Archivos</span>
                     </button>
                   </div>
                 )}
