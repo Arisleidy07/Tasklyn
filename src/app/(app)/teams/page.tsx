@@ -291,10 +291,23 @@ function CreateTeamModal({
       setError("El nombre del equipo es requerido.");
       return;
     }
+    if (name.trim().length < 2) {
+      setError("El nombre debe tener al menos 2 caracteres.");
+      return;
+    }
     setError("");
-    await onSubmit({ name: name.trim(), description: description.trim() });
-    setName("");
-    setDescription("");
+    try {
+      await onSubmit({ name: name.trim(), description: description.trim() });
+      setName("");
+      setDescription("");
+    } catch (e) {
+      const err = e as { code?: string; message?: string };
+      setError(
+        err.code === "permission-denied"
+          ? "No tienes permisos para crear equipos."
+          : err.message || "No se pudo crear el equipo. Inténtalo de nuevo.",
+      );
+    }
   };
 
   return (
@@ -434,7 +447,6 @@ export default function TeamsPage() {
     try {
       await createTeam({ ...data, owner: user.id }, user.id);
       setShowCreateModal(false);
-    } catch {
     } finally {
       setLoading(false);
     }
@@ -542,10 +554,7 @@ export default function TeamsPage() {
                 Crea un equipo para colaborar con otros miembros en tareas y
                 proyectos.
               </p>
-              <Button
-                onClick={() => setShowCreateModal(true)}
-                icon={<Plus size={16} />}
-              >
+              <Button onClick={handleNewTeamClick} icon={<Plus size={16} />}>
                 Crear equipo
               </Button>
             </motion.div>

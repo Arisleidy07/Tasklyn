@@ -74,7 +74,7 @@ export default function Header({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 min-w-0">
               <h1
-                className="text-lg md:text-xl font-bold truncate tracking-tight"
+                className="text-lg md:text-xl font-bold truncate tracking-tight min-w-0 flex-1"
                 style={{ color: "var(--text-primary)" }}
               >
                 {title}

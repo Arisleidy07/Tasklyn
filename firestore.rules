@@ -366,5 +366,119 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Technician Reports collection
+    match /reports/{reportId} {
+      // Read: owner can read their own reports
+      // Team admins/owners can read all reports in their team
+      allow read: if isAuth() && (
+        resource.data.createdBy == uid() ||
+        (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
+      );
+
+      // Create: only authenticated users can create reports
+      // Must use their own userId as createdBy (prevent impersonation)
+      allow create: if isAuth() &&
+        request.resource.data.createdBy == uid() &&
+        request.resource.data.createdByName is string &&
+        request.resource.data.declarationConfirmed == true;
+
+      // Update: only the report creator can update their own reports
+      allow update: if isAuth() &&
+        resource.data.createdBy == uid() &&
+        request.resource.data.createdBy == resource.data.createdBy; // Prevent changing owner
+
+      // Delete: only the report creator can delete their own reports
+      // Team admins/owners can also delete for cleanup
+      allow delete: if isAuth() && (
+        resource.data.createdBy == uid() ||
+        (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
+      );
+    }
+
+    // Forms collection (Google Forms-like)
+    match /forms/{formId} {
+      // Read: form owner, team members of the form's team
+      allow read: if isAuth() && (
+        resource.data.createdBy == uid() ||
+        (resource.data.teamId != null && isTeamMemberOf(resource.data.teamId))
+      );
+
+      // Create: only authenticated users can create forms
+      // Must belong to the team
+      // Must use their own userId as createdBy (prevent impersonation)
+      allow create: if isAuth() &&
+        request.resource.data.teamId != null &&
+        isTeamMemberOf(request.resource.data.teamId) &&
+        request.resource.data.createdBy == uid() &&
+        request.resource.data.createdByName is string;
+
+      // Update: only the form owner can update
+      allow update: if isAuth() &&
+        resource.data.createdBy == uid() &&
+        request.resource.data.createdBy == resource.data.createdBy; // Prevent changing owner
+
+      // Delete: only the form owner can delete
+      // Team owners can also delete for cleanup
+      allow delete: if isAuth() && (
+        resource.data.createdBy == uid() ||
+        (resource.data.teamId != null && isTeamOwnerOf(resource.data.teamId))
+      );
+
+      // Participants subcollection
+      match /participants/{userId} {
+        // Read: form owner, team members, the participant themselves
+        allow read: if isAuth() && (
+          resource.data.createdBy == uid() ||
+          get(/databases/$(database)/documents/forms/$(formId)).data.createdBy == uid() ||
+          uid() == userId ||
+          isTeamMemberOf(get(/databases/$(database)/documents/forms/$(formId)).data.teamId)
+        );
+
+        // Create: form owner can add participants
+        allow create: if isAuth() &&
+          get(/databases/$(database)/documents/forms/$(formId)).data.createdBy == uid() &&
+          request.resource.data.userId is string;
+
+        // Update: form owner can update participant roles
+        allow update: if isAuth() &&
+          get(/databases/$(database)/documents/forms/$(formId)).data.createdBy == uid();
+
+        // Delete: form owner can remove participants
+        allow delete: if isAuth() &&
+          get(/databases/$(database)/documents/forms/$(formId)).data.createdBy == uid();
+      }
+
+      // Responses subcollection
+      match /responses/{responseId} {
+        // Read: form owner can read all responses
+        // Participant can read their own responses
+        allow read: if isAuth() && (
+          resource.data.respondentId == uid() ||
+          get(/databases/$(database)/documents/forms/$(formId)).data.createdBy == uid() ||
+          (get(/databases/$(database)/documents/forms/$(formId)).data.teamId != null &&
+           isTeamAdminOrOwnerOf(get(/databases/$(database)/documents/forms/$(formId)).data.teamId))
+        );
+
+        // Create: authenticated users can submit responses
+        // Must use their own userId as respondentId (prevent impersonation)
+        allow create: if isAuth() &&
+          request.resource.data.respondentId == uid() &&
+          request.resource.data.respondentName is string &&
+          request.resource.data.formId == formId;
+
+        // Update: respondent can update their own draft responses
+        allow update: if isAuth() &&
+          resource.data.respondentId == uid() &&
+          resource.data.status == "draft";
+
+        // Delete: form owner can delete responses
+        allow delete: if isAuth() && (
+          get(/databases/$(database)/documents/forms/$(formId)).data.createdBy == uid() ||
+          (get(/databases/$(database)/documents/forms/$(formId)).data.teamId != null &&
+           isTeamOwnerOf(get(/databases/$(database)/documents/forms/$(formId)).data.teamId))
+        );
+      }
+    }
+
   }
 }

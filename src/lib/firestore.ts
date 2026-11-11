@@ -15,6 +15,14 @@ export interface BackgroundImage {
   order?: number;
 }
 
+import type {
+  TechnicianReport,
+  Form,
+  Question,
+  FormResponse,
+  FormParticipant,
+} from "@/types";
+
 import {
   collection,
   doc,
@@ -510,9 +518,12 @@ export const updateTask = async (
 ): Promise<void> => {
   const taskRef = doc(db, "tasks", taskId);
   const { id, createdAt, ...rest } = updates;
-  const cleanUpdates = stripUndefined(rest) as Record<string, unknown>;
-  if ("priority" in updates && updates.priority === undefined) {
-    cleanUpdates.priority = deleteField();
+  // Keys explicitly present with `undefined` mean "remove this field"
+  // (e.g. clearing location, phones, priority). Firestore rejects raw
+  // `undefined`, so translate them into deleteField().
+  const cleanUpdates: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(rest)) {
+    cleanUpdates[key] = value === undefined ? deleteField() : value;
   }
   await updateDoc(taskRef, withTimestamps(cleanUpdates));
 };
@@ -2277,4 +2288,392 @@ export const subscribeToTaskAttachments = (
     },
     () => callback([]),
   );
+};
+
+// ============================================
+// ÍTEM 11 — Technician Reports
+// ============================================
+
+export const reportsCollection = collection(db, "reports");
+
+export const createTechnicianReport = async (
+  report: Omit<TechnicianReport, "id" | "createdAt">,
+): Promise<string> => {
+  const reportRef = doc(reportsCollection);
+  const cleanReport = stripUndefined(report);
+  await setDoc(reportRef, {
+    ...cleanReport,
+    createdAt: serverTimestamp(),
+  });
+  return reportRef.id;
+};
+
+export const updateTechnicianReport = async (
+  reportId: string,
+  updates: Partial<TechnicianReport>,
+): Promise<void> => {
+  const reportRef = doc(db, "reports", reportId);
+  const { id, createdAt, ...rest } = updates;
+  const cleanUpdates = stripUndefined(rest) as Record<string, unknown>;
+  await updateDoc(reportRef, withTimestamps(cleanUpdates));
+};
+
+export const deleteTechnicianReport = async (
+  reportId: string,
+): Promise<void> => {
+  await deleteDoc(doc(db, "reports", reportId));
+};
+
+export const getTechnicianReport = async (
+  reportId: string,
+): Promise<TechnicianReport | null> => {
+  const docRef = doc(db, "reports", reportId);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) return null;
+  const data = docSnap.data();
+  return {
+    ...data,
+    id: docSnap.id,
+    createdAt: toDate(data.createdAt),
+    updatedAt: data.updatedAt ? toDate(data.updatedAt) : undefined,
+  } as TechnicianReport;
+};
+
+export const subscribeToMyReports = (
+  userId: string,
+  callback: (reports: TechnicianReport[]) => void,
+): Unsubscribe => {
+  const q = query(
+    reportsCollection,
+    where("createdBy", "==", userId),
+    orderBy("createdAt", "desc"),
+    firestoreLimit(100),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const reports = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: toDate(data.createdAt),
+          updatedAt: data.updatedAt ? toDate(data.updatedAt) : undefined,
+        } as TechnicianReport;
+      });
+      callback(reports);
+    },
+    () => callback([]),
+  );
+};
+
+export const subscribeToAllReports = (
+  teamId: string,
+  callback: (reports: TechnicianReport[]) => void,
+): Unsubscribe => {
+  const q = query(
+    reportsCollection,
+    where("teamId", "==", teamId),
+    orderBy("createdAt", "desc"),
+    firestoreLimit(200),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const reports = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: toDate(data.createdAt),
+          updatedAt: data.updatedAt ? toDate(data.updatedAt) : undefined,
+        } as TechnicianReport;
+      });
+      callback(reports);
+    },
+    () => callback([]),
+  );
+};
+
+export const subscribeToReportsByTask = (
+  taskId: string,
+  callback: (reports: TechnicianReport[]) => void,
+): Unsubscribe => {
+  const q = query(
+    reportsCollection,
+    where("linkedTaskId", "==", taskId),
+    orderBy("createdAt", "desc"),
+    firestoreLimit(50),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const reports = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: toDate(data.createdAt),
+          updatedAt: data.updatedAt ? toDate(data.updatedAt) : undefined,
+        } as TechnicianReport;
+      });
+      callback(reports);
+    },
+    () => callback([]),
+  );
+};
+
+// ============================================
+// ÍTEM 12 — Forms (Google Forms-like)
+// ============================================
+
+export const formsCollection = collection(db, "forms");
+
+export const createForm = async (
+  form: Omit<Form, "id" | "createdAt" | "updatedAt" | "responseCount">,
+): Promise<string> => {
+  const formRef = doc(formsCollection);
+  const cleanForm = stripUndefined(form);
+  await setDoc(formRef, {
+    ...cleanForm,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    responseCount: 0,
+  });
+  return formRef.id;
+};
+
+export const updateForm = async (
+  formId: string,
+  updates: Partial<Form>,
+): Promise<void> => {
+  const formRef = doc(db, "forms", formId);
+  const { id, createdAt, responseCount, ...rest } = updates;
+  const cleanUpdates = stripUndefined(rest) as Record<string, unknown>;
+  await updateDoc(formRef, withTimestamps(cleanUpdates));
+};
+
+export const deleteForm = async (formId: string): Promise<void> => {
+  await deleteDoc(doc(db, "forms", formId));
+};
+
+export const getForm = async (formId: string): Promise<Form | null> => {
+  const docRef = doc(db, "forms", formId);
+  const docSnap = await getDoc(docRef);
+  if (!docSnap.exists()) return null;
+  const data = docSnap.data();
+  return {
+    ...data,
+    id: docSnap.id,
+    createdAt: toDate(data.createdAt),
+    updatedAt: toDate(data.updatedAt),
+    publishedAt: data.publishedAt ? toDate(data.publishedAt) : undefined,
+  } as Form;
+};
+
+export const getFormsByTeam = async (teamId: string): Promise<Form[]> => {
+  const q = query(
+    formsCollection,
+    where("teamId", "==", teamId),
+    orderBy("updatedAt", "desc"),
+    firestoreLimit(100),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      ...data,
+      id: doc.id,
+      createdAt: toDate(data.createdAt),
+      updatedAt: toDate(data.updatedAt),
+      publishedAt: data.publishedAt ? toDate(data.publishedAt) : undefined,
+    } as Form;
+  });
+};
+
+export const subscribeToTeamForms = (
+  teamId: string,
+  callback: (forms: Form[]) => void,
+): Unsubscribe => {
+  const q = query(
+    formsCollection,
+    where("teamId", "==", teamId),
+    orderBy("updatedAt", "desc"),
+    firestoreLimit(100),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const forms = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: toDate(data.createdAt),
+          updatedAt: toDate(data.updatedAt),
+          publishedAt: data.publishedAt ? toDate(data.publishedAt) : undefined,
+        } as Form;
+      });
+      callback(forms);
+    },
+    () => callback([]),
+  );
+};
+
+export const incrementFormResponseCount = async (
+  formId: string,
+): Promise<void> => {
+  const formRef = doc(db, "forms", formId);
+  await updateDoc(formRef, {
+    responseCount: increment(1),
+    updatedAt: serverTimestamp(),
+  });
+};
+
+// Form participants subcollection
+export const addFormParticipant = async (
+  formId: string,
+  participant: Omit<FormParticipant, "id">,
+): Promise<string> => {
+  const ref = doc(
+    collection(db, "forms", formId, "participants"),
+    participant.userId,
+  );
+  await setDoc(ref, {
+    ...stripUndefined(participant),
+    addedAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
+export const removeFormParticipant = async (
+  formId: string,
+  userId: string,
+): Promise<void> => {
+  await deleteDoc(doc(db, "forms", formId, "participants", userId));
+};
+
+export const subscribeToFormParticipants = (
+  formId: string,
+  callback: (participants: FormParticipant[]) => void,
+): Unsubscribe => {
+  const q = query(
+    collection(db, "forms", formId, "participants"),
+    orderBy("addedAt", "desc"),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const participants = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          userId: d.id,
+          userName: data.userName || "",
+          role: data.role || "participant",
+          addedAt: toDate(data.addedAt),
+          addedBy: data.addedBy || "",
+        } as FormParticipant;
+      });
+      callback(participants);
+    },
+    () => callback([]),
+  );
+};
+
+// Form responses subcollection
+export const createFormResponse = async (
+  response: Omit<FormResponse, "id" | "submittedAt">,
+): Promise<string> => {
+  const ref = doc(collection(db, "forms", response.formId, "responses"));
+  await setDoc(ref, {
+    ...stripUndefined(response),
+    submittedAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
+export const updateFormResponse = async (
+  formId: string,
+  responseId: string,
+  updates: Partial<FormResponse>,
+): Promise<void> => {
+  const ref = doc(db, "forms", formId, "responses", responseId);
+  await updateDoc(ref, withTimestamps(stripUndefined(updates)));
+};
+
+export const deleteFormResponse = async (
+  formId: string,
+  responseId: string,
+): Promise<void> => {
+  await deleteDoc(doc(db, "forms", formId, "responses", responseId));
+};
+
+export const getFormResponses = async (
+  formId: string,
+): Promise<FormResponse[]> => {
+  const q = query(
+    collection(db, "forms", formId, "responses"),
+    orderBy("submittedAt", "desc"),
+    firestoreLimit(500),
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      ...data,
+      id: doc.id,
+      submittedAt: toDate(data.submittedAt),
+    } as FormResponse;
+  });
+};
+
+export const subscribeToFormResponses = (
+  formId: string,
+  callback: (responses: FormResponse[]) => void,
+): Unsubscribe => {
+  const q = query(
+    collection(db, "forms", formId, "responses"),
+    orderBy("submittedAt", "desc"),
+    firestoreLimit(500),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const responses = snap.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          submittedAt: toDate(data.submittedAt),
+        } as FormResponse;
+      });
+      callback(responses);
+    },
+    () => callback([]),
+  );
+};
+
+export const getUserForms = async (userId: string): Promise<Form[]> => {
+  // Get forms where user is owner or participant
+  const q = query(
+    formsCollection,
+    where("createdBy", "==", userId),
+    orderBy("updatedAt", "desc"),
+    firestoreLimit(50),
+  );
+  const snap = await getDocs(q);
+  const ownedForms = snap.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      ...data,
+      id: doc.id,
+      createdAt: toDate(data.createdAt),
+      updatedAt: toDate(data.updatedAt),
+      publishedAt: data.publishedAt ? toDate(data.publishedAt) : undefined,
+    } as Form;
+  });
+
+  // Get forms where user is participant (subcollection query would be expensive)
+  // For now, return owned forms. Participant filtering can be enhanced later.
+  return ownedForms;
 };

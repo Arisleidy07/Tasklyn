@@ -158,7 +158,7 @@ function HistoryCard({ entry, isCurrentUser }: HistoryCardProps) {
       animate={{ opacity: 1, x: 0 }}
       whileHover={{ x: 4 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="flex items-start gap-4 p-4 rounded-xl border transition-all duration-200"
+      className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border transition-all duration-200 overflow-hidden"
       style={
         isCurrentUser
           ? {
@@ -173,7 +173,7 @@ function HistoryCard({ entry, isCurrentUser }: HistoryCardProps) {
     >
       {/* Action Icon */}
       <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center"
+        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
         style={getActionStyle(entry.action)}
       >
         {getActionIcon(entry.action)}
@@ -189,17 +189,20 @@ function HistoryCard({ entry, isCurrentUser }: HistoryCardProps) {
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex-1">
-            <p className="text-sm" style={{ color: "var(--text-primary)" }}>
+          <div className="flex-1 min-w-0">
+            <p
+              className="text-sm break-words"
+              style={{ color: "var(--text-primary)" }}
+            >
               <span className="font-medium">{entry.performedByName}</span>{" "}
               <span style={{ color: "var(--text-secondary)" }}>
                 {getActionText(entry.action)}
               </span>{" "}
               <span
-                className="font-medium truncate block"
+                className="font-medium block line-clamp-2"
                 style={{ color: "var(--text-primary)" }}
               >
-                "{entry.taskTitle}"
+                &quot;{entry.taskTitle}&quot;
               </span>
             </p>
 
@@ -227,7 +230,7 @@ function HistoryCard({ entry, isCurrentUser }: HistoryCardProps) {
 
             {entry.details && (
               <p
-                className="text-sm mt-1 italic"
+                className="text-sm mt-1 italic break-words"
                 style={{ color: "var(--text-tertiary)" }}
               >
                 {entry.details}
@@ -324,7 +327,7 @@ export default function HistoryPage() {
     tasks.forEach((task) => {
       if (task.createdBy) uids.add(task.createdBy);
       if (task.completedBy) uids.add(task.completedBy);
-      if ((task as any).performedBy) uids.add((task as any).performedBy);
+      if (task.performedBy) uids.add(task.performedBy);
       if (task.assignedTo) uids.add(task.assignedTo);
       task.history?.forEach((h) => {
         if (h.performedBy) uids.add(h.performedBy);
@@ -384,8 +387,8 @@ export default function HistoryPage() {
           listName: getListName(task.listId),
           listId: task.listId,
           details: "Tarea marcada como completada",
-          completedBy: (task as any).performedBy,
-          completedByName: resolveName((task as any).performedBy),
+          completedBy: task.performedBy,
+          completedByName: resolveName(task.performedBy),
         });
       }
 
@@ -408,7 +411,7 @@ export default function HistoryPage() {
       }
 
       task.history?.forEach((historyEntry) => {
-        const storedName = (historyEntry as any).performedByName;
+        const storedName = historyEntry.performedByName;
         history.push({
           id: `${task.id}-history-${historyEntry.id}`,
           action: historyEntry.action,

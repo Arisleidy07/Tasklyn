@@ -60,6 +60,7 @@ interface TaskState {
     createdBy: string;
     assignedTo?: string | null;
     location?: string;
+    locationUrl?: string;
     phoneNumbers?: string[];
     dueDate?: string | null;
     dueTime?: string | null;
@@ -82,6 +83,7 @@ interface TaskState {
         | "description"
         | "assignedTo"
         | "location"
+        | "locationUrl"
         | "phoneNumbers"
         | "dueDate"
         | "dueTime"
@@ -290,6 +292,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     createdBy,
     assignedTo,
     location,
+    locationUrl,
     phoneNumbers,
     dueDate,
     dueTime,
@@ -314,6 +317,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       completedBy: null,
       completedAt: null,
       location: location || undefined,
+      locationUrl: locationUrl || undefined,
       phoneNumbers: phoneNumbers || undefined,
       dueDate: dueDate || undefined,
       dueTime: dueTime || undefined,
@@ -444,18 +448,27 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         ),
       );
     }
-    if (updates.location !== undefined && updates.location !== task.location) {
-      entries.push(
-        createHistoryEntry(
-          "location_changed",
-          performedBy,
-          "Ubicación actualizada",
-          {
-            previousValue: task.location || "",
-            newValue: updates.location || "",
-          },
-        ),
+    const locationTouched =
+      ("location" in updates && updates.location !== task.location) ||
+      ("locationUrl" in updates && updates.locationUrl !== task.locationUrl);
+    if (locationTouched) {
+      const fmt = (loc?: string, url?: string) =>
+        [loc, url].filter(Boolean).join(" · ");
+      const prev = fmt(task.location, task.locationUrl);
+      const next = fmt(
+        "location" in updates ? updates.location : task.location,
+        "locationUrl" in updates ? updates.locationUrl : task.locationUrl,
       );
+      if (prev !== next) {
+        entries.push(
+          createHistoryEntry(
+            "location_changed",
+            performedBy,
+            next ? "Ubicación actualizada" : "Ubicación eliminada",
+            { previousValue: prev, newValue: next },
+          ),
+        );
+      }
     }
     if (
       updates.phoneNumbers !== undefined &&
@@ -598,7 +611,12 @@ export const useTaskStore = create<TaskState>((set, get) => ({
           task.id,
           task.listId,
         );
-      } else if (updates.title || updates.dueDate || updates.location) {
+      } else if (
+        updates.title ||
+        updates.dueDate ||
+        updates.location ||
+        updates.locationUrl
+      ) {
         notifyTaskEdited(
           task.createdBy,
           task.title,
@@ -609,7 +627,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
             ? "title"
             : updates.dueDate
               ? "dueDate"
-              : updates.location
+              : updates.location || updates.locationUrl
                 ? "location"
                 : undefined,
         );

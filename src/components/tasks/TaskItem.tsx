@@ -9,6 +9,7 @@ import { getPriorityConfig } from "@/lib/priority";
 import { motion } from "framer-motion";
 import TaskCompletionModal from "./TaskCompletionModal";
 import TaskDetailPanel from "./TaskDetailPanel";
+import { resolveTaskLocation } from "@/lib/location";
 import TaskCardMetaChip from "./TaskCardMetaChip";
 import {
   CheckCircle2,
@@ -141,6 +142,7 @@ function TaskItem({
   const dueUrgent = useMemo(() => isDueUrgent(task.dueDate), [task.dueDate]);
   const hasDescription = !!task.description?.trim();
   const firstPhone = task.phoneNumbers?.find((p) => p.trim()) || null;
+  const taskLocation = resolveTaskLocation(task);
   const reminderText = useMemo(() => {
     const r = task.reminders?.[0];
     return r ? formatReminder(r.at) : null;
@@ -186,7 +188,7 @@ function TaskItem({
   };
 
   const hasMeta =
-    firstPhone || task.location || reminderText || dueText || isCompleted;
+    firstPhone || taskLocation || reminderText || dueText || isCompleted;
 
   // Format completion info
   const completionInfo = useMemo(() => {
@@ -313,13 +315,11 @@ function TaskItem({
                   color="var(--text-success)"
                 />
               )}
-              {task.location && (
+              {taskLocation && (
                 <TaskCardMetaChip
                   icon={<MapPin size={12} />}
-                  text={task.location}
-                  href={`https://maps.google.com/?q=${encodeURIComponent(
-                    task.location,
-                  )}`}
+                  text={taskLocation.address || "Ver en Google Maps"}
+                  href={taskLocation.url}
                   color="var(--text-info)"
                 />
               )}

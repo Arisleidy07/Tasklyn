@@ -28,6 +28,11 @@ import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { timeAgo } from "@/lib/utils";
 import { subscribeToTaskHistory } from "@/lib/firestore";
 import {
+  resolveTaskLocation,
+  normalizeMapsUrl,
+  looksLikeUrl,
+} from "@/lib/location";
+import {
   X,
   Trash2,
   Archive,
@@ -53,6 +58,7 @@ import {
   Video,
   Download,
   Loader2,
+  Link as LinkIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -353,6 +359,7 @@ export default function TaskDetailPanel({
   const [localTitle, setLocalTitle] = useState("");
   const [localDescription, setLocalDescription] = useState("");
   const [localLocation, setLocalLocation] = useState("");
+  const [localLocationUrl, setLocalLocationUrl] = useState("");
   const [localPhones, setLocalPhones] = useState<string[]>([""]);
   const [localAssignedTo, setLocalAssignedTo] = useState<string | null>(null);
   const [localPriority, setLocalPriority] = useState<
@@ -394,14 +401,19 @@ export default function TaskDetailPanel({
   const queueSave = useCallback(
     (field: string, updates: Partial<Task>, delay = 700) => {
       if (!user || !task) return;
+      // Merge with any pending updates so quick edits across different
+      // fields (e.g. address then maps link) are never lost.
+      const merged = pendingSaveRef.current
+        ? { ...pendingSaveRef.current.updates, ...updates }
+        : updates;
       if (pendingSaveRef.current) clearTimeout(pendingSaveRef.current.timer);
       pendingSaveRef.current = {
         field,
         timer: setTimeout(() => {
-          updateTask(task.id, updates, user.id, user.name);
+          updateTask(task.id, merged, user.id, user.name);
           pendingSaveRef.current = null;
         }, delay),
-        updates,
+        updates: merged,
       };
     },
     [user, task, updateTask],
@@ -469,7 +481,14 @@ export default function TaskDetailPanel({
     if (task && isOpen) {
       setLocalTitle(task.title);
       setLocalDescription(task.description || "");
-      setLocalLocation(task.location || "");
+      // Tolerate legacy tasks where a maps link was saved in `location`
+      const resolved = resolveTaskLocation(task);
+      setLocalLocation(resolved?.address || "");
+      setLocalLocationUrl(
+        resolved?.hasExplicitUrl
+          ? task.locationUrl?.trim() || task.location?.trim() || ""
+          : "",
+      );
       setLocalPhones(task.phoneNumbers?.length ? [...task.phoneNumbers] : [""]);
       setLocalAssignedTo(task.assignedTo || null);
       setLocalPriority(
@@ -489,6 +508,7 @@ export default function TaskDetailPanel({
       setLocalTitle("");
       setLocalDescription("");
       setLocalLocation("");
+      setLocalLocationUrl("");
       setLocalPhones([""]);
       setLocalAssignedTo(null);
       setLocalPriority("medium");
@@ -573,6 +593,17 @@ export default function TaskDetailPanel({
 
   if (!task) return null;
 
+  // While editing, reflect the local (unsaved) values so the preview link
+  // updates instantly; otherwise fall back to what is stored in Firestore.
+  const resolvedLocation = canEdit
+    ? resolveTaskLocation({
+        location: localLocation,
+        locationUrl: looksLikeUrl(localLocationUrl) ? localLocationUrl : "",
+      })
+    : resolveTaskLocation(task);
+  const locationUrlInvalid =
+    !!localLocationUrl.trim() && !looksLikeUrl(localLocationUrl);
+
   const handleDelete = () => {
     deleteTask(task.id);
     onClose();
@@ -594,8 +625,11 @@ export default function TaskDetailPanel({
     if (validPhones.length) {
       lines.push("", `📞 ${validPhones.join(" / ")}`);
     }
-    if (task.location) {
-      lines.push("", `📍 ${task.location}`);
+    const loc = resolveTaskLocation(task);
+    if (loc) {
+      lines.push("");
+      if (loc.address) lines.push(`📍 ${loc.address}`);
+      lines.push(loc.address ? `🗺️ ${loc.url}` : `📍 ${loc.url}`);
     }
     if (task.dueDate) {
       lines.push(
@@ -632,11 +666,30 @@ export default function TaskDetailPanel({
     queueSave("priority", { priority });
   };
 
+  // Both location fields are always written together so legacy tasks (maps
+  // link stored in `location`) get migrated into the two-field model.
   const handleLocationChange = (value: string) => {
     setLocalLocation(value);
     queueSave("location", {
       location: value.trim() || undefined,
+      locationUrl: localLocationUrl.trim()
+        ? normalizeMapsUrl(localLocationUrl)
+        : undefined,
     });
+  };
+
+  const handleLocationUrlChange = (value: string) => {
+    setLocalLocationUrl(value);
+    queueSave("locationUrl", {
+      location: localLocation.trim() || undefined,
+      locationUrl: value.trim() ? normalizeMapsUrl(value) : undefined,
+    });
+  };
+
+  const handleClearLocation = () => {
+    setLocalLocation("");
+    setLocalLocationUrl("");
+    queueSave("location", { location: undefined, locationUrl: undefined }, 0);
   };
 
   const handlePhoneChange = (index: number, value: string) => {
@@ -1147,59 +1200,141 @@ export default function TaskDetailPanel({
           )}
 
           {/* Location */}
-          {(canEdit || task.location) && (
+          {(canEdit || resolvedLocation) && (
             <Section
               icon={<MapPin size={16} style={{ color: "var(--text-info)" }} />}
               label="Ubicación"
               action={
-                task.location && (
-                  <div className="flex items-center gap-0.5">
-                    <IconButton
-                      icon={<Copy size={14} />}
-                      title="Copiar dirección"
-                      onClick={() =>
-                        copyToClipboard(task.location || "", showToast)
-                      }
-                    />
-                    <IconButton
-                      icon={<ExternalLink size={14} />}
-                      title="Abrir en Google Maps"
-                      href={`https://maps.google.com/?q=${encodeURIComponent(task.location || "")}`}
-                      color="var(--text-info)"
-                    />
-                  </div>
+                canEdit &&
+                (localLocation.trim() || localLocationUrl.trim()) && (
+                  <IconButton
+                    icon={<X size={14} />}
+                    title="Eliminar ubicación"
+                    onClick={handleClearLocation}
+                    color="var(--text-error)"
+                  />
                 )
               }
             >
-              {canEdit ? (
-                <div
-                  className="flex items-center gap-2 rounded-[var(--radius-lg)] border px-3 py-2 focus-within:border-[var(--border-input-focus)] focus-within:ring-2 focus-within:ring-[var(--border-input-focus)]/15 transition-all"
-                  style={{
-                    backgroundColor: "var(--bg-secondary)",
-                    borderColor: "var(--border-input)",
-                  }}
-                >
-                  <input
-                    value={localLocation}
-                    onChange={(e) => handleLocationChange(e.target.value)}
-                    onBlur={flushPending}
-                    placeholder="Añade una ubicación..."
-                    className="flex-1 min-w-0 text-[var(--text-base)] bg-transparent focus:outline-none"
-                    style={{ color: "var(--text-primary)" }}
-                  />
-                </div>
-              ) : task.location ? (
-                <a
-                  href={`https://maps.google.com/?q=${encodeURIComponent(task.location)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[var(--text-base)] hover:underline"
-                  style={{ color: "var(--text-info)" }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {task.location}
-                </a>
-              ) : null}
+              <div className="space-y-2">
+                {canEdit && (
+                  <>
+                    <div
+                      className="flex items-center gap-2 rounded-[var(--radius-lg)] border px-3 py-2 min-h-10 focus-within:border-[var(--border-input-focus)] focus-within:ring-2 focus-within:ring-[var(--border-input-focus)]/15 transition-all"
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        borderColor: "var(--border-input)",
+                      }}
+                    >
+                      <MapPin
+                        size={14}
+                        className="flex-shrink-0"
+                        style={{ color: "var(--text-tertiary)" }}
+                      />
+                      <input
+                        value={localLocation}
+                        onChange={(e) => handleLocationChange(e.target.value)}
+                        onBlur={flushPending}
+                        placeholder="Dirección o nombre del lugar"
+                        aria-label="Dirección o nombre del lugar"
+                        className="flex-1 min-w-0 text-[var(--text-base)] bg-transparent focus:outline-none"
+                        style={{ color: "var(--text-primary)" }}
+                      />
+                    </div>
+                    <div
+                      className={cn(
+                        "flex items-center gap-2 rounded-[var(--radius-lg)] border px-3 py-2 min-h-10 focus-within:border-[var(--border-input-focus)] focus-within:ring-2 focus-within:ring-[var(--border-input-focus)]/15 transition-all",
+                        locationUrlInvalid && "border-[var(--text-error)]",
+                      )}
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        borderColor: locationUrlInvalid
+                          ? "var(--text-error)"
+                          : "var(--border-input)",
+                      }}
+                    >
+                      <LinkIcon
+                        size={14}
+                        className="flex-shrink-0"
+                        style={{ color: "var(--text-tertiary)" }}
+                      />
+                      <input
+                        type="url"
+                        inputMode="url"
+                        autoCapitalize="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        value={localLocationUrl}
+                        onChange={(e) =>
+                          handleLocationUrlChange(e.target.value)
+                        }
+                        onBlur={flushPending}
+                        placeholder="Pega el enlace de Google Maps"
+                        aria-label="Enlace de Google Maps"
+                        className="flex-1 min-w-0 text-[var(--text-base)] bg-transparent focus:outline-none"
+                        style={{ color: "var(--text-primary)" }}
+                      />
+                    </div>
+                    {locationUrlInvalid && (
+                      <p
+                        className="text-[var(--text-xs)] flex items-center gap-1"
+                        style={{ color: "var(--text-error)" }}
+                      >
+                        <AlertCircle size={12} /> Pega un enlace válido (debe
+                        comenzar con https://)
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {resolvedLocation && (
+                  <div
+                    className="rounded-[var(--radius-lg)] border px-3 py-2.5 space-y-1.5"
+                    style={{
+                      backgroundColor: "var(--bg-info)",
+                      borderColor: "var(--border-color)",
+                    }}
+                  >
+                    {resolvedLocation.address && (
+                      <div className="flex items-start justify-between gap-2">
+                        <p
+                          className="text-[var(--text-base)] leading-snug break-words min-w-0"
+                          style={{ color: "var(--text-primary)" }}
+                        >
+                          {resolvedLocation.address}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyToClipboard(
+                              resolvedLocation.address,
+                              showToast,
+                            )
+                          }
+                          title="Copiar dirección"
+                          className="flex-shrink-0 p-1.5 -mr-1 rounded-md transition-colors hover:bg-[var(--bg-hover)]"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
+                          <Copy size={14} />
+                        </button>
+                      </div>
+                    )}
+                    <a
+                      href={resolvedLocation.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="inline-flex items-center gap-1.5 min-h-10 sm:min-h-0 py-1 text-[var(--text-sm)] font-semibold underline underline-offset-2 break-all"
+                      style={{ color: "#1d4ed8" }}
+                    >
+                      <ExternalLink size={14} className="flex-shrink-0" />
+                      {resolvedLocation.hasExplicitUrl
+                        ? "Abrir en Google Maps"
+                        : "Buscar en Google Maps"}
+                    </a>
+                  </div>
+                )}
+              </div>
             </Section>
           )}
 

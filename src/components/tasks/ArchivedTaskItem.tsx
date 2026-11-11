@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { timeAgo } from "@/lib/utils";
 import TaskCardMetaChip from "./TaskCardMetaChip";
+import { resolveTaskLocation } from "@/lib/location";
 
 interface ArchivedTaskItemProps {
   task: Task;
@@ -54,6 +55,7 @@ export default function ArchivedTaskItem({
   };
 
   const hasMeta = task.archivedAt || task.archivedBy;
+  const taskLocation = resolveTaskLocation(task);
 
   return (
     <>
@@ -129,16 +131,16 @@ export default function ArchivedTaskItem({
           </div>
         </div>
 
-        {(task.location ||
+        {(taskLocation ||
           task.phoneNumbers?.length ||
           task.description ||
           hasMeta) && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            {task.location && (
+            {taskLocation && (
               <TaskCardMetaChip
                 icon={<MapPin size={11} />}
-                text={task.location}
-                href={`https://maps.google.com/?q=${encodeURIComponent(task.location)}`}
+                text={taskLocation.address || "Ver en Google Maps"}
+                href={taskLocation.url}
                 color="var(--text-tertiary)"
               />
             )}
@@ -184,7 +186,8 @@ export default function ArchivedTaskItem({
           >
             <AlertTriangle size={15} className="flex-shrink-0 mt-0.5" />
             <p>
-              ¿Eliminar "<strong>{task.title}</strong>"? No se puede deshacer.
+              ¿Eliminar &quot;<strong>{task.title}</strong>&quot;? No se puede
+              deshacer.
             </p>
           </div>
           <div className="flex gap-3">

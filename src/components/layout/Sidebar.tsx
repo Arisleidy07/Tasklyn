@@ -25,6 +25,7 @@ import {
   History,
   Activity,
   Zap,
+  Wrench,
 } from "lucide-react";
 import { useNotificationStore } from "@/stores/notificationStore";
 import Logo from "@/components/shared/Logo";
@@ -84,6 +85,7 @@ export default function Sidebar() {
     { name: "Ranking", href: "/ranking", icon: Trophy },
     { name: "Calendario", href: "/calendar", icon: Calendar },
     { name: "Historial", href: "/history", icon: History },
+    { name: "Técnicos", href: "/technicians", icon: Wrench },
     {
       name: "Notificaciones",
       href: "/notifications",

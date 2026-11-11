@@ -555,3 +555,139 @@ export async function deleteTaskAttachment(storagePath: string): Promise<void> {
     throw error;
   }
 }
+
+// ============================================
+// Technician Report Evidence
+// ============================================
+
+export interface ReportEvidenceUploadResult {
+  url: string;
+  storagePath: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+}
+
+/**
+ * Upload technician report evidence (location photo or work evidence).
+ * Supports images and videos with size limits.
+ */
+export async function uploadReportEvidence(
+  reportId: string,
+  evidenceType: "location_photo" | "work_evidence",
+  file: File,
+  onProgress?: (progress: number) => void,
+): Promise<ReportEvidenceUploadResult> {
+  try {
+    // Validate file - location photo max 100MB, work evidence max 1GB
+    const maxSizeBytes =
+      evidenceType === "location_photo"
+        ? 100 * 1024 * 1024 // 100MB
+        : 1024 * 1024 * 1024; // 1GB
+
+    const validatedFile = await prepareAttachmentFile(file, {
+      maxSizeBytes,
+      allowedTypes: ALLOWED_ATTACHMENT_TYPES,
+    });
+
+    const fileName = safeAttachmentFileName(validatedFile);
+    const storagePath = `reports/${reportId}/${evidenceType}/${fileName}`;
+
+    const storageRef = ref(storage, storagePath);
+
+    // Upload with progress tracking if callback provided
+    if (onProgress) {
+      const uploadTask = uploadBytesResumable(storageRef, validatedFile, {
+        contentType: validatedFile.type,
+      });
+
+      return new Promise((resolve, reject) => {
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            const progress =
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            onProgress(progress);
+          },
+          (error) => {
+            console.error("[uploadReportEvidence] Upload failed:", error);
+            if (error.code === "storage/unauthorized") {
+              reject(new Error("No tienes permiso para subir archivos"));
+            } else if (error.code === "storage/canceled") {
+              reject(new Error("Subida cancelada"));
+            } else if (error.code === "storage/unknown") {
+              reject(new Error("Error desconocido al subir el archivo"));
+            } else {
+              reject(
+                new Error(
+                  `Error al subir: ${error.message || "Error de conexión"}`,
+                ),
+              );
+            }
+          },
+          async () => {
+            try {
+              const url = await getDownloadURL(storageRef);
+              console.log("[uploadReportEvidence] Upload successful:", {
+                url,
+                storagePath,
+                fileName,
+              });
+              resolve({
+                url,
+                storagePath,
+                fileName,
+                fileType: validatedFile.type,
+                fileSize: validatedFile.size,
+              });
+            } catch (error) {
+              console.error(
+                "[uploadReportEvidence] Failed to get download URL:",
+                error,
+              );
+              reject(new Error("No se pudo obtener la URL del archivo"));
+            }
+          },
+        );
+      });
+    } else {
+      // Simple upload without progress tracking
+      await uploadBytes(storageRef, validatedFile, {
+        contentType: validatedFile.type,
+      });
+      const url = await getDownloadURL(storageRef);
+      console.log("[uploadReportEvidence] Upload successful:", {
+        url,
+        storagePath,
+        fileName,
+      });
+      return {
+        url,
+        storagePath,
+        fileName,
+        fileType: validatedFile.type,
+        fileSize: validatedFile.size,
+      };
+    }
+  } catch (error) {
+    console.error("[uploadReportEvidence] Validation or upload error:", error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error("Error al subir el archivo");
+  }
+}
+
+/**
+ * Delete technician report evidence from Firebase Storage.
+ */
+export async function deleteReportEvidence(storagePath: string): Promise<void> {
+  if (!storagePath || storagePath.startsWith("data:")) return;
+  try {
+    const storageRef = ref(storage, storagePath);
+    await deleteObject(storageRef);
+  } catch (error) {
+    console.warn("Failed to delete report evidence from Storage:", error);
+    throw error;
+  }
+}

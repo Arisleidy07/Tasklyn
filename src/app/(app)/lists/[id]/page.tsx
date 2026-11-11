@@ -25,6 +25,7 @@ import {
   AlertCircle,
   Phone,
   MapPin,
+  Link as LinkIcon,
   X,
   Archive,
   ChevronDown,
@@ -40,6 +41,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { normalizeMapsUrl, looksLikeUrl } from "@/lib/location";
 import { canShareList } from "@/lib/permissions";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 
@@ -63,6 +65,7 @@ export default function ListDetailPage() {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDescription, setNewTaskDescription] = useState("");
   const [newTaskLocation, setNewTaskLocation] = useState("");
+  const [newTaskLocationUrl, setNewTaskLocationUrl] = useState("");
   const [newTaskPhones, setNewTaskPhones] = useState<string[]>([""]);
   const [newTaskPriority, setNewTaskPriority] = useState<
     "low" | "medium" | "high" | "urgent"
@@ -219,6 +222,7 @@ export default function ListDetailPage() {
     setNewTaskTitle("");
     setNewTaskDescription("");
     setNewTaskLocation("");
+    setNewTaskLocationUrl("");
     setNewTaskPhones([""]);
     setNewTaskPriority("medium");
     setNewTaskDueDate("");
@@ -259,6 +263,9 @@ export default function ListDetailPage() {
         title: newTaskTitle.trim(),
         description: newTaskDescription.trim() || "",
         location: newTaskLocation.trim() || undefined,
+        locationUrl: newTaskLocationUrl.trim()
+          ? normalizeMapsUrl(newTaskLocationUrl)
+          : undefined,
         phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
         priority: newTaskPriority,
         createdBy: user.id,
@@ -1205,18 +1212,61 @@ export default function ListDetailPage() {
                         <MapPin size={12} />
                         Ubicación
                       </label>
-                      <input
-                        id="new-task-location"
-                        placeholder="Dirección o enlace de Google Maps"
-                        value={newTaskLocation}
-                        onChange={(e) => setNewTaskLocation(e.target.value)}
-                        className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
-                        style={{
-                          border: "1px solid var(--border-input)",
-                          backgroundColor: "var(--bg-input)",
-                          color: "var(--text-primary)",
-                        }}
-                      />
+                      <div className="space-y-2">
+                        <input
+                          id="new-task-location"
+                          placeholder="Dirección o nombre del lugar"
+                          value={newTaskLocation}
+                          onChange={(e) => setNewTaskLocation(e.target.value)}
+                          className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                          style={{
+                            border: "1px solid var(--border-input)",
+                            backgroundColor: "var(--bg-input)",
+                            color: "var(--text-primary)",
+                          }}
+                        />
+                        <div className="relative">
+                          <LinkIcon
+                            size={14}
+                            className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
+                            style={{ color: "var(--text-tertiary)" }}
+                          />
+                          <input
+                            id="new-task-location-url"
+                            type="url"
+                            inputMode="url"
+                            autoCapitalize="off"
+                            autoCorrect="off"
+                            spellCheck={false}
+                            placeholder="Enlace de Google Maps (opcional)"
+                            value={newTaskLocationUrl}
+                            onChange={(e) =>
+                              setNewTaskLocationUrl(e.target.value)
+                            }
+                            className="w-full h-11 pl-10 pr-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                            style={{
+                              border: `1px solid ${
+                                newTaskLocationUrl.trim() &&
+                                !looksLikeUrl(newTaskLocationUrl)
+                                  ? "var(--text-error)"
+                                  : "var(--border-input)"
+                              }`,
+                              backgroundColor: "var(--bg-input)",
+                              color: "var(--text-primary)",
+                            }}
+                          />
+                        </div>
+                        {newTaskLocationUrl.trim() &&
+                          !looksLikeUrl(newTaskLocationUrl) && (
+                            <p
+                              className="text-xs"
+                              style={{ color: "var(--text-error)" }}
+                            >
+                              Pega un enlace válido (debe comenzar con
+                              https://)
+                            </p>
+                          )}
+                      </div>
                     </div>
 
                     {/* Archivos adjuntos */}

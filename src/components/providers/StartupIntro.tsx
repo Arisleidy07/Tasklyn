@@ -1,157 +1,103 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
-import { Volume2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
 
 const INTRO_SHOWN_KEY = "tasklyn-intro-shown";
+const INTRO_DURATION_MS = 1500;
+const FADE_MS = 300;
 
+/**
+ * White startup screen with the original TASKLYN logo (green symbol, blue
+ * wordmark). Shown once per session on the first page load (browser tab or
+ * installed PWA). App content stays hidden until the intro finishes.
+ */
 export default function StartupIntro({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const pathname = usePathname();
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLeaving, setIsLeaving] = useState(false);
-  const [soundBlocked, setSoundBlocked] = useState(false);
+  // null = not decided yet (SSR / first paint), true = showing, false = done
+  const [showing, setShowing] = useState<boolean | null>(null);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
-    const isHome = pathname === "/";
-    const alreadyShown = sessionStorage.getItem(INTRO_SHOWN_KEY) === "true";
-    const show = isHome && !alreadyShown;
-    const raf = requestAnimationFrame(() => setIsPlaying(show));
-    return () => cancelAnimationFrame(raf);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (!isPlaying) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isPlaying]);
-
-  // Replay the intro with sound once the browser has a real user gesture.
-  const enableSound = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    setSoundBlocked(false);
-    video.muted = false;
+    let alreadyShown = false;
     try {
-      video.currentTime = 0;
+      alreadyShown = sessionStorage.getItem(INTRO_SHOWN_KEY) === "true";
     } catch {
-      // Ignore seek errors; unmuting alone is still an improvement.
+      alreadyShown = true;
     }
-    video.play().catch(() => {
-      // Still blocked — keep playing muted so the animation continues.
-      video.muted = true;
-      video.play().catch(() => {});
-    });
+    // Decide on the next frame to avoid a synchronous setState in the effect.
+    const raf = requestAnimationFrame(() => setShowing(!alreadyShown));
+    if (alreadyShown) return () => cancelAnimationFrame(raf);
+    const t1 = window.setTimeout(() => setLeaving(true), INTRO_DURATION_MS);
+    const t2 = window.setTimeout(() => {
+      try {
+        sessionStorage.setItem(INTRO_SHOWN_KEY, "true");
+      } catch {}
+      setShowing(false);
+    }, INTRO_DURATION_MS + FADE_MS);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
   }, []);
 
   useEffect(() => {
-    if (!isPlaying) return;
-    const video = videoRef.current;
-    if (!video) return;
-
-    let cancelled = false;
-    const startPlayback = async () => {
-      // Try with sound first; browsers may allow it after prior interaction.
-      video.muted = false;
-      try {
-        await video.play();
-        return;
-      } catch {
-        // Autoplay with sound blocked — fall back to muted playback so the
-        // animation always plays, and offer a gesture to enable sound.
-        if (cancelled) return;
-        video.muted = true;
-        try {
-          await video.play();
-          if (!cancelled) setSoundBlocked(true);
-        } catch {
-          if (!cancelled) setIsPlaying(false);
-        }
-      }
-    };
-
-    void startPlayback();
+    if (!showing) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     return () => {
-      cancelled = true;
-      if (!video) return;
-      video.pause();
-      video.removeAttribute("src");
-      video.load();
+      document.body.style.overflow = prev;
     };
-  }, [isPlaying]);
-
-  // First user gesture unlocks the audio (browser autoplay policy compliant).
-  useEffect(() => {
-    if (!isPlaying || !soundBlocked) return;
-    const handler = () => enableSound();
-    window.addEventListener("pointerdown", handler);
-    window.addEventListener("keydown", handler);
-    return () => {
-      window.removeEventListener("pointerdown", handler);
-      window.removeEventListener("keydown", handler);
-    };
-  }, [isPlaying, soundBlocked, enableSound]);
-
-  const markIntroShown = () => {
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(INTRO_SHOWN_KEY, "true");
-    }
-  };
-
-  const finishIntro = () => {
-    setIsLeaving(true);
-    markIntroShown();
-    window.setTimeout(() => setIsPlaying(false), 220);
-  };
+  }, [showing]);
 
   return (
     <>
+      {/* The opaque overlay below fully covers the app while the intro runs. */}
       {children}
-      {isPlaying && (
+      {showing !== false && (
         <div
-          className={`fixed inset-0 z-[2147483647] flex min-h-dvh w-screen items-center justify-center overflow-hidden bg-white transition-opacity duration-200 ${
-            isLeaving ? "opacity-0" : "opacity-100"
-          }`}
+          role="status"
+          aria-label="Cargando TASKLYN"
+          className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-white"
           style={{
+            opacity: leaving ? 0 : 1,
+            transition: `opacity ${FADE_MS}ms ease`,
             paddingTop: "env(safe-area-inset-top)",
-            paddingRight: "env(safe-area-inset-right)",
             paddingBottom: "env(safe-area-inset-bottom)",
-            paddingLeft: "env(safe-area-inset-left)",
           }}
         >
-          <video
-            ref={videoRef}
-            src="/ANIMACION-TASKLYN-WHITE.mp4"
-            autoPlay
-            playsInline
-            preload="auto"
-            controls={false}
-            disablePictureInPicture
-            onEnded={finishIntro}
-            onError={() => {
-              markIntroShown();
-              setIsPlaying(false);
+          <div
+            className="flex flex-col items-center gap-5 px-8"
+            style={{
+              animation: showing
+                ? "tasklyn-intro-in 650ms cubic-bezier(0.16,1,0.3,1) both"
+                : undefined,
             }}
-            className="block h-auto max-h-[58dvh] w-[min(84vw,360px)] object-contain sm:max-h-[62dvh] sm:w-[min(72vw,560px)] lg:max-h-[66dvh] lg:w-[min(58vw,680px)]"
-          />
-          {soundBlocked && (
-            <button
-              type="button"
-              onClick={enableSound}
-              className="absolute bottom-10 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-xs font-medium text-slate-600 shadow-sm backdrop-blur transition-colors hover:bg-white"
-            >
-              <Volume2 size={14} className="text-blue-600" aria-hidden="true" />
-              Toca para activar el sonido
-            </button>
-          )}
+          >
+            <Image
+              src="/icons/splash-logo.png"
+              alt="TASKLYN"
+              width={160}
+              height={160}
+              priority
+              unoptimized
+              className="w-[clamp(150px,42vw,230px)] h-auto select-none"
+              draggable={false}
+            />
+            <span className="text-[clamp(1.5rem,6vw,2.25rem)] font-bold tracking-[0.12em] text-blue-700 select-none">
+              TASKLYN
+            </span>
+          </div>
+          <style>{`
+            @keyframes tasklyn-intro-in {
+              from { opacity: 0; transform: translateY(8px) scale(0.96); }
+              to { opacity: 1; transform: translateY(0) scale(1); }
+            }
+          `}</style>
         </div>
       )}
     </>

@@ -45,6 +45,8 @@ import {
   Copy,
   Mail,
   Calendar,
+  FileText,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -52,10 +54,13 @@ import {
   getUserByEmail,
   subscribeToTeamActivity,
   createTeamInvitation,
+  createNotification,
   type TeamActivityEntry,
 } from "@/lib/firestore";
 import type { User as UserType } from "@/types";
 import type { SubcollectionTeamMember } from "@/lib/firestore";
+import FormList from "@/components/forms/FormList";
+import { useFormStore } from "@/stores/formStore";
 
 interface MemberProfile extends UserType {
   role: "owner" | "admin" | "member";
@@ -64,7 +69,14 @@ interface MemberProfile extends UserType {
   totalTasks: number;
 }
 
-type TabId = "panel" | "lists" | "members" | "activity" | "ranking" | "config";
+type TabId =
+  | "panel"
+  | "lists"
+  | "members"
+  | "activity"
+  | "ranking"
+  | "forms"
+  | "config";
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "panel", label: "Panel", icon: BarChart3 },
@@ -72,6 +84,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "members", label: "Miembros", icon: Users },
   { id: "activity", label: "Actividad", icon: Activity },
   { id: "ranking", label: "Ranking", icon: Trophy },
+  { id: "forms", label: "Formularios", icon: FileText },
   { id: "config", label: "Config.", icon: Settings },
 ];
 
@@ -109,6 +122,7 @@ export default function TeamDetailPage() {
   } = useTeamStore();
   const { tasks } = useTaskStore();
   const { lists, reorderLists } = useListStore();
+  const { subscribeToTeamForms, unsubscribeFromTeamForms } = useFormStore();
 
   const [activeTab, setActiveTab] = useState<TabId>("panel");
   const [memberProfiles, setMemberProfiles] = useState<MemberProfile[]>([]);
@@ -123,6 +137,7 @@ export default function TeamDetailPage() {
   const [editingName, setEditingName] = useState(false);
   const [newTeamName, setNewTeamName] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -244,6 +259,13 @@ export default function TeamDetailPage() {
     return () => unsub();
   }, [teamId]);
 
+  // Subscribe to team forms
+  useEffect(() => {
+    if (!teamId) return;
+    subscribeToTeamForms(teamId);
+    return () => unsubscribeFromTeamForms();
+  }, [teamId]);
+
   if (!user || !team) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -287,11 +309,37 @@ export default function TeamDetailPage() {
       ? Math.round((completedCount / teamTasks.length) * 100)
       : 0;
 
+  const showActionError = (message: string) => {
+    setActionError(message);
+    window.setTimeout(() => setActionError(null), 4000);
+  };
+
+  const describeError = (e: unknown, fallback: string) => {
+    const err = e as { code?: string; message?: string };
+    if (err?.code === "permission-denied")
+      return "No tienes permisos para realizar esta acción.";
+    return fallback;
+  };
+
+  // Admins can only manage plain members; only the owner manages admins.
+  // The owner can never be removed from their own team.
+  const canManageMember = (memberId: string, memberRole: string) => {
+    if (memberId === user.id || memberId === team.owner) return false;
+    if (userRole === "owner") return true;
+    return userRole === "admin" && memberRole === "member";
+  };
+
   const handleRemoveMember = async (memberId: string) => {
-    if (!isOwnerOrAdmin || memberId === user.id) return;
+    const target = activeMembers.find((m) => m.userId === memberId);
+    if (!target || !canManageMember(memberId, target.role)) {
+      showActionError("No puedes eliminar a este miembro.");
+      return;
+    }
     setActionLoading(memberId);
     try {
       await removeTeamMember(teamId, memberId);
+    } catch (e) {
+      showActionError(describeError(e, "No se pudo eliminar al miembro."));
     } finally {
       setActionLoading(null);
     }
@@ -301,24 +349,35 @@ export default function TeamDetailPage() {
     memberId: string,
     role: "owner" | "admin" | "member",
   ) => {
-    if (userRole !== "owner") return;
+    if (userRole !== "owner" || memberId === team.owner || role === "owner") {
+      showActionError("Solo el propietario puede cambiar roles.");
+      return;
+    }
     setActionLoading(memberId);
     try {
       await updateTeamMemberRole(teamId, memberId, role);
+    } catch (e) {
+      showActionError(describeError(e, "No se pudo cambiar el rol."));
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleSaveTeamName = async () => {
-    if (!newTeamName.trim() || newTeamName === team.name) {
+    const name = newTeamName.trim();
+    if (!name || name === team.name) {
       setEditingName(false);
       return;
     }
+    if (name.length < 2) {
+      showActionError("El nombre debe tener al menos 2 caracteres.");
+      return;
+    }
     try {
-      await updateTeam(teamId, { name: newTeamName.trim() });
-    } finally {
+      await updateTeam(teamId, { name });
       setEditingName(false);
+    } catch (e) {
+      showActionError(describeError(e, "No se pudo guardar el nombre."));
     }
   };
 
@@ -360,16 +419,46 @@ export default function TeamDetailPage() {
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inviteEmail.trim()) return;
+    const email = inviteEmail.trim().toLowerCase();
+    if (!email) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+      setInviteError("Escribe un correo electrónico válido.");
+      return;
+    }
+    if (email === user.email?.toLowerCase()) {
+      setInviteError("No puedes invitarte a ti mismo.");
+      return;
+    }
     setInviteLoading(true);
     setInviteError(null);
     try {
-      const foundUser = await getUserByEmail(inviteEmail.trim().toLowerCase());
+      const foundUser = await getUserByEmail(email);
       const alreadyMember = activeMembers.some(
         (m) => m.userId === foundUser?.id,
       );
       if (alreadyMember) {
         setInviteError("Este usuario ya es miembro del equipo.");
+        return;
+      }
+      const { doc, setDoc, collection, getDocs, query, where } = await import(
+        "firebase/firestore"
+      );
+      const { db } = await import("@/lib/firebase");
+      const pendingSnap = await getDocs(
+        query(
+          collection(db, "invitations"),
+          where("teamId", "==", teamId),
+          where("invitedEmail", "==", email),
+          where("status", "==", "pending"),
+        ),
+      );
+      if (
+        pendingSnap.docs.some((d) => {
+          const exp = d.data().expiresAt;
+          return !exp || new Date(exp) > new Date();
+        })
+      ) {
+        setInviteError("Ya existe una invitación pendiente para este correo.");
         return;
       }
       // Create invitation document — user must accept, no direct add
@@ -378,8 +467,6 @@ export default function TeamDetailPage() {
       const expiresAt = new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000,
       ).toISOString();
-      const { doc, setDoc, collection } = await import("firebase/firestore");
-      const { db } = await import("@/lib/firebase");
       const invRef = doc(collection(db, "invitations"));
       await setDoc(invRef, {
         token,
@@ -387,21 +474,47 @@ export default function TeamDetailPage() {
         targetId: teamId,
         teamId,
         invitedBy: user.id,
-        invitedEmail: inviteEmail.trim().toLowerCase(),
+        inviterName: user.name,
+        invitedEmail: email,
         defaultRole: inviteRole,
         status: "pending",
         createdAt: new Date().toISOString(),
         expiresAt,
       });
+
+      // If user exists, send in-app notification
+      if (foundUser) {
+        const roleLabel = inviteRole === "admin" ? "Administrador" : "Miembro";
+        await createNotification({
+          userId: foundUser.id,
+          type: "team_invitation",
+          title: `${user.name} te invita al equipo ${team.name}`,
+          body: `Unirte como ${roleLabel}`,
+          read: false,
+          status: "pending",
+          data: {
+            teamId,
+            teamName: team.name,
+            inviterName: user.name,
+            role: inviteRole,
+            token,
+          },
+        });
+      }
+
       setInviteSuccess(true);
       setInviteEmail("");
       setTimeout(() => {
         setInviteSuccess(false);
         setShowInviteModal(false);
       }, 1500);
-    } catch {
+    } catch (e) {
+      console.error("[handleInvite]", e);
       setInviteError(
-        "No se pudo enviar la invitación. Inténtalo nuevamente en unos segundos.",
+        describeError(
+          e,
+          "No se pudo enviar la invitación. Inténtalo nuevamente en unos segundos.",
+        ),
       );
     } finally {
       setInviteLoading(false);
@@ -435,21 +548,25 @@ export default function TeamDetailPage() {
     <>
       <Header
         title={
-          <div className="flex items-center gap-3">
-            <TeamImage
-              teamId={team.id}
-              name={team.name}
-              photoURL={team.photoURL}
-              size="md"
-              color={team.color}
-            />
-            <div>
-              <div className="flex items-center gap-2">
-                <span>{team.name}</span>
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="flex-shrink-0">
+              <TeamImage
+                teamId={team.id}
+                name={team.name}
+                photoURL={team.photoURL}
+                size="md"
+                color={team.color}
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="truncate" title={team.name}>
+                  {team.name}
+                </span>
                 {userRole === "owner" && (
                   <button
                     onClick={() => setShowEditModal(true)}
-                    className="p-1 rounded-md transition-colors"
+                    className="p-1 rounded-md transition-colors flex-shrink-0"
                     style={{ color: "var(--text-tertiary)" }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor =
@@ -461,6 +578,7 @@ export default function TeamDetailPage() {
                       e.currentTarget.style.color = "var(--text-tertiary)";
                     }}
                     title="Editar equipo"
+                    aria-label="Editar equipo"
                   >
                     <Edit3 size={14} />
                   </button>
@@ -477,8 +595,11 @@ export default function TeamDetailPage() {
               variant="ghost"
               size="sm"
               onClick={() => router.push("/teams")}
+              title="Volver a equipos"
+              aria-label="Volver a equipos"
             >
-              <ArrowLeft size={14} className="mr-1.5" /> Equipos
+              <ArrowLeft size={14} className="sm:mr-1.5" />
+              <span className="hidden sm:inline">Equipos</span>
             </Button>
             {isOwnerOrAdmin && (
               <Button
@@ -881,6 +1002,19 @@ export default function TeamDetailPage() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-3"
           >
+            {actionError && (
+              <div
+                role="alert"
+                className="flex items-start gap-2 rounded-xl px-4 py-3 text-sm"
+                style={{
+                  backgroundColor: "var(--bg-error)",
+                  color: "var(--text-error)",
+                }}
+              >
+                <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
+                <span className="min-w-0 break-words">{actionError}</span>
+              </div>
+            )}
             {loadingProfiles ? (
               <div className="space-y-3">
                 {activeMembers.map((_, i) => (
@@ -937,9 +1071,9 @@ export default function TeamDetailPage() {
                     >
                       {getRoleIcon(member.role)} {getRoleLabel(member.role)}
                     </span>
-                    {isOwnerOrAdmin && member.id !== user.id && (
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                        {userRole === "owner" && (
+                    {canManageMember(member.id, member.role) && (
+                      <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100 transition-opacity">
+                        {userRole === "owner" && member.id !== team.owner && (
                           <select
                             value={member.role}
                             onChange={(e) =>
@@ -963,7 +1097,9 @@ export default function TeamDetailPage() {
                         <button
                           onClick={() => handleRemoveMember(member.id)}
                           disabled={actionLoading === member.id}
-                          className="p-1.5 rounded-lg transition-colors"
+                          title="Quitar del equipo"
+                          aria-label="Quitar del equipo"
+                          className="min-w-9 min-h-9 p-1.5 rounded-lg transition-colors flex items-center justify-center"
                           style={{ color: "var(--text-tertiary)" }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.color = "#ef4444";
@@ -1204,6 +1340,16 @@ export default function TeamDetailPage() {
                 );
               })
             )}
+          </motion.div>
+        )}
+
+        {/* ══ TAB: FORMULARIOS ═════════════════════════════════════════════════ */}
+        {activeTab === "forms" && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <FormList teamId={teamId} isOwnerOrAdmin={isOwnerOrAdmin} />
           </motion.div>
         )}
 

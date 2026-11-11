@@ -19,15 +19,26 @@ export const metadata: Metadata = {
   title: "TASKLYN — Gestión de tareas colaborativa",
   description:
     "Plataforma SaaS de gestión de tareas profesional con colaboración en tiempo real.",
-  manifest: "/manifest.json",
+  manifest: "/manifest.json?v=2",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "TASKLYN",
   },
   icons: {
-    icon: "/T.PNG",
-    apple: "/T.PNG",
+    icon: [
+      { url: "/icons/favicon-32.png?v=2", sizes: "32x32", type: "image/png" },
+      { url: "/icons/favicon-16.png?v=2", sizes: "16x16", type: "image/png" },
+      { url: "/icons/icon-192.png?v=2", sizes: "192x192", type: "image/png" },
+    ],
+    apple: [
+      {
+        url: "/icons/apple-touch-icon.png?v=2",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+    shortcut: ["/icons/favicon-32.png?v=2"],
   },
   other: {
     "mobile-web-app-capable": "yes",
@@ -41,7 +52,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#2563eb",
+  themeColor: "#ffffff",
   viewportFit: "cover",
 };
 

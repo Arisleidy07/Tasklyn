@@ -1,12 +1,13 @@
-const CACHE_NAME = "tasklyn-v8";
+const CACHE_NAME = "tasklyn-v9";
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",
   "/favicon.svg",
   "/T.PNG",
-  "/TA.PNG",
-  "/ANIMACION-TASKLYN.mp4",
-  "/ANIMACION-TASKLYN-WHITE.mp4",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/apple-touch-icon.png",
+  "/icons/splash-logo.png",
 ];
 
 // Force skip waiting on install — activate immediately
@@ -111,8 +112,8 @@ try {
     const { title, body, icon } = payload.notification || {};
     self.registration.showNotification(title || "Tasklyn", {
       body: body || "",
-      icon: icon || "/T.PNG",
-      badge: "/T.PNG",
+      icon: icon || "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
       tag: payload.data?.taskId || "tasklyn",
       data: payload.data,
     });

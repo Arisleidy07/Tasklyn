@@ -6,6 +6,7 @@ import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import type { Task } from "@/types";
+import { normalizeMapsUrl, looksLikeUrl } from "@/lib/location";
 import {
   Plus,
   X,
@@ -15,6 +16,7 @@ import {
   Flag,
   AlertCircle,
   Paperclip,
+  Link as LinkIcon,
   Upload,
   Image as ImageIcon,
   Video,
@@ -35,6 +37,7 @@ export default function CreateTaskForm({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+  const [locationUrl, setLocationUrl] = useState("");
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>([""]);
   const [priority, setPriority] = useState<
     "low" | "normal" | "medium" | "high" | "urgent" | undefined
@@ -58,6 +61,7 @@ export default function CreateTaskForm({
     setTitle("");
     setDescription("");
     setLocation("");
+    setLocationUrl("");
     setPhoneNumbers([""]);
     setPriority(undefined);
     setTags([]);
@@ -122,6 +126,9 @@ export default function CreateTaskForm({
         description: description.trim(),
         createdBy: user.id,
         location: location.trim() || undefined,
+        locationUrl: locationUrl.trim()
+          ? normalizeMapsUrl(locationUrl)
+          : undefined,
         phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
         priority: priority || undefined,
         tags: tags.length > 0 ? tags : undefined,
@@ -424,19 +431,54 @@ export default function CreateTaskForm({
             <MapPin size={12} />
             Ubicación
           </label>
-          <input
-            id="create-task-location"
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="Dirección o enlace de Google Maps"
-            className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
-            style={{
-              border: "1px solid var(--border-input)",
-              backgroundColor: "var(--bg-input)",
-              color: "var(--text-primary)",
-            }}
-          />
+          <div className="space-y-2">
+            <input
+              id="create-task-location"
+              type="text"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              placeholder="Dirección o nombre del lugar"
+              className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
+            />
+            <div className="relative">
+              <LinkIcon
+                size={14}
+                className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none"
+                style={{ color: "var(--text-tertiary)" }}
+              />
+              <input
+                id="create-task-location-url"
+                type="url"
+                inputMode="url"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                value={locationUrl}
+                onChange={(e) => setLocationUrl(e.target.value)}
+                placeholder="Enlace de Google Maps (opcional)"
+                className="w-full h-11 pl-10 pr-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
+                style={{
+                  border: `1px solid ${
+                    locationUrl.trim() && !looksLikeUrl(locationUrl)
+                      ? "var(--text-error)"
+                      : "var(--border-input)"
+                  }`,
+                  backgroundColor: "var(--bg-input)",
+                  color: "var(--text-primary)",
+                }}
+              />
+            </div>
+            {locationUrl.trim() && !looksLikeUrl(locationUrl) && (
+              <p className="text-xs" style={{ color: "var(--text-error)" }}>
+                Pega un enlace válido (debe comenzar con https://)
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Phones */}

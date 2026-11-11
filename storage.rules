@@ -79,6 +79,52 @@ service firebase.storage {
       allow delete: if isAuth() && isListMember(firestore.get(/databases/(default)/documents/tasks/$(taskId)).data.listId);
     }
 
+    // Technician Report Evidence — read/write/delete based on report ownership
+    match /reports/{reportId}/{allPaths=**} {
+      // Read: report creator OR team admin/owner
+      allow read: if isAuth() && (
+        firestore.get(/databases/(default)/documents/reports/$(reportId)).data.createdBy == getAuthUid() ||
+        (firestore.get(/databases/(default)/documents/reports/$(reportId)).data.teamId != null &&
+         isTeamAdminOrOwner(firestore.get(/databases/(default)/documents/reports/$(reportId)).data.teamId))
+      );
+
+      // Write: only the report creator can upload evidence
+      allow write: if isAuth() &&
+        firestore.get(/databases/(default)/documents/reports/$(reportId)).data.createdBy == getAuthUid();
+
+      // Delete: report creator OR team admin/owner
+      allow delete: if isAuth() && (
+        firestore.get(/databases/(default)/documents/reports/$(reportId)).data.createdBy == getAuthUid() ||
+        (firestore.get(/databases/(default)/documents/reports/$(reportId)).data.teamId != null &&
+         isTeamAdminOrOwner(firestore.get(/databases/(default)/documents/reports/$(reportId)).data.teamId))
+      );
+    }
+
+    // Form files — header images and response uploads
+    match /forms/{formId}/{allPaths=**} {
+      // Read: form owner, team members of the form's team
+      allow read: if isAuth() && (
+        firestore.get(/databases/(default)/documents/forms/$(formId)).data.createdBy == getAuthUid() ||
+        (firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId != null &&
+         isTeamMember(firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId))
+      );
+
+      // Write: form owner can upload header images
+      // Participants can upload response files
+      allow write: if isAuth() && (
+        firestore.get(/databases/(default)/documents/forms/$(formId)).data.createdBy == getAuthUid() ||
+        (firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId != null &&
+         isTeamMember(firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId))
+      );
+
+      // Delete: form owner OR team admin/owner
+      allow delete: if isAuth() && (
+        firestore.get(/databases/(default)/documents/forms/$(formId)).data.createdBy == getAuthUid() ||
+        (firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId != null &&
+         isTeamAdminOrOwner(firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId))
+      );
+    }
+
     // Legacy image paths (old uploads before the organized structure).
     // Keep read access so existing profile/team/background photos keep loading.
     match /profile-photos/{userId}/{allPaths=**} {

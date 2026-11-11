@@ -5,13 +5,14 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface LogoProps {
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   className?: string;
   showText?: boolean;
   textClassName?: string;
 }
 
 const sizeMap = {
+  xs: { icon: 36, text: "text-base" },
   sm: { icon: 48, text: "text-lg" },
   md: { icon: 64, text: "text-xl" },
   lg: { icon: 80, text: "text-2xl" },

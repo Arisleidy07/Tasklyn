@@ -79,12 +79,19 @@ const tasks: Task[] = [
     dueTime: "10:30",
     phoneNumbers: ["+1 809 555 0123", "+1 829 555 9876"],
     location: "Av. Winston Churchill 1099, Santo Domingo",
+    locationUrl: "https://maps.app.goo.gl/abc123",
     tags: ["infraestructura", "sucursal-norte"],
     assignedTo: "u2",
     reminders: [{ id: "r1", at: iso(1), sent: false, recipientType: "me" }],
   }),
   mk({ id: "t2", title: "Enviar reporte semanal", priority: "medium", dueDate: iso(2).slice(0, 10) }),
-  mk({ id: "t3", title: "Revisar presupuesto Q3", priority: "high" }),
+  mk({
+    id: "t3",
+    title: "Revisar presupuesto Q3",
+    priority: "high",
+    // legacy data: maps link stored in `location`
+    location: "https://goo.gl/maps/legacy123",
+  }),
   mk({ id: "t4", title: "Actualizar inventario", priority: "low", status: "completed", completedBy: "u1", completedAt: iso(-1) }),
   mk({ id: "t5", title: "Llamar al proveedor de licencias", status: "completed", completedBy: "u2", completedAt: iso(-2) }),
   mk({ id: "t6", title: "Comprar café", listId: "l2", priority: "low" }),
@@ -117,9 +124,38 @@ export function seedDevPreview() {
     unsubscribeFromList: () => {},
     unsubscribeAll: () => {},
   });
+  const team = {
+    id: "team1",
+    name: "Operaciones Regionales",
+    description: "Equipo de operaciones y logística",
+    owner: "u1",
+    members: [
+      { userId: "u1", role: "owner" as const, joinedAt: iso(-90) },
+      { userId: "u2", role: "admin" as const, joinedAt: iso(-30) },
+      { userId: "u3", role: "member" as const, joinedAt: iso(-10) },
+    ],
+    memberIds: ["u1", "u2", "u3"],
+    createdAt: iso(-90),
+    updatedAt: iso(-1),
+    settings: { allowInvites: true, allowMemberCreateLists: true },
+    stats: { totalTasks: 6, completedTasks: 2, totalMembers: 3, totalLists: 2 },
+  };
   useTeamStore.setState({
-    teams: [],
+    teams: [team],
+    teamMembers: {
+      team1: team.members.map((m) => ({
+        ...m,
+        name: m.userId === "u1" ? "Arisleidy Pérez" : m.userId === "u2" ? "Carlos Méndez" : "Lucía Fernández",
+        email: `${m.userId}@tasklyn.com`,
+        photoURL: "",
+        xp: 0,
+        streak: 0,
+      })),
+    },
     subscribeToTeams: () => {},
     unsubscribeFromTeams: () => {},
+    subscribeToMembersForTeam: () => {},
+    unsubscribeFromMembersForTeam: () => {},
+    refreshTeams: async () => {},
   } as never);
 }

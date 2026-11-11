@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useNotificationStore } from "@/stores/notificationStore";
 import { useInvitationStore } from "@/stores/invitationStore";
@@ -145,6 +146,7 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const {
     notifications,
@@ -173,6 +175,28 @@ export default function NotificationsPage() {
       await markAllRead(user.id);
     } finally {
       setIsMarkingAll(false);
+    }
+  };
+
+  const handleNotificationClick = async (notif: any) => {
+    // Mark as read
+    if (!notif.read) {
+      await markRead(notif.id);
+    }
+
+    // Navigate based on notification type and data
+    if (notif.type === "team_invitation" && notif.data?.token) {
+      router.push(`/invite/team/${notif.data.token}`);
+    } else if (notif.type === "invitation" && notif.data?.token) {
+      router.push(`/invite/${notif.data.token}`);
+    } else if (notif.type === "task_assigned" && notif.data?.listId) {
+      router.push(`/lists/${notif.data.listId}`);
+    } else if (notif.type === "task_completed" && notif.data?.listId) {
+      router.push(`/lists/${notif.data.listId}`);
+    } else if (notif.data?.listId) {
+      router.push(`/lists/${notif.data.listId}`);
+    } else if (notif.data?.teamId) {
+      router.push(`/teams/${notif.data.teamId}`);
     }
   };
 
@@ -400,7 +424,7 @@ export default function NotificationsPage() {
                             boxShadow: "var(--shadow-card)",
                           }
                     }
-                    onClick={() => !notif.read && markRead(notif.id)}
+                    onClick={() => handleNotificationClick(notif)}
                   >
                     <div
                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 border"
@@ -578,7 +602,7 @@ export default function NotificationsPage() {
                               boxShadow: "var(--shadow-card)",
                             }
                       }
-                      onClick={() => !notif.read && markRead(notif.id)}
+                      onClick={() => handleNotificationClick(notif)}
                     >
                       <div
                         className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0 border"

@@ -207,6 +207,7 @@ export interface Task {
   deletedBy?: string | null;
   phoneNumbers?: string[];
   location?: string;
+  locationUrl?: string;
   archivedAt?: string | null;
   archivedBy?: string | null;
   dueDate?: string | null;
@@ -437,4 +438,215 @@ export interface BgCategoryConfig {
   createdBy: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+// ---- Technician Reports ----
+export type ServiceType =
+  | "INSTALACION"
+  | "AVERIA"
+  | "REVISION"
+  | "RETIRO"
+  | "CAMBIO_DE_CABLE"
+  | "CAMBIO_DE_TERMINAL"
+  | "CAMBIO_ROUTER"
+  | "TRASLADO"
+  | "OTROS";
+
+export type ReportResult =
+  | "TERMINADO"
+  | "PENDIENTE"
+  | "NO_SE_PUDO_REALIZAR"
+  | "OTROS";
+
+export interface ReportEvidence {
+  id: string;
+  type: "location_photo" | "work_evidence";
+  url: string;
+  storagePath: string;
+  fileName: string;
+  fileType: string; // MIME type
+  fileSize: number; // bytes
+  uploadedAt: string;
+}
+
+export interface TechnicianReport {
+  id: string;
+  // Report metadata
+  createdBy: string; // userId of the technician
+  createdByName: string; // Historical name of the technician
+  createdAt: string; // ISO timestamp
+  reportTime: string; // Time of report submission (editable)
+  updatedAt?: string; // Last modification timestamp
+
+  // Service information
+  serviceDate: string; // Date of service (YYYY-MM-DD)
+  serviceType: ServiceType;
+  serviceTypeOther?: string; // Description when serviceType is "OTROS"
+
+  // Client information
+  clientNameOrCode: string;
+  clientPhone: string;
+
+  // Work details
+  arrivalTime: string; // HH:MM format
+  departureTime: string; // HH:MM format
+  amountCharged?: number; // Optional amount
+
+  // Location and evidence
+  locationGPS: string; // GPS coordinates or Google Maps link
+  evidences: ReportEvidence[]; // Array of evidence files
+
+  // Result
+  result: ReportResult;
+  resultOther?: string; // Description when result is "OTROS"
+
+  // Declaration
+  declarationConfirmed: boolean;
+  declarationConfirmedAt: string;
+
+  // Optional task linking
+  linkedTaskId?: string; // Optional reference to a Task
+
+  // For supervisor tracking
+  teamId?: string; // Optional team assignment for supervision
+}
+
+// ---- Forms ----
+export type QuestionType =
+  | "short_text"
+  | "paragraph"
+  | "multiple_choice"
+  | "checkbox"
+  | "dropdown"
+  | "date"
+  | "time"
+  | "number"
+  | "phone"
+  | "email"
+  | "file_upload"
+  | "image_upload"
+  | "video_upload"
+  | "linear_scale"
+  | "rating"
+  | "information"
+  | "header"
+  | "location"
+  | "confirmation";
+
+export type FormStatus = "draft" | "published" | "paused" | "archived";
+
+export type FormRole = "owner" | "editor" | "participant" | "viewer";
+
+export interface QuestionOption {
+  id: string;
+  label: string;
+  order: number;
+}
+
+export interface QuestionValidation {
+  required: boolean;
+  min?: number;
+  max?: number;
+  pattern?: string;
+  customMessage?: string;
+}
+
+export interface Question {
+  id: string;
+  type: QuestionType;
+  title: string;
+  description?: string;
+  order: number;
+  isRequired: boolean;
+  validation?: QuestionValidation;
+  options?: QuestionOption[];
+  allowOther?: boolean;
+  otherLabel?: string;
+  maxFiles?: number;
+  acceptedFileTypes?: string[];
+  min?: number;
+  max?: number;
+  step?: number;
+  formula?: string; // For calculated fields
+  conditions?: QuestionCondition[];
+  sectionId?: string; // For grouping questions
+}
+
+export interface QuestionCondition {
+  questionId: string;
+  operator:
+    | "equals"
+    | "not_equals"
+    | "contains"
+    | "not_contains"
+    | "greater_than"
+    | "less_than";
+  value: string | number | boolean;
+}
+
+export interface FormSection {
+  id: string;
+  title: string;
+  description?: string;
+  order: number;
+}
+
+export interface Form {
+  id: string;
+  teamId: string;
+  title: string;
+  description?: string;
+  headerImage?: string;
+  headerImageStoragePath?: string;
+  status: FormStatus;
+  createdBy: string;
+  createdByName: string;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string;
+  questions: Question[];
+  sections?: FormSection[];
+  settings: {
+    allowResponses: boolean;
+    requireLogin: boolean;
+    collectEmail: boolean;
+    showProgressBar: boolean;
+    shuffleQuestions: boolean;
+    limitResponses?: number;
+  };
+  responseCount: number;
+}
+
+export interface FormParticipant {
+  userId: string;
+  userName: string;
+  role: FormRole;
+  addedAt: string;
+  addedBy: string;
+}
+
+export interface FormResponse {
+  id: string;
+  formId: string;
+  formVersion: number; // Track form version at time of response
+  formTitle: string; // Historical title
+  respondentId: string;
+  respondentName: string;
+  respondentEmail?: string;
+  submittedAt: string;
+  status: "draft" | "submitted";
+  answers: Record<string, any>; // questionId -> answer
+  files: ResponseFile[];
+  completedPercentage?: number; // For progress tracking
+}
+
+export interface ResponseFile {
+  id: string;
+  questionId: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  url: string;
+  storagePath: string;
+  uploadedAt: string;
 }
