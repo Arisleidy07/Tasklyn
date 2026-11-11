@@ -27,12 +27,11 @@ import {
   Clock,
   ArrowRight,
   TrendingUp,
-  CalendarDays,
-  Zap,
   Activity,
   Layout,
   ArrowUpRight,
   ChevronRight,
+  Target,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { PLAN_FEATURES, type Plan } from "@/types";
@@ -43,71 +42,17 @@ import {
   subDays,
   isSameDay,
   parseISO,
-  isBefore,
-  addDays,
 } from "date-fns";
 import { es } from "date-fns/locale";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-// ============================================
-// SPARKLINE CHART COMPONENT (MINI AREA)
-// ============================================
-function SparklineChart({ data, color }: { data: number[]; color: string }) {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setMounted(true), 50);
-    return () => clearTimeout(timer);
-  }, []);
-
-  const series = [{ name: "Value", data }];
-
-  const options: ApexCharts.ApexOptions = {
-    chart: {
-      type: "area",
-      height: 60,
-      sparkline: { enabled: true },
-      background: "transparent",
-      animations: {
-        enabled: true,
-        speed: 800,
-        dynamicAnimation: { enabled: true, speed: 350 },
-      },
-    },
-    colors: [color],
-    stroke: {
-      curve: "smooth",
-      width: 2,
-      lineCap: "round",
-    },
-    fill: {
-      type: "gradient",
-      gradient: {
-        shadeIntensity: 1,
-        opacityFrom: 0.2,
-        opacityTo: 0,
-        stops: [0, 100],
-      },
-    },
-    tooltip: {
-      enabled: false,
-    },
-    grid: {
-      padding: { top: 0, right: 0, bottom: 0, left: 0 },
-    },
-  };
-
-  if (!mounted) {
-    return <div className="h-[60px] w-full" />;
-  }
-
-  return (
-    <div className="w-full h-[60px]">
-      <Chart options={options} series={series} type="area" height={60} />
-    </div>
-  );
-}
+const PRIORITY_HEX: Record<string, string> = {
+  urgent: "#dc2626",
+  high: "#ea580c",
+  medium: "#d97706",
+  low: "#2563eb",
+};
 
 // ============================================
 // COUNT UP ANIMATION COMPONENT
@@ -116,10 +61,6 @@ function CountUp({ target, suffix = "" }: { target: number; suffix?: string }) {
   const [count, setCount] = useState(0);
   const rafRef = useRef<number | null>(null);
   useEffect(() => {
-    if (target === 0) {
-      setCount(0);
-      return;
-    }
     const duration = 1000;
     let startTime: number | null = null;
     const step = (ts: number) => {
@@ -303,10 +244,7 @@ interface KPICardProps {
     suffix: string;
     icon: React.ElementType;
     bg: string;
-    sparklineColor: string;
     badge: string;
-    badgeColor: string;
-    sparklineData: number[];
   };
   index: number;
 }
@@ -335,18 +273,19 @@ function KPICard({ stat, index }: KPICardProps) {
         borderColor: "var(--border-color)",
       }}
     >
-      <div className="flex items-center justify-between mb-2 relative z-10">
+      <div className="flex items-center justify-between mb-3 relative z-10">
         <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 shadow-lg"
+          className="w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300"
           style={{ backgroundColor: stat.bg }}
         >
-          <stat.icon size={18} style={{ color: "var(--text-on-accent)" }} />
+          <stat.icon size={18} style={{ color: "#ffffff" }} />
         </div>
         <span
-          className={cn(
-            "text-[11px] font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm",
-            stat.badgeColor,
-          )}
+          className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
+          style={{
+            backgroundColor: "var(--bg-secondary)",
+            color: "var(--text-secondary)",
+          }}
         >
           {stat.badge}
         </span>
@@ -359,16 +298,11 @@ function KPICard({ stat, index }: KPICardProps) {
         <CountUp target={stat.numericValue} suffix={stat.suffix} />
       </p>
       <p
-        className="text-xs font-medium relative z-10"
+        className="text-xs font-medium relative z-10 mt-0.5"
         style={{ color: "var(--text-secondary)" }}
       >
         {stat.label}
       </p>
-
-      {/* Sparkline Chart */}
-      <div className="mt-3 relative z-10">
-        <SparklineChart data={stat.sparklineData} color={stat.sparklineColor} />
-      </div>
     </motion.div>
   );
 }
@@ -377,9 +311,10 @@ function KPICard({ stat, index }: KPICardProps) {
 // ACTIVITY TIMELINE COMPONENT (REAL ACTIVITY)
 // ============================================
 function ActivityTimeline({ activities }: { activities: ActivityItem[] }) {
+  const [now] = useState(() => Date.now());
   const getTimeAgo = (dateStr: string) => {
     try {
-      const diff = Date.now() - parseISO(dateStr).getTime();
+      const diff = now - parseISO(dateStr).getTime();
       const mins = Math.floor(diff / 60000);
       if (mins < 1) return "Ahora";
       if (mins < 60) return `${mins}m`;
@@ -511,7 +446,7 @@ function ActivityTimeline({ activities }: { activities: ActivityItem[] }) {
                     className="font-medium"
                     style={{ color: "var(--text-secondary)" }}
                   >
-                    "{item.targetName}"
+                    &ldquo;{item.targetName}&rdquo;
                   </span>
                 </p>
                 <p
@@ -543,29 +478,9 @@ function SharedListRow({
   list,
   index,
 }: {
-  list: { id: string; name: string; members: any[]; type: string };
+  list: { id: string; name: string; members: unknown[]; type: string };
   index: number;
 }) {
-  const colors = [
-    {
-      border: "hover:border-blue-500/40",
-      glow: "group-hover:shadow-blue-500/20",
-    },
-    {
-      border: "hover:border-purple-500/40",
-      glow: "group-hover:shadow-purple-500/20",
-    },
-    {
-      border: "hover:border-emerald-500/40",
-      glow: "group-hover:shadow-emerald-500/20",
-    },
-    {
-      border: "hover:border-amber-500/40",
-      glow: "group-hover:shadow-amber-500/20",
-    },
-  ];
-  const color = colors[index % colors.length];
-
   return (
     <Link href={`/lists/${list.id}`} className="block">
       <motion.div
@@ -615,6 +530,153 @@ function SharedListRow({
 }
 
 // ============================================
+// LIST PREVIEW CARD (MAIN CONTENT)
+// ============================================
+function ListPreviewCard({
+  lists,
+  taskStats,
+}: {
+  lists: {
+    id: string;
+    name: string;
+    color?: string;
+    icon?: string;
+    type: string;
+  }[];
+  taskStats: Map<
+    string,
+    { pending: number; completed: number; total: number }
+  >;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2, duration: 0.5 }}
+      className="p-5 rounded-2xl border backdrop-blur-md shadow-sm"
+      style={{
+        backgroundColor: "var(--bg-card)",
+        borderColor: "var(--border-color)",
+      }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            style={{ backgroundColor: "var(--bg-info)" }}
+          >
+            <Layout size={18} style={{ color: "var(--text-link)" }} />
+          </div>
+          <div>
+            <h3
+              className="text-sm font-semibold"
+              style={{ color: "var(--text-primary)" }}
+            >
+              Mis listas
+            </h3>
+            <p
+              className="text-xs"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {lists.length} lista{lists.length !== 1 ? "s" : ""} activa
+              {lists.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/dashboard?section=lists&view=todas"
+          className="text-xs font-semibold hover:opacity-80 transition-colors"
+          style={{ color: "var(--text-link)" }}
+        >
+          Ver todas las listas
+        </Link>
+      </div>
+
+      <div className="space-y-1.5">
+        {lists.map((list) => {
+          const stats = taskStats.get(list.id) ?? {
+            pending: 0,
+            completed: 0,
+            total: 0,
+          };
+          const progress =
+            stats.total > 0
+              ? Math.round((stats.completed / stats.total) * 100)
+              : 0;
+          const accent = list.color || "var(--text-link)";
+
+          return (
+            <Link
+              key={list.id}
+              href={`/lists/${list.id}`}
+              className="flex items-center gap-3 p-2.5 rounded-xl transition-colors hover:bg-[var(--bg-hover)]"
+            >
+              <div
+                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-base"
+                style={{ backgroundColor: `${accent}1a` }}
+              >
+                {list.icon ? (
+                  <span className="leading-none">{list.icon}</span>
+                ) : (
+                  <ListTodo size={16} style={{ color: accent }} />
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <p
+                    className="text-sm font-medium truncate"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {list.name}
+                  </p>
+                  <span
+                    className="text-[11px] font-semibold tabular-nums flex-shrink-0"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    {stats.pending > 0
+                      ? `${stats.pending} pendiente${stats.pending !== 1 ? "s" : ""}`
+                      : stats.total > 0
+                        ? "Completada"
+                        : "Sin tareas"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <div
+                    className="flex-1 h-1.5 rounded-full overflow-hidden"
+                    style={{ backgroundColor: "var(--bg-secondary)" }}
+                  >
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${progress}%`,
+                        backgroundColor: accent,
+                      }}
+                    />
+                  </div>
+                  <span
+                    className="text-[10px] tabular-nums flex-shrink-0"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    {progress}%
+                  </span>
+                </div>
+              </div>
+
+              <ChevronRight
+                size={16}
+                className="flex-shrink-0"
+                style={{ color: "var(--text-tertiary)" }}
+              />
+            </Link>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
+// ============================================
 // MAIN DASHBOARD PAGE
 // ============================================
 export default function DashboardPage() {
@@ -647,11 +709,6 @@ export default function DashboardPage() {
   } = useActivityStore();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Subscribe to activity for user and all their lists
   useEffect(() => {
@@ -693,33 +750,49 @@ export default function DashboardPage() {
   const completedTasks = userTasks.filter((t) => t.status === "completed");
   const pendingTasks = userTasks.filter((t) => t.status === "pending");
 
-  const today = new Date();
+  const listTaskStats = (() => {
+    const map = new Map<
+      string,
+      { pending: number; completed: number; total: number }
+    >();
+    for (const t of userTasks) {
+      const s = map.get(t.listId) ?? { pending: 0, completed: 0, total: 0 };
+      s.total += 1;
+      if (t.status === "completed") s.completed += 1;
+      else s.pending += 1;
+      map.set(t.listId, s);
+    }
+    return map;
+  })();
 
-  const weekData = useMemo(() => {
-    return Array.from({ length: 7 }).map((_, i) => {
-      const day = subDays(today, 6 - i);
-      const done = completedTasks.filter((t) => {
-        try {
-          return t.completedAt && isSameDay(parseISO(t.completedAt), day);
-        } catch {
-          return false;
-        }
-      }).length;
-      const created = userTasks.filter((t) => {
-        try {
-          return isSameDay(parseISO(t.createdAt), day);
-        } catch {
-          return false;
-        }
-      }).length;
-      return {
-        label: format(day, "EEE", { locale: es }).slice(0, 3),
-        done,
-        created,
-        isToday: isSameDay(day, today),
-      };
-    });
-  }, [completedTasks, userTasks, today]);
+  const previewLists = [...allLists]
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .slice(0, 6);
+
+  const today = new Date();
+  const weekData = Array.from({ length: 7 }).map((_, i) => {
+    const day = subDays(today, 6 - i);
+    const done = completedTasks.filter((t) => {
+      try {
+        return t.completedAt && isSameDay(parseISO(t.completedAt), day);
+      } catch {
+        return false;
+      }
+    }).length;
+    const created = userTasks.filter((t) => {
+      try {
+        return isSameDay(parseISO(t.createdAt), day);
+      } catch {
+        return false;
+      }
+    }).length;
+    return {
+      label: format(day, "EEE", { locale: es }).slice(0, 3),
+      done,
+      created,
+      isToday: isSameDay(day, today),
+    };
+  });
 
   const handleTabChange = (tab: "todas" | "personal" | "shared") => {
     router.replace(`/dashboard?section=lists&view=${tab}`);
@@ -745,59 +818,38 @@ export default function DashboardPage() {
   const completionRate =
     totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
 
-  // Generate sparkline data based on weekly trend
-  const generateSparklineData = (baseValue: number, variance: number = 5) => {
-    return Array.from({ length: 10 }, (_, i) => {
-      const trend =
-        Math.sin(i * 0.8) * variance + baseValue + Math.random() * 2;
-      return Math.max(0, Math.round(trend));
-    });
-  };
-
   const stats = [
     {
       label: "Listas totales",
       numericValue: allLists.length,
       suffix: "",
       icon: FolderOpen,
-      bg: "bg-gradient-to-br from-blue-500 to-indigo-600",
-      sparklineColor: "#6366f1",
-      badge: `${allLists.length} total`,
-      badgeColor: "bg-blue-50 text-blue-600",
-      sparklineData: generateSparklineData(allLists.length, 2),
+      bg: "#2563eb",
+      badge: `${allLists.length} en total`,
     },
     {
       label: "Tareas totales",
       numericValue: userTasks.length,
       suffix: "",
       icon: TrendingUp,
-      bg: "bg-gradient-to-br from-purple-500 to-pink-600",
-      sparklineColor: "#a855f7",
+      bg: "#0891b2",
       badge: `${completedTasks.length} completadas`,
-      badgeColor: "bg-purple-50 text-purple-600",
-      sparklineData: generateSparklineData(userTasks.length / 5, 3),
     },
     {
       label: "Tasa de éxito",
       numericValue: completionRate,
       suffix: "%",
       icon: CheckCircle2,
-      bg: "bg-gradient-to-br from-green-500 to-emerald-600",
-      sparklineColor: "#10b981",
+      bg: "#059669",
       badge: `${completedTasks.length} completadas`,
-      badgeColor: "bg-green-50 text-green-600",
-      sparklineData: generateSparklineData(completionRate / 10, 1),
     },
     {
       label: "Pendientes",
       numericValue: pendingTasks.length,
       suffix: "",
       icon: Clock,
-      bg: "bg-gradient-to-br from-yellow-500 to-orange-600",
-      sparklineColor: "#ef4444",
+      bg: "#d97706",
       badge: "por completar",
-      badgeColor: "bg-amber-50 text-amber-600",
-      sparklineData: generateSparklineData(pendingTasks.length / 3, 2),
     },
   ];
 
@@ -925,7 +977,7 @@ export default function DashboardPage() {
       )}
 
       <div className="p-3 sm:p-4 md:p-8 max-w-[1400px] mx-auto">
-        {!isListsSection && (
+        {!isListsSection && allLists.length > 0 && (
           <>
             {/* KPI Stats Row */}
             <motion.div
@@ -939,11 +991,13 @@ export default function DashboardPage() {
               ))}
             </motion.div>
 
-            {/* Bento Grid Layout */}
+            {/* Main content grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              {/* Left Column - 2/3 width */}
+              {/* Left Column - 2/3 width: lists + chart */}
               <div className="lg:col-span-2 space-y-4">
-                {/* Trading Chart */}
+                <ListPreviewCard lists={previewLists} taskStats={listTaskStats} />
+
+                {/* Weekly chart */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -981,64 +1035,8 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </div>
-                  {mounted && <TradingAreaChart data={weekData} />}
+                  <TradingAreaChart data={weekData} />
                 </motion.div>
-
-                {/* Shared Lists */}
-                {sharedLists.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.5 }}
-                    className="p-5 rounded-2xl border backdrop-blur-md shadow-sm"
-                    style={{
-                      backgroundColor: "var(--bg-card)",
-                      borderColor: "var(--border-color)",
-                    }}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center"
-                          style={{ backgroundColor: "var(--bg-info)" }}
-                        >
-                          <Users
-                            size={18}
-                            style={{ color: "var(--text-link)" }}
-                          />
-                        </div>
-                        <div>
-                          <h3
-                            className="text-sm font-semibold"
-                            style={{ color: "var(--text-primary)" }}
-                          >
-                            Listas compartidas
-                          </h3>
-                          <p
-                            className="text-xs"
-                            style={{ color: "var(--text-secondary)" }}
-                          >
-                            {sharedLists.length} lista
-                            {sharedLists.length !== 1 ? "s" : ""} compartida
-                            {sharedLists.length !== 1 ? "s" : ""}
-                          </p>
-                        </div>
-                      </div>
-                      <Link
-                        href="/dashboard?section=lists&view=todas"
-                        className="text-xs font-semibold hover:opacity-80 transition-colors"
-                        style={{ color: "var(--text-link)" }}
-                      >
-                        Ver todas las listas
-                      </Link>
-                    </div>
-                    <div className="space-y-2">
-                      {sharedLists.slice(0, 4).map((list, i) => (
-                        <SharedListRow key={list.id} list={list} index={i} />
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
               </div>
 
               {/* Right Column - 1/3 width */}
@@ -1056,10 +1054,10 @@ export default function DashboardPage() {
                 >
                   <div className="flex items-center gap-3 mb-4">
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
+                      className="w-10 h-10 rounded-xl flex items-center justify-center"
                       style={{ backgroundColor: "var(--bg-info)" }}
                     >
-                      🎯
+                      <Target size={18} style={{ color: "var(--text-link)" }} />
                     </div>
                     <h3
                       className="text-sm font-semibold"
@@ -1096,7 +1094,7 @@ export default function DashboardPage() {
                           </div>
                           <span
                             className="text-xs font-bold tabular-nums"
-                            style={{ color: cfg.text.replace("text-", "") }}
+                            style={{ color: PRIORITY_HEX[key] ?? "var(--text-secondary)" }}
                           >
                             {count}
                           </span>
@@ -1153,6 +1151,62 @@ export default function DashboardPage() {
                       </Link>
                     </div>
                     <ActivityTimeline activities={activities} />
+                  </motion.div>
+                )}
+
+                {/* Shared Lists (secondary) */}
+                {sharedLists.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                    className="p-5 rounded-2xl border backdrop-blur-md shadow-sm"
+                    style={{
+                      backgroundColor: "var(--bg-card)",
+                      borderColor: "var(--border-color)",
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center"
+                          style={{ backgroundColor: "var(--bg-info)" }}
+                        >
+                          <Users
+                            size={18}
+                            style={{ color: "var(--text-link)" }}
+                          />
+                        </div>
+                        <div>
+                          <h3
+                            className="text-sm font-semibold"
+                            style={{ color: "var(--text-primary)" }}
+                          >
+                            Listas compartidas
+                          </h3>
+                          <p
+                            className="text-xs"
+                            style={{ color: "var(--text-secondary)" }}
+                          >
+                            {sharedLists.length} lista
+                            {sharedLists.length !== 1 ? "s" : ""} compartida
+                            {sharedLists.length !== 1 ? "s" : ""}
+                          </p>
+                        </div>
+                      </div>
+                      <Link
+                        href="/dashboard?section=lists&view=shared"
+                        className="text-xs font-semibold hover:opacity-80 transition-colors"
+                        style={{ color: "var(--text-link)" }}
+                      >
+                        Ver todas
+                      </Link>
+                    </div>
+                    <div className="space-y-2">
+                      {sharedLists.slice(0, 4).map((list, i) => (
+                        <SharedListRow key={list.id} list={list} index={i} />
+                      ))}
+                    </div>
                   </motion.div>
                 )}
               </div>
