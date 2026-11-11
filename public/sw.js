@@ -1,4 +1,4 @@
-const CACHE_NAME = "tasklyn-v9";
+const CACHE_NAME = "tasklyn-v10";
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",
@@ -8,6 +8,9 @@ const STATIC_ASSETS = [
   "/icons/icon-512.png",
   "/icons/apple-touch-icon.png",
   "/icons/splash-logo.png",
+  "/icons/favicon-16.png",
+  "/icons/favicon-32.png",
+  "/icons/favicon-48.png",
 ];
 
 // Force skip waiting on install — activate immediately
@@ -57,6 +60,37 @@ self.addEventListener("fetch", (event) => {
   if (url.includes("gstatic.com")) return;
   if (url.includes("googleapis.com")) return;
   if (!url.startsWith(self.location.origin)) return;
+
+  const isNavigate =
+    event.request.mode === "navigate" ||
+    (event.request.headers.get("accept") || "").includes("text/html");
+
+  // HTML navigations: network-first so users always get the latest deploy.
+  // Hashed build assets and icons: cache-first (they are immutable).
+  if (isNavigate) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() =>
+          caches.match(event.request).then(
+            (cached) =>
+              cached ||
+              caches.match("/").then(
+                (fallback) =>
+                  fallback ||
+                  new Response("Offline", { status: 503, statusText: "Offline" }),
+              ),
+          ),
+        ),
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {

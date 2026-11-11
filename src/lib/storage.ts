@@ -31,15 +31,25 @@ const ALLOWED_ATTACHMENT_TYPES = [
   "image/png",
   "image/webp",
   "image/gif",
+  "image/heic",
+  "image/heif",
+  "image/avif",
   "video/mp4",
   "video/quicktime",
   "video/webm",
+  "video/x-m4v",
+  "video/3gpp",
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "text/plain",
+  "text/csv",
+  "application/json",
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/x-rar-compressed",
 ];
 
 const ALLOWED_ATTACHMENT_EXTENSIONS = [
@@ -48,16 +58,61 @@ const ALLOWED_ATTACHMENT_EXTENSIONS = [
   ".png",
   ".webp",
   ".gif",
+  ".heic",
+  ".heif",
+  ".avif",
   ".mp4",
   ".mov",
   ".webm",
+  ".m4v",
+  ".3gp",
   ".pdf",
   ".doc",
   ".docx",
   ".xls",
   ".xlsx",
   ".txt",
+  ".csv",
+  ".json",
+  ".zip",
+  ".rar",
 ];
+
+// Some devices (notably Android/iOS pickers) return files with an empty MIME
+// type. Infer a safe type from the extension in that case.
+const EXTENSION_MIME: Record<string, string> = {
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".heic": "image/heic",
+  ".heif": "image/heif",
+  ".avif": "image/avif",
+  ".mp4": "video/mp4",
+  ".mov": "video/quicktime",
+  ".webm": "video/webm",
+  ".m4v": "video/x-m4v",
+  ".3gp": "video/3gpp",
+  ".pdf": "application/pdf",
+  ".doc": "application/msword",
+  ".docx":
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".xls": "application/vnd.ms-excel",
+  ".xlsx":
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".txt": "text/plain",
+  ".csv": "text/csv",
+  ".json": "application/json",
+  ".zip": "application/zip",
+  ".rar": "application/x-rar-compressed",
+};
+
+function resolveAttachmentMime(file: File): string {
+  if (file.type) return file.type.toLowerCase();
+  const ext = `.${file.name.split(".").pop()?.toLowerCase() || ""}`;
+  return EXTENSION_MIME[ext] || "";
+}
 
 // Firestore documents have a ~1 MiB limit; keep data URLs well below it.
 const MAX_DATA_URL_LENGTH = 750_000;
@@ -416,15 +471,27 @@ export async function prepareAttachmentFile(
     );
   }
 
-  if (!allowedTypes.includes(file.type.toLowerCase())) {
+  const mime = resolveAttachmentMime(file);
+  if (!mime) {
     throw new Error(
-      `Formato no soportado. Usa: ${allowedTypes
-        .map((t) => t.split("/")[1])
-        .join(", ")}`,
+      "No se pudo determinar el tipo de archivo. Usa un formato compatible (imagen, video o documento).",
     );
   }
 
-  return file;
+  if (!allowedTypes.includes(mime)) {
+    throw new Error(
+      `Formato no soportado. Usa: imagen, video o documento (pdf, doc, xls, txt, csv, zip).`,
+    );
+  }
+
+  // Re-tag the file with the resolved MIME so Storage stores the right
+  // Content-Type even when the picker left it empty.
+  const prepared =
+    file.type === mime
+      ? file
+      : new File([file], file.name, { type: mime, lastModified: file.lastModified });
+
+  return prepared;
 }
 
 function attachmentFileExtension(fileName: string): string {

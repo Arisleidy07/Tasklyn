@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
 import { useTaskStore } from "@/stores/taskStore";
+import { useTeamStore } from "@/stores/teamStore";
 import { useMemberProfiles } from "@/lib/useMemberProfiles";
 import ListHeader from "@/components/lists/ListHeader";
 import TaskItem from "@/components/tasks/TaskItem";
@@ -41,7 +42,11 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { normalizeMapsUrl, looksLikeUrl } from "@/lib/location";
+import {
+  normalizeMapsUrl,
+  isMapsUrl,
+  isInvalidMapsInput,
+} from "@/lib/location";
 import { canShareList } from "@/lib/permissions";
 import { usePlanLimits } from "@/hooks/usePlanLimits";
 
@@ -54,6 +59,7 @@ export default function ListDetailPage() {
   const { getList, deleteList, getDisplayName } = useListStore();
   const { getTasksByList, subscribeToList, createTask, reorderTasks } =
     useTaskStore();
+  const { getTeamMembers, subscribeToMembersForTeam } = useTeamStore();
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
   const [showAddTask, setShowAddTask] = useState(false);
   const [showSharePanel, setShowSharePanel] = useState(false);
@@ -98,11 +104,22 @@ export default function ListDetailPage() {
     if (listId) subscribeToList(listId);
   }, [listId, subscribeToList]);
 
+  // For team lists, members live in the team — subscribe so assign options
+  // and name resolution include every authorized team member.
+  const listTeamId = list?.teamId;
+  useEffect(() => {
+    if (listTeamId) subscribeToMembersForTeam(listTeamId);
+  }, [listTeamId, subscribeToMembersForTeam]);
+  const teamMembers = listTeamId ? getTeamMembers(listTeamId) : [];
+
   // Collect ALL user IDs referenced in this list context:
   // current members + anyone who created/completed a task or appears in history.
   // This ensures "Completado por" shows the real name even for removed members.
   const allProfileIds = useMemo(() => {
     const ids = new Set<string>(list?.members.map((m) => m.userId) ?? []);
+    teamMembers.forEach((m) => {
+      if (m.userId) ids.add(m.userId);
+    });
     tasks.forEach((t) => {
       if (t.createdBy) ids.add(t.createdBy);
       if (t.completedBy) ids.add(t.completedBy);
@@ -111,7 +128,23 @@ export default function ListDetailPage() {
       });
     });
     return Array.from(ids);
-  }, [list?.members, tasks]);
+  }, [list?.members, teamMembers, tasks]);
+
+  // Members that can be assigned to tasks: explicit list members plus, for
+  // team lists, every member of the team (deduplicated by userId).
+  const assignableMembers = useMemo(() => {
+    const base = list?.members ?? [];
+    if (!listTeamId || teamMembers.length === 0) return base;
+    const seen = new Set(base.map((m) => m.userId));
+    const extra = teamMembers
+      .filter((m) => m.userId && !seen.has(m.userId))
+      .map((m) => ({
+        userId: m.userId,
+        role: m.role as (typeof base)[number]["role"],
+        joinedAt: m.joinedAt,
+      }));
+    return [...base, ...extra];
+  }, [list?.members, listTeamId, teamMembers]);
 
   // Subscribe to real-time Firestore profiles for all referenced users
   const memberProfiles = useMemberProfiles(allProfileIds);
@@ -193,8 +226,16 @@ export default function ListDetailPage() {
       }
     });
 
+    // Team members may not have a Firestore profile doc loaded yet — the team
+    // member record already carries a display name, use it as fallback.
+    teamMembers.forEach((m) => {
+      if (m.userId && m.name && !names[m.userId]) {
+        names[m.userId] = getDisplayName(listId, m.userId, m.name);
+      }
+    });
+
     return names;
-  }, [list, memberProfiles, user, listId, getDisplayName]);
+  }, [list, memberProfiles, teamMembers, user, listId, getDisplayName]);
 
   if (!user || !list) {
     return (
@@ -263,9 +304,10 @@ export default function ListDetailPage() {
         title: newTaskTitle.trim(),
         description: newTaskDescription.trim() || "",
         location: newTaskLocation.trim() || undefined,
-        locationUrl: newTaskLocationUrl.trim()
-          ? normalizeMapsUrl(newTaskLocationUrl)
-          : undefined,
+        locationUrl:
+          newTaskLocationUrl.trim() && isMapsUrl(newTaskLocationUrl)
+            ? normalizeMapsUrl(newTaskLocationUrl)
+            : undefined,
         phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
         priority: newTaskPriority,
         createdBy: user.id,
@@ -579,7 +621,7 @@ export default function ListDetailPage() {
                               task={task}
                               role={userMember?.role || null}
                               memberNames={memberNames}
-                              listMembers={list?.members}
+                              listMembers={assignableMembers}
                               dragHandleProps={dragHandleProps}
                               isDragging={isDragging}
                               justDraggedRef={justDraggedRef}
@@ -683,7 +725,7 @@ export default function ListDetailPage() {
                                     task={task}
                                     role={userMember?.role || null}
                                     memberNames={memberNames}
-                                    listMembers={list?.members}
+                                    listMembers={assignableMembers}
                                     dragHandleProps={dragHandleProps}
                                     isDragging={isDragging}
                                     justDraggedRef={justDraggedRef}
@@ -712,7 +754,7 @@ export default function ListDetailPage() {
                       task={task}
                       role={userMember?.role || null}
                       memberNames={memberNames}
-                      listMembers={list?.members}
+                      listMembers={assignableMembers}
                       dragHandleProps={dragHandleProps}
                       isDragging={isDragging}
                       justDraggedRef={justDraggedRef}
@@ -1126,7 +1168,7 @@ export default function ListDetailPage() {
                             }}
                           >
                             <option value="">Sin asignar</option>
-                            {list.members.map((m) => (
+                            {assignableMembers.map((m) => (
                               <option key={m.userId} value={m.userId}>
                                 {memberNames[m.userId] ||
                                   (m.userId === user.id ? "Tú" : "Miembro")}
@@ -1246,8 +1288,7 @@ export default function ListDetailPage() {
                             className="w-full h-11 pl-10 pr-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
                             style={{
                               border: `1px solid ${
-                                newTaskLocationUrl.trim() &&
-                                !looksLikeUrl(newTaskLocationUrl)
+                                isInvalidMapsInput(newTaskLocationUrl)
                                   ? "var(--text-error)"
                                   : "var(--border-input)"
                               }`,
@@ -1256,14 +1297,13 @@ export default function ListDetailPage() {
                             }}
                           />
                         </div>
-                        {newTaskLocationUrl.trim() &&
-                          !looksLikeUrl(newTaskLocationUrl) && (
+                        {isInvalidMapsInput(newTaskLocationUrl) && (
                             <p
                               className="text-xs"
                               style={{ color: "var(--text-error)" }}
                             >
-                              Pega un enlace válido (debe comenzar con
-                              https://)
+                              Pega un enlace válido de Google Maps
+                              (maps.app.goo.gl, google.com/maps…)
                             </p>
                           )}
                       </div>

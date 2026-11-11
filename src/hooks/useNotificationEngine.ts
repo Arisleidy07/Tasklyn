@@ -11,6 +11,7 @@ import {
 } from "@/lib/notifications";
 import { notifyReminder, notifyDueSoon } from "@/lib/notify";
 import { useTaskStore } from "@/stores/taskStore";
+import { useTeamStore } from "@/stores/teamStore";
 import { updateTask } from "@/lib/firestore";
 import { db } from "@/lib/firebase";
 import { arrayUnion, doc, updateDoc } from "firebase/firestore";
@@ -85,7 +86,24 @@ export function useNotificationEngine() {
             if (reminder.sent) return;
             const reminderTime = new Date(reminder.at);
             if (reminderTime <= now) {
-              notifyReminder(user.id, task.title, task.id, task.listId);
+              // Resolve recipients: explicit members > whole team > self
+              let recipientIds: string[] = [];
+              if (
+                reminder.recipientType === "members" &&
+                reminder.recipientIds?.length
+              ) {
+                recipientIds = reminder.recipientIds;
+              } else if (reminder.recipientType === "team" && task.teamId) {
+                recipientIds = (
+                  useTeamStore.getState().getTeamMembers(task.teamId) || []
+                )
+                  .map((m) => m.userId)
+                  .filter(Boolean);
+              }
+              if (recipientIds.length === 0) recipientIds = [user.id];
+              recipientIds.forEach((uid) => {
+                if (uid) void notifyReminder(uid, task.title, task.id, task.listId);
+              });
               const updatedReminders = task.reminders?.map((r) =>
                 r.id === reminder.id ? { ...r, sent: true } : r,
               );

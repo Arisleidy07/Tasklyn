@@ -21,6 +21,8 @@ import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import { canEditTask, canDeleteTask, canArchiveTask } from "@/lib/permissions";
 import TaskComments from "./TaskComments";
+import ReminderPicker from "./pickers/ReminderPicker";
+import DueDatePicker from "./pickers/DueDatePicker";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
@@ -30,7 +32,8 @@ import { subscribeToTaskHistory } from "@/lib/firestore";
 import {
   resolveTaskLocation,
   normalizeMapsUrl,
-  looksLikeUrl,
+  isMapsUrl,
+  isInvalidMapsInput,
 } from "@/lib/location";
 import {
   X,
@@ -360,6 +363,7 @@ export default function TaskDetailPanel({
   const [localDescription, setLocalDescription] = useState("");
   const [localLocation, setLocalLocation] = useState("");
   const [localLocationUrl, setLocalLocationUrl] = useState("");
+  const locationAreaRef = useRef<HTMLTextAreaElement>(null);
   const [localPhones, setLocalPhones] = useState<string[]>([""]);
   const [localAssignedTo, setLocalAssignedTo] = useState<string | null>(null);
   const [localPriority, setLocalPriority] = useState<
@@ -378,6 +382,7 @@ export default function TaskDetailPanel({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
+  const recordVideoInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const pendingSaveRef = useRef<{
@@ -385,8 +390,8 @@ export default function TaskDetailPanel({
     timer: ReturnType<typeof setTimeout>;
     updates: Partial<Task>;
   } | null>(null);
-  const dateInputRef = useRef<HTMLInputElement>(null);
-  const reminderInputRef = useRef<HTMLInputElement>(null);
+  const [reminderPickerOpen, setReminderPickerOpen] = useState(false);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   const canEdit = canEditTask(role);
   const canDelete = canDeleteTask(role);
@@ -436,11 +441,14 @@ export default function TaskDetailPanel({
     if (task.completedBy) ids.add(task.completedBy);
     if (task.performedBy) ids.add(task.performedBy);
     if (task.assignedTo) ids.add(task.assignedTo);
+    (listMembers || []).forEach((m) => {
+      if (m.userId) ids.add(m.userId);
+    });
     history.forEach((h) => {
       if (h.performedBy) ids.add(h.performedBy);
     });
     return Array.from(ids);
-  }, [task?.id, history, task?.completedBy]);
+  }, [task?.id, history, task?.completedBy, listMembers]);
 
   const { getProfile } = useUserProfiles(userIdsToResolve);
 
@@ -499,6 +507,14 @@ export default function TaskDetailPanel({
       setHistoryLimit(5);
     }
   }, [task?.id, isOpen]);
+
+  // Auto-grow the address textarea so multiline locations are fully visible
+  useEffect(() => {
+    const el = locationAreaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [localLocation, isOpen]);
 
   // Flush pending saves when closing
   useEffect(() => {
@@ -582,14 +598,42 @@ export default function TaskDetailPanel({
     return () => unsubscribe();
   }, [task?.id, isOpen]);
 
+  // URL that is actually persisted (valid maps link from locationUrl, or a
+  // legacy maps URL stored inside `location`). Used to avoid clobbering a
+  // previously saved valid link when the user types an invalid value.
+  const lastValidLocationUrl = useCallback((): string => {
+    for (const candidate of [task?.locationUrl, task?.location]) {
+      const v = candidate?.trim();
+      if (v && isMapsUrl(v)) return normalizeMapsUrl(v);
+    }
+    return "";
+  }, [task?.locationUrl, task?.location]);
+
+  // Empty input clears the field; a valid maps URL is saved; anything else
+  // preserves the last valid stored value instead of overwriting it.
+  const locationUrlForSave = useCallback((): string | undefined => {
+    const v = localLocationUrl.trim();
+    if (!v) return undefined;
+    if (isMapsUrl(v)) return normalizeMapsUrl(v);
+    return lastValidLocationUrl() || undefined;
+  }, [localLocationUrl, lastValidLocationUrl]);
+
   const assignOptions = useMemo(() => {
-    const options = [{ userId: "", name: "Sin asignar" }];
+    const options: Array<{
+      userId: string;
+      name: string;
+      photoURL?: string;
+    }> = [{ userId: "", name: "Sin asignar" }];
     (listMembers || []).forEach((m) => {
       const name = resolveName(m.userId);
-      options.push({ userId: m.userId, name });
+      options.push({
+        userId: m.userId,
+        name,
+        photoURL: getProfile(m.userId).photoURL,
+      });
     });
     return options;
-  }, [listMembers, resolveName]);
+  }, [listMembers, resolveName, getProfile]);
 
   if (!task) return null;
 
@@ -598,11 +642,10 @@ export default function TaskDetailPanel({
   const resolvedLocation = canEdit
     ? resolveTaskLocation({
         location: localLocation,
-        locationUrl: looksLikeUrl(localLocationUrl) ? localLocationUrl : "",
+        locationUrl: isMapsUrl(localLocationUrl) ? localLocationUrl : "",
       })
     : resolveTaskLocation(task);
-  const locationUrlInvalid =
-    !!localLocationUrl.trim() && !looksLikeUrl(localLocationUrl);
+  const locationUrlInvalid = isInvalidMapsInput(localLocationUrl);
 
   const handleDelete = () => {
     deleteTask(task.id);
@@ -672,14 +715,15 @@ export default function TaskDetailPanel({
     setLocalLocation(value);
     queueSave("location", {
       location: value.trim() || undefined,
-      locationUrl: localLocationUrl.trim()
-        ? normalizeMapsUrl(localLocationUrl)
-        : undefined,
+      locationUrl: locationUrlForSave(),
     });
   };
 
   const handleLocationUrlChange = (value: string) => {
     setLocalLocationUrl(value);
+    // Invalid (non-empty, non-maps) input must not be persisted; the queued
+    // save keeps the previous valid link via locationUrlForSave().
+    if (isInvalidMapsInput(value)) return;
     queueSave("locationUrl", {
       location: localLocation.trim() || undefined,
       locationUrl: value.trim() ? normalizeMapsUrl(value) : undefined,
@@ -752,18 +796,12 @@ export default function TaskDetailPanel({
     }
   };
 
-  const handleCustomReminder = async (value: string) => {
-    if (!value || !user || !task) return;
+  const handleReminderSelect = async (reminders: TaskReminder[]) => {
+    if (!user || !task) return;
     try {
-      const reminder: import("@/types").TaskReminder = {
-        id: genReminderId(),
-        at: new Date(value).toISOString(),
-        sent: false,
-        recipientType: "me",
-      };
-      await updateTask(task.id, { reminders: [reminder] }, user.id, user.name);
+      await updateTask(task.id, { reminders }, user.id, user.name);
     } catch (error) {
-      console.error("[handleCustomReminder] Failed:", error);
+      console.error("[handleReminderSelect] Failed:", error);
       showToast("Error al establecer recordatorio");
     }
   };
@@ -862,6 +900,8 @@ export default function TaskDetailPanel({
       if (imageInputRef.current) imageInputRef.current.value = "";
       if (cameraInputRef.current) cameraInputRef.current.value = "";
       if (videoInputRef.current) videoInputRef.current.value = "";
+      if (recordVideoInputRef.current)
+        recordVideoInputRef.current.value = "";
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -1216,122 +1256,179 @@ export default function TaskDetailPanel({
                 )
               }
             >
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {canEdit && (
                   <>
-                    <div
-                      className="flex items-center gap-2 rounded-[var(--radius-lg)] border px-3 py-2 min-h-10 focus-within:border-[var(--border-input-focus)] focus-within:ring-2 focus-within:ring-[var(--border-input-focus)]/15 transition-all"
-                      style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        borderColor: "var(--border-input)",
-                      }}
-                    >
-                      <MapPin
-                        size={14}
-                        className="flex-shrink-0"
+                    <div>
+                      <label
+                        htmlFor="task-location-address"
+                        className="block text-[var(--text-xs)] font-medium mb-1"
                         style={{ color: "var(--text-tertiary)" }}
-                      />
-                      <input
-                        value={localLocation}
-                        onChange={(e) => handleLocationChange(e.target.value)}
-                        onBlur={flushPending}
-                        placeholder="Dirección o nombre del lugar"
-                        aria-label="Dirección o nombre del lugar"
-                        className="flex-1 min-w-0 text-[var(--text-base)] bg-transparent focus:outline-none"
-                        style={{ color: "var(--text-primary)" }}
-                      />
-                    </div>
-                    <div
-                      className={cn(
-                        "flex items-center gap-2 rounded-[var(--radius-lg)] border px-3 py-2 min-h-10 focus-within:border-[var(--border-input-focus)] focus-within:ring-2 focus-within:ring-[var(--border-input-focus)]/15 transition-all",
-                        locationUrlInvalid && "border-[var(--text-error)]",
-                      )}
-                      style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        borderColor: locationUrlInvalid
-                          ? "var(--text-error)"
-                          : "var(--border-input)",
-                      }}
-                    >
-                      <LinkIcon
-                        size={14}
-                        className="flex-shrink-0"
-                        style={{ color: "var(--text-tertiary)" }}
-                      />
-                      <input
-                        type="url"
-                        inputMode="url"
-                        autoCapitalize="off"
-                        autoCorrect="off"
-                        spellCheck={false}
-                        value={localLocationUrl}
-                        onChange={(e) =>
-                          handleLocationUrlChange(e.target.value)
-                        }
-                        onBlur={flushPending}
-                        placeholder="Pega el enlace de Google Maps"
-                        aria-label="Enlace de Google Maps"
-                        className="flex-1 min-w-0 text-[var(--text-base)] bg-transparent focus:outline-none"
-                        style={{ color: "var(--text-primary)" }}
-                      />
-                    </div>
-                    {locationUrlInvalid && (
-                      <p
-                        className="text-[var(--text-xs)] flex items-center gap-1"
-                        style={{ color: "var(--text-error)" }}
                       >
-                        <AlertCircle size={12} /> Pega un enlace válido (debe
-                        comenzar con https://)
-                      </p>
-                    )}
+                        Dirección o lugar
+                      </label>
+                      <div
+                        className="flex items-start gap-2 rounded-[var(--radius-lg)] border px-3 py-2 focus-within:border-[var(--border-input-focus)] focus-within:ring-2 focus-within:ring-[var(--border-input-focus)]/15 transition-all"
+                        style={{
+                          backgroundColor: "var(--bg-secondary)",
+                          borderColor: "var(--border-input)",
+                        }}
+                      >
+                        <MapPin
+                          size={14}
+                          className="flex-shrink-0 mt-1"
+                          style={{ color: "var(--text-tertiary)" }}
+                        />
+                        <textarea
+                          id="task-location-address"
+                          ref={locationAreaRef}
+                          value={localLocation}
+                          onChange={(e) => handleLocationChange(e.target.value)}
+                          onBlur={flushPending}
+                          placeholder="Av. 27 de Febrero, Santiago…"
+                          aria-label="Dirección o nombre del lugar"
+                          rows={1}
+                          className="flex-1 min-w-0 text-[var(--text-base)] bg-transparent focus:outline-none resize-none overflow-hidden leading-snug"
+                          style={{ color: "var(--text-primary)" }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="task-location-url"
+                        className="block text-[var(--text-xs)] font-medium mb-1"
+                        style={{ color: "var(--text-tertiary)" }}
+                      >
+                        Enlace de Google Maps
+                      </label>
+                      <div
+                        className={cn(
+                          "flex items-center gap-2 rounded-[var(--radius-lg)] border px-3 py-2 min-h-10 focus-within:border-[var(--border-input-focus)] focus-within:ring-2 focus-within:ring-[var(--border-input-focus)]/15 transition-all",
+                          locationUrlInvalid && "border-[var(--text-error)]",
+                        )}
+                        style={{
+                          backgroundColor: "var(--bg-secondary)",
+                          borderColor: locationUrlInvalid
+                            ? "var(--text-error)"
+                            : "var(--border-input)",
+                        }}
+                      >
+                        <LinkIcon
+                          size={14}
+                          className="flex-shrink-0"
+                          style={{ color: "var(--text-tertiary)" }}
+                        />
+                        <input
+                          id="task-location-url"
+                          type="url"
+                          inputMode="url"
+                          autoCapitalize="off"
+                          autoCorrect="off"
+                          spellCheck={false}
+                          value={localLocationUrl}
+                          onChange={(e) =>
+                            handleLocationUrlChange(e.target.value)
+                          }
+                          onBlur={flushPending}
+                          placeholder="https://maps.app.goo.gl/…"
+                          aria-label="Enlace de Google Maps"
+                          aria-invalid={locationUrlInvalid || undefined}
+                          className="flex-1 min-w-0 text-[var(--text-base)] bg-transparent focus:outline-none"
+                          style={{ color: "var(--text-primary)" }}
+                        />
+                      </div>
+                      {locationUrlInvalid && (
+                        <p
+                          className="text-[var(--text-xs)] flex items-center gap-1 mt-1"
+                          style={{ color: "var(--text-error)" }}
+                        >
+                          <AlertCircle size={12} /> Pega un enlace válido de
+                          Google Maps (maps.app.goo.gl, google.com/maps…)
+                        </p>
+                      )}
+                    </div>
                   </>
                 )}
 
                 {resolvedLocation && (
-                  <div
-                    className="rounded-[var(--radius-lg)] border px-3 py-2.5 space-y-1.5"
-                    style={{
-                      backgroundColor: "var(--bg-info)",
-                      borderColor: "var(--border-color)",
-                    }}
-                  >
+                  <div className="space-y-2.5">
                     {resolvedLocation.address && (
-                      <div className="flex items-start justify-between gap-2">
+                      <div>
                         <p
-                          className="text-[var(--text-base)] leading-snug break-words min-w-0"
-                          style={{ color: "var(--text-primary)" }}
-                        >
-                          {resolvedLocation.address}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            copyToClipboard(
-                              resolvedLocation.address,
-                              showToast,
-                            )
-                          }
-                          title="Copiar dirección"
-                          className="flex-shrink-0 p-1.5 -mr-1 rounded-md transition-colors hover:bg-[var(--bg-hover)]"
+                          className="text-[var(--text-xs)] font-medium mb-0.5"
                           style={{ color: "var(--text-tertiary)" }}
                         >
-                          <Copy size={14} />
-                        </button>
+                          Dirección o lugar
+                        </p>
+                        <div className="flex items-start justify-between gap-2">
+                          <p
+                            className="text-[var(--text-base)] leading-relaxed break-words whitespace-pre-wrap min-w-0"
+                            style={{ color: "var(--text-primary)" }}
+                          >
+                            {resolvedLocation.address}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              copyToClipboard(
+                                resolvedLocation.address,
+                                showToast,
+                              )
+                            }
+                            title="Copiar dirección"
+                            className="flex-shrink-0 p-1.5 -mr-1 rounded-md transition-colors hover:bg-[var(--bg-hover)]"
+                            style={{ color: "var(--text-tertiary)" }}
+                          >
+                            <Copy size={14} />
+                          </button>
+                        </div>
                       </div>
                     )}
-                    <a
-                      href={resolvedLocation.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="inline-flex items-center gap-1.5 min-h-10 sm:min-h-0 py-1 text-[var(--text-sm)] font-semibold underline underline-offset-2 break-all"
-                      style={{ color: "#1d4ed8" }}
-                    >
-                      <ExternalLink size={14} className="flex-shrink-0" />
-                      {resolvedLocation.hasExplicitUrl
-                        ? "Abrir en Google Maps"
-                        : "Buscar en Google Maps"}
-                    </a>
+                    {resolvedLocation.hasExplicitUrl && (
+                      <div>
+                        <p
+                          className="text-[var(--text-xs)] font-medium mb-0.5"
+                          style={{ color: "var(--text-tertiary)" }}
+                        >
+                          Enlace de Google Maps
+                        </p>
+                        <a
+                          href={resolvedLocation.explicitUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="block text-[var(--text-sm)] font-medium break-all underline underline-offset-2 leading-snug"
+                          style={{ color: "#1d4ed8" }}
+                        >
+                          {resolvedLocation.explicitUrl}
+                        </a>
+                        <a
+                          href={resolvedLocation.explicitUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 mt-1 min-h-10 sm:min-h-0 text-[var(--text-xs)] font-medium transition-colors hover:underline"
+                          style={{ color: "var(--text-info)" }}
+                        >
+                          Abrir ubicación en Google Maps
+                          <ExternalLink size={12} className="flex-shrink-0" />
+                        </a>
+                      </div>
+                    )}
+                    {!resolvedLocation.hasExplicitUrl &&
+                      resolvedLocation.address && (
+                        <a
+                          href={resolvedLocation.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 min-h-10 sm:min-h-0 py-1 text-[var(--text-sm)] font-semibold underline underline-offset-2"
+                          style={{ color: "#1d4ed8" }}
+                        >
+                          <ExternalLink size={14} className="flex-shrink-0" />
+                          Buscar en Google Maps
+                        </a>
+                      )}
                   </div>
                 )}
               </div>
@@ -1389,28 +1486,16 @@ export default function TaskDetailPanel({
                         {opt.label}
                       </button>
                     ))}
-                    <div className="relative">
-                      <button
-                        onClick={() => reminderInputRef.current?.showPicker?.()}
-                        className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
-                        style={{
-                          backgroundColor: "var(--bg-secondary)",
-                          color: "var(--text-link)",
-                        }}
-                      >
-                        Personalizado
-                      </button>
-                      <input
-                        ref={reminderInputRef}
-                        type="datetime-local"
-                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                        onChange={(e) => {
-                          if (e.target.value)
-                            handleCustomReminder(e.target.value);
-                        }}
-                        onBlur={flushPending}
-                      />
-                    </div>
+                    <button
+                      onClick={() => setReminderPickerOpen(true)}
+                      className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        color: "var(--text-link)",
+                      }}
+                    >
+                      Personalizado
+                    </button>
                   </div>
                 )}
               </div>
@@ -1502,26 +1587,16 @@ export default function TaskDetailPanel({
                   >
                     Próxima semana
                   </button>
-                  <div className="relative">
-                    <button
-                      onClick={() => dateInputRef.current?.showPicker?.()}
-                      className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
-                      style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        color: "var(--text-link)",
-                      }}
-                    >
-                      Personalizado
-                    </button>
-                    <input
-                      ref={dateInputRef}
-                      type="date"
-                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                      value={task.dueDate || ""}
-                      onChange={(e) => handleQuickDate(e.target.value || null)}
-                      onBlur={flushPending}
-                    />
-                  </div>
+                  <button
+                    onClick={() => setDatePickerOpen(true)}
+                    className="px-3 py-1.5 rounded-[var(--radius-md)] text-[var(--text-xs)] font-medium transition-colors hover:opacity-90"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      color: "var(--text-link)",
+                    }}
+                  >
+                    Personalizado
+                  </button>
                 </div>
               )}
             </div>
@@ -1614,23 +1689,30 @@ export default function TaskDetailPanel({
                         className="w-full flex items-center gap-2 px-3 py-2 text-[var(--text-sm)] transition-colors hover:bg-[var(--bg-secondary)]"
                         style={{ color: "var(--text-primary)" }}
                       >
-                        {opt.userId && (
-                          <span
-                            className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold"
-                            style={{
-                              backgroundColor: "var(--text-link)",
-                              color: "var(--text-inverse)",
-                            }}
-                          >
-                            {opt.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .slice(0, 2)
-                              .join("")
-                              .toUpperCase()}
-                          </span>
-                        )}
-                        <span>{opt.name}</span>
+                        {opt.userId &&
+                          (opt.photoURL ? (
+                            <img
+                              src={opt.photoURL}
+                              alt={opt.name}
+                              className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <span
+                              className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold flex-shrink-0"
+                              style={{
+                                backgroundColor: "var(--text-link)",
+                                color: "var(--text-inverse)",
+                              }}
+                            >
+                              {opt.name
+                                .split(" ")
+                                .map((n) => n[0])
+                                .slice(0, 2)
+                                .join("")
+                                .toUpperCase()}
+                            </span>
+                          ))}
+                        <span className="truncate">{opt.name}</span>
                         {localAssignedTo === opt.userId && (
                           <Check
                             size={12}
@@ -1686,10 +1768,18 @@ export default function TaskDetailPanel({
                       className="hidden"
                     />
                     <input
+                      ref={recordVideoInputRef}
+                      type="file"
+                      accept="video/*"
+                      capture="environment"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <input
                       ref={fileInputRef}
                       type="file"
                       multiple
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.json,.zip,.rar"
                       onChange={handleFileSelect}
                       className="hidden"
                     />
@@ -1761,6 +1851,28 @@ export default function TaskDetailPanel({
                         <Video size={18} className="flex-shrink-0" />
                       )}
                       <span className="!block">Videos</span>
+                    </button>
+                    {/* Record video — only meaningful on touch devices */}
+                    <button
+                      type="button"
+                      onClick={() => recordVideoInputRef.current?.click()}
+                      disabled={isUploading}
+                      className="h-12 px-3 rounded-lg text-sm font-medium items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed hidden [@media(pointer:coarse)]:flex !important"
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        color: "var(--text-secondary)",
+                        border: "1px solid var(--border-color)",
+                      }}
+                    >
+                      {isUploading ? (
+                        <Loader2
+                          size={18}
+                          className="animate-spin flex-shrink-0"
+                        />
+                      ) : (
+                        <Video size={18} className="flex-shrink-0" />
+                      )}
+                      <span className="!block">Grabar</span>
                     </button>
                     <button
                       type="button"
@@ -1917,11 +2029,7 @@ export default function TaskDetailPanel({
                           {canEdit && (
                             <button
                               onClick={() => handleDeleteAttachment(img)}
-                              className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                              style={{
-                                backgroundColor: "rgba(0,0,0,0.6)",
-                                color: "white",
-                              }}
+                              className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center transition-opacity bg-black/60 text-white [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                             >
                               <X size={12} />
                             </button>
@@ -2331,6 +2439,29 @@ export default function TaskDetailPanel({
               {panelContent}
             </motion.div>
           </div>
+
+          {/* Date/reminder pickers — rendered once at portal level so they
+              are not duplicated by the mobile+desktop panelContent renders */}
+          <ReminderPicker
+            isOpen={reminderPickerOpen}
+            onClose={() => setReminderPickerOpen(false)}
+            onSelect={handleReminderSelect}
+            currentReminders={task.reminders}
+            taskDueDate={task.dueDate}
+            taskDueTime={task.dueTime}
+            teamMembers={assignOptions
+              .filter((o) => o.userId)
+              .map((o) => ({ userId: o.userId, name: o.name }))}
+          />
+          <DueDatePicker
+            isOpen={datePickerOpen}
+            onClose={() => setDatePickerOpen(false)}
+            onSelect={(date) => {
+              handleQuickDate(date);
+              flushPending();
+            }}
+            selectedDate={task.dueDate}
+          />
 
           {/* Delete confirm modal */}
           <Modal

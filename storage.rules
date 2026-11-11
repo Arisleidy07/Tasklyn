@@ -39,7 +39,10 @@ service firebase.storage {
 
     function isListMember(listId) {
       let l = firestoreList(listId);
-      return l != null && l.memberIds != null && getAuthUid() in l.memberIds;
+      return l != null && (
+        l.owner == getAuthUid() ||
+        (l.memberIds != null && getAuthUid() in l.memberIds)
+      );
     }
 
     // Profile photos — owner can read/write, others can read
@@ -72,11 +75,23 @@ service firebase.storage {
       allow delete: if isAuth() && isListOwner(listId);
     }
 
-    // Task attachments — read/write/delete for list members (verified via Firestore)
+    // Task attachments — read/write/delete for list members and team members
+    // (verified via Firestore). teamId covers tasks that belong to a team
+    // list where the user is a team member but not an explicit list member.
     match /tasks/{taskId}/attachments/{attachmentId} {
-      allow read: if isAuth() && isListMember(firestore.get(/databases/(default)/documents/tasks/$(taskId)).data.listId);
-      allow write: if isAuth() && isListMember(firestore.get(/databases/(default)/documents/tasks/$(taskId)).data.listId);
-      allow delete: if isAuth() && isListMember(firestore.get(/databases/(default)/documents/tasks/$(taskId)).data.listId);
+      function taskData() {
+        return firestore.get(/databases/(default)/documents/tasks/$(taskId)).data;
+      }
+      function canAccessTaskFiles() {
+        let t = taskData();
+        return t != null && (
+          (t.listId != null && isListMember(t.listId)) ||
+          (t.teamId != null && isTeamMember(t.teamId))
+        );
+      }
+      allow read: if isAuth() && canAccessTaskFiles();
+      allow write: if isAuth() && canAccessTaskFiles();
+      allow delete: if isAuth() && canAccessTaskFiles();
     }
 
     // Technician Report Evidence — read/write/delete based on report ownership

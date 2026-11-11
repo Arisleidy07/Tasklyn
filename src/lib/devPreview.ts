@@ -35,6 +35,7 @@ const lists: TaskList[] = [
     customNames: {},
     createdAt: iso(-40),
     description: "Tareas del área de operaciones",
+    teamId: "team1",
     color: "#2563eb",
     icon: "💼",
     order: 1,

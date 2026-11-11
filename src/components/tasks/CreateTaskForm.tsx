@@ -6,7 +6,11 @@ import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import type { Task } from "@/types";
-import { normalizeMapsUrl, looksLikeUrl } from "@/lib/location";
+import {
+  normalizeMapsUrl,
+  isMapsUrl,
+  isInvalidMapsInput,
+} from "@/lib/location";
 import {
   Plus,
   X,
@@ -126,9 +130,10 @@ export default function CreateTaskForm({
         description: description.trim(),
         createdBy: user.id,
         location: location.trim() || undefined,
-        locationUrl: locationUrl.trim()
-          ? normalizeMapsUrl(locationUrl)
-          : undefined,
+        locationUrl:
+          locationUrl.trim() && isMapsUrl(locationUrl)
+            ? normalizeMapsUrl(locationUrl)
+            : undefined,
         phoneNumbers: validPhones.length > 0 ? validPhones : undefined,
         priority: priority || undefined,
         tags: tags.length > 0 ? tags : undefined,
@@ -464,7 +469,7 @@ export default function CreateTaskForm({
                 className="w-full h-11 pl-10 pr-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all"
                 style={{
                   border: `1px solid ${
-                    locationUrl.trim() && !looksLikeUrl(locationUrl)
+                    isInvalidMapsInput(locationUrl)
                       ? "var(--text-error)"
                       : "var(--border-input)"
                   }`,
@@ -473,9 +478,9 @@ export default function CreateTaskForm({
                 }}
               />
             </div>
-            {locationUrl.trim() && !looksLikeUrl(locationUrl) && (
+            {isInvalidMapsInput(locationUrl) && (
               <p className="text-xs" style={{ color: "var(--text-error)" }}>
-                Pega un enlace válido (debe comenzar con https://)
+                Pega un enlace válido de Google Maps (maps.app.goo.gl, google.com/maps…)
               </p>
             )}
           </div>
