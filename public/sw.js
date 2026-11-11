@@ -1,9 +1,11 @@
-const CACHE_NAME = "tasklyn-v10";
+const CACHE_NAME = "tasklyn-v11";
 const STATIC_ASSETS = [
   "/",
   "/manifest.json",
   "/favicon.svg",
   "/T.PNG",
+  "/ANIMACION-TASKLYN.mp4",
+  "/ANIMACION-TASKLYN-WHITE.mp4",
   "/icons/icon-192.png",
   "/icons/icon-512.png",
   "/icons/apple-touch-icon.png",
