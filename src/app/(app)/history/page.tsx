@@ -387,8 +387,8 @@ export default function HistoryPage() {
           listName: getListName(task.listId),
           listId: task.listId,
           details: "Tarea marcada como completada",
-          completedBy: task.performedBy,
-          completedByName: resolveName(task.performedBy),
+          completedBy: task.performedBy ?? null,
+          completedByName: resolveName(task.performedBy ?? undefined),
         });
       }
 
