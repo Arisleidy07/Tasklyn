@@ -415,13 +415,16 @@ export default function TaskDetailPanel({
       pendingSaveRef.current = {
         field,
         timer: setTimeout(() => {
-          updateTask(task.id, merged, user.id, user.name);
+          updateTask(task.id, merged, user.id, user.name).catch((err) => {
+            console.error("[TaskDetailPanel] Save failed:", err);
+            showToast("No se pudo guardar el cambio. Intenta de nuevo.");
+          });
           pendingSaveRef.current = null;
         }, delay),
         updates: merged,
       };
     },
-    [user, task, updateTask],
+    [user, task, updateTask, showToast],
   );
 
   const flushPending = useCallback(() => {
@@ -429,9 +432,14 @@ export default function TaskDetailPanel({
       clearTimeout(pendingSaveRef.current.timer);
       const { updates } = pendingSaveRef.current;
       pendingSaveRef.current = null;
-      if (user && task) updateTask(task.id, updates, user.id, user.name);
+      if (user && task) {
+        updateTask(task.id, updates, user.id, user.name).catch((err) => {
+          console.error("[TaskDetailPanel] Save failed:", err);
+          showToast("No se pudo guardar el cambio. Intenta de nuevo.");
+        });
+      }
     }
-  }, [user, task, updateTask]);
+  }, [user, task, updateTask, showToast]);
 
   // Resolve user names
   const userIdsToResolve = useMemo(() => {
