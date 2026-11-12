@@ -22,6 +22,7 @@ import {
   Image as ImageIcon,
   Video,
   FileText,
+  User,
 } from "lucide-react";
 import type { DragHandleProps } from "./SortableTaskContainer";
 import { cn } from "@/lib/utils";
@@ -187,8 +188,17 @@ function TaskItem({
     setShowDetailPanel(true);
   };
 
+  const assigneeName = task.assignedTo
+    ? memberNames[task.assignedTo] || null
+    : null;
+
   const hasMeta =
-    firstPhone || taskLocation || reminderText || dueText || isCompleted;
+    firstPhone ||
+    taskLocation ||
+    reminderText ||
+    dueText ||
+    isCompleted ||
+    assigneeName;
 
   // Format completion info
   const completionInfo = useMemo(() => {
@@ -307,6 +317,13 @@ function TaskItem({
           {/* Metadata chips: Teléfono · Ubicación · Recordatorio · Fecha · Completada */}
           {hasMeta && (
             <div className="flex flex-wrap items-center gap-1.5 sm:pl-7 w-full min-w-0">
+              {assigneeName && (
+                <TaskCardMetaChip
+                  icon={<User size={12} />}
+                  text={`Asignado a: ${assigneeName}`}
+                  color="var(--text-link)"
+                />
+              )}
               {firstPhone && (
                 <TaskCardMetaChip
                   icon={<Phone size={12} />}
