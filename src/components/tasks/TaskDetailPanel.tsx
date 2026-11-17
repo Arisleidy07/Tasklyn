@@ -182,7 +182,9 @@ function formatTimeLabel(timeStr?: string | null): string | null {
 
 function formatReminderLabel(at?: string): string | null {
   if (!at) return null;
-  const d = new Date(at);
+  // Tolerate legacy values stored with a space separator ("YYYY-MM-DD HH:mm")
+  // which Safari/iOS cannot parse as a valid Date.
+  const d = new Date(at.includes("T") ? at : at.replace(" ", "T"));
   if (isNaN(d.getTime())) return null;
 
   // Check if the date is too old (more than 1 year ago) - likely corrupted data
@@ -216,7 +218,13 @@ function formatReminderLabel(at?: string): string | null {
 }
 
 function toISODate(d: Date): string {
-  return d.toISOString().split("T")[0];
+  // Local-timezone ISO date (YYYY-MM-DD). Never use toISOString() here —
+  // it returns the UTC date, which is already "tomorrow" for users in
+  // negative-offset timezones late in the evening.
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function genReminderId(): string {
@@ -246,11 +254,6 @@ function reminderQuickOptions() {
     tonight.setDate(tonight.getDate() + 1);
   }
 
-  // Mañana mañana (9 AM)
-  const tomorrowMorning = new Date(now);
-  tomorrowMorning.setDate(tomorrowMorning.getDate() + 1);
-  tomorrowMorning.setHours(9, 0, 0, 0);
-
   // Mañana (9 AM)
   const tomorrow = new Date(now);
   tomorrow.setDate(tomorrow.getDate() + 1);
@@ -267,7 +270,6 @@ function reminderQuickOptions() {
     { label: "En 1 hora", value: in1Hour.toISOString() },
     { label: "En 2 horas", value: in2Hours.toISOString() },
     { label: "Esta noche (8 PM)", value: tonight.toISOString() },
-    { label: "Mañana mañana (9 AM)", value: tomorrowMorning.toISOString() },
     { label: "Mañana", value: tomorrow.toISOString() },
     { label: "Próxima semana", value: nextWeek.toISOString() },
   ];
@@ -717,10 +719,23 @@ export default function TaskDetailPanel({
     queueSave("priority", { priority });
   };
 
+  // Optimistic preview-only patch so the task card reflects typed text
+  // immediately; the durable write still goes through queueSave/updateTask.
+  const patchPreview = (updates: Partial<Task>) => {
+    if (!task) return;
+    useTaskStore.setState((s) => ({
+      tasks: s.tasks.map((t) => (t.id === task.id ? { ...t, ...updates } : t)),
+    }));
+  };
+
   // Both location fields are always written together so legacy tasks (maps
   // link stored in `location`) get migrated into the two-field model.
   const handleLocationChange = (value: string) => {
     setLocalLocation(value);
+    patchPreview({
+      location: value.trim() || undefined,
+      locationUrl: locationUrlForSave(),
+    });
     queueSave("location", {
       location: value.trim() || undefined,
       locationUrl: locationUrlForSave(),
@@ -732,9 +747,14 @@ export default function TaskDetailPanel({
     // Invalid (non-empty, non-maps) input must not be persisted; the queued
     // save keeps the previous valid link via locationUrlForSave().
     if (isInvalidMapsInput(value)) return;
+    const url = value.trim() ? normalizeMapsUrl(value) : undefined;
+    patchPreview({
+      location: localLocation.trim() || undefined,
+      locationUrl: url,
+    });
     queueSave("locationUrl", {
       location: localLocation.trim() || undefined,
-      locationUrl: value.trim() ? normalizeMapsUrl(value) : undefined,
+      locationUrl: url,
     });
   };
 
@@ -798,6 +818,7 @@ export default function TaskDetailPanel({
         recipientType: "me",
       };
       await updateTask(task.id, { reminders: [reminder] }, user.id, user.name);
+      showToast("Recordatorio establecido");
     } catch (error) {
       console.error("[handleQuickReminder] Failed:", error);
       showToast("Error al establecer recordatorio");
@@ -808,6 +829,9 @@ export default function TaskDetailPanel({
     if (!user || !task) return;
     try {
       await updateTask(task.id, { reminders }, user.id, user.name);
+      showToast(
+        reminders.length ? "Recordatorio establecido" : "Recordatorio eliminado",
+      );
     } catch (error) {
       console.error("[handleReminderSelect] Failed:", error);
       showToast("Error al establecer recordatorio");
@@ -823,6 +847,7 @@ export default function TaskDetailPanel({
         user.id,
         user.name,
       );
+      showToast("Recordatorio eliminado");
     } catch (error) {
       console.error("[handleClearReminder] Failed:", error);
       showToast("Error al eliminar recordatorio");

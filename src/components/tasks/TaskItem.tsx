@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import TaskCompletionModal from "./TaskCompletionModal";
 import TaskDetailPanel from "./TaskDetailPanel";
 import { resolveTaskLocation } from "@/lib/location";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
 import TaskCardMetaChip from "./TaskCardMetaChip";
 import {
   CheckCircle2,
@@ -188,9 +189,22 @@ function TaskItem({
     setShowDetailPanel(true);
   };
 
-  const assigneeName = task.assignedTo
-    ? memberNames[task.assignedTo] || null
-    : null;
+  // Resolve real profile names for assignee/completer — memberNames can
+  // contain the literal "..." placeholder while profiles are still loading.
+  const { getProfile } = useUserProfiles(
+    [task.completedBy, task.assignedTo].filter((v): v is string => !!v),
+  );
+  const cleanName = (n?: string | null): string | null =>
+    n && n !== "..." && n !== "Cargando..." ? n : null;
+  const resolveDisplayName = (uid?: string | null): string | null => {
+    if (!uid) return null;
+    return (
+      cleanName(memberNames[uid]) ??
+      cleanName(getProfile(uid).name) ??
+      (uid === user?.id ? cleanName(user?.name) : null)
+    );
+  };
+  const assigneeName = resolveDisplayName(task.assignedTo || null);
 
   const hasMeta =
     firstPhone ||
@@ -201,11 +215,10 @@ function TaskItem({
     assigneeName;
 
   // Format completion info
-  const completionInfo = useMemo(() => {
+  const completionInfo = (() => {
     if (!isCompleted || !task.completedAt) return null;
-    const completedByName = task.completedBy
-      ? memberNames[task.completedBy] || "Usuario"
-      : "Usuario";
+    const completedByName =
+      resolveDisplayName(task.completedBy || null) || "Usuario";
     const completedDate = new Date(task.completedAt);
     const dateStr = completedDate.toLocaleDateString("es-ES", {
       day: "numeric",
@@ -221,7 +234,7 @@ function TaskItem({
       date: dateStr,
       time: timeStr,
     };
-  }, [isCompleted, task.completedAt, task.completedBy, memberNames]);
+  })();
 
   return (
     <>
