@@ -28,12 +28,12 @@ import TeamImage from "@/components/ui/TeamImage";
 import Avatar from "@/components/ui/Avatar";
 import { useUserProfiles } from "@/hooks/useUserProfiles";
 import { canCreateMoreTeams } from "@/lib/permissions";
-import type { Team } from "@/types";
+import type { Team, TeamRole } from "@/types";
 
 // ── Team Card ────────────────────────────────────────────────────────────────
 interface TeamCardProps {
   team: Team;
-  userRole: "owner" | "admin" | "member";
+  userRole: TeamRole;
   listCount: number;
   taskCount: number;
   completedCount: number;
@@ -567,12 +567,11 @@ export default function TeamsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filtered.map((team, index) => {
-                const userRole: "owner" | "admin" | "member" =
+                const userRole: TeamRole =
                   team.owner === user.id
                     ? "owner"
-                    : (team.members?.find((m) => m.userId === user.id)?.role as
-                        | "admin"
-                        | "member") || "member";
+                    : (team.members?.find((m) => m.userId === user.id)
+                        ?.role as TeamRole) || "member";
                 const stats = getTeamStats(team.id);
                 return (
                   <TeamCard

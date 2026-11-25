@@ -233,9 +233,24 @@ export default function FormResponsesPage() {
                               {question.title}:
                             </span>
                             <span className="text-[var(--text-secondary)] ml-2">
-                              {Array.isArray(response.answers[question.id])
-                                ? response.answers[question.id].join(", ")
-                                : response.answers[question.id] || "-"}
+                              {(() => {
+                                const answer = response.answers[question.id];
+                                if (Array.isArray(answer))
+                                  return answer
+                                    .map((a) =>
+                                      typeof a === "object" && a !== null
+                                        ? (a as { label?: string }).label ??
+                                          JSON.stringify(a)
+                                        : String(a),
+                                    )
+                                    .join(", ");
+                                if (typeof answer === "object" && answer !== null)
+                                  return (
+                                    (answer as { label?: string }).label ??
+                                    JSON.stringify(answer)
+                                  );
+                                return answer == null ? "-" : String(answer);
+                              })()}
                             </span>
                           </div>
                         ))}

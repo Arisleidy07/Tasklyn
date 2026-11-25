@@ -42,6 +42,34 @@ service cloud.firestore {
       return m != null && (m.role == "owner" || m.role == "admin");
     }
 
+    // Role of the current user in a team's members subcollection (null if absent)
+    function teamMemberRoleOf(teamId) {
+      return teamId != null &&
+        exists(/databases/$(database)/documents/teams/$(teamId)/members/$(uid()))
+        ? get(/databases/$(database)/documents/teams/$(teamId)/members/$(uid())).data.role
+        : null;
+    }
+
+    // "viewer" (Solo lectura) members must not modify team-scoped data
+    function isTeamViewerOf(teamId) {
+      return teamId != null && teamMemberRoleOf(teamId) == "viewer";
+    }
+
+    function isViewerInList(listId) {
+      return listId != null &&
+        exists(/databases/$(database)/documents/lists/$(listId)) &&
+        isTeamViewerOf(get(/databases/$(database)/documents/lists/$(listId)).data.teamId);
+    }
+
+    // True when the task belongs to a team (directly or via its list) where
+    // the current user has the read-only "viewer" role
+    function isViewerScopedTask(taskId) {
+      return exists(/databases/$(database)/documents/tasks/$(taskId)) && (
+        isTeamViewerOf(get(/databases/$(database)/documents/tasks/$(taskId)).data.teamId) ||
+        isViewerInList(get(/databases/$(database)/documents/tasks/$(taskId)).data.listId)
+      );
+    }
+
     // ── List helpers ──────────────────────────────────────────────────────────
 
     function isListOwner() {
@@ -112,14 +140,15 @@ service cloud.firestore {
 
     match /lists/{listId} {
       allow read: if isAuth();
-      allow create: if isAuth();
-      allow update: if isAuth() && (
+      allow create: if isAuth() &&
+        !isTeamViewerOf(request.resource.data.teamId);
+      allow update: if isAuth() && !isTeamViewerOf(resource.data.teamId) && (
         isListOwner() ||
         isListMember() ||
         isAcceptingListInvitation(listId) ||
         (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
       );
-      allow delete: if isAuth() && (
+      allow delete: if isAuth() && !isTeamViewerOf(resource.data.teamId) && (
         isListOwner() ||
         (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
       );
@@ -127,8 +156,12 @@ service cloud.firestore {
 
     match /tasks/{taskId} {
       allow read: if isAuth();
-      allow create: if isAuth();
-      allow update: if isAuth() && (
+      allow create: if isAuth() &&
+        !isTeamViewerOf(request.resource.data.teamId) &&
+        !isViewerInList(request.resource.data.listId);
+      allow update: if isAuth() &&
+        !isTeamViewerOf(resource.data.teamId) &&
+        !isViewerInList(resource.data.listId) && (
         resource.data.createdBy == uid() ||
         resource.data.assignedTo == uid() ||
         (resource.data.listId != null && isListMemberOf(resource.data.listId)) ||
@@ -136,7 +169,9 @@ service cloud.firestore {
       );
       // Delete allowed for the creator, any member of the task's list (editors),
       // and the team owner (cascade/admin cleanup)
-      allow delete: if isAuth() && (
+      allow delete: if isAuth() &&
+        !isTeamViewerOf(resource.data.teamId) &&
+        !isViewerInList(resource.data.listId) && (
         resource.data.createdBy == uid() ||
         resource.data.assignedTo == uid() ||
         (resource.data.listId != null && isListMemberOf(resource.data.listId)) ||
@@ -153,17 +188,27 @@ service cloud.firestore {
       // Task comments subcollection
       match /comments/{commentId} {
         allow read: if isAuth();
-        allow create: if isAuth() && request.resource.data.userId == uid();
-        allow update: if isAuth() && resource.data.userId == uid();
-        allow delete: if isAuth() && resource.data.userId == uid();
+        allow create: if isAuth() &&
+          request.resource.data.userId == uid() &&
+          !isViewerScopedTask(taskId);
+        allow update: if isAuth() &&
+          resource.data.userId == uid() &&
+          !isViewerScopedTask(taskId);
+        allow delete: if isAuth() &&
+          resource.data.userId == uid() &&
+          !isViewerScopedTask(taskId);
       }
 
       // Task attachments subcollection
       match /attachments/{attachmentId} {
         allow read: if isAuth();
-        allow create: if isAuth() && request.resource.data.uploadedBy == uid();
+        allow create: if isAuth() &&
+          request.resource.data.uploadedBy == uid() &&
+          !isViewerScopedTask(taskId);
         allow update: if false; // Attachments are immutable
-        allow delete: if isAuth() && resource.data.uploadedBy == uid();
+        allow delete: if isAuth() &&
+          resource.data.uploadedBy == uid() &&
+          !isViewerScopedTask(taskId);
       }
     }
 
@@ -214,7 +259,8 @@ service cloud.firestore {
           isTeamOwnerOf(teamId)
         );
 
-        allow create: if isAuth() && (
+        allow create: if isAuth() &&
+          (request.resource.data.role != "owner" || isTeamOwnerOf(teamId)) && (
           isTeamAdminOrOwnerOf(teamId) ||
           isTeamOwnerOf(teamId) ||
           (uid() == memberId &&
@@ -227,10 +273,11 @@ service cloud.firestore {
 
         allow update: if isAuth() && (
           isTeamOwnerOf(teamId) ||
-          isTeamAdminOrOwnerOf(teamId)
+          (isTeamAdminOrOwnerOf(teamId) &&
+           request.resource.data.role != "owner")
         );
 
-        // Owner can delete anyone. Admin can remove members. Member can leave. 
+        // Owner can delete anyone. Admin can remove members. Member can leave.
         allow delete: if isAuth() && (
           isTeamOwnerOf(teamId) ||
           isTeamAdminOrOwnerOf(teamId) ||
@@ -243,6 +290,7 @@ service cloud.firestore {
         allow read: if isAuth() && isTeamMemberOf(teamId);
         allow create: if isAuth() &&
           isTeamMemberOf(teamId) &&
+          teamMemberRoleOf(teamId) != "viewer" &&
           request.resource.data.userId == uid();
         allow update: if false;
         allow delete: if isAuth() && isTeamOwnerOf(teamId);
@@ -251,7 +299,8 @@ service cloud.firestore {
       // Scores subcollection
       match /scores/{userId} {
         allow read: if isAuth() && isTeamMemberOf(teamId);
-        allow create, update: if isAuth() && (
+        allow create, update: if isAuth() &&
+          teamMemberRoleOf(teamId) != "viewer" && (
           uid() == userId ||
           isTeamOwnerOf(teamId)
         );
@@ -261,15 +310,18 @@ service cloud.firestore {
 
     match /goals/{goalId} {
       allow read: if isAuth();
-      allow create: if isAuth() && (
+      allow create: if isAuth() &&
+        !isTeamViewerOf(request.resource.data.teamId) && (
         request.resource.data.createdBy == uid() ||
         (request.resource.data.teamId != null && isTeamAdminOrOwnerOf(request.resource.data.teamId))
       );
-      allow update: if isAuth() && (
+      allow update: if isAuth() &&
+        !isTeamViewerOf(resource.data.teamId) && (
         resource.data.createdBy == uid() ||
         (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
       );
-      allow delete: if isAuth() && (
+      allow delete: if isAuth() &&
+        !isTeamViewerOf(resource.data.teamId) && (
         resource.data.createdBy == uid() ||
         (resource.data.teamId != null && isTeamOwnerOf(resource.data.teamId))
       );
@@ -277,11 +329,13 @@ service cloud.firestore {
 
     match /achievements/{achievementId} {
       allow read: if isAuth();
-      allow create: if isAuth() && (
+      allow create: if isAuth() &&
+        !isTeamViewerOf(request.resource.data.teamId) && (
         request.resource.data.userId == uid() ||
         (request.resource.data.teamId != null && isTeamAdminOrOwnerOf(request.resource.data.teamId))
       );
-      allow update, delete: if isAuth() && (
+      allow update, delete: if isAuth() &&
+        !isTeamViewerOf(resource.data.teamId) && (
         resource.data.userId == uid() ||
         (resource.data.teamId != null && isTeamOwnerOf(resource.data.teamId))
       );
@@ -353,9 +407,15 @@ service cloud.firestore {
         resource.data.ownerId == uid() ||
         (resource.data.teamId != null && isTeamMemberOf(resource.data.teamId))
       );
-      allow create: if isAuth() && request.resource.data.ownerId == uid();
-      allow update: if isAuth() && resource.data.ownerId == uid();
-      allow delete: if isAuth() && resource.data.ownerId == uid();
+      allow create: if isAuth() &&
+        request.resource.data.ownerId == uid() &&
+        !isTeamViewerOf(request.resource.data.teamId);
+      allow update: if isAuth() &&
+        resource.data.ownerId == uid() &&
+        !isTeamViewerOf(resource.data.teamId);
+      allow delete: if isAuth() &&
+        resource.data.ownerId == uid() &&
+        !isTeamViewerOf(resource.data.teamId);
     }
 
     // Activity collection (root) - user activity log
@@ -368,19 +428,22 @@ service cloud.firestore {
 
     // Technician Reports collection
     match /reports/{reportId} {
-      // Read: owner can read their own reports
-      // Team admins/owners can read all reports in their team
+      // Read: creator + ANY member of the report's team (technicians must be
+      // able to consult team reports, not only admins/owners)
       allow read: if isAuth() && (
         resource.data.createdBy == uid() ||
-        (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
+        (resource.data.teamId != null && isTeamMemberOf(resource.data.teamId))
       );
 
-      // Create: only authenticated users can create reports
-      // Must use their own userId as createdBy (prevent impersonation)
+      // Create: authenticated user, own createdBy, declaration confirmed.
+      // If a teamId is provided the user must belong to that team.
       allow create: if isAuth() &&
         request.resource.data.createdBy == uid() &&
         request.resource.data.createdByName is string &&
-        request.resource.data.declarationConfirmed == true;
+        request.resource.data.declarationConfirmed == true &&
+        (request.resource.data.teamId == null ||
+         (isTeamMemberOf(request.resource.data.teamId) &&
+          teamMemberRoleOf(request.resource.data.teamId) != "viewer"));
 
       // Update: only the report creator can update their own reports
       allow update: if isAuth() &&
@@ -409,6 +472,7 @@ service cloud.firestore {
       allow create: if isAuth() &&
         request.resource.data.teamId != null &&
         isTeamMemberOf(request.resource.data.teamId) &&
+        teamMemberRoleOf(request.resource.data.teamId) != "viewer" &&
         request.resource.data.createdBy == uid() &&
         request.resource.data.createdByName is string;
 
@@ -461,10 +525,12 @@ service cloud.firestore {
 
         // Create: authenticated users can submit responses
         // Must use their own userId as respondentId (prevent impersonation)
+        // Viewers (read-only) cannot submit responses to team forms
         allow create: if isAuth() &&
           request.resource.data.respondentId == uid() &&
           request.resource.data.respondentName is string &&
-          request.resource.data.formId == formId;
+          request.resource.data.formId == formId &&
+          !isTeamViewerOf(get(/databases/$(database)/documents/forms/$(formId)).data.teamId);
 
         // Update: respondent can update their own draft responses
         allow update: if isAuth() &&

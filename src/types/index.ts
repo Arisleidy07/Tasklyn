@@ -14,7 +14,7 @@ export type TaskStatus = "pending" | "completed" | "archived";
 export type ListType = "shared" | "team";
 
 // ---- Team Types ----
-export type TeamRole = "owner" | "admin" | "member";
+export type TeamRole = "owner" | "admin" | "member" | "viewer";
 
 export interface TeamMember {
   userId: string;
@@ -506,6 +506,9 @@ export interface TechnicianReport {
 
   // Optional task linking
   linkedTaskId?: string; // Optional reference to a Task
+  linkedTaskTitle?: string; // Cached task title for display
+  linkedTaskListName?: string; // Cached list name for display
+  linkedTaskListId?: string; // List the task belongs to (for navigation)
 
   // For supervisor tracking
   teamId?: string; // Optional team assignment for supervision
@@ -635,7 +638,7 @@ export interface FormResponse {
   respondentEmail?: string;
   submittedAt: string;
   status: "draft" | "submitted";
-  answers: Record<string, any>; // questionId -> answer
+  answers: Record<string, unknown>; // questionId -> answer
   files: ResponseFile[];
   completedPercentage?: number; // For progress tracking
 }

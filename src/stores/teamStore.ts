@@ -5,11 +5,10 @@
 
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import type { Team, TeamMember, Goal, Achievement } from "@/types";
+import type { Team, TeamRole, Goal, Achievement } from "@/types";
 import {
   type SubcollectionTeamMember,
   createTeam,
-  getTeam,
   updateTeam,
   deleteTeam,
   addTeamMember,
@@ -66,14 +65,14 @@ interface TeamState {
   addTeamMember: (
     teamId: string,
     userId: string,
-    role: "owner" | "admin" | "member",
+    role: TeamRole,
     invitedBy?: string,
   ) => Promise<void>;
   removeTeamMember: (teamId: string, userId: string) => Promise<void>;
   updateTeamMemberRole: (
     teamId: string,
     userId: string,
-    role: "owner" | "admin" | "member",
+    role: TeamRole,
   ) => Promise<void>;
 
   // Goal actions
@@ -96,7 +95,7 @@ interface TeamState {
   getUserRoleInTeam: (
     teamId: string,
     userId: string,
-  ) => "owner" | "admin" | "member" | null;
+  ) => TeamRole | null;
   isTeamOwner: (teamId: string, userId: string) => boolean;
   isTeamAdmin: (teamId: string, userId: string) => boolean;
   isTeamMember: (teamId: string, userId: string) => boolean;
@@ -259,7 +258,7 @@ export const useTeamStore = create<TeamState>()(
       addTeamMember: async (
         teamId: string,
         userId: string,
-        role: "owner" | "admin" | "member",
+        role: TeamRole,
         invitedBy?: string,
       ) => {
         try {
@@ -286,7 +285,7 @@ export const useTeamStore = create<TeamState>()(
       updateTeamMemberRole: async (
         teamId: string,
         userId: string,
-        role: "owner" | "admin" | "member",
+        role: TeamRole,
       ) => {
         try {
           await updateTeamMemberRole(teamId, userId, role);

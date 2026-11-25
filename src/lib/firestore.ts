@@ -665,7 +665,7 @@ export const createTeamInvitation = async (params: {
   teamId: string;
   invitedBy: string;
   invitedEmail?: string;
-  defaultRole: "admin" | "member";
+  defaultRole: "admin" | "member" | "viewer";
   token: string;
   expiresInDays?: number;
 }): Promise<string> => {
@@ -740,7 +740,7 @@ export const acceptTeamInvitation = async (
 
   const userData = userSnapshot.data() ?? {};
   const joinedAt = new Date().toISOString();
-  const role = (current.defaultRole as "admin" | "member") || "member";
+  const role = (current.defaultRole as TeamRole) || "member";
   const batch = writeBatch(db);
   batch.update(doc(db, "teams", teamId), {
     members: arrayUnion({

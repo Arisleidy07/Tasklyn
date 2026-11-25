@@ -23,6 +23,8 @@ type ViewMode = "my" | "supervision";
 interface ReportsListProps {
   viewMode: ViewMode;
   onReportClick?: (report: TechnicianReport) => void;
+  /** When set, locks the supervision view to this team (embedded team panel) */
+  fixedTeamId?: string;
 }
 
 const SERVICE_TYPE_LABELS: Record<ServiceType, string> = {
@@ -54,6 +56,7 @@ const RESULT_COLORS: Record<ReportResult, string> = {
 export default function ReportsList({
   viewMode,
   onReportClick,
+  fixedTeamId,
 }: ReportsListProps) {
   const { user } = useAuthStore();
   const { myReports, allReports, loadMyReports, loadAllReports, isLoading } =
@@ -67,16 +70,23 @@ export default function ReportsList({
   const [filterResult, setFilterResult] = useState<ReportResult | "all">("all");
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
+  const [filterTechnician, setFilterTechnician] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const activeTeamId =
+    fixedTeamId ??
+    (selectedTeamId && teams.some((t) => t.id === selectedTeamId)
+      ? selectedTeamId
+      : teams[0]?.id ?? null);
 
   useEffect(() => {
     if (viewMode === "my" && user) {
       loadMyReports();
-    } else if (viewMode === "supervision" && teams.length > 0) {
-      // Load reports for the first team (can be enhanced to select team)
-      loadAllReports(teams[0].id);
+    } else if (viewMode === "supervision" && activeTeamId) {
+      loadAllReports(activeTeamId);
     }
-  }, [viewMode, user, teams, loadMyReports, loadAllReports]);
+  }, [viewMode, user, activeTeamId, loadMyReports, loadAllReports]);
 
   const reports = viewMode === "my" ? myReports : allReports;
 
@@ -106,6 +116,11 @@ export default function ReportsList({
       return false;
     }
 
+    // Technician filter
+    if (filterTechnician && report.createdBy !== filterTechnician) {
+      return false;
+    }
+
     // Date range filter
     if (filterDateFrom && report.serviceDate < filterDateFrom) {
       return false;
@@ -123,6 +138,7 @@ export default function ReportsList({
     setFilterResult("all");
     setFilterDateFrom("");
     setFilterDateTo("");
+    setFilterTechnician("");
   };
 
   const hasActiveFilters =
@@ -130,7 +146,8 @@ export default function ReportsList({
     filterServiceType !== "all" ||
     filterResult !== "all" ||
     filterDateFrom ||
-    filterDateTo;
+    filterDateTo ||
+    filterTechnician;
 
   if (isLoading && reports.length === 0) {
     return (
@@ -152,20 +169,40 @@ export default function ReportsList({
           className="text-2xl font-bold"
           style={{ color: "var(--text-primary)" }}
         >
-          {viewMode === "my" ? "Mis Reportes" : "Supervisión"}
+          {viewMode === "my" ? "Mis Reportes" : "Reportes técnicos"}
         </h1>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-          style={{
-            backgroundColor: "var(--bg-secondary)",
-            color: "var(--text-secondary)",
-            border: "1px solid var(--border-color)",
-          }}
-        >
-          <Filter size={16} />
-          Filtros
-        </button>
+        <div className="flex items-center gap-2">
+          {viewMode === "supervision" && !fixedTeamId && teams.length > 0 && (
+            <select
+              value={activeTeamId}
+              onChange={(e) => setSelectedTeamId(e.target.value)}
+              className="h-9 px-3 rounded-lg text-sm"
+              style={{
+                border: "1px solid var(--border-input)",
+                backgroundColor: "var(--bg-input)",
+                color: "var(--text-primary)",
+              }}
+            >
+              {teams.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name}
+                </option>
+              ))}
+            </select>
+          )}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+            style={{
+              backgroundColor: "var(--bg-secondary)",
+              color: "var(--text-secondary)",
+              border: "1px solid var(--border-color)",
+            }}
+          >
+            <Filter size={16} />
+            Filtros
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -202,7 +239,7 @@ export default function ReportsList({
               border: "1px solid var(--border-color)",
             }}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div>
                 <label
                   className="block text-xs font-medium mb-1.5"
@@ -254,6 +291,36 @@ export default function ReportsList({
                   {Object.entries(RESULT_LABELS).map(([value, label]) => (
                     <option key={value} value={value}>
                       {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label
+                  className="block text-xs font-medium mb-1.5"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Técnico
+                </label>
+                <select
+                  value={filterTechnician}
+                  onChange={(e) => setFilterTechnician(e.target.value)}
+                  className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+                  style={{
+                    border: "1px solid var(--border-input)",
+                    backgroundColor: "var(--bg-input)",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <option value="">Todos</option>
+                  {Array.from(
+                    new Map(
+                      reports.map((r) => [r.createdBy, r.createdByName]),
+                    ),
+                  ).map(([id, name]) => (
+                    <option key={id} value={id}>
+                      {name}
                     </option>
                   ))}
                 </select>
@@ -380,16 +447,44 @@ export default function ReportsList({
                   >
                     <div className="flex items-center gap-1">
                       <Calendar size={14} />
-                      {new Date(report.serviceDate).toLocaleDateString("es-DO")}
+                      {(() => {
+                        const [y, m, d] = report.serviceDate
+                          .split("-")
+                          .map(Number);
+                        return y && m && d
+                          ? new Date(y, m - 1, d).toLocaleDateString("es-DO")
+                          : report.serviceDate;
+                      })()}
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock size={14} />
-                      {report.reportTime}
+                      {(() => {
+                        const [h, m] = (report.reportTime || "")
+                          .split(":")
+                          .map(Number);
+                        if (isNaN(h)) return report.reportTime;
+                        const ampm = h >= 12 ? "p. m." : "a. m.";
+                        const h12 = h % 12 === 0 ? 12 : h % 12;
+                        return `${h12}:${String(m || 0).padStart(2, "0")} ${ampm}`;
+                      })()}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <MapPin size={14} />
-                      {report.locationGPS.slice(0, 20)}...
-                    </div>
+                    {report.locationGPS ? (
+                      <a
+                        href={
+                          report.locationGPS.startsWith("http")
+                            ? report.locationGPS
+                            : `https://www.google.com/maps?q=${encodeURIComponent(report.locationGPS)}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1"
+                        style={{ color: "var(--text-link)" }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MapPin size={14} />
+                        Google Maps
+                      </a>
+                    ) : null}
                   </div>
 
                   <div

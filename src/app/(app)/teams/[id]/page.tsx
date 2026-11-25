@@ -47,6 +47,7 @@ import {
   Calendar,
   FileText,
   AlertCircle,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -60,10 +61,12 @@ import {
 import type { User as UserType } from "@/types";
 import type { SubcollectionTeamMember } from "@/lib/firestore";
 import FormList from "@/components/forms/FormList";
+import ReportsList from "@/components/reports/ReportsList";
+import ReportDetail from "@/components/reports/ReportDetail";
 import { useFormStore } from "@/stores/formStore";
 
 interface MemberProfile extends UserType {
-  role: "owner" | "admin" | "member";
+  role: "owner" | "admin" | "member" | "viewer";
   joinedAt: string;
   completedTasks: number;
   totalTasks: number;
@@ -75,6 +78,7 @@ type TabId =
   | "members"
   | "activity"
   | "ranking"
+  | "reports"
   | "forms"
   | "config";
 
@@ -84,6 +88,7 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
   { id: "members", label: "Miembros", icon: Users },
   { id: "activity", label: "Actividad", icon: Activity },
   { id: "ranking", label: "Ranking", icon: Trophy },
+  { id: "reports", label: "Reportes", icon: ClipboardList },
   { id: "forms", label: "Formularios", icon: FileText },
   { id: "config", label: "Config.", icon: Settings },
 ];
@@ -96,8 +101,9 @@ function getRoleIcon(role: string) {
 }
 function getRoleLabel(role: string) {
   if (role === "owner") return "Propietario";
-  if (role === "admin") return "Admin";
-  return "Miembro";
+  if (role === "admin") return "Administrador";
+  if (role === "viewer") return "Solo lectura";
+  return "Técnico";
 }
 function getRoleBadge(role: string) {
   if (role === "owner") return "bg-yellow-50 text-yellow-700 border-yellow-200";
@@ -125,12 +131,13 @@ export default function TeamDetailPage() {
   const { subscribeToTeamForms, unsubscribeFromTeamForms } = useFormStore();
 
   const [activeTab, setActiveTab] = useState<TabId>("panel");
+  const [reportDetailId, setReportDetailId] = useState<string | null>(null);
   const [memberProfiles, setMemberProfiles] = useState<MemberProfile[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [activityLog, setActivityLog] = useState<TeamActivityEntry[]>([]);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
+  const [inviteRole, setInviteRole] = useState<"admin" | "member" | "viewer">("member");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSuccess, setInviteSuccess] = useState(false);
@@ -161,7 +168,7 @@ export default function TeamDetailPage() {
   // Derive member list: prefer subcollection, fall back to legacy array
   const activeMembers: Array<{
     userId: string;
-    role: "owner" | "admin" | "member";
+    role: "owner" | "admin" | "member" | "viewer";
     joinedAt: string;
     name?: string;
     photoURL?: string;
@@ -288,7 +295,8 @@ export default function TeamDetailPage() {
     (team.owner === user.id ? "owner" : "member")) as
     | "owner"
     | "admin"
-    | "member";
+    | "member"
+    | "viewer";
   const isOwnerOrAdmin = userRole === "owner" || userRole === "admin";
   const teamLists = [...lists.filter((l) => l.teamId === teamId)].sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0),
@@ -347,7 +355,7 @@ export default function TeamDetailPage() {
 
   const handleRoleChange = async (
     memberId: string,
-    role: "owner" | "admin" | "member",
+    role: "owner" | "admin" | "member" | "viewer",
   ) => {
     if (userRole !== "owner" || memberId === team.owner || role === "owner") {
       showActionError("Solo el propietario puede cambiar roles.");
@@ -484,7 +492,12 @@ export default function TeamDetailPage() {
 
       // If user exists, send in-app notification
       if (foundUser) {
-        const roleLabel = inviteRole === "admin" ? "Administrador" : "Miembro";
+        const roleLabel =
+          inviteRole === "admin"
+            ? "Administrador"
+            : inviteRole === "viewer"
+              ? "Solo lectura"
+              : "Técnico";
         await createNotification({
           userId: foundUser.id,
           type: "team_invitation",
@@ -1079,7 +1092,7 @@ export default function TeamDetailPage() {
                             onChange={(e) =>
                               handleRoleChange(
                                 member.id,
-                                e.target.value as "owner" | "admin" | "member",
+                                e.target.value as "owner" | "admin" | "member" | "viewer",
                               )
                             }
                             disabled={actionLoading === member.id}
@@ -1090,8 +1103,9 @@ export default function TeamDetailPage() {
                               color: "var(--text-secondary)",
                             }}
                           >
-                            <option value="admin">Admin</option>
-                            <option value="member">Miembro</option>
+                            <option value="admin">Administrador</option>
+                            <option value="member">Técnico</option>
+                            <option value="viewer">Solo lectura</option>
                           </select>
                         )}
                         <button
@@ -1339,6 +1353,28 @@ export default function TeamDetailPage() {
                   </motion.div>
                 );
               })
+            )}
+          </motion.div>
+        )}
+
+        {/* ══ TAB: REPORTES TÉCNICOS ══════════════════════════════════════════ */}
+        {activeTab === "reports" && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            {reportDetailId ? (
+              <ReportDetail
+                reportId={reportDetailId}
+                onBack={() => setReportDetailId(null)}
+                onNavigateToTask={(listId) => router.push(`/lists/${listId}`)}
+              />
+            ) : (
+              <ReportsList
+                viewMode="supervision"
+                fixedTeamId={teamId}
+                onReportClick={(report) => setReportDetailId(report.id)}
+              />
             )}
           </motion.div>
         )}
@@ -1667,7 +1703,7 @@ export default function TeamDetailPage() {
                 <select
                   value={inviteRole}
                   onChange={(e) =>
-                    setInviteRole(e.target.value as "admin" | "member")
+                    setInviteRole(e.target.value as "admin" | "member" | "viewer")
                   }
                   className="w-full px-4 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                   style={{
@@ -1676,8 +1712,9 @@ export default function TeamDetailPage() {
                     color: "var(--text-primary)",
                   }}
                 >
-                  <option value="member">Miembro</option>
+                  <option value="member">Técnico</option>
                   <option value="admin">Administrador</option>
+                  <option value="viewer">Solo lectura</option>
                 </select>
               </div>
               {inviteError && (

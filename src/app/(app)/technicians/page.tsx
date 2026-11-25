@@ -26,9 +26,9 @@ export default function TechniciansPage() {
     setView("my-reports");
   };
 
-  const handleNavigateToTask = (taskId: string) => {
-    // Navigate to task detail
-    window.location.href = `/lists/${taskId}`;
+  const handleNavigateToTask = (listId: string) => {
+    // Navigate to the list that contains the linked task
+    window.location.href = `/lists/${listId}`;
   };
 
   if (!user) {
@@ -175,10 +175,10 @@ export default function TechniciansPage() {
               <Shield size={24} style={{ color: "var(--text-link)" }} />
             </div>
             <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
-              Supervisión
+              Reportes técnicos
             </h2>
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
-              Ver reportes del equipo (solo supervisores)
+              Ver todos los reportes del equipo en tiempo real
             </p>
           </motion.button>
         </div>

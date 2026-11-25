@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useReportStore } from "@/stores/reportStore";
-import { deleteReportEvidence } from "@/lib/storage";
-import type { TechnicianReport, ServiceType, ReportResult } from "@/types";
+import type { ServiceType, ReportResult } from "@/types";
 import {
   ArrowLeft,
   Calendar,
@@ -15,10 +14,10 @@ import {
   AlertCircle,
   X,
   Download,
-  Play,
   Image as ImageIcon,
   Video,
   Link as LinkIcon,
+  ExternalLink,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Button from "@/components/ui/Button";
@@ -85,6 +84,27 @@ export default function ReportDetail({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // "YYYY-MM-DD" parsed as LOCAL date (new Date(str) treats it as UTC and
+  // can show the previous day in negative-offset timezones)
+  const formatServiceDate = (d?: string) => {
+    if (!d) return "—";
+    const [y, m, day] = d.split("-").map(Number);
+    if (!y || !m || !day) return d;
+    return new Date(y, m - 1, day).toLocaleDateString("es-DO");
+  };
+
+  // "HH:MM" (24h) → "8:00 a. m." — never shows seconds
+  const formatTime12 = (t?: string) => {
+    if (!t) return "—";
+    const [hStr, mStr] = t.split(":");
+    const h = parseInt(hStr, 10);
+    const m = parseInt(mStr || "0", 10);
+    if (isNaN(h)) return t;
+    const ampm = h >= 12 ? "p. m." : "a. m.";
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -175,7 +195,7 @@ export default function ReportDetail({
                 Fecha del servicio
               </p>
               <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                {new Date(report.serviceDate).toLocaleDateString("es-DO")}
+                {formatServiceDate(report.serviceDate)}
               </p>
             </div>
           </div>
@@ -187,7 +207,7 @@ export default function ReportDetail({
                 Hora del reporte
               </p>
               <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                {report.reportTime}
+                {formatTime12(report.reportTime)}
               </p>
             </div>
           </div>
@@ -266,7 +286,7 @@ export default function ReportDetail({
                 Hora de llegada
               </p>
               <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                {report.arrivalTime}
+                {formatTime12(report.arrivalTime)}
               </p>
             </div>
 
@@ -275,7 +295,7 @@ export default function ReportDetail({
                 Hora de salida
               </p>
               <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                {report.departureTime}
+                {formatTime12(report.departureTime)}
               </p>
             </div>
 
@@ -307,15 +327,18 @@ export default function ReportDetail({
                 Ubicación GPS
               </p>
               <a
-                href={report.locationGPS.startsWith("http")
-                  ? report.locationGPS
-                  : `https://www.google.com/maps?q=${report.locationGPS}`}
+                href={
+                  report.locationGPS.startsWith("http")
+                    ? report.locationGPS
+                    : `https://www.google.com/maps?q=${encodeURIComponent(report.locationGPS)}`
+                }
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-medium transition-colors hover:underline"
+                className="text-sm font-medium transition-colors hover:underline inline-flex items-center gap-1.5"
                 style={{ color: "var(--text-link)" }}
               >
-                {report.locationGPS}
+                <ExternalLink size={14} />
+                Abrir en Google Maps
               </a>
             </div>
           </div>
@@ -442,15 +465,24 @@ export default function ReportDetail({
                   Vinculado a tarea
                 </p>
                 <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-                  ID: {report.linkedTaskId}
+                  {report.linkedTaskTitle || report.linkedTaskId}
                 </p>
+                {report.linkedTaskListName && (
+                  <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>
+                    {report.linkedTaskListName}
+                  </p>
+                )}
               </div>
             </div>
             {onNavigateToTask && (
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onNavigateToTask(report.linkedTaskId!)}
+                onClick={() =>
+                  onNavigateToTask(
+                    report.linkedTaskListId || report.linkedTaskId!,
+                  )
+                }
               >
                 Ver tarea
               </Button>

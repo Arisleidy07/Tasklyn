@@ -28,6 +28,11 @@ service firebase.storage {
         (m != null && (m.role == "owner" || m.role == "admin"));
     }
 
+    function isTeamViewer(teamId) {
+      let m = firestore.get(/databases/(default)/documents/teams/$(teamId)/members/$(getAuthUid())).data;
+      return m != null && m.role == "viewer";
+    }
+
     function firestoreList(listId) {
       return firestore.get(/databases/(default)/documents/lists/$(listId)).data;
     }
@@ -42,6 +47,21 @@ service firebase.storage {
       return l != null && (
         l.owner == getAuthUid() ||
         (l.memberIds != null && getAuthUid() in l.memberIds)
+      );
+    }
+
+    // True when the list belongs to a team where the user is "viewer" (read-only)
+    function isListViewerScoped(listId) {
+      let l = firestoreList(listId);
+      return l != null && l.teamId != null && isTeamViewer(l.teamId);
+    }
+
+    // True when the task is team-scoped and the user is a "viewer" there
+    function isViewerScopedTaskDoc(taskId) {
+      let t = firestore.get(/databases/(default)/documents/tasks/$(taskId)).data;
+      return t != null && (
+        (t.teamId != null && isTeamViewer(t.teamId)) ||
+        (t.listId != null && isListViewerScoped(t.listId))
       );
     }
 
@@ -90,17 +110,19 @@ service firebase.storage {
         );
       }
       allow read: if isAuth() && canAccessTaskFiles();
-      allow write: if isAuth() && canAccessTaskFiles();
-      allow delete: if isAuth() && canAccessTaskFiles();
+      allow write: if isAuth() && canAccessTaskFiles() &&
+        !isViewerScopedTaskDoc(taskId);
+      allow delete: if isAuth() && canAccessTaskFiles() &&
+        !isViewerScopedTaskDoc(taskId);
     }
 
-    // Technician Report Evidence — read/write/delete based on report ownership
+    // Technician Report Evidence — read for team members, write by creator
     match /reports/{reportId}/{allPaths=**} {
-      // Read: report creator OR team admin/owner
+      // Read: report creator OR any member of the report's team
       allow read: if isAuth() && (
         firestore.get(/databases/(default)/documents/reports/$(reportId)).data.createdBy == getAuthUid() ||
         (firestore.get(/databases/(default)/documents/reports/$(reportId)).data.teamId != null &&
-         isTeamAdminOrOwner(firestore.get(/databases/(default)/documents/reports/$(reportId)).data.teamId))
+         isTeamMember(firestore.get(/databases/(default)/documents/reports/$(reportId)).data.teamId))
       );
 
       // Write: only the report creator can upload evidence
@@ -126,10 +148,12 @@ service firebase.storage {
 
       // Write: form owner can upload header images
       // Participants can upload response files
+      // "viewer" (read-only) members cannot upload to team forms
       allow write: if isAuth() && (
         firestore.get(/databases/(default)/documents/forms/$(formId)).data.createdBy == getAuthUid() ||
         (firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId != null &&
-         isTeamMember(firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId))
+         isTeamMember(firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId) &&
+         !isTeamViewer(firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId))
       );
 
       // Delete: form owner OR team admin/owner
