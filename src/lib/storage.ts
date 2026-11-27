@@ -758,3 +758,92 @@ export async function deleteReportEvidence(storagePath: string): Promise<void> {
     throw error;
   }
 }
+
+// ============================================
+// Form Response Files
+// ============================================
+
+export interface FormFileUploadResult {
+  url: string;
+  storagePath: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+}
+
+/**
+ * Upload a file attached to a form response question.
+ * Stored under forms/{formId}/responses/{respondentId}/{questionId}/ so files
+ * stay scoped to the form and never mix with task attachments.
+ */
+export async function uploadFormResponseFile(
+  formId: string,
+  respondentId: string,
+  questionId: string,
+  file: File,
+  onProgress?: (progress: number) => void,
+): Promise<FormFileUploadResult> {
+  try {
+    const validatedFile = await prepareAttachmentFile(file, {
+      maxSizeBytes: 100 * 1024 * 1024, // 100MB
+      allowedTypes: ALLOWED_ATTACHMENT_TYPES,
+    });
+
+    const fileName = safeAttachmentFileName(validatedFile);
+    const storagePath = `forms/${formId}/responses/${respondentId}/${questionId}/${fileName}`;
+    const storageRef = ref(storage, storagePath);
+
+    const uploadTask = uploadBytesResumable(storageRef, validatedFile, {
+      contentType: validatedFile.type,
+    });
+
+    return await new Promise<FormFileUploadResult>((resolve, reject) => {
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          if (onProgress) {
+            onProgress(
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
+            );
+          }
+        },
+        (error) => {
+          console.error("[uploadFormResponseFile] Upload failed:", error);
+          if (error.code === "storage/unauthorized") {
+            reject(
+              new Error(
+                "No tienes permiso para subir archivos a este formulario",
+              ),
+            );
+          } else if (error.code === "storage/canceled") {
+            reject(new Error("Subida cancelada"));
+          } else {
+            reject(
+              new Error(
+                `Error al subir ${file.name}: ${error.message || "Error de conexión"}`,
+              ),
+            );
+          }
+        },
+        async () => {
+          try {
+            const url = await getDownloadURL(storageRef);
+            resolve({
+              url,
+              storagePath,
+              fileName: validatedFile.name,
+              fileType: validatedFile.type,
+              fileSize: validatedFile.size,
+            });
+          } catch {
+            reject(new Error("No se pudo obtener la URL del archivo"));
+          }
+        },
+      );
+    });
+  } catch (error) {
+    console.error("[uploadFormResponseFile] Validation error:", error);
+    if (error instanceof Error) throw error;
+    throw new Error("Error al subir el archivo");
+  }
+}

@@ -50,6 +50,16 @@ service cloud.firestore {
         : null;
     }
 
+    // Safe field accessors: reading a missing map key throws in rules,
+    // so optional fields must be read through `in` checks first.
+    function docTeamId(data) {
+      return data != null && 'teamId' in data ? data.teamId : null;
+    }
+
+    function docListId(data) {
+      return data != null && 'listId' in data ? data.listId : null;
+    }
+
     // "viewer" (Solo lectura) members must not modify team-scoped data
     function isTeamViewerOf(teamId) {
       return teamId != null && teamMemberRoleOf(teamId) == "viewer";
@@ -58,15 +68,15 @@ service cloud.firestore {
     function isViewerInList(listId) {
       return listId != null &&
         exists(/databases/$(database)/documents/lists/$(listId)) &&
-        isTeamViewerOf(get(/databases/$(database)/documents/lists/$(listId)).data.teamId);
+        isTeamViewerOf(docTeamId(get(/databases/$(database)/documents/lists/$(listId)).data));
     }
 
     // True when the task belongs to a team (directly or via its list) where
     // the current user has the read-only "viewer" role
     function isViewerScopedTask(taskId) {
       return exists(/databases/$(database)/documents/tasks/$(taskId)) && (
-        isTeamViewerOf(get(/databases/$(database)/documents/tasks/$(taskId)).data.teamId) ||
-        isViewerInList(get(/databases/$(database)/documents/tasks/$(taskId)).data.listId)
+        isTeamViewerOf(docTeamId(get(/databases/$(database)/documents/tasks/$(taskId)).data)) ||
+        isViewerInList(docListId(get(/databases/$(database)/documents/tasks/$(taskId)).data))
       );
     }
 
@@ -141,14 +151,14 @@ service cloud.firestore {
     match /lists/{listId} {
       allow read: if isAuth();
       allow create: if isAuth() &&
-        !isTeamViewerOf(request.resource.data.teamId);
-      allow update: if isAuth() && !isTeamViewerOf(resource.data.teamId) && (
+        !isTeamViewerOf(docTeamId(request.resource.data));
+      allow update: if isAuth() && !isTeamViewerOf(docTeamId(resource.data)) && (
         isListOwner() ||
         isListMember() ||
         isAcceptingListInvitation(listId) ||
         (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
       );
-      allow delete: if isAuth() && !isTeamViewerOf(resource.data.teamId) && (
+      allow delete: if isAuth() && !isTeamViewerOf(docTeamId(resource.data)) && (
         isListOwner() ||
         (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
       );
@@ -157,11 +167,11 @@ service cloud.firestore {
     match /tasks/{taskId} {
       allow read: if isAuth();
       allow create: if isAuth() &&
-        !isTeamViewerOf(request.resource.data.teamId) &&
-        !isViewerInList(request.resource.data.listId);
+        !isTeamViewerOf(docTeamId(request.resource.data)) &&
+        !isViewerInList(docListId(request.resource.data));
       allow update: if isAuth() &&
-        !isTeamViewerOf(resource.data.teamId) &&
-        !isViewerInList(resource.data.listId) && (
+        !isTeamViewerOf(docTeamId(resource.data)) &&
+        !isViewerInList(docListId(resource.data)) && (
         resource.data.createdBy == uid() ||
         resource.data.assignedTo == uid() ||
         (resource.data.listId != null && isListMemberOf(resource.data.listId)) ||
@@ -170,8 +180,8 @@ service cloud.firestore {
       // Delete allowed for the creator, any member of the task's list (editors),
       // and the team owner (cascade/admin cleanup)
       allow delete: if isAuth() &&
-        !isTeamViewerOf(resource.data.teamId) &&
-        !isViewerInList(resource.data.listId) && (
+        !isTeamViewerOf(docTeamId(resource.data)) &&
+        !isViewerInList(docListId(resource.data)) && (
         resource.data.createdBy == uid() ||
         resource.data.assignedTo == uid() ||
         (resource.data.listId != null && isListMemberOf(resource.data.listId)) ||
@@ -311,17 +321,17 @@ service cloud.firestore {
     match /goals/{goalId} {
       allow read: if isAuth();
       allow create: if isAuth() &&
-        !isTeamViewerOf(request.resource.data.teamId) && (
+        !isTeamViewerOf(docTeamId(request.resource.data)) && (
         request.resource.data.createdBy == uid() ||
         (request.resource.data.teamId != null && isTeamAdminOrOwnerOf(request.resource.data.teamId))
       );
       allow update: if isAuth() &&
-        !isTeamViewerOf(resource.data.teamId) && (
+        !isTeamViewerOf(docTeamId(resource.data)) && (
         resource.data.createdBy == uid() ||
         (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
       );
       allow delete: if isAuth() &&
-        !isTeamViewerOf(resource.data.teamId) && (
+        !isTeamViewerOf(docTeamId(resource.data)) && (
         resource.data.createdBy == uid() ||
         (resource.data.teamId != null && isTeamOwnerOf(resource.data.teamId))
       );
@@ -330,12 +340,12 @@ service cloud.firestore {
     match /achievements/{achievementId} {
       allow read: if isAuth();
       allow create: if isAuth() &&
-        !isTeamViewerOf(request.resource.data.teamId) && (
+        !isTeamViewerOf(docTeamId(request.resource.data)) && (
         request.resource.data.userId == uid() ||
         (request.resource.data.teamId != null && isTeamAdminOrOwnerOf(request.resource.data.teamId))
       );
       allow update, delete: if isAuth() &&
-        !isTeamViewerOf(resource.data.teamId) && (
+        !isTeamViewerOf(docTeamId(resource.data)) && (
         resource.data.userId == uid() ||
         (resource.data.teamId != null && isTeamOwnerOf(resource.data.teamId))
       );
@@ -409,13 +419,13 @@ service cloud.firestore {
       );
       allow create: if isAuth() &&
         request.resource.data.ownerId == uid() &&
-        !isTeamViewerOf(request.resource.data.teamId);
+        !isTeamViewerOf(docTeamId(request.resource.data));
       allow update: if isAuth() &&
         resource.data.ownerId == uid() &&
-        !isTeamViewerOf(resource.data.teamId);
+        !isTeamViewerOf(docTeamId(resource.data));
       allow delete: if isAuth() &&
         resource.data.ownerId == uid() &&
-        !isTeamViewerOf(resource.data.teamId);
+        !isTeamViewerOf(docTeamId(resource.data));
     }
 
     // Activity collection (root) - user activity log
@@ -441,9 +451,9 @@ service cloud.firestore {
         request.resource.data.createdBy == uid() &&
         request.resource.data.createdByName is string &&
         request.resource.data.declarationConfirmed == true &&
-        (request.resource.data.teamId == null ||
-         (isTeamMemberOf(request.resource.data.teamId) &&
-          teamMemberRoleOf(request.resource.data.teamId) != "viewer"));
+        (docTeamId(request.resource.data) == null ||
+         (isTeamMemberOf(docTeamId(request.resource.data)) &&
+          teamMemberRoleOf(docTeamId(request.resource.data)) != "viewer"));
 
       // Update: only the report creator can update their own reports
       allow update: if isAuth() &&
@@ -530,7 +540,7 @@ service cloud.firestore {
           request.resource.data.respondentId == uid() &&
           request.resource.data.respondentName is string &&
           request.resource.data.formId == formId &&
-          !isTeamViewerOf(get(/databases/$(database)/documents/forms/$(formId)).data.teamId);
+          !isTeamViewerOf(docTeamId(get(/databases/$(database)/documents/forms/$(formId)).data));
 
         // Update: respondent can update their own draft responses
         allow update: if isAuth() &&

@@ -53,15 +53,24 @@ service firebase.storage {
     // True when the list belongs to a team where the user is "viewer" (read-only)
     function isListViewerScoped(listId) {
       let l = firestoreList(listId);
-      return l != null && l.teamId != null && isTeamViewer(l.teamId);
+      return l != null && 'teamId' in l && l.teamId != null &&
+        isTeamViewer(l.teamId);
+    }
+
+    // True when the user is a member of the team that owns the list
+    // (covers legacy tasks that don't carry teamId themselves)
+    function isListTeamMember(listId) {
+      let l = firestoreList(listId);
+      return l != null && 'teamId' in l && l.teamId != null &&
+        isTeamMember(l.teamId);
     }
 
     // True when the task is team-scoped and the user is a "viewer" there
     function isViewerScopedTaskDoc(taskId) {
       let t = firestore.get(/databases/(default)/documents/tasks/$(taskId)).data;
       return t != null && (
-        (t.teamId != null && isTeamViewer(t.teamId)) ||
-        (t.listId != null && isListViewerScoped(t.listId))
+        ('teamId' in t && t.teamId != null && isTeamViewer(t.teamId)) ||
+        ('listId' in t && t.listId != null && isListViewerScoped(t.listId))
       );
     }
 
@@ -105,8 +114,9 @@ service firebase.storage {
       function canAccessTaskFiles() {
         let t = taskData();
         return t != null && (
-          (t.listId != null && isListMember(t.listId)) ||
-          (t.teamId != null && isTeamMember(t.teamId))
+          ('listId' in t && t.listId != null && isListMember(t.listId)) ||
+          ('teamId' in t && t.teamId != null && isTeamMember(t.teamId)) ||
+          ('listId' in t && t.listId != null && isListTeamMember(t.listId))
         );
       }
       allow read: if isAuth() && canAccessTaskFiles();

@@ -176,6 +176,9 @@ export default function CreateReportForm({
     Record<string, string>
   >({});
 
+  const clearFieldError = (key: string) =>
+    setValidationErrors((v) => (v[key] ? { ...v, [key]: "" } : v));
+
   const locationPhotoRef = useRef<HTMLInputElement>(null);
   const workEvidenceRef = useRef<HTMLInputElement>(null);
 
@@ -381,7 +384,15 @@ export default function CreateReportForm({
       setError("Debes estar autenticado para crear un reporte");
       return;
     }
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      // Scroll to the first field showing a validation error
+      requestAnimationFrame(() => {
+        document
+          .querySelector("[data-field-error]")
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      return;
+    }
 
     // Read-only members cannot submit reports
     const reportTeam = userTeams.find((t) => t.id === reportTeamId);
@@ -636,7 +647,7 @@ export default function CreateReportForm({
         ))}
       </div>
       {validationErrors[errorKey] && (
-        <p className="text-xs mt-1" style={{ color: "var(--text-error)" }}>
+        <p data-field-error className="text-xs mt-1" style={{ color: "var(--text-error)" }}>
           {validationErrors[errorKey]}
         </p>
       )}
@@ -729,7 +740,7 @@ export default function CreateReportForm({
               <input
                 type="date"
                 value={serviceDate}
-                onChange={(e) => setServiceDate(e.target.value)}
+                onChange={(e) => { setServiceDate(e.target.value); clearFieldError("serviceDate"); }}
                 className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                 style={{
                   border: validationErrors.serviceDate
@@ -740,7 +751,7 @@ export default function CreateReportForm({
                 }}
               />
               {validationErrors.serviceDate && (
-                <p
+                <p data-field-error
                   className="text-xs mt-1"
                   style={{ color: "var(--text-error)" }}
                 >
@@ -818,7 +829,7 @@ export default function CreateReportForm({
               <input
                 type="text"
                 value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
+                onChange={(e) => { setClientName(e.target.value); clearFieldError("clientName"); }}
                 placeholder="Nombre del cliente"
                 className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                 style={{
@@ -830,7 +841,7 @@ export default function CreateReportForm({
                 }}
               />
               {validationErrors.clientName && (
-                <p
+                <p data-field-error
                   className="text-xs mt-1"
                   style={{ color: "var(--text-error)" }}
                 >
@@ -850,7 +861,7 @@ export default function CreateReportForm({
                 type="tel"
                 inputMode="tel"
                 value={clientPhone}
-                onChange={(e) => setClientPhone(e.target.value)}
+                onChange={(e) => { setClientPhone(e.target.value); clearFieldError("clientPhone"); }}
                 placeholder="Teléfono del cliente"
                 className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                 style={{
@@ -862,7 +873,7 @@ export default function CreateReportForm({
                 }}
               />
               {validationErrors.clientPhone && (
-                <p
+                <p data-field-error
                   className="text-xs mt-1"
                   style={{ color: "var(--text-error)" }}
                 >
@@ -944,7 +955,7 @@ export default function CreateReportForm({
             </label>
             <select
               value={serviceType}
-              onChange={(e) => setServiceType(e.target.value as ServiceType)}
+              onChange={(e) => { setServiceType(e.target.value as ServiceType); clearFieldError("serviceType"); }}
               className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
               style={{
                 border: validationErrors.serviceType
@@ -961,7 +972,7 @@ export default function CreateReportForm({
               ))}
             </select>
             {validationErrors.serviceType && (
-              <p
+              <p data-field-error
                 className="text-xs mt-1"
                 style={{ color: "var(--text-error)" }}
               >
@@ -980,7 +991,7 @@ export default function CreateReportForm({
               </label>
               <textarea
                 value={serviceTypeOther}
-                onChange={(e) => setServiceTypeOther(e.target.value)}
+                onChange={(e) => { setServiceTypeOther(e.target.value); clearFieldError("serviceTypeOther"); }}
                 placeholder="Describe el tipo de trabajo realizado"
                 rows={3}
                 className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 resize-none"
@@ -993,7 +1004,7 @@ export default function CreateReportForm({
                 }}
               />
               {validationErrors.serviceTypeOther && (
-                <p
+                <p data-field-error
                   className="text-xs mt-1"
                   style={{ color: "var(--text-error)" }}
                 >
@@ -1031,7 +1042,7 @@ export default function CreateReportForm({
                 type="time"
                 step={60}
                 value={arrivalTime}
-                onChange={(e) => setArrivalTime(e.target.value)}
+                onChange={(e) => { setArrivalTime(e.target.value); clearFieldError("arrivalTime"); }}
                 className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                 style={{
                   border: validationErrors.arrivalTime
@@ -1042,7 +1053,7 @@ export default function CreateReportForm({
                 }}
               />
               {validationErrors.arrivalTime && (
-                <p
+                <p data-field-error
                   className="text-xs mt-1"
                   style={{ color: "var(--text-error)" }}
                 >
@@ -1062,7 +1073,7 @@ export default function CreateReportForm({
                 type="time"
                 step={60}
                 value={departureTime}
-                onChange={(e) => setDepartureTime(e.target.value)}
+                onChange={(e) => { setDepartureTime(e.target.value); clearFieldError("departureTime"); }}
                 className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
                 style={{
                   border: validationErrors.departureTime
@@ -1073,7 +1084,7 @@ export default function CreateReportForm({
                 }}
               />
               {validationErrors.departureTime && (
-                <p
+                <p data-field-error
                   className="text-xs mt-1"
                   style={{ color: "var(--text-error)" }}
                 >
@@ -1149,6 +1160,7 @@ export default function CreateReportForm({
                 onChange={(e) => {
                   setLocationGPS(e.target.value);
                   setLocationError(null);
+                  clearFieldError("locationGPS");
                 }}
                 placeholder="https://maps.app.goo.gl/... o 18.4861,-69.9312"
                 className="flex-1 h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
@@ -1196,7 +1208,7 @@ export default function CreateReportForm({
               </a>
             )}
             {validationErrors.locationGPS && (
-              <p
+              <p data-field-error
                 className="text-xs mt-1"
                 style={{ color: "var(--text-error)" }}
               >
@@ -1276,7 +1288,7 @@ export default function CreateReportForm({
             </label>
             <select
               value={result}
-              onChange={(e) => setResult(e.target.value as ReportResult)}
+              onChange={(e) => { setResult(e.target.value as ReportResult); clearFieldError("result"); }}
               className="w-full h-11 px-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
               style={{
                 border: validationErrors.result
@@ -1293,7 +1305,7 @@ export default function CreateReportForm({
               ))}
             </select>
             {validationErrors.result && (
-              <p
+              <p data-field-error
                 className="text-xs mt-1"
                 style={{ color: "var(--text-error)" }}
               >
@@ -1312,7 +1324,7 @@ export default function CreateReportForm({
               </label>
               <textarea
                 value={resultOther}
-                onChange={(e) => setResultOther(e.target.value)}
+                onChange={(e) => { setResultOther(e.target.value); clearFieldError("resultOther"); }}
                 placeholder="Describe el resultado del trabajo"
                 rows={3}
                 className="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 resize-none"
@@ -1325,7 +1337,7 @@ export default function CreateReportForm({
                 }}
               />
               {validationErrors.resultOther && (
-                <p
+                <p data-field-error
                   className="text-xs mt-1"
                   style={{ color: "var(--text-error)" }}
                 >
@@ -1340,7 +1352,7 @@ export default function CreateReportForm({
               <input
                 type="checkbox"
                 checked={declarationConfirmed}
-                onChange={(e) => setDeclarationConfirmed(e.target.checked)}
+                onChange={(e) => { setDeclarationConfirmed(e.target.checked); clearFieldError("declaration"); }}
                 className="mt-1 w-4 h-4 rounded"
                 style={{ accentColor: "var(--text-link)" }}
               />
@@ -1354,7 +1366,7 @@ export default function CreateReportForm({
               </span>
             </label>
             {validationErrors.declaration && (
-              <p
+              <p data-field-error
                 className="text-xs mt-1"
                 style={{ color: "var(--text-error)" }}
               >
