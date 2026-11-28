@@ -2,6 +2,24 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
 
+    // ─────────────────────────────────────────────────────────────────────
+    // IMPORTANT — why these helpers look defensive:
+    //
+    // In Storage rules, `firestore.get(path)` returns null when the document
+    // does not exist, and reading `.data` on null (or reading a map key that
+    // is not present) raises an evaluation ERROR. An error inside `!x` or
+    // `a && x` propagates and the whole request is DENIED with
+    // `storage/unauthorized` (HTTP 403) — even for owners and members.
+    //
+    // Legacy teams often have no `teams/{id}/members/{uid}` document and
+    // many tasks have no `teamId` field, so every lookup below is guarded
+    // with `firestore.exists()` and `map.get(key, default)`.
+    //
+    // NOTE: cross-service rules (firestore.get / firestore.exists) require
+    // the Storage service agent to hold the "Firebase Rules Firestore
+    // Service Agent" role. `firebase deploy --only storage` grants it.
+    // ─────────────────────────────────────────────────────────────────────
+
     function isAuth() {
       return request.auth != null;
     }
@@ -10,68 +28,75 @@ service firebase.storage {
       return request.auth.uid;
     }
 
-    // Cross-service Firestore lookups for team/list membership.
-    // These cost one Firestore read per request under the Blaze plan.
-    function firestoreTeam(teamId) {
-      return firestore.get(/databases/(default)/documents/teams/$(teamId)).data;
+    function fsPath(collectionName, docId) {
+      return /databases/(default)/documents/$(collectionName)/$(docId);
+    }
+
+    // Data of a Firestore document, or an empty map when it does not exist.
+    function docData(collectionName, docId) {
+      return firestore.exists(fsPath(collectionName, docId))
+        ? firestore.get(fsPath(collectionName, docId)).data
+        : {};
+    }
+
+    function teamData(teamId) {
+      return docData('teams', teamId);
+    }
+
+    // Role stored in teams/{teamId}/members/{uid}, or '' when absent.
+    function teamMemberRole(teamId) {
+      let p = /databases/(default)/documents/teams/$(teamId)/members/$(getAuthUid());
+      return firestore.exists(p) ? firestore.get(p).data.get('role', '') : '';
     }
 
     function isTeamMember(teamId) {
-      let t = firestoreTeam(teamId);
-      return t != null && t.memberIds != null && getAuthUid() in t.memberIds;
+      let t = teamData(teamId);
+      return teamId is string && (
+        t.get('owner', '') == getAuthUid() ||
+        getAuthUid() in t.get('memberIds', []) ||
+        teamMemberRole(teamId) != ''
+      );
     }
 
     function isTeamAdminOrOwner(teamId) {
-      let t = firestoreTeam(teamId);
-      let m = firestore.get(/databases/(default)/documents/teams/$(teamId)/members/$(getAuthUid())).data;
-      return (t != null && t.owner == getAuthUid()) ||
-        (m != null && (m.role == "owner" || m.role == "admin"));
+      let role = teamMemberRole(teamId);
+      return teamId is string && (
+        teamData(teamId).get('owner', '') == getAuthUid() ||
+        role == 'owner' || role == 'admin'
+      );
     }
 
+    // "viewer" (Solo lectura). The team owner is never a viewer.
     function isTeamViewer(teamId) {
-      let m = firestore.get(/databases/(default)/documents/teams/$(teamId)/members/$(getAuthUid())).data;
-      return m != null && m.role == "viewer";
+      return teamId is string &&
+        teamData(teamId).get('owner', '') != getAuthUid() &&
+        teamMemberRole(teamId) == 'viewer';
     }
 
-    function firestoreList(listId) {
-      return firestore.get(/databases/(default)/documents/lists/$(listId)).data;
+    function listData(listId) {
+      return docData('lists', listId);
     }
 
     function isListOwner(listId) {
-      let l = firestoreList(listId);
-      return l != null && l.owner == getAuthUid();
+      return listData(listId).get('owner', '') == getAuthUid();
     }
 
     function isListMember(listId) {
-      let l = firestoreList(listId);
-      return l != null && (
-        l.owner == getAuthUid() ||
-        (l.memberIds != null && getAuthUid() in l.memberIds)
-      );
+      let l = listData(listId);
+      return l.get('owner', '') == getAuthUid() ||
+        getAuthUid() in l.get('memberIds', []);
     }
 
-    // True when the list belongs to a team where the user is "viewer" (read-only)
-    function isListViewerScoped(listId) {
-      let l = firestoreList(listId);
-      return l != null && 'teamId' in l && l.teamId != null &&
-        isTeamViewer(l.teamId);
-    }
-
-    // True when the user is a member of the team that owns the list
-    // (covers legacy tasks that don't carry teamId themselves)
+    // Member of the team that owns the list (covers team members who are not
+    // explicitly in list.memberIds).
     function isListTeamMember(listId) {
-      let l = firestoreList(listId);
-      return l != null && 'teamId' in l && l.teamId != null &&
-        isTeamMember(l.teamId);
+      let teamId = listData(listId).get('teamId', null);
+      return teamId is string && isTeamMember(teamId);
     }
 
-    // True when the task is team-scoped and the user is a "viewer" there
-    function isViewerScopedTaskDoc(taskId) {
-      let t = firestore.get(/databases/(default)/documents/tasks/$(taskId)).data;
-      return t != null && (
-        ('teamId' in t && t.teamId != null && isTeamViewer(t.teamId)) ||
-        ('listId' in t && t.listId != null && isListViewerScoped(t.listId))
-      );
+    function isListViewerScoped(listId) {
+      let teamId = listData(listId).get('teamId', null);
+      return teamId is string && isTeamViewer(teamId);
     }
 
     // Profile photos — owner can read/write, others can read
@@ -96,81 +121,97 @@ service firebase.storage {
       allow delete: if isAuth() && getAuthUid() == userId;
     }
 
-    // List-specific images (foto/fondo asociado a una lista)
-    // Only list members can read; only list owner can write/delete.
+    // List-specific images: list members read, list owner writes.
     match /lists/{listId}/{allPaths=**} {
       allow read: if isAuth() && isListMember(listId);
       allow write: if isAuth() && isListOwner(listId);
       allow delete: if isAuth() && isListOwner(listId);
     }
 
-    // Task attachments — read/write/delete for list members and team members
-    // (verified via Firestore). teamId covers tasks that belong to a team
-    // list where the user is a team member but not an explicit list member.
+    // Task attachments — the task document must exist first (the app creates
+    // it before uploading). Access: task creator, list owner/members, members
+    // of the task's team or of the list's team. Viewers can only read.
     match /tasks/{taskId}/attachments/{attachmentId} {
-      function taskData() {
-        return firestore.get(/databases/(default)/documents/tasks/$(taskId)).data;
+      function task() {
+        return docData('tasks', taskId);
+      }
+      function taskListId() {
+        return task().get('listId', null);
+      }
+      function taskTeamId() {
+        return task().get('teamId', null);
       }
       function canAccessTaskFiles() {
-        let t = taskData();
-        return t != null && (
-          ('listId' in t && t.listId != null && isListMember(t.listId)) ||
-          ('teamId' in t && t.teamId != null && isTeamMember(t.teamId)) ||
-          ('listId' in t && t.listId != null && isListTeamMember(t.listId))
+        let t = task();
+        return t.size() > 0 && (
+          t.get('createdBy', '') == getAuthUid() ||
+          (taskListId() is string && isListMember(taskListId())) ||
+          (taskTeamId() is string && isTeamMember(taskTeamId())) ||
+          (taskListId() is string && isListTeamMember(taskListId()))
         );
       }
+      function isViewerScopedTask() {
+        return (taskTeamId() is string && isTeamViewer(taskTeamId())) ||
+          (taskListId() is string && isListViewerScoped(taskListId()));
+      }
       allow read: if isAuth() && canAccessTaskFiles();
-      allow write: if isAuth() && canAccessTaskFiles() &&
-        !isViewerScopedTaskDoc(taskId);
-      allow delete: if isAuth() && canAccessTaskFiles() &&
-        !isViewerScopedTaskDoc(taskId);
+      allow create, update: if isAuth() && canAccessTaskFiles() &&
+        !isViewerScopedTask() &&
+        request.resource.size < 200 * 1024 * 1024;
+      allow delete: if isAuth() && canAccessTaskFiles() && !isViewerScopedTask();
     }
 
-    // Technician Report Evidence — read for team members, write by creator
+    // Technician report evidence — the report document must exist first.
+    // Read: creator or any member of the report's team.
+    // Write: only the report creator. Delete: creator or team admin/owner.
     match /reports/{reportId}/{allPaths=**} {
-      // Read: report creator OR any member of the report's team
+      function report() {
+        return docData('reports', reportId);
+      }
+      function reportTeamId() {
+        return report().get('teamId', null);
+      }
+      function isReportCreator() {
+        return report().get('createdBy', '') == getAuthUid();
+      }
       allow read: if isAuth() && (
-        firestore.get(/databases/(default)/documents/reports/$(reportId)).data.createdBy == getAuthUid() ||
-        (firestore.get(/databases/(default)/documents/reports/$(reportId)).data.teamId != null &&
-         isTeamMember(firestore.get(/databases/(default)/documents/reports/$(reportId)).data.teamId))
+        isReportCreator() ||
+        (reportTeamId() is string && isTeamMember(reportTeamId()))
       );
-
-      // Write: only the report creator can upload evidence
-      allow write: if isAuth() &&
-        firestore.get(/databases/(default)/documents/reports/$(reportId)).data.createdBy == getAuthUid();
-
-      // Delete: report creator OR team admin/owner
+      allow create, update: if isAuth() && isReportCreator() &&
+        request.resource.size < 1024 * 1024 * 1024;
       allow delete: if isAuth() && (
-        firestore.get(/databases/(default)/documents/reports/$(reportId)).data.createdBy == getAuthUid() ||
-        (firestore.get(/databases/(default)/documents/reports/$(reportId)).data.teamId != null &&
-         isTeamAdminOrOwner(firestore.get(/databases/(default)/documents/reports/$(reportId)).data.teamId))
+        isReportCreator() ||
+        (reportTeamId() is string && isTeamAdminOrOwner(reportTeamId()))
       );
     }
 
     // Form files — header images and response uploads
     match /forms/{formId}/{allPaths=**} {
-      // Read: form owner, team members of the form's team
+      function form() {
+        return docData('forms', formId);
+      }
+      function formTeamId() {
+        return form().get('teamId', null);
+      }
+      function isFormOwner() {
+        return form().get('createdBy', '') == getAuthUid();
+      }
       allow read: if isAuth() && (
-        firestore.get(/databases/(default)/documents/forms/$(formId)).data.createdBy == getAuthUid() ||
-        (firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId != null &&
-         isTeamMember(firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId))
+        isFormOwner() ||
+        (formTeamId() is string && isTeamMember(formTeamId()))
       );
-
-      // Write: form owner can upload header images
-      // Participants can upload response files
-      // "viewer" (read-only) members cannot upload to team forms
-      allow write: if isAuth() && (
-        firestore.get(/databases/(default)/documents/forms/$(formId)).data.createdBy == getAuthUid() ||
-        (firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId != null &&
-         isTeamMember(firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId) &&
-         !isTeamViewer(firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId))
+      // Form owner uploads header images; team members (not viewers) upload
+      // response files.
+      allow create, update: if isAuth() &&
+        request.resource.size < 200 * 1024 * 1024 && (
+        isFormOwner() ||
+        (formTeamId() is string && isTeamMember(formTeamId()) &&
+         !isTeamViewer(formTeamId()))
       );
-
-      // Delete: form owner OR team admin/owner
       allow delete: if isAuth() && (
-        firestore.get(/databases/(default)/documents/forms/$(formId)).data.createdBy == getAuthUid() ||
-        (firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId != null &&
-         isTeamAdminOrOwner(firestore.get(/databases/(default)/documents/forms/$(formId)).data.teamId))
+        isFormOwner() ||
+        (formTeamId() is string && isTeamAdminOrOwner(formTeamId()))
       );
     }
 
@@ -184,8 +225,8 @@ service firebase.storage {
 
     match /team-photos/{teamId}/{allPaths=**} {
       allow read: if isAuth();
-      allow write: if isAuth();
-      allow delete: if isAuth();
+      allow write: if isAuth() && isTeamAdminOrOwner(teamId);
+      allow delete: if isAuth() && isTeamAdminOrOwner(teamId);
     }
 
     match /background-images/{userId}/{allPaths=**} {
@@ -194,11 +235,12 @@ service firebase.storage {
       allow delete: if isAuth() && getAuthUid() == userId;
     }
 
-    // Fallback: read for any auth user, write denied
+    // Fallback: deny everything else. Storage rules are OR-ed across every
+    // matching block, so a permissive catch-all here would let ANY signed-in
+    // user read private task, report and form files. Every path the app uses
+    // is matched explicitly above.
     match /{allPaths=**} {
-      allow read: if isAuth();
-      allow write: if false;
-      allow delete: if false;
+      allow read, write: if false;
     }
   }
 }

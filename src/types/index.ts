@@ -222,6 +222,18 @@ export interface Task {
   actualTime?: number;
   order?: number;
   showPreviewInCard?: boolean;
+  /** Denormalised attachment summary so cards need no extra listener. */
+  attachmentCount?: number;
+  attachmentPreviews?: TaskAttachmentPreview[];
+}
+
+export interface TaskAttachmentPreview {
+  id: string;
+  name: string;
+  type: string;
+  category: AttachmentCategory;
+  url: string;
+  thumbUrl?: string;
 }
 
 // ---- TaskList ----
@@ -396,6 +408,9 @@ export interface TaskAttachment {
   category: AttachmentCategory;
   url: string;
   storagePath: string;
+  /** Small JPEG preview (images/videos) — avoids loading originals in cards */
+  thumbUrl?: string;
+  thumbStoragePath?: string;
   uploadedBy: string;
   uploadedByName?: string;
   createdAt: string;
@@ -512,6 +527,12 @@ export interface TechnicianReport {
 
   // For supervisor tracking
   teamId?: string; // Optional team assignment for supervision
+
+  /**
+   * "uploading" while evidence files are still being uploaded; "complete"
+   * once every file is stored. Reports without the field are legacy/complete.
+   */
+  submissionStatus?: "uploading" | "complete";
 }
 
 // ---- Forms ----

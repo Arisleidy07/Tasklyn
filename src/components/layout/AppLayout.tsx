@@ -6,6 +6,7 @@ import Sidebar from "./Sidebar";
 import MobileSidebar from "./MobileSidebar";
 import MobileNav from "./MobileNav";
 import ToastOverlay from "@/components/ui/ToastOverlay";
+import ActionToaster from "@/components/ui/ActionToaster";
 import { useNotificationEngine } from "@/hooks/useNotificationEngine";
 import { useUIStore } from "@/stores/uiStore";
 import { cn } from "@/lib/utils";
@@ -106,6 +107,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
       {/* In-app toast notifications */}
       <ToastOverlay />
+
+      {/* Action feedback (success / error / undo) */}
+      <ActionToaster />
     </div>
   );
 }

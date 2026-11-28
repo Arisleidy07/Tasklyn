@@ -10,7 +10,18 @@ import {
   uploadReportEvidence,
   type ReportEvidenceUploadResult,
 } from "@/lib/storage";
-import { subscribeToListTasks } from "@/lib/firestore";
+import {
+  subscribeToListTasks,
+  verifyTechnicianReportSaved,
+} from "@/lib/firestore";
+import PendingFilesGrid, {
+  type PendingFileItem,
+} from "@/components/attachments/PendingFilesGrid";
+import {
+  focusFirstInvalidField,
+  notifyInvalidFields,
+} from "@/lib/formValidation";
+import { showToast } from "@/stores/toastStore";
 import type { Unsubscribe as FsUnsubscribe } from "firebase/firestore";
 import type {
   Task,
@@ -29,7 +40,6 @@ import {
   ChevronRight,
   ExternalLink,
   Link2,
-  Film,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -61,8 +71,8 @@ const RESULTS: ReportResult[] = [
 interface PendingFile {
   id: string;
   file: File;
-  previewUrl: string;
   progress: number;
+  uploading?: boolean;
   error?: string;
   evidence?: ReportEvidence; // set once uploaded to Storage
 }
@@ -157,8 +167,6 @@ export default function CreateReportForm({
   // ---- Multi-file state ----
   const [locationPhotos, setLocationPhotos] = useState<PendingFile[]>([]);
   const [workFiles, setWorkFiles] = useState<PendingFile[]>([]);
-  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
-  const [lightboxVideo, setLightboxVideo] = useState<string | null>(null);
 
   // ---- Task picker state ----
   const [showTaskPicker, setShowTaskPicker] = useState(false);
@@ -214,7 +222,6 @@ export default function CreateReportForm({
     const items: PendingFile[] = Array.from(files).map((file) => ({
       id: genFileId(),
       file,
-      previewUrl: URL.createObjectURL(file),
       progress: 0,
     }));
     if (kind === "photo") {
@@ -227,24 +234,8 @@ export default function CreateReportForm({
   };
 
   const removePendingFile = (kind: "photo" | "work", id: string) => {
-    const revoke = (f: PendingFile) => URL.revokeObjectURL(f.previewUrl);
-    if (kind === "photo") {
-      setLocationPhotos((prev) => {
-        prev.filter((f) => f.id === id).forEach(revoke);
-        return prev.filter((f) => f.id !== id);
-      });
-    } else {
-      setWorkFiles((prev) => {
-        prev.filter((f) => f.id === id).forEach(revoke);
-        return prev.filter((f) => f.id !== id);
-      });
-    }
-  };
-
-  const revokeAllPreviews = () => {
-    [...locationPhotos, ...workFiles].forEach((f) =>
-      URL.revokeObjectURL(f.previewUrl),
-    );
+    if (kind === "photo") setLocationPhotos((prev) => prev.filter((f) => f.id !== id));
+    else setWorkFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
   // ---- GPS / Maps ----
@@ -329,35 +320,38 @@ export default function CreateReportForm({
   };
 
   // ---- Validation ----
-  const validateForm = (): boolean => {
+  /** Returns the number of invalid fields (0 = valid). */
+  const validateForm = (): number => {
     const errors: Record<string, string> = {};
 
     if (!serviceDate)
-      errors.serviceDate = "La fecha del servicio es obligatoria";
+      errors.serviceDate = "Selecciona la fecha del servicio";
     if (!clientName.trim())
-      errors.clientName = "El nombre o código del cliente es obligatorio";
-    if (!clientPhone.trim()) errors.clientPhone = "El teléfono es obligatorio";
+      errors.clientName = "Introduce el nombre o el código del cliente";
+    if (!clientPhone.trim()) errors.clientPhone = "Introduce el teléfono del cliente";
+    else if (clientPhone.replace(/\D/g, "").length < 7)
+      errors.clientPhone = "Introduce un número de teléfono válido";
     if (locationPhotos.length === 0)
-      errors.locationPhotos = "Añade al menos una foto del lugar";
-    if (!serviceType) errors.serviceType = "El tipo de servicio es obligatorio";
+      errors.locationPhotos = "Añade al menos una fotografía del lugar";
+    if (!serviceType) errors.serviceType = "Selecciona el tipo de trabajo realizado";
     if (serviceType === "OTROS" && !serviceTypeOther.trim()) {
-      errors.serviceTypeOther = "Describe el tipo de trabajo";
+      errors.serviceTypeOther = "Describe el tipo de trabajo realizado";
     }
-    if (!arrivalTime) errors.arrivalTime = "La hora de llegada es obligatoria";
+    if (!arrivalTime) errors.arrivalTime = "Introduce una hora de llegada válida";
     if (!departureTime)
-      errors.departureTime = "La hora de salida es obligatoria";
+      errors.departureTime = "Introduce una hora de salida válida";
     if (locationGPS.trim() && !mapsUrl) {
       errors.locationGPS =
         "Ingresa un enlace válido de Google Maps o coordenadas";
     }
     if (workFiles.length === 0)
-      errors.workEvidence = "Adjunta al menos una foto o video del trabajo";
-    if (!result) errors.result = "El resultado es obligatorio";
+      errors.workEvidence = "Adjunta al menos una fotografía o un video del trabajo realizado";
+    if (!result) errors.result = "Selecciona el resultado del servicio";
     if (result === "OTROS" && !resultOther.trim()) {
-      errors.resultOther = "Describe el resultado";
+      errors.resultOther = "Describe el resultado del servicio";
     }
     if (!declarationConfirmed) {
-      errors.declaration = "Debes confirmar la declaración";
+      errors.declaration = "Confirma la declaración para enviar el reporte";
     }
 
     if (arrivalTime && departureTime) {
@@ -372,25 +366,26 @@ export default function CreateReportForm({
     }
 
     setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    return Object.keys(errors).length;
   };
 
   // ---- Submit ----
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submittingRef = useRef(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (submittingRef.current) return; // no double submit
     setError(null);
 
     if (!user) {
-      setError("Debes estar autenticado para crear un reporte");
+      setError("Debes iniciar sesión para enviar un reporte");
       return;
     }
-    if (!validateForm()) {
-      // Scroll to the first field showing a validation error
-      requestAnimationFrame(() => {
-        document
-          .querySelector("[data-field-error]")
-          ?.scrollIntoView({ behavior: "smooth", block: "center" });
-      });
+    const invalidCount = validateForm();
+    if (invalidCount > 0) {
+      focusFirstInvalidField(formRef.current);
+      notifyInvalidFields(invalidCount);
       return;
     }
 
@@ -402,10 +397,10 @@ export default function CreateReportForm({
         : reportTeam?.members?.find((m) => m.userId === user.id)?.role;
     if (reportTeam && myRole === "viewer") {
       setError("Tu rol en este equipo es de solo lectura.");
-      setIsSubmitting(false);
       return;
     }
 
+    submittingRef.current = true;
     setIsSubmitting(true);
 
     const reportPayload = {
@@ -433,63 +428,51 @@ export default function CreateReportForm({
       teamId: reportTeamId,
     };
 
+    const patch = (kind: "photo" | "work", id: string, update: Partial<PendingFile>) => {
+      const apply = (list: PendingFile[]) =>
+        list.map((f) => (f.id === id ? { ...f, ...update } : f));
+      if (kind === "photo") setLocationPhotos(apply);
+      else setWorkFiles(apply);
+    };
+
     try {
-      // Reuse the already-created report on retry so files are not orphaned
-      // and no duplicate report is written to Firestore.
+      // 1) The report document must exist before uploading: Storage rules
+      //    verify that the uploader is its creator. On retry the SAME report
+      //    is reused, so no duplicate report or orphan files are created.
       let reportId = submittedReportIdRef.current;
       if (reportId) {
-        await updateReport(reportId, reportPayload);
+        await updateReport(reportId, { ...reportPayload, submissionStatus: "uploading" });
       } else {
         reportId = await createReport({
           ...reportPayload,
           evidences: [],
+          submissionStatus: "uploading",
         });
         submittedReportIdRef.current = reportId;
       }
 
-      const setFileEvidence = (
-        kind: "photo" | "work",
-        id: string,
-        evidence: ReportEvidence,
-      ) => {
-        const mark = (list: PendingFile[]) =>
-          list.map((f) => (f.id === id ? { ...f, evidence } : f));
-        if (kind === "photo") setLocationPhotos(mark);
-        else setWorkFiles(mark);
-      };
-
-      const allFiles: Array<{
-        item: PendingFile;
-        type: "location_photo" | "work_evidence";
-      }> = [
-        ...locationPhotos.map((item) => ({
-          item,
-          type: "location_photo" as const,
-        })),
-        ...workFiles.map((item) => ({
-          item,
-          type: "work_evidence" as const,
-        })),
+      // 2) Upload every file not uploaded yet. A failure does not stop the
+      //    others; results are collected locally (state updates are async).
+      const allFiles = [
+        ...locationPhotos.map((item) => ({ item, kind: "photo" as const, type: "location_photo" as const })),
+        ...workFiles.map((item) => ({ item, kind: "work" as const, type: "work_evidence" as const })),
       ];
+      const uploaded = new Map<string, ReportEvidence>();
+      const failures: Array<{ name: string; message: string }> = [];
 
-      for (const { item, type } of allFiles) {
-        const kind = type === "location_photo" ? "photo" : "work";
-        if (item.evidence) continue; // already uploaded on a previous attempt
-        const setProg = (p: number) => {
-          const update = (list: PendingFile[]) =>
-            list.map((f) => (f.id === item.id ? { ...f, progress: p } : f));
-          if (kind === "photo") setLocationPhotos(update);
-          else setWorkFiles(update);
-        };
+      for (const { item, kind, type } of allFiles) {
+        if (item.evidence) {
+          uploaded.set(item.id, item.evidence); // done on a previous attempt
+          continue;
+        }
+        patch(kind, item.id, { uploading: true, progress: 0, error: undefined });
         try {
-          setProg(0);
           const up: ReportEvidenceUploadResult = await uploadReportEvidence(
             reportId,
             type,
             item.file,
-            setProg,
+            (p) => patch(kind, item.id, { progress: p }),
           );
-          setProg(100);
           const evidence: ReportEvidence = {
             id: `${type}-${item.id}`,
             type,
@@ -500,41 +483,66 @@ export default function CreateReportForm({
             fileSize: up.fileSize,
             uploadedAt: new Date().toISOString(),
           };
-          setFileEvidence(kind, item.id, evidence);
+          uploaded.set(item.id, evidence);
+          patch(kind, item.id, { uploading: false, progress: 100, evidence });
         } catch (err) {
-          const msg =
-            err instanceof Error ? err.message : "Error al subir el archivo";
-          const markErr = (list: PendingFile[]) =>
-            list.map((f) =>
-              f.id === item.id ? { ...f, error: msg } : f,
-            );
-          if (kind === "photo") setLocationPhotos(markErr);
-          else setWorkFiles(markErr);
-          throw err;
+          const isPhoto = item.file.type.startsWith("image/");
+          const message =
+            err instanceof Error && err.message
+              ? err.message
+              : isPhoto
+                ? "No se pudo subir esta fotografía. Inténtalo nuevamente."
+                : "No se pudo subir este archivo. Inténtalo nuevamente.";
+          failures.push({ name: item.file.name, message });
+          patch(kind, item.id, { uploading: false, error: message });
         }
       }
 
-      const evidences = [
-        ...locationPhotos.map((f) => f.evidence),
-        ...workFiles.map((f) => f.evidence),
-      ].filter((e): e is ReportEvidence => !!e);
+      // 3) Persist the evidence that IS uploaded (keeps progress on retry)
+      const evidences = allFiles
+        .map(({ item }) => uploaded.get(item.id))
+        .filter((ev): ev is ReportEvidence => !!ev);
+      await updateReport(reportId, {
+        evidences,
+        submissionStatus: failures.length ? "uploading" : "complete",
+      });
 
-      if (evidences.length > 0) {
-        await updateReport(reportId, { evidences });
+      if (failures.length > 0) {
+        const msg =
+          failures.length === 1
+            ? `No se pudo subir "${failures[0].name}". ${failures[0].message}`
+            : `No se pudieron subir ${failures.length} archivos. Pulsa "Reintentar" en cada uno o vuelve a enviar el reporte.`;
+        setError(`${msg} Tus datos y los archivos ya subidos se conservan.`);
+        showToast({ variant: "error", message: "El reporte aún no se envió", description: "Algunos archivos no se pudieron subir." });
+        focusFirstInvalidField(formRef.current);
+        return;
       }
 
-      revokeAllPreviews();
+      // 4) Only confirm after reading the report back from the server
+      const check = await verifyTechnicianReportSaved(reportId);
+      if (!check.exists || check.evidenceCount !== evidences.length || check.status !== "complete") {
+        throw new Error("No se pudo confirmar que el reporte se guardó. Inténtalo nuevamente.");
+      }
+
       submittedReportIdRef.current = null;
       resetForm();
+      showToast({ variant: "success", message: "Reporte enviado correctamente" });
       onSuccess?.();
     } catch (err) {
       console.error("[handleSubmit] Error:", err);
-      setError(
-        err instanceof Error
-          ? `No se pudo enviar el reporte: ${err.message}`
-          : "No se pudo crear el reporte",
-      );
+      const code = (err as { code?: string })?.code;
+      const message =
+        code === "permission-denied"
+          ? "No tienes permiso para enviar reportes en este equipo."
+          : code === "unavailable"
+            ? "Sin conexión con el servidor. Revisa tu internet e inténtalo de nuevo."
+            : err instanceof Error
+              ? err.message
+              : "No se pudo enviar el reporte.";
+      setError(`No se pudo enviar el reporte: ${message} Tus datos se conservan.`);
+      showToast({ variant: "error", message: "No se pudo enviar el reporte", description: message });
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -563,89 +571,44 @@ export default function CreateReportForm({
     if (workEvidenceRef.current) workEvidenceRef.current.value = "";
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return bytes + " B";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-  };
+
 
   const duration = formatDuration(arrivalTime, departureTime);
-  const isVideoFile = (f: File) => f.type.startsWith("video/");
 
-  // Reusable file-grid renderer
+  // Reusable file-grid renderer (real thumbnails, status, retry, viewer)
+  const toGridItems = (files: PendingFile[]): PendingFileItem[] =>
+    files.map((f) => ({
+      id: f.id,
+      file: f.file,
+      progress: f.progress,
+      error: f.error,
+      status: f.evidence
+        ? "done"
+        : f.uploading
+          ? "uploading"
+          : f.error
+            ? "error"
+            : isSubmitting || submittedReportIdRef.current
+              ? "pending"
+              : undefined,
+    }));
+
   const renderFileGrid = (
     files: PendingFile[],
     kind: "photo" | "work",
     errorKey: string,
   ) => (
     <>
-      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3">
-        {files.map((item) => (
-          <div
-            key={item.id}
-            className="relative aspect-square rounded-xl overflow-hidden group"
-            style={{ backgroundColor: "var(--bg-secondary)" }}
-          >
-            {isVideoFile(item.file) ? (
-              <video
-                src={item.previewUrl}
-                className="w-full h-full object-cover"
-                muted
-                playsInline
-                preload="metadata"
-              />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={item.previewUrl}
-                alt={item.file.name}
-                className="w-full h-full object-cover cursor-zoom-in"
-                onClick={() =>
-                  isVideoFile(item.file)
-                    ? setLightboxVideo(item.previewUrl)
-                    : setLightboxUrl(item.previewUrl)
-                }
-              />
-            )}
-            {isVideoFile(item.file) && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                <Film size={20} className="text-white" />
-              </div>
-            )}
-            {/* progress / remove overlay */}
-            <div className="absolute inset-x-0 bottom-0 p-1.5 bg-gradient-to-t from-black/70 to-transparent">
-              {item.progress > 0 && item.progress < 100 ? (
-                <div className="h-1 rounded-full bg-white/30 overflow-hidden">
-                  <div
-                    className="h-full bg-white transition-all"
-                    style={{ width: `${item.progress}%` }}
-                  />
-                </div>
-              ) : (
-                <p className="text-[10px] text-white/90 truncate">
-                  {formatFileSize(item.file.size)}
-                </p>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => removePendingFile(kind, item.id)}
-              disabled={isSubmitting}
-              className="absolute top-1 right-1 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-              aria-label="Eliminar archivo"
-            >
-              <X size={14} />
-            </button>
-            {item.error && (
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center p-1">
-                <span className="text-[10px] text-red-300 text-center">
-                  {item.error}
-                </span>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
+      {files.length > 0 && (
+        <div className="mt-3">
+          <PendingFilesGrid
+            items={toGridItems(files)}
+            onRemove={(id) => removePendingFile(kind, id)}
+            onRetry={() => void handleSubmit()}
+            disabled={isSubmitting}
+          />
+        </div>
+      )}
       {validationErrors[errorKey] && (
         <p data-field-error className="text-xs mt-1" style={{ color: "var(--text-error)" }}>
           {validationErrors[errorKey]}
@@ -686,7 +649,7 @@ export default function CreateReportForm({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-6">
         {/* Report Information */}
         <div
           className="p-4 rounded-xl"
@@ -895,7 +858,6 @@ export default function CreateReportForm({
               type="file"
               accept="image/*"
               multiple
-              capture="environment"
               onChange={(e) => {
                 makePendingFiles(e.target.files, "photo");
                 e.target.value = "";
@@ -1690,49 +1652,6 @@ export default function CreateReportForm({
         )}
       </AnimatePresence>
 
-      {/* Lightbox */}
-      <AnimatePresence>
-        {(lightboxUrl || lightboxVideo) && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100000] bg-black/90 flex items-center justify-center p-4"
-            onClick={() => {
-              setLightboxUrl(null);
-              setLightboxVideo(null);
-            }}
-          >
-            <button
-              className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 text-white flex items-center justify-center"
-              aria-label="Cerrar"
-              onClick={() => {
-                setLightboxUrl(null);
-                setLightboxVideo(null);
-              }}
-            >
-              <X size={22} />
-            </button>
-            {lightboxVideo ? (
-              <video
-                src={lightboxVideo}
-                controls
-                autoPlay
-                className="max-w-full max-h-[85vh] rounded-xl"
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={lightboxUrl || ""}
-                alt="Vista previa"
-                className="max-w-full max-h-[85vh] rounded-xl object-contain"
-                onClick={(e) => e.stopPropagation()}
-              />
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 }

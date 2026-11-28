@@ -18,6 +18,14 @@ import PremiumMembersPanel from "@/components/members/PremiumMembersPanel";
 import MembersPanel from "@/components/members/MembersPanel";
 import EditListModal from "@/components/members/EditListModal";
 import { SortableTaskContainer } from "@/components/tasks/SortableTaskContainer";
+import PendingFilesGrid, {
+  pendingFileId,
+  type PendingFileItem,
+} from "@/components/attachments/PendingFilesGrid";
+import { useToastStore } from "@/stores/toastStore";
+import QuickAddTask, {
+  useQuickAddMembers,
+} from "@/components/tasks/QuickAddTask";
 import {
   Plus,
   Trash2,
@@ -81,7 +89,8 @@ export default function ListDetailPage() {
   const [newTaskReminder, setNewTaskReminder] = useState("");
   const [newTaskAssignee, setNewTaskAssignee] = useState("");
   const [showMoreFields, setShowMoreFields] = useState(false);
-  const [newTaskFiles, setNewTaskFiles] = useState<File[]>([]);
+  const [newTaskFiles, setNewTaskFiles] = useState<PendingFileItem[]>([]);
+  const showActionToast = useToastStore((s) => s.show);
   const limits = usePlanLimits();
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [createTaskError, setCreateTaskError] = useState<string | null>(null);
@@ -237,6 +246,12 @@ export default function ListDetailPage() {
     return names;
   }, [list, memberProfiles, teamMembers, user, listId, getDisplayName]);
 
+  const quickAddMemberIds = useMemo(
+    () => assignableMembers.map((m) => m.userId),
+    [assignableMembers],
+  );
+  const quickAddMembers = useQuickAddMembers(quickAddMemberIds, memberNames);
+
   if (!user || !list) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -249,6 +264,23 @@ export default function ListDetailPage() {
   const isOwner = userMember?.role === "owner";
   const canEdit = isOwner || userMember?.role === "editor";
   const canShare = canShareList(userMember?.role ?? null);
+
+  // Quick add (inline, Microsoft To Do style). The "Añadir tarea" button and
+  // its full form keep working exactly as before.
+  const quickAdd = canEdit ? (
+    <QuickAddTask
+      listId={listId}
+      userId={user.id}
+      members={quickAddMembers}
+      canAssign={limits.features.canAssign}
+      checkLimit={(n) => {
+        const check = limits.canCreateTask(activeTasks.length + n);
+        return check.allowed
+          ? null
+          : check.message || "Tu plan no permite crear más tareas en esta lista.";
+      }}
+    />
+  ) : null;
 
   const pendingCount = pendingTasks.length;
   const completedCount = completedTasks.length;
@@ -293,13 +325,18 @@ export default function ListDetailPage() {
       // Filter out empty phone numbers
       const validPhones = newTaskPhones.filter((p) => p.trim());
 
-      const attachments = newTaskFiles.map((file) => ({
-        file,
+      const attachments = newTaskFiles.map((item) => ({
+        file: item.file,
         uploadedBy: user.id,
         uploadedByName: user.name,
       }));
+      if (attachments.length) {
+        setNewTaskFiles((prev) =>
+          prev.map((f) => ({ ...f, status: "pending" as const, progress: 0 })),
+        );
+      }
 
-      await createTask({
+      const created = await createTask({
         listId,
         title: newTaskTitle.trim(),
         description: newTaskDescription.trim() || "",
@@ -328,9 +365,59 @@ export default function ListDetailPage() {
             ? newTaskAssignee
             : undefined,
         attachments,
+        onAttachmentProgress: (index, progress) =>
+          setNewTaskFiles((prev) =>
+            prev.map((f, i) =>
+              i !== index
+                ? f
+                : progress < 0
+                  ? { ...f, status: "error" as const }
+                  : {
+                      ...f,
+                      status: progress >= 100 ? ("done" as const) : ("uploading" as const),
+                      progress,
+                    },
+            ),
+          ),
       });
 
       closeTaskModal();
+
+      // The task exists; report files that could not be uploaded and offer
+      // a retry against the SAME task (no duplicate task is created).
+      if (created.failedAttachments.length > 0) {
+        const failedFiles = created.failedAttachments;
+        const taskId = created.id;
+        const retry = async () => {
+          const stillFailing: string[] = [];
+          for (const { file } of failedFiles) {
+            try {
+              await useTaskStore
+                .getState()
+                .addAttachment(taskId, file, user.id, user.name);
+            } catch (e) {
+              stillFailing.push(e instanceof Error ? e.message : file.name);
+            }
+          }
+          showActionToast(
+            stillFailing.length
+              ? {
+                  variant: "error",
+                  message: "Algunos archivos siguen sin subirse",
+                  description: stillFailing[0],
+                }
+              : { variant: "success", message: "Archivos subidos correctamente" },
+          );
+        };
+        showActionToast({
+          variant: "warning",
+          message: `Tarea creada, pero ${failedFiles.length === 1 ? "1 archivo no se pudo subir" : `${failedFiles.length} archivos no se pudieron subir`}`,
+          description: failedFiles[0].error,
+          actionLabel: "Reintentar",
+          onAction: retry,
+          durationMs: 12000,
+        });
+      }
     } catch (err) {
       console.error("Error creating task:", err);
       setCreateTaskError(
@@ -357,23 +444,23 @@ export default function ListDetailPage() {
     setNewTaskPhones(newPhones);
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // All pickers append (multiple files, any mix); the input is reset so the
+  // same file can be picked again after removing it.
+  const addPickedFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setNewTaskFiles((prev) => [...prev, ...files]);
+    e.target.value = "";
+    if (!files.length) return;
+    setNewTaskFiles((prev) => [
+      ...prev,
+      ...files.map((file) => ({ id: pendingFileId(), file })),
+    ]);
   };
+  const handleImageSelect = addPickedFiles;
+  const handleVideoSelect = addPickedFiles;
+  const handleFileSelect = addPickedFiles;
 
-  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setNewTaskFiles((prev) => [...prev, ...files]);
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    setNewTaskFiles((prev) => [...prev, ...files]);
-  };
-
-  const handleRemoveFile = (index: number) => {
-    setNewTaskFiles((prev) => prev.filter((_, i) => i !== index));
+  const handleRemoveFile = (id: string) => {
+    setNewTaskFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
   const handleBackClick = () => {
@@ -547,6 +634,7 @@ export default function ListDetailPage() {
           <div className="space-y-2">
             {filter === "all" ? (
               activeTasks.length === 0 ? (
+                <>
                 <EmptyState
                   icon={<CheckCircle2 size={32} />}
                   title="Aún no hay tareas"
@@ -563,6 +651,8 @@ export default function ListDetailPage() {
                     )
                   }
                 />
+                {quickAdd}
+                </>
               ) : (
                 <div className="space-y-6">
                   {/* Bloque de pendientes */}
@@ -637,6 +727,7 @@ export default function ListDetailPage() {
                         No hay tareas pendientes.
                       </p>
                     )}
+                    {quickAdd}
                   </section>
 
                   {/* Bloque de completadas — expandido por defecto, colapsable */}
@@ -788,6 +879,7 @@ export default function ListDetailPage() {
                     }
                   />
                 )}
+                {filter === "pending" && quickAdd}
               </>
             )}
           </div>
@@ -1325,7 +1417,6 @@ export default function ListDetailPage() {
                         type="file"
                         multiple
                         accept="image/*"
-                        capture="environment"
                         onChange={handleImageSelect}
                         className="hidden"
                       />
@@ -1334,7 +1425,6 @@ export default function ListDetailPage() {
                         type="file"
                         multiple
                         accept="video/*"
-                        capture="environment"
                         onChange={handleVideoSelect}
                         className="hidden"
                       />
@@ -1342,7 +1432,7 @@ export default function ListDetailPage() {
                         ref={fileInputRef}
                         type="file"
                         multiple
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.rar,.json,image/*,video/*"
                         onChange={handleFileSelect}
                         className="hidden"
                       />
@@ -1393,75 +1483,16 @@ export default function ListDetailPage() {
                         </button>
                       </div>
 
-                      {/* Selected files preview */}
-                      <AnimatePresence>
-                        {newTaskFiles.length > 0 && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="flex flex-col gap-2 mt-3"
-                          >
-                            {newTaskFiles.map((file, index) => {
-                              const isImage = file.type.startsWith("image/");
-                              const isVideo = file.type.startsWith("video/");
-
-                              return (
-                                <div
-                                  key={index}
-                                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
-                                  style={{
-                                    backgroundColor: "var(--bg-secondary)",
-                                    border: "1px solid var(--border-color)",
-                                  }}
-                                >
-                                  {isImage ? (
-                                    <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0 bg-gray-100">
-                                      <img
-                                        src={URL.createObjectURL(file)}
-                                        alt={file.name}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                  ) : isVideo ? (
-                                    <Video
-                                      size={20}
-                                      style={{ color: "var(--text-tertiary)" }}
-                                    />
-                                  ) : (
-                                    <FileText
-                                      size={20}
-                                      style={{ color: "var(--text-tertiary)" }}
-                                    />
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <p
-                                      className="text-sm truncate"
-                                      style={{ color: "var(--text-primary)" }}
-                                    >
-                                      {file.name}
-                                    </p>
-                                    <p
-                                      className="text-xs"
-                                      style={{ color: "var(--text-tertiary)" }}
-                                    >
-                                      {(file.size / 1024 / 1024).toFixed(2)} MB
-                                    </p>
-                                  </div>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveFile(index)}
-                                    className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 transition-colors hover:bg-[var(--bg-hover)]"
-                                    style={{ color: "var(--text-error)" }}
-                                  >
-                                    <X size={16} />
-                                  </button>
-                                </div>
-                              );
-                            })}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      {/* Selected files preview (real thumbnails) */}
+                      {newTaskFiles.length > 0 && (
+                        <div className="mt-3">
+                          <PendingFilesGrid
+                            items={newTaskFiles}
+                            onRemove={isCreatingTask ? undefined : handleRemoveFile}
+                            disabled={isCreatingTask}
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </motion.div>

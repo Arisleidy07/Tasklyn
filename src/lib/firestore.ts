@@ -70,6 +70,7 @@ import type {
   TeamScore,
   Background,
   TaskAttachment,
+  TaskAttachmentPreview,
 } from "@/types";
 
 // ---- SubcollectionTeamMember (stored at teams/{teamId}/members/{userId}) ----
@@ -510,6 +511,82 @@ export const createTask = async (
     createdAt: serverTimestamp(),
   });
   return taskRef.id;
+};
+
+/** Reserve a task ID client-side (no network). Used to make writes idempotent. */
+export const newTaskId = (): string => doc(tasksCollection).id;
+
+export interface BatchTaskInput {
+  id: string;
+  data: Omit<Task, "id" | "createdAt" | "history">;
+  history: Omit<TaskHistoryEntry, "id">;
+  /** Client timestamp (ms) used for createdAt so pasted order is preserved. */
+  createdAtMs: number;
+}
+
+// Firestore allows 500 writes per batch; each task = task doc + history doc.
+const TASKS_PER_BATCH = 200;
+
+/**
+ * Create many tasks with the SAME document shape as createTask(), using
+ * write batches (atomic per chunk). IDs are reserved by the caller so a retry
+ * targets the same documents and never duplicates. Tasks that already exist
+ * on the server (a previous attempt that committed but whose response was
+ * lost) are skipped instead of rewritten.
+ */
+export const createTasksBatch = async (
+  items: BatchTaskInput[],
+): Promise<{ savedIds: string[]; failedIds: string[]; error?: unknown }> => {
+  const savedIds: string[] = [];
+  const failedIds: string[] = [];
+  let lastError: unknown;
+
+  for (let i = 0; i < items.length; i += TASKS_PER_BATCH) {
+    const chunk = items.slice(i, i + TASKS_PER_BATCH);
+    try {
+      const batch = writeBatch(db);
+      for (const item of chunk) {
+        batch.set(doc(db, "tasks", item.id), {
+          ...stripUndefined(item.data as Record<string, unknown>),
+          createdAt: Timestamp.fromMillis(item.createdAtMs),
+        });
+        batch.set(doc(db, "tasks", item.id, "history", `${item.id}_created`), {
+          ...stripUndefined(item.history as Record<string, unknown>),
+          createdAt: serverTimestamp(),
+        });
+      }
+      await batch.commit();
+      savedIds.push(...chunk.map((c) => c.id));
+    } catch (error) {
+      lastError = error;
+      failedIds.push(...chunk.map((c) => c.id));
+    }
+  }
+  return { savedIds, failedIds, error: lastError };
+};
+
+/** Returns the subset of task IDs that exist on the server. */
+export const getExistingTaskIds = async (ids: string[]): Promise<string[]> => {
+  const results = await Promise.all(
+    ids.map(async (id) => {
+      try {
+        const snap = await getDocFromServer(doc(db, "tasks", id));
+        return snap.exists() ? id : null;
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return results.filter((id): id is string => !!id);
+};
+
+/** Delete several task documents atomically per chunk (used by "Deshacer"). */
+export const deleteTasksBatch = async (ids: string[]): Promise<void> => {
+  for (let i = 0; i < ids.length; i += 450) {
+    const batch = writeBatch(db);
+    ids.slice(i, i + 450).forEach((id) => batch.delete(doc(db, "tasks", id)));
+    await batch.commit();
+  }
 };
 
 export const updateTask = async (
@@ -2268,6 +2345,47 @@ export const deleteTaskAttachmentMetadata = async (
   await deleteDoc(doc(db, "tasks", taskId, "attachments", attachmentId));
 };
 
+/** One-time read of all attachments of a task (oldest first). */
+export const getTaskAttachments = async (
+  taskId: string,
+): Promise<TaskAttachment[]> => {
+  const snap = await getDocs(
+    query(collection(db, "tasks", taskId, "attachments"), orderBy("createdAt", "asc")),
+  );
+  return snap.docs.map((d) => ({
+    ...d.data(),
+    id: d.id,
+    createdAt: toDate(d.data().createdAt),
+  })) as unknown as TaskAttachment[];
+};
+
+/**
+ * Recompute the denormalised attachment summary stored on the task document
+ * (count + first three previews). Cards read it instead of opening one
+ * real-time listener per task. Self-healing: always derived from the
+ * attachments subcollection.
+ */
+export const refreshTaskAttachmentSummary = async (
+  taskId: string,
+): Promise<{ count: number; previews: TaskAttachmentPreview[] }> => {
+  const all = await getTaskAttachments(taskId);
+  const previews: TaskAttachmentPreview[] = all.slice(0, 3).map((a) =>
+    stripUndefined({
+      id: a.id,
+      name: a.name,
+      type: a.type,
+      category: a.category,
+      url: a.url,
+      thumbUrl: a.thumbUrl,
+    }) as TaskAttachmentPreview,
+  );
+  await updateDoc(doc(db, "tasks", taskId), {
+    attachmentCount: all.length,
+    attachmentPreviews: previews,
+  });
+  return { count: all.length, previews };
+};
+
 export const subscribeToTaskAttachments = (
   taskId: string,
   callback: (attachments: TaskAttachment[]) => void,
@@ -2316,6 +2434,20 @@ export const updateTechnicianReport = async (
   const { id, createdAt, ...rest } = updates;
   const cleanUpdates = stripUndefined(rest) as Record<string, unknown>;
   await updateDoc(reportRef, withTimestamps(cleanUpdates));
+};
+
+/** Read the report straight from the server to confirm it was persisted. */
+export const verifyTechnicianReportSaved = async (
+  reportId: string,
+): Promise<{ exists: boolean; evidenceCount: number; status?: string }> => {
+  const snap = await getDocFromServer(doc(db, "reports", reportId));
+  if (!snap.exists()) return { exists: false, evidenceCount: 0 };
+  const data = snap.data();
+  return {
+    exists: true,
+    evidenceCount: Array.isArray(data.evidences) ? data.evidences.length : 0,
+    status: data.submissionStatus,
+  };
 };
 
 export const deleteTechnicianReport = async (

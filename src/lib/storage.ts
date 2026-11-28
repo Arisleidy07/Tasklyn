@@ -11,8 +11,84 @@ import {
   getDownloadURL,
   deleteObject,
 } from "firebase/storage";
-import { storage } from "./firebase";
+import { storage, auth } from "./firebase";
 import { nanoid } from "nanoid";
+import { createThumbnail } from "./mediaThumbnails";
+
+/**
+ * Translate Firebase Storage errors into specific Spanish messages. Not every
+ * failure is a permissions problem: auth, quota/billing, bucket configuration
+ * and network errors are reported separately so they can be diagnosed.
+ */
+export function describeStorageError(error: unknown, fileName?: string): string {
+  const code = (error as { code?: string })?.code || "";
+  const status = (error as { status_?: number; customData?: { serverResponse?: string } })?.status_;
+  const prefix = fileName ? `${fileName}: ` : "";
+  // Diagnostic detail in the console (code + HTTP status + server response)
+  console.error("[storage]", code, status, (error as { customData?: unknown })?.customData || error);
+  switch (code) {
+    case "storage/unauthenticated":
+      return `${prefix}Tu sesión expiró. Vuelve a iniciar sesión e inténtalo de nuevo.`;
+    case "storage/unauthorized":
+      return auth.currentUser
+        ? `${prefix}No tienes permiso para subir archivos aquí. Verifica que sigues siendo miembro de la lista o del equipo (el rol "Solo lectura" no puede subir archivos).`
+        : `${prefix}Debes iniciar sesión para subir archivos.`;
+    case "storage/quota-exceeded":
+      return `${prefix}Se superó la cuota de almacenamiento del proyecto (revisa el plan de facturación de Firebase).`;
+    case "storage/project-not-found":
+    case "storage/bucket-not-found":
+    case "storage/no-default-bucket":
+      return `${prefix}El almacenamiento de archivos no está configurado correctamente (bucket no encontrado).`;
+    case "storage/retry-limit-exceeded":
+    case "storage/server-file-wrong-size":
+      return `${prefix}Se perdió la conexión durante la subida. Inténtalo nuevamente.`;
+    case "storage/canceled":
+      return `${prefix}Subida cancelada.`;
+    case "storage/invalid-checksum":
+      return `${prefix}El archivo llegó dañado. Inténtalo nuevamente.`;
+    default:
+      if (typeof navigator !== "undefined" && navigator.onLine === false) {
+        return `${prefix}Sin conexión a internet. Inténtalo nuevamente cuando vuelvas a estar en línea.`;
+      }
+      if (status === 402) {
+        return `${prefix}El proyecto de Firebase requiere un plan de facturación activo para almacenar archivos.`;
+      }
+      return `${prefix}No se pudo subir el archivo. Inténtalo nuevamente.`;
+  }
+}
+
+/** Resumable upload with progress; rejects with a translated Error. */
+function resumableUpload(
+  path: string,
+  data: Blob,
+  contentType: string,
+  onProgress?: (progress: number) => void,
+  fileName?: string,
+): Promise<string> {
+  const storageRef = ref(storage, path);
+  const task = uploadBytesResumable(storageRef, data, {
+    contentType,
+    cacheControl: "private, max-age=31536000",
+  });
+  return new Promise((resolve, reject) => {
+    task.on(
+      "state_changed",
+      (snap) => {
+        if (onProgress && snap.totalBytes > 0) {
+          onProgress((snap.bytesTransferred / snap.totalBytes) * 100);
+        }
+      },
+      (error) => reject(new Error(describeStorageError(error, fileName))),
+      async () => {
+        try {
+          resolve(await getDownloadURL(storageRef));
+        } catch (error) {
+          reject(new Error(describeStorageError(error, fileName)));
+        }
+      },
+    );
+  });
+}
 
 const ALLOWED_TYPES = [
   "image/jpeg",
@@ -518,95 +594,54 @@ export interface TaskAttachmentUploadResult {
   url: string;
   storagePath: string;
   category: "image" | "video" | "file";
+  /** MIME type actually stored (resolved from the extension when empty). */
+  contentType: string;
+  thumbUrl?: string;
+  thumbStoragePath?: string;
 }
 
 /**
- * Upload a task attachment to Firebase Storage.
- * Supports images, videos, and documents.
+ * Upload a task attachment (image, video or document) to
+ * tasks/{taskId}/attachments/. The task document MUST already exist because
+ * the Storage rules check membership through it. For images and videos a
+ * small JPEG thumbnail is uploaded alongside so cards stay light.
  */
 export async function uploadTaskAttachment(
   taskId: string,
   file: File,
   onProgress?: (progress: number) => void,
 ): Promise<TaskAttachmentUploadResult> {
-  try {
-    const validatedFile = await prepareAttachmentFile(file);
-    const category = getAttachmentCategory(validatedFile);
-    const fileName = safeAttachmentFileName(validatedFile);
-    const storagePath = `tasks/${taskId}/attachments/${fileName}`;
+  const validatedFile = await prepareAttachmentFile(file);
+  const category = getAttachmentCategory(validatedFile);
+  const fileName = safeAttachmentFileName(validatedFile);
+  const storagePath = `tasks/${taskId}/attachments/${fileName}`;
 
-    const storageRef = ref(storage, storagePath);
+  const url = await resumableUpload(
+    storagePath,
+    validatedFile,
+    validatedFile.type,
+    onProgress,
+    file.name,
+  );
 
-    // Upload with progress tracking if callback provided
-    if (onProgress) {
-      const uploadTask = uploadBytesResumable(storageRef, validatedFile, {
-        contentType: validatedFile.type,
-      });
-
-      return new Promise((resolve, reject) => {
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            onProgress(progress);
-          },
-          (error) => {
-            console.error("[uploadTaskAttachment] Upload failed:", error);
-            // Provide user-friendly error messages
-            if (error.code === "storage/unauthorized") {
-              reject(new Error("No tienes permiso para subir archivos"));
-            } else if (error.code === "storage/canceled") {
-              reject(new Error("Subida cancelada"));
-            } else if (error.code === "storage/unknown") {
-              reject(new Error("Error desconocido al subir el archivo"));
-            } else {
-              reject(
-                new Error(
-                  `Error al subir: ${error.message || "Error de conexión"}`,
-                ),
-              );
-            }
-          },
-          async () => {
-            try {
-              const url = await getDownloadURL(storageRef);
-              console.log("[uploadTaskAttachment] Upload successful:", {
-                url,
-                storagePath,
-                category,
-              });
-              resolve({ url, storagePath, category });
-            } catch (error) {
-              console.error(
-                "[uploadTaskAttachment] Failed to get download URL:",
-                error,
-              );
-              reject(new Error("No se pudo obtener la URL del archivo"));
-            }
-          },
-        );
-      });
-    } else {
-      // Simple upload without progress tracking
-      await uploadBytes(storageRef, validatedFile, {
-        contentType: validatedFile.type,
-      });
-      const url = await getDownloadURL(storageRef);
-      console.log("[uploadTaskAttachment] Upload successful:", {
-        url,
-        storagePath,
-        category,
-      });
-      return { url, storagePath, category };
+  // Thumbnail is best-effort: never fail the attachment because of it.
+  let thumbUrl: string | undefined;
+  let thumbStoragePath: string | undefined;
+  if (category !== "file") {
+    try {
+      const thumb = await createThumbnail(validatedFile);
+      if (thumb) {
+        thumbStoragePath = `tasks/${taskId}/attachments/${fileName.replace(/\.[^.]+$/, "")}_thumb.jpg`;
+        thumbUrl = await resumableUpload(thumbStoragePath, thumb, "image/jpeg");
+      }
+    } catch (error) {
+      console.warn("[uploadTaskAttachment] Thumbnail skipped:", error);
+      thumbUrl = undefined;
+      thumbStoragePath = undefined;
     }
-  } catch (error) {
-    console.error("[uploadTaskAttachment] Validation or upload error:", error);
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error("Error al subir el archivo");
   }
+
+  return { url, storagePath, category, contentType: validatedFile.type, thumbUrl, thumbStoragePath };
 }
 
 /**
@@ -645,104 +680,33 @@ export async function uploadReportEvidence(
   file: File,
   onProgress?: (progress: number) => void,
 ): Promise<ReportEvidenceUploadResult> {
-  try {
-    // Validate file - location photo max 100MB, work evidence max 1GB
-    const maxSizeBytes =
-      evidenceType === "location_photo"
-        ? 100 * 1024 * 1024 // 100MB
-        : 1024 * 1024 * 1024; // 1GB
+  // Location photo max 100MB, work evidence max 1GB
+  const maxSizeBytes =
+    evidenceType === "location_photo" ? 100 * 1024 * 1024 : 1024 * 1024 * 1024;
 
-    const validatedFile = await prepareAttachmentFile(file, {
-      maxSizeBytes,
-      allowedTypes: ALLOWED_ATTACHMENT_TYPES,
-    });
+  const validatedFile = await prepareAttachmentFile(file, {
+    maxSizeBytes,
+    allowedTypes: ALLOWED_ATTACHMENT_TYPES,
+  });
 
-    const fileName = safeAttachmentFileName(validatedFile);
-    const storagePath = `reports/${reportId}/${evidenceType}/${fileName}`;
-
-    const storageRef = ref(storage, storagePath);
-
-    // Upload with progress tracking if callback provided
-    if (onProgress) {
-      const uploadTask = uploadBytesResumable(storageRef, validatedFile, {
-        contentType: validatedFile.type,
-      });
-
-      return new Promise((resolve, reject) => {
-        uploadTask.on(
-          "state_changed",
-          (snapshot) => {
-            const progress =
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            onProgress(progress);
-          },
-          (error) => {
-            console.error("[uploadReportEvidence] Upload failed:", error);
-            if (error.code === "storage/unauthorized") {
-              reject(new Error("No tienes permiso para subir archivos"));
-            } else if (error.code === "storage/canceled") {
-              reject(new Error("Subida cancelada"));
-            } else if (error.code === "storage/unknown") {
-              reject(new Error("Error desconocido al subir el archivo"));
-            } else {
-              reject(
-                new Error(
-                  `Error al subir: ${error.message || "Error de conexión"}`,
-                ),
-              );
-            }
-          },
-          async () => {
-            try {
-              const url = await getDownloadURL(storageRef);
-              console.log("[uploadReportEvidence] Upload successful:", {
-                url,
-                storagePath,
-                fileName,
-              });
-              resolve({
-                url,
-                storagePath,
-                fileName,
-                fileType: validatedFile.type,
-                fileSize: validatedFile.size,
-              });
-            } catch (error) {
-              console.error(
-                "[uploadReportEvidence] Failed to get download URL:",
-                error,
-              );
-              reject(new Error("No se pudo obtener la URL del archivo"));
-            }
-          },
-        );
-      });
-    } else {
-      // Simple upload without progress tracking
-      await uploadBytes(storageRef, validatedFile, {
-        contentType: validatedFile.type,
-      });
-      const url = await getDownloadURL(storageRef);
-      console.log("[uploadReportEvidence] Upload successful:", {
-        url,
-        storagePath,
-        fileName,
-      });
-      return {
-        url,
-        storagePath,
-        fileName,
-        fileType: validatedFile.type,
-        fileSize: validatedFile.size,
-      };
-    }
-  } catch (error) {
-    console.error("[uploadReportEvidence] Validation or upload error:", error);
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error("Error al subir el archivo");
-  }
+  const fileName = safeAttachmentFileName(validatedFile);
+  // reports/{reportId}/... — the report document must exist first (rules
+  // check that the uploader is its creator). Never mixed with task files.
+  const storagePath = `reports/${reportId}/${evidenceType}/${fileName}`;
+  const url = await resumableUpload(
+    storagePath,
+    validatedFile,
+    validatedFile.type,
+    onProgress,
+    file.name,
+  );
+  return {
+    url,
+    storagePath,
+    fileName: validatedFile.name,
+    fileType: validatedFile.type,
+    fileSize: validatedFile.size,
+  };
 }
 
 /**
@@ -783,67 +747,24 @@ export async function uploadFormResponseFile(
   file: File,
   onProgress?: (progress: number) => void,
 ): Promise<FormFileUploadResult> {
-  try {
-    const validatedFile = await prepareAttachmentFile(file, {
-      maxSizeBytes: 100 * 1024 * 1024, // 100MB
-      allowedTypes: ALLOWED_ATTACHMENT_TYPES,
-    });
-
-    const fileName = safeAttachmentFileName(validatedFile);
-    const storagePath = `forms/${formId}/responses/${respondentId}/${questionId}/${fileName}`;
-    const storageRef = ref(storage, storagePath);
-
-    const uploadTask = uploadBytesResumable(storageRef, validatedFile, {
-      contentType: validatedFile.type,
-    });
-
-    return await new Promise<FormFileUploadResult>((resolve, reject) => {
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          if (onProgress) {
-            onProgress(
-              (snapshot.bytesTransferred / snapshot.totalBytes) * 100,
-            );
-          }
-        },
-        (error) => {
-          console.error("[uploadFormResponseFile] Upload failed:", error);
-          if (error.code === "storage/unauthorized") {
-            reject(
-              new Error(
-                "No tienes permiso para subir archivos a este formulario",
-              ),
-            );
-          } else if (error.code === "storage/canceled") {
-            reject(new Error("Subida cancelada"));
-          } else {
-            reject(
-              new Error(
-                `Error al subir ${file.name}: ${error.message || "Error de conexión"}`,
-              ),
-            );
-          }
-        },
-        async () => {
-          try {
-            const url = await getDownloadURL(storageRef);
-            resolve({
-              url,
-              storagePath,
-              fileName: validatedFile.name,
-              fileType: validatedFile.type,
-              fileSize: validatedFile.size,
-            });
-          } catch {
-            reject(new Error("No se pudo obtener la URL del archivo"));
-          }
-        },
-      );
-    });
-  } catch (error) {
-    console.error("[uploadFormResponseFile] Validation error:", error);
-    if (error instanceof Error) throw error;
-    throw new Error("Error al subir el archivo");
-  }
+  const validatedFile = await prepareAttachmentFile(file, {
+    maxSizeBytes: 100 * 1024 * 1024, // 100MB
+    allowedTypes: ALLOWED_ATTACHMENT_TYPES,
+  });
+  const fileName = safeAttachmentFileName(validatedFile);
+  const storagePath = `forms/${formId}/responses/${respondentId}/${questionId}/${fileName}`;
+  const url = await resumableUpload(
+    storagePath,
+    validatedFile,
+    validatedFile.type,
+    onProgress,
+    file.name,
+  );
+  return {
+    url,
+    storagePath,
+    fileName: validatedFile.name,
+    fileType: validatedFile.type,
+    fileSize: validatedFile.size,
+  };
 }

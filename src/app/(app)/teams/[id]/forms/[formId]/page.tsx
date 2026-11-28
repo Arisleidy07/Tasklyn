@@ -6,6 +6,12 @@ import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { useFormStore } from "@/stores/formStore";
 import { uploadFormResponseFile } from "@/lib/storage";
+import PendingFilesGrid from "@/components/attachments/PendingFilesGrid";
+import {
+  focusFirstInvalidField,
+  notifyInvalidFields,
+} from "@/lib/formValidation";
+import { showToast } from "@/stores/toastStore";
 import type { Question, ResponseFile } from "@/types";
 import {
   ArrowLeft,
@@ -21,7 +27,6 @@ import {
   MapPin,
   CheckSquare,
   Upload,
-  X,
   Film,
   Paperclip,
   AlertCircle,
@@ -60,8 +65,8 @@ const FILE_QUESTION_TYPES = new Set([
 interface PendingFormFile {
   id: string;
   file: File;
-  previewUrl: string;
   progress: number;
+  uploading?: boolean;
   error?: string;
   uploaded?: {
     url: string;
@@ -74,12 +79,6 @@ interface PendingFormFile {
 
 function genFileId() {
   return `ff-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function isImageType(q: Question) {
@@ -136,7 +135,6 @@ export default function FormPreviewPage() {
       .map((file) => ({
         id: genFileId(),
         file,
-        previewUrl: URL.createObjectURL(file),
         progress: 0,
       }));
     setFileAnswers((prev) => ({
@@ -154,8 +152,6 @@ export default function FormPreviewPage() {
   const removeFile = (questionId: string, fileId: string) => {
     setFileAnswers((prev) => {
       const list = prev[questionId] ?? [];
-      const target = list.find((f) => f.id === fileId);
-      if (target) URL.revokeObjectURL(target.previewUrl);
       return { ...prev, [questionId]: list.filter((f) => f.id !== fileId) };
     });
   };
@@ -167,7 +163,8 @@ export default function FormPreviewPage() {
 
     if (FILE_QUESTION_TYPES.has(question.type)) {
       if (files.length === 0) return "Debes adjuntar al menos un archivo";
-      if (files.some((f) => f.error)) return "Corrige los archivos con error";
+      if (files.some((f) => f.error))
+        return "Algunos archivos no se pudieron subir. Pulsa “Reintentar” o quítalos.";
       return null;
     }
 
@@ -195,69 +192,69 @@ export default function FormPreviewPage() {
     }
   };
 
-  const scrollToFirstError = (firstId: string) => {
-    requestAnimationFrame(() => {
-      questionRefs.current[firstId]?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    });
-  };
+  const submittingRef = useRef(false);
 
   const handleSubmit = async () => {
-    if (!currentForm || !user) return;
+    if (!currentForm || !user || submittingRef.current) return;
 
     const nextErrors: Record<string, string> = {};
-    let firstErrorId: string | null = null;
     for (const q of currentForm.questions) {
       const msg = validateAnswer(q);
-      if (msg && !nextErrors[q.id]) {
-        nextErrors[q.id] = msg;
-        if (!firstErrorId) firstErrorId = q.id;
-      }
+      if (msg && !nextErrors[q.id]) nextErrors[q.id] = msg;
     }
-
-    if (firstErrorId) {
+    const invalid = Object.keys(nextErrors).length;
+    if (invalid > 0) {
       setErrors(nextErrors);
-      scrollToFirstError(firstErrorId);
+      focusFirstInvalidField();
+      notifyInvalidFields(invalid);
       return;
     }
 
+    submittingRef.current = true;
     setLoading(true);
     setErrors({});
 
+    const patchFile = (qid: string, id: string, update: Partial<PendingFormFile>) =>
+      setFileAnswers((prev) => ({
+        ...prev,
+        [qid]: (prev[qid] ?? []).map((f) => (f.id === id ? { ...f, ...update } : f)),
+      }));
+
     try {
-      // Upload pending files for file questions
+      // Upload pending files; a failure does not stop the rest, and files
+      // uploaded on a previous attempt are reused (collected locally because
+      // state updates are asynchronous).
       const responseFiles: ResponseFile[] = [];
+      const namesByQuestion: Record<string, string[]> = {};
+      const failures: string[] = [];
       const fileQuestionIds = currentForm.questions
         .filter((q) => FILE_QUESTION_TYPES.has(q.type))
         .map((q) => q.id);
 
       for (const qid of fileQuestionIds) {
-        const pending = fileAnswers[qid] ?? [];
-        for (const item of pending) {
-          if (item.uploaded) continue;
-          const setProg = (p: number) => {
-            setFileAnswers((prev) => ({
-              ...prev,
-              [qid]: (prev[qid] ?? []).map((f) =>
-                f.id === item.id ? { ...f, progress: p } : f,
-              ),
-            }));
-          };
-          const up = await uploadFormResponseFile(
-            formId,
-            user.id,
-            qid,
-            item.file,
-            setProg,
-          );
-          setFileAnswers((prev) => ({
-            ...prev,
-            [qid]: (prev[qid] ?? []).map((f) =>
-              f.id === item.id ? { ...f, progress: 100, uploaded: up } : f,
-            ),
-          }));
+        namesByQuestion[qid] = [];
+        for (const item of fileAnswers[qid] ?? []) {
+          let up = item.uploaded;
+          if (!up) {
+            patchFile(qid, item.id, { uploading: true, progress: 0, error: undefined });
+            try {
+              up = await uploadFormResponseFile(formId, user.id, qid, item.file, (p) =>
+                patchFile(qid, item.id, { progress: p }),
+              );
+              patchFile(qid, item.id, { uploading: false, progress: 100, uploaded: up });
+            } catch (err) {
+              const message =
+                err instanceof Error && err.message
+                  ? err.message
+                  : item.file.type.startsWith("image/")
+                    ? "No se pudo subir esta fotografía. Inténtalo nuevamente."
+                    : "No se pudo subir este archivo. Inténtalo nuevamente.";
+              failures.push(message);
+              patchFile(qid, item.id, { uploading: false, error: message });
+              continue;
+            }
+          }
+          namesByQuestion[qid].push(up.fileName);
           responseFiles.push({
             id: `${qid}-${item.id}`,
             questionId: qid,
@@ -271,14 +268,19 @@ export default function FormPreviewPage() {
         }
       }
 
-      // Store uploaded file names as the answer for file questions
-      const finalAnswers: Record<string, string | string[]> = { ...answers };
-      for (const qid of fileQuestionIds) {
-        const names = (fileAnswers[qid] ?? [])
-          .map((f) => f.uploaded?.fileName ?? f.file.name)
-          .filter(Boolean);
-        finalAnswers[qid] = names;
+      if (failures.length > 0) {
+        setErrors({
+          __form:
+            failures.length === 1
+              ? failures[0]
+              : `No se pudieron subir ${failures.length} archivos. Pulsa “Reintentar” en cada uno.`,
+        });
+        showToast({ variant: "error", message: "La respuesta aún no se envió", description: "Algunos archivos no se pudieron subir." });
+        focusFirstInvalidField();
+        return;
       }
+
+      const finalAnswers: Record<string, string | string[]> = { ...answers, ...namesByQuestion };
 
       await useFormStore.getState().createResponse({
         formId,
@@ -291,13 +293,21 @@ export default function FormPreviewPage() {
         files: responseFiles,
       });
 
+      showToast({ variant: "success", message: "Respuesta enviada correctamente" });
       setSubmitted(true);
     } catch (err) {
       console.error("Failed to submit response:", err);
+      const code = (err as { code?: string })?.code;
       const msg =
-        err instanceof Error ? err.message : "No se pudo enviar la respuesta";
+        code === "permission-denied"
+          ? "No tienes permiso para responder este formulario."
+          : err instanceof Error
+            ? err.message
+            : "No se pudo enviar la respuesta";
       setErrors({ __form: msg });
+      showToast({ variant: "error", message: "No se pudo enviar la respuesta", description: msg });
     } finally {
+      submittingRef.current = false;
       setLoading(false);
     }
   };
@@ -350,74 +360,32 @@ export default function FormPreviewPage() {
         </button>
 
         {files.length > 0 && (
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mt-3">
-            {files.map((f) => {
-              const isImg = f.file.type.startsWith("image/");
-              const isVid = f.file.type.startsWith("video/");
-              return (
-                <div
-                  key={f.id}
-                  className="relative rounded-lg overflow-hidden group"
-                  style={{
-                    border: f.error
-                      ? "1px solid #ef4444"
-                      : "1px solid var(--border-color)",
-                    backgroundColor: "var(--bg-secondary)",
-                  }}
-                >
-                  {isImg ? (
-                    <img
-                      src={f.previewUrl}
-                      alt={f.file.name}
-                      className="w-full h-20 object-cover"
-                    />
-                  ) : isVid ? (
-                    <div className="w-full h-20 flex flex-col items-center justify-center gap-1">
-                      <Film size={20} style={{ color: "var(--text-tertiary)" }} />
-                      <span className="text-[10px] px-1 truncate w-full text-center">
-                        {f.file.name}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="w-full h-20 flex flex-col items-center justify-center gap-1 p-1">
-                      <Paperclip
-                        size={18}
-                        style={{ color: "var(--text-tertiary)" }}
-                      />
-                      <span className="text-[10px] px-1 truncate w-full text-center">
-                        {f.file.name}
-                      </span>
-                      <span className="text-[9px]" style={{ color: "var(--text-tertiary)" }}>
-                        {formatSize(f.file.size)}
-                      </span>
-                    </div>
-                  )}
-
-                  {f.progress > 0 && f.progress < 100 && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
-                      <div
-                        className="h-full bg-blue-500 transition-all"
-                        style={{ width: `${f.progress}%` }}
-                      />
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() => removeFile(question.id, f.id)}
-                    className="absolute top-1 right-1 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label="Eliminar archivo"
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              );
-            })}
+          <div className="mt-3">
+            <PendingFilesGrid
+              items={files.map((f) => ({
+                id: f.id,
+                file: f.file,
+                progress: f.progress,
+                error: f.error,
+                status: f.uploaded
+                  ? "done"
+                  : f.uploading
+                    ? "uploading"
+                    : f.error
+                      ? "error"
+                      : loading
+                        ? "pending"
+                        : undefined,
+              }))}
+              onRemove={(id) => removeFile(question.id, id)}
+              onRetry={() => void handleSubmit()}
+              disabled={loading}
+            />
           </div>
         )}
 
         {questionError && (
-          <p className="mt-2 text-xs flex items-center gap-1" style={{ color: "#ef4444" }}>
+          <p data-field-error className="mt-2 text-xs flex items-center gap-1" style={{ color: "#ef4444" }}>
             <AlertCircle size={12} /> {questionError}
           </p>
         )}
@@ -431,7 +399,7 @@ export default function FormPreviewPage() {
     const errorBorder = questionError ? "1px solid #ef4444" : undefined;
 
     const errorText = questionError && (
-      <p className="mt-2 text-xs flex items-center gap-1" style={{ color: "#ef4444" }}>
+      <p data-field-error className="mt-2 text-xs flex items-center gap-1" style={{ color: "#ef4444" }}>
         <AlertCircle size={12} /> {questionError}
       </p>
     );

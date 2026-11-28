@@ -10,6 +10,10 @@ import {
   addTaskAttachment,
   deleteTaskAttachmentMetadata,
   subscribeToTaskAttachments,
+  createTasksBatch,
+  getExistingTaskIds,
+  refreshTaskAttachmentSummary,
+  deleteTasksBatch,
 } from "@/lib/firestore";
 import {
   uploadTaskAttachment,
@@ -46,6 +50,33 @@ import { logTeamActivity } from "@/lib/firestore";
 import { useAuthStore } from "./authStore";
 import { useListStore } from "./listStore";
 
+export interface BulkTaskInput {
+  id: string;
+  title: string;
+  description?: string;
+  phoneNumbers?: string[];
+  location?: string;
+  locationUrl?: string;
+  priority?: "low" | "normal" | "medium" | "high" | "urgent";
+  dueDate?: string;
+  dueTime?: string;
+  assignedTo?: string | null;
+}
+
+function firestoreErrorMessage(error: unknown): string {
+  const code = (error as { code?: string })?.code || "";
+  if (code === "permission-denied") {
+    return "No tienes permiso para crear tareas en esta lista.";
+  }
+  if (code === "unavailable" || code === "deadline-exceeded") {
+    return "Sin conexión con el servidor. Revisa tu internet e inténtalo de nuevo.";
+  }
+  if (code === "resource-exhausted") {
+    return "Se alcanzó el límite de operaciones. Inténtalo en unos minutos.";
+  }
+  return error instanceof Error ? error.message : "No se pudieron guardar las tareas.";
+}
+
 interface TaskState {
   tasks: Task[];
   isLoading: boolean;
@@ -73,7 +104,22 @@ interface TaskState {
       uploadedBy: string;
       uploadedByName: string;
     }>;
-  }) => Promise<Task>;
+    /** Per-file upload progress (index in `attachments`, 0-100). */
+    onAttachmentProgress?: (index: number, progress: number) => void;
+  }) => Promise<Task & { failedAttachments: Array<{ file: File; error: string }> }>;
+  /**
+   * Create many tasks at once (quick-add / paste). Task IDs are reserved by the
+   * caller so retries hit the same documents and never duplicate.
+   */
+  createTasksBulk: (params: {
+    listId: string;
+    createdBy: string;
+    tasks: BulkTaskInput[];
+    /** When true, IDs already present on the server count as saved (retry). */
+    isRetry?: boolean;
+  }) => Promise<{ savedIds: string[]; failedIds: string[]; error?: string }>;
+  /** Revert a bulk creation: deletes exactly those task IDs. */
+  undoBulkCreate: (ids: string[]) => Promise<void>;
   updateTask: (
     id: string,
     updates: Partial<
@@ -126,6 +172,7 @@ interface TaskState {
     taskId: string,
     attachmentId: string,
     storagePath: string,
+    thumbStoragePath?: string,
   ) => Promise<void>;
   subscribeToAttachments: (
     taskId: string,
@@ -301,6 +348,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     priority,
     tags,
     attachments,
+    onAttachmentProgress,
   }) => {
     const list = useListStore
       .getState()
@@ -331,22 +379,32 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
     const id = await createTaskInDb(newTaskData);
 
-    // Upload attachments if provided
+    // Upload attachments AFTER the task document exists: Storage rules
+    // resolve permissions through tasks/{id}, so uploading first would be
+    // rejected (403) and leave orphan files.
+    const failedAttachments: Array<{ file: File; error: string }> = [];
     if (attachments && attachments.length > 0) {
-      for (const attachment of attachments) {
+      for (let index = 0; index < attachments.length; index++) {
+        const attachment = attachments[index];
         try {
           await get().addAttachment(
             id,
             attachment.file,
             attachment.uploadedBy,
             attachment.uploadedByName,
+            (p) => onAttachmentProgress?.(index, p),
           );
+          onAttachmentProgress?.(index, 100);
         } catch (error) {
           console.error(
             `[createTask] Failed to upload attachment: ${attachment.file.name}`,
             error,
           );
-          // Continue with other attachments even if one fails
+          failedAttachments.push({
+            file: attachment.file,
+            error: error instanceof Error ? error.message : "Error al subir el archivo",
+          });
+          onAttachmentProgress?.(index, -1);
         }
       }
     }
@@ -387,11 +445,122 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }
 
     return {
-      id,
-      ...newTaskData,
-      createdAt: new Date().toISOString(),
-      history: [],
-    } as Task;
+      ...({
+        id,
+        ...newTaskData,
+        createdAt: new Date().toISOString(),
+        history: [],
+      } as Task),
+      failedAttachments,
+    };
+  },
+
+  createTasksBulk: async ({ listId, createdBy, tasks, isRetry }) => {
+    const list = useListStore
+      .getState()
+      .lists.find((item) => item.id === listId);
+    const currentUser = useAuthStore.getState().user;
+
+    let pending = tasks;
+    const alreadySaved: string[] = [];
+    if (isRetry && tasks.length > 0) {
+      // A previous attempt may have committed even though the response was
+      // lost (flaky network). Never rewrite those.
+      const existing = new Set(await getExistingTaskIds(tasks.map((t) => t.id)));
+      alreadySaved.push(...tasks.filter((t) => existing.has(t.id)).map((t) => t.id));
+      pending = tasks.filter((t) => !existing.has(t.id));
+    }
+
+    const base = Date.now();
+    const items = pending.map((t, i) => ({
+      id: t.id,
+      // Same shape as createTask() so both creation paths are identical
+      data: {
+        teamId: list?.teamId,
+        listId,
+        isDeleted: false,
+        title: t.title,
+        description: t.description || "",
+        status: "pending" as TaskStatus,
+        assignedTo: t.assignedTo || null,
+        createdBy,
+        completedBy: null,
+        completedAt: null,
+        location: t.location || undefined,
+        locationUrl: t.locationUrl || undefined,
+        phoneNumbers: t.phoneNumbers?.length ? t.phoneNumbers : undefined,
+        dueDate: t.dueDate || undefined,
+        dueTime: t.dueDate && t.dueTime ? t.dueTime : undefined,
+        priority: t.priority || "normal",
+        tags: [],
+        parentTaskId: null,
+        completedCount: 0,
+      },
+      history: (() => {
+        const { id: _id, ...entry } = createHistoryEntry(
+          "created",
+          createdBy,
+          `Tarea "${t.title}" creada`,
+        );
+        return entry;
+      })(),
+      // +1 ms per task keeps the pasted order (lists sort by createdAt)
+      createdAtMs: base + i,
+    }));
+
+    const result = items.length
+      ? await createTasksBatch(items)
+      : { savedIds: [] as string[], failedIds: [] as string[], error: undefined };
+
+    // Activity / team history for every task actually saved
+    if (currentUser) {
+      const byId = new Map(pending.map((t) => [t.id, t]));
+      for (const id of result.savedIds) {
+        const t = byId.get(id);
+        if (!t) continue;
+        logTaskCreated(
+          { id, title: t.title, listId, listName: list?.name },
+          {
+            id: currentUser.id,
+            name: currentUser.name || "Usuario",
+            photoURL: currentUser.photoURL,
+          },
+        );
+        if (list?.teamId) {
+          logTeamActivity(list.teamId, {
+            teamId: list.teamId,
+            userId: currentUser.id,
+            userName: currentUser.name || "Usuario",
+            userPhotoURL: currentUser.photoURL,
+            action: "task_created",
+            entityType: "task",
+            entityId: id,
+            entityName: t.title,
+            detail: `${currentUser.name || "Usuario"} creó la tarea "${t.title}"`,
+          });
+        }
+      }
+    }
+
+    return {
+      savedIds: [...alreadySaved, ...result.savedIds],
+      failedIds: result.failedIds,
+      error: result.error ? firestoreErrorMessage(result.error) : undefined,
+    };
+  },
+
+  undoBulkCreate: async (ids) => {
+    if (ids.length === 0) return;
+    // Optimistically hide them; the snapshot listener confirms the delete.
+    const idSet = new Set(ids);
+    const previous = get().tasks;
+    set((state) => ({ tasks: state.tasks.filter((t) => !idSet.has(t.id)) }));
+    try {
+      await deleteTasksBatch(ids);
+    } catch (error) {
+      set({ tasks: previous });
+      throw new Error(firestoreErrorMessage(error));
+    }
   },
 
   updateTask: async (id, updates, performedBy, performerName) => {
@@ -1010,53 +1179,66 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     uploadedByName,
     onProgress,
   ) => {
-    console.log(
-      "[addAttachment] Starting upload for task:",
-      taskId,
-      "file:",
-      file.name,
-    );
+    // 1) Storage (task doc already exists → rules can verify membership)
+    const up = await uploadTaskAttachment(taskId, file, onProgress);
 
-    // Upload to Storage
-    const { url, storagePath, category } = await uploadTaskAttachment(
-      taskId,
-      file,
-      onProgress,
-    );
+    // 2) Firestore metadata. If it fails, remove the uploaded objects so no
+    //    orphan files are left behind.
+    let attachmentId: string;
+    try {
+      attachmentId = await addTaskAttachment(taskId, {
+        taskId,
+        name: file.name,
+        type: up.contentType || file.type,
+        size: file.size,
+        category: up.category,
+        url: up.url,
+        storagePath: up.storagePath,
+        thumbUrl: up.thumbUrl,
+        thumbStoragePath: up.thumbStoragePath,
+        uploadedBy,
+        uploadedByName,
+      });
+    } catch (error) {
+      await Promise.allSettled(
+        [up.storagePath, up.thumbStoragePath]
+          .filter((p): p is string => !!p)
+          .map((p) => deleteTaskAttachmentFromStorage(p)),
+      );
+      const code = (error as { code?: string })?.code;
+      throw new Error(
+        code === "permission-denied"
+          ? `${file.name}: no tienes permiso para adjuntar archivos a esta tarea.`
+          : `${file.name}: no se pudo registrar el archivo. Inténtalo nuevamente.`,
+      );
+    }
 
-    console.log("[addAttachment] Storage upload complete:", {
-      url,
-      storagePath,
-      category,
-    });
-
-    // Save metadata to Firestore
-    const attachmentId = await addTaskAttachment(taskId, {
-      taskId,
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      category,
-      url,
-      storagePath,
-      uploadedBy,
-      uploadedByName,
-    });
-
-    console.log("[addAttachment] Firestore metadata saved, ID:", attachmentId);
+    // 3) Card summary (non-fatal)
+    try {
+      await refreshTaskAttachmentSummary(taskId);
+    } catch (error) {
+      console.warn("[addAttachment] Summary refresh failed:", error);
+    }
     return attachmentId;
   },
 
-  deleteAttachment: async (taskId, attachmentId, storagePath) => {
+  deleteAttachment: async (taskId, attachmentId, storagePath, thumbStoragePath) => {
+    const removeObject = async (path?: string) => {
+      if (!path) return;
+      try {
+        await deleteTaskAttachmentFromStorage(path);
+      } catch (error) {
+        // Already gone is fine; anything else is a real failure
+        if ((error as { code?: string })?.code !== "storage/object-not-found") throw error;
+      }
+    };
+    await removeObject(storagePath);
+    await removeObject(thumbStoragePath);
+    await deleteTaskAttachmentMetadata(taskId, attachmentId);
     try {
-      // Delete from Storage
-      await deleteTaskAttachmentFromStorage(storagePath);
-
-      // Delete metadata from Firestore
-      await deleteTaskAttachmentMetadata(taskId, attachmentId);
+      await refreshTaskAttachmentSummary(taskId);
     } catch (error) {
-      console.error("[deleteAttachment] Failed to delete attachment:", error);
-      throw error;
+      console.warn("[deleteAttachment] Summary refresh failed:", error);
     }
   },
 

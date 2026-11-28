@@ -1,5 +1,8 @@
 "use client";
 
+import AttachmentViewer, {
+  type ViewerItem,
+} from "@/components/attachments/AttachmentViewer";
 import React, {
   useState,
   useEffect,
@@ -377,6 +380,7 @@ export default function TaskDetailPanel({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
     {},
@@ -959,13 +963,34 @@ export default function TaskDetailPanel({
     try {
       await useTaskStore
         .getState()
-        .deleteAttachment(task.id, attachment.id, attachment.storagePath);
+        .deleteAttachment(
+          task.id,
+          attachment.id,
+          attachment.storagePath,
+          attachment.thumbStoragePath,
+        );
       showToast("Archivo eliminado");
     } catch (error) {
       console.error("[handleDeleteAttachment] Failed to delete:", error);
       showToast("Error al eliminar archivo");
     }
   };
+
+  // Full-screen viewer over all attachments (images → videos → files)
+  const viewerItems: ViewerItem[] = [
+    ...attachments.filter((a) => a.category === "image"),
+    ...attachments.filter((a) => a.category === "video"),
+    ...attachments.filter((a) => a.category === "file"),
+  ].map((a) => ({
+    id: a.id,
+    url: a.url,
+    name: a.name,
+    type: a.type,
+    category: a.category,
+    thumbUrl: a.thumbUrl,
+  }));
+  const openViewer = (id: string) =>
+    setViewerIndex(Math.max(0, viewerItems.findIndex((v) => v.id === id)));
 
   // Group attachments by category
   const images = attachments.filter((a) => a.category === "image");
@@ -1993,47 +2018,6 @@ export default function TaskDetailPanel({
                   </div>
                 )}
 
-                {/* Show preview in card toggle */}
-                {canEdit && (
-                  <div className="flex items-center gap-2 pt-2">
-                    <input
-                      type="checkbox"
-                      id="showPreviewInCard"
-                      checked={task.showPreviewInCard || false}
-                      onChange={async (e) => {
-                        if (!user || !task) return;
-                        try {
-                          await updateTask(
-                            task.id,
-                            { showPreviewInCard: e.target.checked },
-                            user.id,
-                            user.name,
-                          );
-                          showToast(
-                            e.target.checked
-                              ? "Vista previa activada"
-                              : "Vista previa desactivada",
-                          );
-                        } catch (error) {
-                          console.error("[showPreviewInCard] Failed:", error);
-                          showToast("Error al actualizar preferencia");
-                        }
-                      }}
-                      className="w-4 h-4 rounded"
-                      style={{
-                        accentColor: "var(--text-link)",
-                      }}
-                    />
-                    <label
-                      htmlFor="showPreviewInCard"
-                      className="text-xs cursor-pointer"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      Mostrar vista previa en la tarjeta
-                    </label>
-                  </div>
-                )}
-
                 {/* Images */}
                 {images.length > 0 && (
                   <div>
@@ -2054,10 +2038,11 @@ export default function TaskDetailPanel({
                           }}
                         >
                           <img
-                            src={img.url}
+                            src={img.thumbUrl || img.url}
                             alt={img.name}
-                            className="w-full h-full object-cover cursor-pointer"
-                            onClick={() => window.open(img.url, "_blank")}
+                            loading="lazy"
+                            className="w-full h-full object-cover cursor-zoom-in"
+                            onClick={() => openViewer(img.id)}
                           />
                           {canEdit && (
                             <button
@@ -2094,9 +2079,21 @@ export default function TaskDetailPanel({
                         >
                           <video
                             src={vid.url}
+                            poster={vid.thumbUrl}
                             controls
-                            className="w-full max-h-64"
+                            playsInline
+                            preload="metadata"
+                            className="w-full max-h-64 bg-black"
+                            style={{ objectFit: "contain" }}
                           />
+                          <button
+                            type="button"
+                            onClick={() => openViewer(vid.id)}
+                            className="absolute top-2 left-2 h-8 px-2.5 rounded-full text-xs font-medium flex items-center gap-1"
+                            style={{ backgroundColor: "rgba(0,0,0,0.6)", color: "white" }}
+                          >
+                            Ampliar
+                          </button>
                           {canEdit && (
                             <button
                               onClick={() => handleDeleteAttachment(vid)}
@@ -2472,6 +2469,13 @@ export default function TaskDetailPanel({
               {panelContent}
             </motion.div>
           </div>
+
+          <AttachmentViewer
+            open={viewerIndex !== null}
+            items={viewerItems}
+            index={viewerIndex ?? 0}
+            onClose={() => setViewerIndex(null)}
+          />
 
           {/* Date/reminder pickers — rendered once at portal level so they
               are not duplicated by the mobile+desktop panelContent renders */}

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useMemo, useState, useRef, useEffect } from "react";
-import { Task, MemberRole, TaskAttachment } from "@/types";
+import { Task, MemberRole } from "@/types";
+import TaskCardAttachments from "@/components/attachments/TaskCardAttachments";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import { canCompleteTask } from "@/lib/permissions";
@@ -20,9 +21,6 @@ import {
   Phone,
   CalendarDays,
   Bell,
-  Image as ImageIcon,
-  Video,
-  FileText,
   User,
 } from "lucide-react";
 import type { DragHandleProps } from "./SortableTaskContainer";
@@ -131,11 +129,10 @@ function TaskItem({
 }: TaskItemProps) {
   const [showDetailPanel, setShowDetailPanel] = useState(false);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
   const skipClickRef = useRef(false);
 
   const { user } = useAuthStore();
-  const { uncompleteTask, subscribeToAttachments } = useTaskStore();
+  const { uncompleteTask } = useTaskStore();
 
   const isCompleted = task.status === "completed";
   const canComplete = canCompleteTask(role);
@@ -149,15 +146,6 @@ function TaskItem({
     const r = task.reminders?.[0];
     return r ? formatReminder(r.at) : null;
   }, [task.reminders]);
-
-  // Subscribe to attachments
-  useEffect(() => {
-    if (!task?.id) return;
-    const unsubscribe = subscribeToAttachments(task.id, (atts) => {
-      setAttachments(atts);
-    });
-    return () => unsubscribe();
-  }, [task?.id, subscribeToAttachments]);
 
   // Suppress the click event that sometimes fires after a drag ends.
   useEffect(() => {
@@ -385,66 +373,8 @@ function TaskItem({
             </div>
           )}
 
-          {/* Attachment preview thumbnail */}
-          {task.showPreviewInCard && attachments.length > 0 && (
-            <div className="sm:pl-7 mt-1">
-              <div className="flex items-center gap-2">
-                {attachments.slice(0, 3).map((att) => (
-                  <div
-                    key={att.id}
-                    className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden cursor-pointer"
-                    style={{
-                      backgroundColor: "var(--bg-secondary)",
-                      border: "1px solid var(--border-color)",
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.open(att.url, "_blank");
-                    }}
-                  >
-                    {att.category === "image" ? (
-                      <img
-                        src={att.url}
-                        alt={att.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : att.category === "video" ? (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Video
-                          size={16}
-                          style={{ color: "var(--text-tertiary)" }}
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <FileText
-                          size={16}
-                          style={{ color: "var(--text-tertiary)" }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {attachments.length > 3 && (
-                  <div
-                    className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center text-xs font-medium cursor-pointer"
-                    style={{
-                      backgroundColor: "var(--bg-secondary)",
-                      border: "1px solid var(--border-color)",
-                      color: "var(--text-tertiary)",
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowDetailPanel(true);
-                    }}
-                  >
-                    +{attachments.length - 3}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          {/* Attachment thumbnails (always visible, max 3 + "+N") */}
+          <TaskCardAttachments task={task} />
         </motion.div>
       </div>
 
@@ -478,6 +408,15 @@ export default React.memo(TaskItem, (prev, next) => {
     prev.task.dueDate === next.task.dueDate &&
     prev.task.dueTime === next.task.dueTime &&
     prev.task.assignedTo === next.task.assignedTo &&
-    prev.task.showPreviewInCard === next.task.showPreviewInCard
+    prev.task.showPreviewInCard === next.task.showPreviewInCard &&
+    prev.task.attachmentCount === next.task.attachmentCount &&
+    prev.task.attachmentPreviews === next.task.attachmentPreviews &&
+    prev.task.description === next.task.description &&
+    prev.task.location === next.task.location &&
+    prev.task.locationUrl === next.task.locationUrl &&
+    prev.task.phoneNumbers === next.task.phoneNumbers &&
+    prev.task.completedBy === next.task.completedBy &&
+    prev.task.reminders === next.task.reminders &&
+    prev.memberNames === next.memberNames
   );
 });

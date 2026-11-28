@@ -96,6 +96,38 @@ service cloud.firestore {
       return l != null && l.memberIds != null && uid() in l.memberIds;
     }
 
+    // Safe (never-erroring) membership checks used for task attachments.
+    function safeDoc(path) {
+      return exists(path) ? get(path).data : {};
+    }
+
+    function safeIsTeamMember(teamId) {
+      let t = safeDoc(/databases/$(database)/documents/teams/$(teamId));
+      return teamId is string && (
+        t.get('owner', '') == uid() ||
+        uid() in t.get('memberIds', []) ||
+        exists(/databases/$(database)/documents/teams/$(teamId)/members/$(uid()))
+      );
+    }
+
+    function safeIsListMemberOrTeam(listId) {
+      let l = safeDoc(/databases/$(database)/documents/lists/$(listId));
+      return listId is string && (
+        l.get('owner', '') == uid() ||
+        uid() in l.get('memberIds', []) ||
+        (l.get('teamId', null) is string && safeIsTeamMember(l.get('teamId', null)))
+      );
+    }
+
+    function canAccessTaskFiles(taskId) {
+      let t = safeDoc(/databases/$(database)/documents/tasks/$(taskId));
+      return t.size() > 0 && (
+        t.get('createdBy', '') == uid() ||
+        safeIsListMemberOrTeam(t.get('listId', null)) ||
+        safeIsTeamMember(t.get('teamId', null))
+      );
+    }
+
     function isListOwnerOf(listId) {
       let l = get(/databases/$(database)/documents/lists/$(listId)).data;
       return l != null && l.owner == uid();
@@ -175,7 +207,12 @@ service cloud.firestore {
         resource.data.createdBy == uid() ||
         resource.data.assignedTo == uid() ||
         (resource.data.listId != null && isListMemberOf(resource.data.listId)) ||
-        (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId))
+        (resource.data.teamId != null && isTeamAdminOrOwnerOf(resource.data.teamId)) ||
+        // Anyone allowed to attach files may refresh ONLY the attachment
+        // summary shown on task cards.
+        (request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['attachmentCount', 'attachmentPreviews']) &&
+         canAccessTaskFiles(taskId))
       );
       // Delete allowed for the creator, any member of the task's list (editors),
       // and the team owner (cascade/admin cleanup)
@@ -209,11 +246,14 @@ service cloud.firestore {
           !isViewerScopedTask(taskId);
       }
 
-      // Task attachments subcollection
+      // Task attachments subcollection. Metadata holds tokenized download
+      // URLs (which bypass Storage rules), so reads are limited to people
+      // who can actually access the task's list or team.
       match /attachments/{attachmentId} {
-        allow read: if isAuth();
+        allow read: if isAuth() && canAccessTaskFiles(taskId);
         allow create: if isAuth() &&
           request.resource.data.uploadedBy == uid() &&
+          canAccessTaskFiles(taskId) &&
           !isViewerScopedTask(taskId);
         allow update: if false; // Attachments are immutable
         allow delete: if isAuth() &&

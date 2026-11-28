@@ -92,6 +92,11 @@ export default function ReportsList({
 
   // Filter reports
   const filteredReports = reports.filter((report) => {
+    // Reports whose files are still uploading are only visible to their
+    // author (shown as "Envío incompleto"); never half-sent to the team.
+    if (report.submissionStatus === "uploading" && report.createdBy !== user?.id) {
+      return false;
+    }
     // Search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -440,6 +445,11 @@ export default function ReportsList({
                   >
                     {report.clientNameOrCode}
                   </h3>
+                  {report.submissionStatus === "uploading" && (
+                    <p className="text-[11px] font-medium mb-1" style={{ color: "var(--text-warning, #b45309)" }}>
+                      Envío incompleto: faltan archivos por subir
+                    </p>
+                  )}
 
                   <div
                     className="flex flex-wrap items-center gap-3 text-xs"
