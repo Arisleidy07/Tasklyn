@@ -6,7 +6,13 @@ const nextConfig: NextConfig = {
   },
   allowedDevOrigins: ["127.0.0.1"],
   // Separate output folder for the local emulator build (npm run start:emulators)
-  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
+  // (own tsconfig so its generated types never mix with the production build)
+  ...(process.env.NEXT_DIST_DIR
+    ? {
+        distDir: process.env.NEXT_DIST_DIR,
+        typescript: { tsconfigPath: "tsconfig.emulators.json" },
+      }
+    : {}),
 };
 
 export default nextConfig;

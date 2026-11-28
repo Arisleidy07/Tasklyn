@@ -5,7 +5,8 @@ import { Task, MemberRole } from "@/types";
 import TaskCardAttachments from "@/components/attachments/TaskCardAttachments";
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
-import { canCompleteTask } from "@/lib/permissions";
+import { canCompleteTask, canEditTask } from "@/lib/permissions";
+import { showToast } from "@/stores/toastStore";
 import { getPriorityConfig } from "@/lib/priority";
 import { motion } from "framer-motion";
 import TaskCompletionModal from "./TaskCompletionModal";
@@ -22,6 +23,11 @@ import {
   CalendarDays,
   Bell,
   User,
+  Pencil,
+  Check,
+  X,
+  Square,
+  CheckSquare,
 } from "lucide-react";
 import type { DragHandleProps } from "./SortableTaskContainer";
 import { cn } from "@/lib/utils";
@@ -34,7 +40,13 @@ interface TaskItemProps {
   dragHandleProps?: DragHandleProps;
   isDragging?: boolean;
   justDraggedRef?: React.RefObject<boolean>;
+  /** Multi-select mode ("Seleccionar"): the card toggles selection. */
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (taskId: string) => void;
 }
+
+const TITLE_MAX = 250;
 
 const WEEKDAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const MONTHS = [
@@ -126,16 +138,77 @@ function TaskItem({
   dragHandleProps,
   isDragging,
   justDraggedRef,
+  selectionMode = false,
+  selected = false,
+  onToggleSelect,
 }: TaskItemProps) {
   const [showDetailPanel, setShowDetailPanel] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [savingTitle, setSavingTitle] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
   const skipClickRef = useRef(false);
 
   const { user } = useAuthStore();
-  const { uncompleteTask } = useTaskStore();
+  const { uncompleteTask, updateTask } = useTaskStore();
 
   const isCompleted = task.status === "completed";
   const canComplete = canCompleteTask(role);
+  const canEditTitle = canEditTask(role) && !selectionMode;
+
+  // ---- Quick title edit (inline, no modal) ----
+  const startEditTitle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDraftTitle(task.title);
+    setEditingTitle(true);
+  };
+  const cancelEditTitle = () => {
+    setEditingTitle(false);
+    setDraftTitle("");
+  };
+  const saveTitle = async () => {
+    if (!user || savingTitle) return;
+    const next = draftTitle.replace(/\s+/g, " ").trim().slice(0, TITLE_MAX);
+    if (!next) {
+      showToast({ variant: "error", message: "El título no puede estar vacío" });
+      titleInputRef.current?.focus();
+      return;
+    }
+    if (next === task.title) {
+      cancelEditTitle();
+      return;
+    }
+    setSavingTitle(true);
+    try {
+      // Optimistic in the store; reverted automatically if Firestore fails
+      await updateTask(task.id, { title: next }, user.id, user.name);
+      setEditingTitle(false);
+    } catch (error) {
+      console.error("[TaskItem] title update failed:", error);
+      const code = (error as { code?: string })?.code;
+      showToast({
+        variant: "error",
+        message:
+          code === "permission-denied"
+            ? "No tienes permiso para editar esta tarea"
+            : "No se pudo guardar el título. Inténtalo nuevamente.",
+      });
+    } finally {
+      setSavingTitle(false);
+    }
+  };
+  useEffect(() => {
+    if (editingTitle) {
+      const el = titleInputRef.current;
+      el?.focus();
+      el?.select();
+    }
+  }, [editingTitle]);
+  // Leaving selection mode / losing permission closes the editor
+  useEffect(() => {
+    if (!canEditTitle && editingTitle) setEditingTitle(false);
+  }, [canEditTitle, editingTitle]);
 
   const dueText = useMemo(() => formatTaskDate(task.dueDate), [task.dueDate]);
   const dueUrgent = useMemo(() => isDueUrgent(task.dueDate), [task.dueDate]);
@@ -170,6 +243,11 @@ function TaskItem({
   };
 
   const handleCardClick = (e: React.MouseEvent) => {
+    if (selectionMode) {
+      onToggleSelect?.(task.id);
+      return;
+    }
+    if (editingTitle) return;
     if (skipClickRef.current) return;
     if (justDraggedRef?.current) return;
     if ((e.target as HTMLElement).closest("button,a,input,textarea,select"))
@@ -229,9 +307,10 @@ function TaskItem({
       {/* Whole-card drag handle: setNodeRef + listeners + attributes */}
       <div
         ref={dragHandleProps?.setNodeRef as React.Ref<HTMLDivElement>}
-        {...dragHandleProps?.attributes}
-        {...dragHandleProps?.listeners}
+        {...(selectionMode || editingTitle ? {} : dragHandleProps?.attributes)}
+        {...(selectionMode || editingTitle ? {} : dragHandleProps?.listeners)}
         className="group/task select-none mb-1.5 sm:mb-2 w-full max-w-full"
+        data-task-id={task.id}
       >
         <motion.div
           layout
@@ -243,10 +322,16 @@ function TaskItem({
             "glass-card relative flex flex-col gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-[var(--radius-card)] cursor-pointer select-none w-full max-w-full overflow-hidden",
             isDragging && "z-10 shadow-2xl",
           )}
+          style={
+            selectionMode && selected
+              ? { boxShadow: "0 0 0 2px var(--text-link)" }
+              : undefined
+          }
+          aria-selected={selectionMode ? selected : undefined}
           onClick={handleCardClick}
         >
           {/* Drag handle indicator (desktop only, visual cue) */}
-          {dragHandleProps && (
+          {dragHandleProps && !selectionMode && (
             <div
               className="absolute left-2 sm:left-2.5 top-1/2 -translate-y-1/2 hidden sm:flex items-center justify-center w-5 h-8 opacity-0 group-hover/task:opacity-100 transition-opacity cursor-grab"
               aria-label="Mantén presionado para mover"
@@ -260,28 +345,49 @@ function TaskItem({
 
           {/* Title row */}
           <div className="flex items-start gap-2 sm:pl-5">
-            <button
-              onClick={handleToggleComplete}
-              disabled={!canComplete}
-              className={cn(
-                "flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full transition-transform duration-200 mt-0.5",
-                canComplete
-                  ? "cursor-pointer"
-                  : "cursor-not-allowed opacity-40",
-                isCompleted
-                  ? "text-[var(--text-info)]"
-                  : "text-[var(--text-tertiary)]",
-              )}
-              aria-label={
-                isCompleted ? "Marcar como pendiente" : "Completar tarea"
-              }
-            >
-              {isCompleted ? (
-                <CheckCircle2 size={24} strokeWidth={1.8} />
-              ) : (
-                <Circle size={24} strokeWidth={1.8} />
-              )}
-            </button>
+            {selectionMode ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleSelect?.(task.id);
+                }}
+                className="flex-shrink-0 flex items-center justify-center w-6 h-6 mt-0.5"
+                style={{ color: selected ? "var(--text-link)" : "var(--text-tertiary)" }}
+                role="checkbox"
+                aria-checked={selected}
+                aria-label={selected ? "Quitar de la selección" : "Seleccionar tarea"}
+              >
+                {selected ? (
+                  <CheckSquare size={22} strokeWidth={1.8} />
+                ) : (
+                  <Square size={22} strokeWidth={1.8} />
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={handleToggleComplete}
+                disabled={!canComplete}
+                className={cn(
+                  "flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full transition-transform duration-200 mt-0.5",
+                  canComplete
+                    ? "cursor-pointer"
+                    : "cursor-not-allowed opacity-40",
+                  isCompleted
+                    ? "text-[var(--text-info)]"
+                    : "text-[var(--text-tertiary)]",
+                )}
+                aria-label={
+                  isCompleted ? "Marcar como pendiente" : "Completar tarea"
+                }
+              >
+                {isCompleted ? (
+                  <CheckCircle2 size={24} strokeWidth={1.8} />
+                ) : (
+                  <Circle size={24} strokeWidth={1.8} />
+                )}
+              </button>
+            )}
             <span
               className={cn(
                 "flex-shrink-0 w-2.5 h-2.5 rounded-full mt-[7px]",
@@ -291,15 +397,89 @@ function TaskItem({
               title={getPriorityConfig(task.priority).label}
               aria-label={`Prioridad: ${getPriorityConfig(task.priority).label}`}
             />
-            <p
-              className={cn(
-                "flex-1 min-w-0 text-[var(--text-base)] sm:text-[var(--text-lg)] font-semibold leading-snug line-clamp-2 break-words",
-                isCompleted && "line-through opacity-70",
-              )}
-              style={{ color: "var(--text-primary)" }}
-            >
-              {task.title}
-            </p>
+            {editingTitle ? (
+              <div
+                className="flex-1 min-w-0 flex items-center gap-1.5"
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              >
+                <input
+                  ref={titleInputRef}
+                  value={draftTitle}
+                  maxLength={TITLE_MAX}
+                  disabled={savingTitle}
+                  onChange={(e) => setDraftTitle(e.target.value)}
+                  onKeyDown={(e) => {
+                    e.stopPropagation();
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      void saveTitle();
+                    } else if (e.key === "Escape") {
+                      e.preventDefault();
+                      cancelEditTitle();
+                    }
+                  }}
+                  aria-label="Título de la tarea"
+                  className="flex-1 min-w-0 h-8 px-2 rounded-lg text-[var(--text-base)] font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/40 select-text"
+                  style={{
+                    border: "1px solid var(--border-input)",
+                    backgroundColor: "var(--bg-input)",
+                    color: "var(--text-primary)",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => void saveTitle()}
+                  disabled={savingTitle}
+                  className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white disabled:opacity-60"
+                  style={{ backgroundColor: "var(--text-link)" }}
+                  aria-label="Guardar título"
+                  title="Guardar (Enter)"
+                >
+                  <Check size={16} />
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelEditTitle}
+                  disabled={savingTitle}
+                  className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{
+                    color: "var(--text-secondary)",
+                    border: "1px solid var(--border-color)",
+                  }}
+                  aria-label="Cancelar edición"
+                  title="Cancelar (Esc)"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <>
+                <p
+                  className={cn(
+                    "flex-1 min-w-0 text-[var(--text-base)] sm:text-[var(--text-lg)] font-semibold leading-snug line-clamp-2 break-words",
+                    isCompleted && "line-through opacity-70",
+                  )}
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  {task.title}
+                </p>
+                {canEditTitle && (
+                  <button
+                    type="button"
+                    onClick={startEditTitle}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    className="flex-shrink-0 w-7 h-7 -mr-0.5 rounded-md flex items-center justify-center transition-opacity opacity-60 sm:opacity-0 sm:group-hover/task:opacity-100 focus:opacity-100 hover:bg-[var(--bg-hover)]"
+                    style={{ color: "var(--text-tertiary)" }}
+                    aria-label="Editar título"
+                    title="Editar título"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           {/* Description */}
@@ -417,6 +597,10 @@ export default React.memo(TaskItem, (prev, next) => {
     prev.task.phoneNumbers === next.task.phoneNumbers &&
     prev.task.completedBy === next.task.completedBy &&
     prev.task.reminders === next.task.reminders &&
-    prev.memberNames === next.memberNames
+    prev.memberNames === next.memberNames &&
+    prev.role === next.role &&
+    prev.selectionMode === next.selectionMode &&
+    prev.selected === next.selected &&
+    prev.onToggleSelect === next.onToggleSelect
   );
 });

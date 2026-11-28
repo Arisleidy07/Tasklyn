@@ -255,7 +255,12 @@ service cloud.firestore {
           request.resource.data.uploadedBy == uid() &&
           canAccessTaskFiles(taskId) &&
           !isViewerScopedTask(taskId);
-        allow update: if false; // Attachments are immutable
+        // The uploader completes their own metadata after the Storage
+        // upload ("uploading" -> "complete"); ownership can't change.
+        allow update: if isAuth() &&
+          resource.data.uploadedBy == uid() &&
+          request.resource.data.uploadedBy == uid() &&
+          !isViewerScopedTask(taskId);
         allow delete: if isAuth() &&
           resource.data.uploadedBy == uid() &&
           !isViewerScopedTask(taskId);

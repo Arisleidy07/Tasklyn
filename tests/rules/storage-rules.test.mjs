@@ -109,6 +109,7 @@ async function read(name, path) {
     return "allow";
   } catch (e) {
     if (e.code === "storage/unauthorized") return "deny";
+    if (e.code === "storage/object-not-found") return "allow";
     throw e;
   }
 }
@@ -170,6 +171,31 @@ after(async () => {
 });
 
 // ---- Task attachments (Storage) ----
+// Real app flow: 1) create metadata doc (status "uploading") through
+// Firestore rules, 2) upload to tasks/{taskId}/attachments/{metaId}/file.
+// Storage rules only read that metadata doc (production allows at most two
+// Firestore document reads per Storage rules evaluation).
+async function attach(name, taskId) {
+  const { db } = await session(name);
+  const id = `att-${name}-${taskId}-${Math.random().toString(36).slice(2, 7)}`;
+  try {
+    await setDoc(doc(db, "tasks", taskId, "attachments", id), {
+      name: "x.jpg", type: "image/jpeg", size: 4, category: "image",
+      url: "", storagePath: "", status: "uploading", uploadedBy: uids[name],
+    });
+  } catch (e) {
+    if (e.code === "permission-denied") return "deny";
+    throw e;
+  }
+  const res = await upload(name, `tasks/${taskId}/attachments/${id}/x.jpg`);
+  if (res === "allow") {
+    await updateDoc(doc(db, "tasks", taskId, "attachments", id), {
+      url: "https://x", storagePath: `tasks/${taskId}/attachments/${id}/x.jpg`, status: "complete",
+    });
+  }
+  return res;
+}
+
 const cases = [
   ["owner", "personalTask", "allow", "dueño · tarea personal sin teamId"],
   ["listGuest", "personalTask", "allow", "miembro de lista · tarea personal"],
@@ -185,15 +211,43 @@ const cases = [
 
 for (const [who, task, expected, label] of cases) {
   test(`adjunto: subir — ${label}`, async () => {
-    assert.equal(await upload(who, `tasks/${task}/attachments/${who}.jpg`), expected);
+    assert.equal(await attach(who, task), expected);
   });
 }
 
-test("adjunto: lectura — miembro sí, viewer sí, ajeno no", async () => {
-  assert.equal(await upload("owner", "tasks/teamTask/attachments/shared.jpg"), "allow");
-  assert.equal(await read("member", "tasks/teamTask/attachments/shared.jpg"), "allow");
-  assert.equal(await read("viewer", "tasks/teamTask/attachments/shared.jpg"), "allow");
-  assert.equal(await read("outsider", "tasks/teamTask/attachments/shared.jpg"), "deny");
+test("adjunto: sin metadatos previos o con metadatos ajenos se deniega", async () => {
+  // No metadata doc → deny, even for the owner
+  assert.equal(await upload("owner", "tasks/teamTask/attachments/noMeta/x.jpg"), "deny");
+  // Outsider can't piggy-back on someone else's placeholder
+  const { db } = await session("member");
+  await setDoc(doc(db, "tasks", "teamTask", "attachments", "pending1"), {
+    name: "x.jpg", type: "image/jpeg", size: 4, category: "image",
+    url: "", storagePath: "", status: "uploading", uploadedBy: uids.member,
+  });
+  assert.equal(await upload("outsider", "tasks/teamTask/attachments/pending1/x.jpg"), "deny");
+  assert.equal(await upload("owner", "tasks/teamTask/attachments/pending1/x.jpg"), "deny");
+  // Completed placeholder can no longer receive new objects
+  assert.equal(await upload("member", "tasks/teamTask/attachments/pending1/x.jpg"), "allow");
+  await updateDoc(doc(db, "tasks", "teamTask", "attachments", "pending1"), { status: "complete", url: "https://x" });
+  assert.equal(await upload("member", "tasks/teamTask/attachments/pending1/other.jpg"), "deny");
+  // Spoofing uploadedBy in Firestore is rejected
+  const o = await session("outsider");
+  await assert.rejects(setDoc(doc(o.db, "tasks", "teamTask", "attachments", "spoof"), {
+    name: "x", uploadedBy: uids.outsider, status: "uploading",
+  }));
+});
+
+test("adjunto: lectura (getDownloadURL) — quien subió y creador de la tarea; ajeno no", async () => {
+  assert.equal(await read("member", "tasks/teamTask/attachments/pending1/x.jpg"), "allow");
+  assert.equal(await read("owner", "tasks/teamTask/attachments/pending1/x.jpg"), "allow");
+  assert.equal(await read("outsider", "tasks/teamTask/attachments/pending1/x.jpg"), "deny");
+});
+
+test("adjunto legado (ruta antigua): miembros de la lista leen, ajeno no, nadie sube", async () => {
+  // Rules allow the read → the emulator answers "object-not-found" (no file)
+  assert.equal(await read("listGuest", "tasks/personalTask/attachments/old.jpg"), "allow");
+  assert.equal(await upload("owner", "tasks/personalTask/attachments/new-legacy.jpg"), "deny");
+  assert.equal(await read("outsider", "tasks/personalTask/attachments/old.jpg"), "deny");
 });
 
 // ---- Attachment metadata (Firestore) ----
@@ -223,14 +277,16 @@ test("reportes: creador sube, equipo lee, ajeno no", async () => {
 });
 
 // ---- Forms ----
-test("formularios: miembro sube respuesta, viewer y ajeno no", async () => {
-  assert.equal(await upload("member", `forms/f1/responses/m/q1/a.jpg`), "allow");
-  assert.equal(await upload("legacyMember", `forms/f1/responses/l/q1/a.jpg`), "allow");
+test("formularios: miembro sube su respuesta, ajeno no, cabecera solo el creador", async () => {
+  assert.equal(await upload("member", `forms/f1/responses/${uids.member}/q1/a.jpg`), "allow");
+  assert.equal(await upload("legacyMember", `forms/f1/responses/${uids.legacyMember}/q1/a.jpg`), "allow");
   assert.equal(await upload("owner", `forms/f1/header/h.jpg`), "allow");
-  assert.equal(await upload("viewer", `forms/f1/responses/v/q1/a.jpg`), "deny");
-  assert.equal(await upload("outsider", `forms/f1/responses/o/q1/a.jpg`), "deny");
-  assert.equal(await read("outsider", `forms/f1/responses/m/q1/a.jpg`), "deny");
-  assert.equal(await read("owner", `forms/f1/responses/m/q1/a.jpg`), "allow");
+  // Each respondent writes only inside their own folder
+  assert.equal(await upload("member", `forms/f1/responses/${uids.owner}/q1/a.jpg`), "deny");
+  assert.equal(await upload("outsider", `forms/f1/responses/${uids.outsider}/q1/a.jpg`), "deny");
+  assert.equal(await upload("member", `forms/f1/header/h.jpg`), "deny");
+  assert.equal(await read("outsider", `forms/f1/responses/${uids.member}/q1/a.jpg`), "deny");
+  assert.equal(await read("owner", `forms/f1/responses/${uids.member}/q1/a.jpg`), "allow");
 });
 
 // ---- Catch-all ----

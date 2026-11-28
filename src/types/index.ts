@@ -413,6 +413,8 @@ export interface TaskAttachment {
   thumbStoragePath?: string;
   uploadedBy: string;
   uploadedByName?: string;
+  /** "uploading" while the file is being sent to Storage (hidden in the UI). */
+  status?: "uploading" | "complete";
   createdAt: string;
 }
 

@@ -7,7 +7,8 @@ import {
   deleteTask as deleteTaskInDb,
   subscribeToListTasks,
   addTaskHistoryEntry,
-  addTaskAttachment,
+  reserveTaskAttachment,
+  completeTaskAttachment,
   deleteTaskAttachmentMetadata,
   subscribeToTaskAttachments,
   createTasksBatch,
@@ -17,6 +18,7 @@ import {
 } from "@/lib/firestore";
 import {
   uploadTaskAttachment,
+  getAttachmentCategory,
   deleteTaskAttachment as deleteTaskAttachmentFromStorage,
 } from "@/lib/storage";
 import { canAddMoreTasks } from "@/lib/permissions";
@@ -156,6 +158,15 @@ interface TaskState {
   ) => Promise<void>;
   uncompleteTask: (id: string, performedBy: string) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
+  /**
+   * Delete several tasks of ONE list (multi-select). Ids that do not belong
+   * to `listId` are ignored. Each task goes through the same path as a single
+   * delete (history, activity log, Firestore rules).
+   */
+  deleteTasks: (
+    ids: string[],
+    listId: string,
+  ) => Promise<{ deleted: string[]; failed: { id: string; message: string }[] }>;
   subscribeToList: (listId: string) => void;
   unsubscribeFromList: (listId: string) => void;
   unsubscribeAll: () => void;
@@ -1102,6 +1113,39 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     set((state) => ({ tasks: state.tasks.filter((t) => t.id !== id) }));
   },
 
+  deleteTasks: async (ids, listId) => {
+    const own = new Set(
+      get()
+        .tasks.filter((t) => t.listId === listId)
+        .map((t) => t.id),
+    );
+    const targets = Array.from(new Set(ids)).filter((id) => own.has(id));
+    const deleted: string[] = [];
+    const failed: { id: string; message: string }[] = [];
+    // Small concurrency: fast for dozens of tasks without flooding Firestore
+    const queue = [...targets];
+    const worker = async () => {
+      while (queue.length) {
+        const id = queue.shift()!;
+        try {
+          await get().deleteTask(id);
+          deleted.push(id);
+        } catch (error) {
+          const code = (error as { code?: string })?.code;
+          failed.push({
+            id,
+            message:
+              code === "permission-denied"
+                ? "No tienes permiso para eliminar esta tarea."
+                : firestoreErrorMessage(error),
+          });
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(4, targets.length) }, worker));
+    return { deleted, failed };
+  },
+
   subscribeToList: (listId) => {
     if (get().taskUnsubscribes.has(listId)) return;
 
@@ -1179,32 +1223,19 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     uploadedByName,
     onProgress,
   ) => {
-    // 1) Storage (task doc already exists → rules can verify membership)
-    const up = await uploadTaskAttachment(taskId, file, onProgress);
-
-    // 2) Firestore metadata. If it fails, remove the uploaded objects so no
-    //    orphan files are left behind.
+    // 1) Metadata first (status "uploading"): Firestore rules verify the
+    //    full task permissions; Storage rules then only check this doc.
     let attachmentId: string;
     try {
-      attachmentId = await addTaskAttachment(taskId, {
-        taskId,
+      attachmentId = await reserveTaskAttachment(taskId, {
         name: file.name,
-        type: up.contentType || file.type,
+        type: file.type || "application/octet-stream",
         size: file.size,
-        category: up.category,
-        url: up.url,
-        storagePath: up.storagePath,
-        thumbUrl: up.thumbUrl,
-        thumbStoragePath: up.thumbStoragePath,
+        category: getAttachmentCategory(file),
         uploadedBy,
         uploadedByName,
       });
     } catch (error) {
-      await Promise.allSettled(
-        [up.storagePath, up.thumbStoragePath]
-          .filter((p): p is string => !!p)
-          .map((p) => deleteTaskAttachmentFromStorage(p)),
-      );
       const code = (error as { code?: string })?.code;
       throw new Error(
         code === "permission-denied"
@@ -1213,7 +1244,36 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       );
     }
 
-    // 3) Card summary (non-fatal)
+    // 2) Storage upload. On failure remove the placeholder metadata.
+    let up: Awaited<ReturnType<typeof uploadTaskAttachment>>;
+    try {
+      up = await uploadTaskAttachment(taskId, attachmentId, file, onProgress);
+    } catch (error) {
+      await deleteTaskAttachmentMetadata(taskId, attachmentId).catch(() => {});
+      throw error;
+    }
+
+    // 3) Final metadata. If it fails, remove uploaded objects + placeholder.
+    try {
+      await completeTaskAttachment(taskId, attachmentId, {
+        url: up.url,
+        storagePath: up.storagePath,
+        thumbUrl: up.thumbUrl,
+        thumbStoragePath: up.thumbStoragePath,
+        type: up.contentType || file.type,
+        category: up.category,
+      });
+    } catch (error) {
+      await Promise.allSettled(
+        [up.storagePath, up.thumbStoragePath]
+          .filter((p): p is string => !!p)
+          .map((p) => deleteTaskAttachmentFromStorage(p)),
+      );
+      await deleteTaskAttachmentMetadata(taskId, attachmentId).catch(() => {});
+      throw new Error(`${file.name}: no se pudo registrar el archivo. Inténtalo nuevamente.`);
+    }
+
+    // 4) Card summary (non-fatal)
     try {
       await refreshTaskAttachmentSummary(taskId);
     } catch (error) {

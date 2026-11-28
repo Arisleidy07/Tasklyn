@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import {
@@ -13,8 +13,30 @@ import type { TaskComment } from "@/types";
 import Avatar from "@/components/ui/Avatar";
 import { Send, Trash2, AtSign } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow, parseISO } from "date-fns";
+import { format, isValid, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { useUserProfiles } from "@/hooks/useUserProfiles";
+
+// "28 nov 2026 · 14:35"
+function formatCommentDate(iso: string): string {
+  const d = parseISO(iso);
+  if (!isValid(d)) return "";
+  return format(d, "d MMM yyyy '·' HH:mm", { locale: es });
+}
+
+// Highlight @mentions without injecting HTML (comment text is user input).
+function renderWithMentions(content: string): React.ReactNode[] {
+  const parts = content.split(/(@[\p{L}\p{N}_]+)/u);
+  return parts.map((part, i) =>
+    part.startsWith("@") && part.length > 1 ? (
+      <span key={i} className="font-medium" style={{ color: "var(--text-link)" }}>
+        {part}
+      </span>
+    ) : (
+      <React.Fragment key={i}>{part}</React.Fragment>
+    ),
+  );
+}
 
 interface TaskCommentsProps {
   taskId: string;
@@ -39,6 +61,13 @@ export default function TaskComments({
     const unsub = subscribeToTaskComments(taskId, setComments);
     return unsub;
   }, [taskId]);
+
+  // Current name / photo of each author (falls back to what was stored)
+  const authorIds = useMemo(
+    () => Array.from(new Set(comments.map((c) => c.authorId).filter(Boolean))),
+    [comments],
+  );
+  const { getProfile } = useUserProfiles(authorIds);
 
   if (!user) return null;
 
@@ -120,17 +149,10 @@ export default function TaskComments({
     )
     .slice(0, 5);
 
-  const renderContent = (content: string) =>
-    content.replace(
-      /@(\w+)/g,
-      (match) =>
-        `<span class="text-[var(--text-link)] font-medium">${match}</span>`,
-    );
-
   return (
     <div>
       {/* Comment list */}
-      <div className="space-y-2 mb-3 max-h-52 overflow-y-auto">
+      <div className="space-y-2.5 mb-3 max-h-[28rem] overflow-y-auto overscroll-contain pr-0.5">
         <AnimatePresence initial={false}>
           {comments.length === 0 ? (
             <p
@@ -140,72 +162,69 @@ export default function TaskComments({
               Sin comentarios. Sé el primero.
             </p>
           ) : (
-            comments.map((c) => (
-              <motion.div
-                key={c.id}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex gap-2 group"
-              >
-                <Avatar
-                  name={c.authorName}
-                  photoURL={c.authorPhoto}
-                  size="sm"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2">
+            comments.map((c) => {
+              const profile = getProfile(c.authorId);
+              const name =
+                profile?.name || memberNames[c.authorId] || c.authorName || "Usuario";
+              const photo = profile?.photoURL || c.authorPhoto;
+              return (
+                <motion.article
+                  key={c.id}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="group rounded-xl p-3"
+                  style={{
+                    backgroundColor: "var(--bg-secondary)",
+                    border: "1px solid var(--border-color)",
+                  }}
+                  data-comment-id={c.id}
+                >
+                  <header className="flex items-center gap-2.5 min-w-0">
+                    <Avatar name={name} photoURL={photo} size="md" />
                     <span
-                      className="text-[var(--text-xs)] font-semibold"
+                      className="flex-1 min-w-0 text-[var(--text-sm)] font-semibold truncate"
                       style={{ color: "var(--text-primary)" }}
+                      title={name}
                     >
-                      {c.authorName}
+                      {name}
                     </span>
-                    <span
-                      className="text-[var(--text-2xs)]"
-                      style={{ color: "var(--text-tertiary)" }}
-                    >
-                      {formatDistanceToNow(parseISO(c.createdAt), {
-                        addSuffix: true,
-                        locale: es,
-                      })}
-                    </span>
-                    {c.editedAt && (
-                      <span
-                        className="text-[var(--text-2xs)] italic"
+                    {c.authorId === user.id && (
+                      <button
+                        type="button"
+                        onClick={() => deleteComment(c.id)}
+                        aria-label="Eliminar comentario"
+                        className="sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 p-1.5 transition-opacity flex-shrink-0 rounded-md"
                         style={{ color: "var(--text-tertiary)" }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.color = "var(--text-error)";
+                          e.currentTarget.style.backgroundColor = "var(--bg-error)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.color = "var(--text-tertiary)";
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
                       >
-                        (editado)
-                      </span>
+                        <Trash2 size={14} />
+                      </button>
                     )}
-                  </div>
+                  </header>
                   <p
-                    className="text-[var(--text-sm)] mt-0.5 break-words"
-                    style={{ color: "var(--text-secondary)" }}
-                    dangerouslySetInnerHTML={{
-                      __html: renderContent(c.content),
-                    }}
-                  />
-                </div>
-                {c.authorId === user.id && (
-                  <button
-                    onClick={() => deleteComment(c.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 transition-opacity flex-shrink-0 rounded-md"
-                    style={{ color: "var(--text-tertiary)" }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = "var(--text-error)";
-                      e.currentTarget.style.backgroundColor = "var(--bg-error)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = "var(--text-tertiary)";
-                      e.currentTarget.style.backgroundColor = "transparent";
-                    }}
+                    className="mt-2 text-[var(--text-sm)] leading-relaxed whitespace-pre-wrap break-words"
+                    style={{ color: "var(--text-secondary)", overflowWrap: "anywhere" }}
                   >
-                    <Trash2 size={12} />
-                  </button>
-                )}
-              </motion.div>
-            ))
+                    {renderWithMentions(c.content)}
+                  </p>
+                  <p
+                    className="mt-2 text-[var(--text-2xs)]"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    <time dateTime={c.createdAt}>{formatCommentDate(c.createdAt)}</time>
+                    {c.editedAt && <span className="italic"> · editado</span>}
+                  </p>
+                </motion.article>
+              );
+            })
           )}
         </AnimatePresence>
       </div>

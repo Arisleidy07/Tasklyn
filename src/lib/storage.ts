@@ -584,7 +584,7 @@ function safeAttachmentFileName(file: File): string {
   return `${base || "file"}_${id}.${attachmentFileExtension(file.name)}`;
 }
 
-function getAttachmentCategory(file: File): "image" | "video" | "file" {
+export function getAttachmentCategory(file: File): "image" | "video" | "file" {
   if (file.type.startsWith("image/")) return "image";
   if (file.type.startsWith("video/")) return "video";
   return "file";
@@ -602,19 +602,23 @@ export interface TaskAttachmentUploadResult {
 
 /**
  * Upload a task attachment (image, video or document) to
- * tasks/{taskId}/attachments/. The task document MUST already exist because
- * the Storage rules check membership through it. For images and videos a
+ * tasks/{taskId}/attachments/{attachmentId}/. The metadata doc (status
+ * "uploading") MUST already exist: Storage rules check it. For images and videos a
  * small JPEG thumbnail is uploaded alongside so cards stay light.
  */
 export async function uploadTaskAttachment(
   taskId: string,
+  attachmentId: string,
   file: File,
   onProgress?: (progress: number) => void,
 ): Promise<TaskAttachmentUploadResult> {
   const validatedFile = await prepareAttachmentFile(file);
   const category = getAttachmentCategory(validatedFile);
   const fileName = safeAttachmentFileName(validatedFile);
-  const storagePath = `tasks/${taskId}/attachments/${fileName}`;
+  // One folder per attachment: Storage rules authorise the upload through
+  // the metadata doc tasks/{taskId}/attachments/{attachmentId}.
+  const folder = `tasks/${taskId}/attachments/${attachmentId}`;
+  const storagePath = `${folder}/${fileName}`;
 
   const url = await resumableUpload(
     storagePath,
@@ -631,7 +635,7 @@ export async function uploadTaskAttachment(
     try {
       const thumb = await createThumbnail(validatedFile);
       if (thumb) {
-        thumbStoragePath = `tasks/${taskId}/attachments/${fileName.replace(/\.[^.]+$/, "")}_thumb.jpg`;
+        thumbStoragePath = `${folder}/${fileName.replace(/\.[^.]+$/, "")}_thumb.jpg`;
         thumbUrl = await resumableUpload(thumbStoragePath, thumb, "image/jpeg");
       }
     } catch (error) {

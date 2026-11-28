@@ -48,3 +48,6 @@ ui-debug.log
 
 # Local emulator build
 /.next-emulators/
+
+# Firebase CLI debug logs
+firebase-debug*.log

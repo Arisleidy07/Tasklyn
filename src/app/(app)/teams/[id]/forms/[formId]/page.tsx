@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/authStore";
 import { useFormStore } from "@/stores/formStore";
 import { uploadFormResponseFile } from "@/lib/storage";
+import FilePickerButtons from "@/components/attachments/FilePickerButtons";
 import PendingFilesGrid from "@/components/attachments/PendingFilesGrid";
 import {
   focusFirstInvalidField,
@@ -26,7 +27,6 @@ import {
   FileText,
   MapPin,
   CheckSquare,
-  Upload,
   Film,
   Paperclip,
   AlertCircle,
@@ -87,11 +87,6 @@ function isImageType(q: Question) {
 function isVideoType(q: Question) {
   return q.type === "video_upload";
 }
-function acceptFor(q: Question): string {
-  if (isImageType(q)) return "image/*";
-  if (isVideoType(q)) return "video/*";
-  return ".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.json,.zip,.rar,image/*,video/*";
-}
 
 export default function FormPreviewPage() {
   const params = useParams();
@@ -127,7 +122,7 @@ export default function FormPreviewPage() {
   };
 
   // ---- File question helpers ----
-  const addFiles = (question: Question, fileList: FileList | null) => {
+  const addFiles = (question: Question, fileList: FileList | File[] | null) => {
     if (!fileList?.length) return;
     const max = question.maxFiles ?? 5;
     const items: PendingFormFile[] = Array.from(fileList)
@@ -321,43 +316,37 @@ export default function FormPreviewPage() {
   const renderFileQuestion = (question: Question) => {
     const files = fileAnswers[question.id] ?? [];
     const questionError = errors[question.id];
-    const fileInputId = `file-input-${question.id}`;
 
     return (
       <div>
-        <input
-          id={fileInputId}
-          type="file"
-          multiple={question.maxFiles !== 1}
-          accept={acceptFor(question)}
-          className="hidden"
-          onChange={(e) => {
-            addFiles(question, e.target.files);
-            e.target.value = "";
-          }}
-        />
-        <button
-          type="button"
-          onClick={() =>
-            document.getElementById(fileInputId)?.click()
+        <div
+          className="rounded-xl"
+          style={
+            questionError
+              ? { outline: "1px dashed #ef4444", outlineOffset: 2 }
+              : undefined
           }
-          className="w-full h-11 px-4 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-          style={{
-            border: `1px dashed ${questionError ? "#ef4444" : "var(--border-input)"}`,
-            backgroundColor: "var(--bg-input)",
-            color: questionError ? "#ef4444" : "var(--text-secondary)",
-          }}
         >
-          <Upload size={16} />
-          {isImageType(question)
-            ? "Añadir imágenes"
-            : isVideoType(question)
-              ? "Añadir videos"
-              : "Añadir archivos"}
-          <span className="text-xs opacity-70">
-            (máx. {question.maxFiles ?? 5})
-          </span>
-        </button>
+          <FilePickerButtons
+            onFiles={(picked) => addFiles(question, picked)}
+            allowImages={!isVideoType(question)}
+            allowVideos={!isImageType(question)}
+            allowDocuments={!isImageType(question) && !isVideoType(question)}
+            multiple={question.maxFiles !== 1}
+            disabled={files.length >= (question.maxFiles ?? 5)}
+            desktopLabel={
+              isImageType(question)
+                ? "Adjuntar imágenes"
+                : isVideoType(question)
+                  ? "Adjuntar videos"
+                  : "Adjuntar archivos"
+            }
+          />
+        </div>
+        <p className="mt-1 text-xs" style={{ color: "var(--text-tertiary)" }}>
+          Máximo {question.maxFiles ?? 5}{" "}
+          {(question.maxFiles ?? 5) === 1 ? "archivo" : "archivos"}
+        </p>
 
         {files.length > 0 && (
           <div className="mt-3">

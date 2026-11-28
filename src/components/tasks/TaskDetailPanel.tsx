@@ -23,6 +23,13 @@ import {
 import { useTaskStore } from "@/stores/taskStore";
 import { useAuthStore } from "@/stores/authStore";
 import { canEditTask, canDeleteTask, canArchiveTask } from "@/lib/permissions";
+import FilePickerButtons from "@/components/attachments/FilePickerButtons";
+import PendingFilesGrid, {
+  pendingFileId,
+  revokeObjectUrlFor,
+  type PendingFileItem,
+} from "@/components/attachments/PendingFilesGrid";
+import ConfirmDeleteDialog from "@/components/ui/ConfirmDeleteDialog";
 import TaskComments from "./TaskComments";
 import ReminderPicker from "./pickers/ReminderPicker";
 import DueDatePicker from "./pickers/DueDatePicker";
@@ -59,9 +66,6 @@ import {
   Plus,
   AlertCircle,
   Paperclip,
-  Upload,
-  Image as ImageIcon,
-  Video,
   Download,
   Loader2,
   Link as LinkIcon,
@@ -378,18 +382,24 @@ export default function TaskDetailPanel({
   const [history, setHistory] = useState<TaskHistoryEntry[]>([]);
   const [historyLimit, setHistoryLimit] = useState(5);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>(
-    {},
-  );
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const recordVideoInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingFiles, setPendingFiles] = useState<PendingFileItem[]>([]);
+  const pendingFilesRef = useRef<PendingFileItem[]>([]);
+  useEffect(() => {
+    pendingFilesRef.current = pendingFiles;
+  }, [pendingFiles]);
+  // Release previews and drop unsaved files when the task changes / panel closes
+  const taskIdForFiles = task?.id;
+  useEffect(() => {
+    return () => {
+      pendingFilesRef.current.forEach((f) => revokeObjectUrlFor(f.file));
+      setPendingFiles([]);
+    };
+  }, [taskIdForFiles]);
 
   const pendingSaveRef = useRef<{
     field: string;
@@ -462,7 +472,7 @@ export default function TaskDetailPanel({
       if (h.performedBy) ids.add(h.performedBy);
     });
     return Array.from(ids);
-  }, [task?.id, history, task?.completedBy, listMembers]);
+  }, [task, history, listMembers]);
 
   const { getProfile } = useUserProfiles(userIdsToResolve);
 
@@ -661,9 +671,24 @@ export default function TaskDetailPanel({
     : resolveTaskLocation(task);
   const locationUrlInvalid = isInvalidMapsInput(localLocationUrl);
 
-  const handleDelete = () => {
-    deleteTask(task.id);
-    onClose();
+  const handleDelete = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await deleteTask(task.id);
+      setShowDeleteConfirm(false);
+      onClose();
+    } catch (error) {
+      console.error("[TaskDetailPanel] delete failed:", error);
+      const code = (error as { code?: string })?.code;
+      showToast(
+        code === "permission-denied"
+          ? "No tienes permiso para eliminar esta tarea"
+          : "No se pudo eliminar la tarea. Inténtalo nuevamente.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleArchive = () => {
@@ -868,78 +893,67 @@ export default function TaskDetailPanel({
       })()
     : null;
 
-  // Attachment handlers
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    if (!files.length || !user || !task) return;
+  // Attachment handlers — files are previewed first, then saved.
+  const addPendingFiles = (files: File[]) => {
+    setPendingFiles((prev) => [
+      ...prev,
+      ...files.map((file) => ({ id: pendingFileId(), file, status: "pending" as const })),
+    ]);
+  };
 
+  const removePendingFile = (id: string) => {
+    setPendingFiles((prev) => {
+      const gone = prev.find((f) => f.id === id);
+      if (gone) revokeObjectUrlFor(gone.file);
+      return prev.filter((f) => f.id !== id);
+    });
+  };
+
+  const clearPendingFiles = () => {
+    setPendingFiles((prev) => {
+      prev.forEach((f) => revokeObjectUrlFor(f.file));
+      return [];
+    });
+  };
+
+  const uploadPendingFiles = async () => {
+    if (!user || !task || isUploading) return;
+    const queue = pendingFiles.filter((f) => f.status !== "done" && f.status !== "uploading");
+    if (!queue.length) return;
     setIsUploading(true);
-    const newProgress: Record<string, number> = {};
-    let successCount = 0;
-    let errorCount = 0;
-    const errors: string[] = [];
+    const patch = (id: string, data: Partial<PendingFileItem>) =>
+      setPendingFiles((prev) => prev.map((f) => (f.id === id ? { ...f, ...data } : f)));
 
-    try {
-      for (const file of files) {
-        const fileId = `${file.name}-${file.size}`;
-        newProgress[fileId] = 0;
-        setUploadProgress({ ...newProgress });
-
-        try {
-          await useTaskStore
-            .getState()
-            .addAttachment(task.id, file, user.id, user.name, (progress) => {
-              setUploadProgress((prev) => ({
-                ...prev,
-                [fileId]: progress,
-              }));
-            });
-
-          newProgress[fileId] = 100;
-          setUploadProgress({ ...newProgress });
-          successCount++;
-        } catch (fileError) {
-          console.error(
-            `[handleFileSelect] Failed to upload ${file.name}:`,
-            fileError,
+    let ok = 0;
+    const failed: string[] = [];
+    for (const item of queue) {
+      patch(item.id, { status: "uploading", progress: 0, error: undefined });
+      try {
+        await useTaskStore
+          .getState()
+          .addAttachment(task.id, item.file, user.id, user.name, (progress) =>
+            patch(item.id, { progress }),
           );
-          errorCount++;
-          const errorMsg =
-            fileError instanceof Error
-              ? fileError.message
-              : "Error desconocido";
-          errors.push(`${file.name}: ${errorMsg}`);
-          // Continue with other files even if one fails
-        }
+        ok++;
+        // Saved → leave the preview (it now appears in the task's files)
+        revokeObjectUrlFor(item.file);
+        setPendingFiles((prev) => prev.filter((f) => f.id !== item.id));
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "No se pudo subir el archivo.";
+        console.error("[uploadPendingFiles]", item.file.name, error);
+        failed.push(message);
+        patch(item.id, { status: "error", error: message });
       }
+    }
+    setIsUploading(false);
 
-      if (successCount > 0 && errorCount === 0) {
-        showToast("Archivos subidos correctamente");
-      } else if (successCount > 0 && errorCount > 0) {
-        showToast(
-          `${successCount} de ${files.length} archivos subidos. ${errorCount} fallaron.`,
-        );
-        // Log specific errors to console for debugging
-        console.error("[handleFileSelect] File errors:", errors);
-      } else if (errorCount > 0) {
-        showToast(
-          "Error: No se pudo subir ningún archivo. " + errors[0] ||
-            "Verifica tu conexión y vuelve a intentar.",
-        );
-        console.error("[handleFileSelect] All files failed:", errors);
-      }
-    } catch (error) {
-      console.error("[handleFileSelect] Unexpected error:", error);
-      showToast("Error inesperado al subir archivos");
-    } finally {
-      setIsUploading(false);
-      setUploadProgress({});
-      if (imageInputRef.current) imageInputRef.current.value = "";
-      if (cameraInputRef.current) cameraInputRef.current.value = "";
-      if (videoInputRef.current) videoInputRef.current.value = "";
-      if (recordVideoInputRef.current)
-        recordVideoInputRef.current.value = "";
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    if (failed.length === 0) {
+      showToast(ok === 1 ? "Archivo guardado" : `${ok} archivos guardados`);
+    } else if (ok > 0) {
+      showToast(`${ok} de ${queue.length} archivos guardados. Revisa los que fallaron y pulsa Reintentar.`);
+    } else {
+      showToast(failed[0] || "No se pudo subir ningún archivo. Inténtalo nuevamente.");
     }
   };
 
@@ -1798,224 +1812,98 @@ export default function TaskDetailPanel({
               label="Archivos"
             >
               <div className="space-y-4">
-                {/* Hidden file inputs */}
+                {/* Device-adapted picker + preview before saving */}
                 {canEdit && (
-                  <>
-                    <input
-                      ref={imageInputRef}
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                    <input
-                      ref={cameraInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                    <input
-                      ref={videoInputRef}
-                      type="file"
-                      multiple
-                      accept="video/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                    <input
-                      ref={recordVideoInputRef}
-                      type="file"
-                      accept="video/*"
-                      capture="environment"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.json,.zip,.rar"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                  </>
+                  <FilePickerButtons
+                    onFiles={addPendingFiles}
+                    busy={isUploading}
+                    heightClassName="h-12"
+                  />
                 )}
 
-                {/* Upload buttons */}
-                {canEdit && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 !important">
-                    <button
-                      type="button"
-                      onClick={() => imageInputRef.current?.click()}
+                {canEdit && pendingFiles.length > 0 && (
+                  <div
+                    className="space-y-3 rounded-xl p-3"
+                    style={{
+                      backgroundColor: "var(--bg-secondary)",
+                      border: "1px solid var(--border-color)",
+                    }}
+                  >
+                    <PendingFilesGrid
+                      items={pendingFiles}
+                      onRemove={isUploading ? undefined : removePendingFile}
+                      onRetry={isUploading ? undefined : () => void uploadPendingFiles()}
                       disabled={isUploading}
-                      className="h-12 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed !important"
-                      style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        color: "var(--text-secondary)",
-                        border: "1px solid var(--border-color)",
-                      }}
-                    >
-                      {isUploading ? (
-                        <Loader2
-                          size={18}
-                          className="animate-spin flex-shrink-0"
-                        />
-                      ) : (
-                        <ImageIcon size={18} className="flex-shrink-0" />
-                      )}
-                      <span className="!block">Galería</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => cameraInputRef.current?.click()}
-                      disabled={isUploading}
-                      className="h-12 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed !important"
-                      style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        color: "var(--text-secondary)",
-                        border: "1px solid var(--border-color)",
-                      }}
-                    >
-                      {isUploading ? (
-                        <Loader2
-                          size={18}
-                          className="animate-spin flex-shrink-0"
-                        />
-                      ) : (
-                        <Upload size={18} className="flex-shrink-0" />
-                      )}
-                      <span className="!block">Cámara</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => videoInputRef.current?.click()}
-                      disabled={isUploading}
-                      className="h-12 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed !important"
-                      style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        color: "var(--text-secondary)",
-                        border: "1px solid var(--border-color)",
-                      }}
-                    >
-                      {isUploading ? (
-                        <Loader2
-                          size={18}
-                          className="animate-spin flex-shrink-0"
-                        />
-                      ) : (
-                        <Video size={18} className="flex-shrink-0" />
-                      )}
-                      <span className="!block">Videos</span>
-                    </button>
-                    {/* Record video — only meaningful on touch devices */}
-                    <button
-                      type="button"
-                      onClick={() => recordVideoInputRef.current?.click()}
-                      disabled={isUploading}
-                      className="h-12 px-3 rounded-lg text-sm font-medium items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed hidden [@media(pointer:coarse)]:flex !important"
-                      style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        color: "var(--text-secondary)",
-                        border: "1px solid var(--border-color)",
-                      }}
-                    >
-                      {isUploading ? (
-                        <Loader2
-                          size={18}
-                          className="animate-spin flex-shrink-0"
-                        />
-                      ) : (
-                        <Video size={18} className="flex-shrink-0" />
-                      )}
-                      <span className="!block">Grabar</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isUploading}
-                      className="h-12 px-3 rounded-lg text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed !important"
-                      style={{
-                        backgroundColor: "var(--bg-secondary)",
-                        color: "var(--text-secondary)",
-                        border: "1px solid var(--border-color)",
-                      }}
-                    >
-                      {isUploading ? (
-                        <Loader2
-                          size={18}
-                          className="animate-spin flex-shrink-0"
-                        />
-                      ) : (
-                        <FileText size={18} className="flex-shrink-0" />
-                      )}
-                      <span className="!block">Archivos</span>
-                    </button>
+                      columnsClassName="grid-cols-3 sm:grid-cols-4"
+                    />
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={clearPendingFiles}
+                        disabled={isUploading}
+                        className="h-9 px-3 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void uploadPendingFiles()}
+                        disabled={isUploading}
+                        className="h-9 px-4 rounded-lg text-sm font-semibold text-white flex items-center gap-1.5 transition-opacity disabled:opacity-60"
+                        style={{ backgroundColor: "var(--accent-primary, #2563eb)" }}
+                      >
+                        {isUploading && <Loader2 size={14} className="animate-spin" />}
+                        {isUploading
+                          ? "Subiendo…"
+                          : pendingFiles.some((f) => f.status === "error")
+                            ? "Reintentar"
+                            : `Guardar ${pendingFiles.length} ${pendingFiles.length === 1 ? "archivo" : "archivos"}`}
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                {/* Upload progress */}
-                {isUploading && Object.keys(uploadProgress).length > 0 && (
-                  <div className="space-y-2">
-                    <p
-                      className="text-[11px] font-semibold uppercase tracking-wide"
-                      style={{ color: "var(--text-tertiary)" }}
+                {/* Show preview in card toggle */}
+                {canEdit && attachments.length > 0 && (
+                  <label
+                    htmlFor="showPreviewInCard"
+                    className="flex items-center gap-2 cursor-pointer select-none"
+                  >
+                    <input
+                      type="checkbox"
+                      id="showPreviewInCard"
+                      checked={task.showPreviewInCard !== false}
+                      onChange={async (e) => {
+                        if (!user || !task) return;
+                        const checked = e.target.checked;
+                        try {
+                          await updateTask(
+                            task.id,
+                            { showPreviewInCard: checked },
+                            user.id,
+                            user.name,
+                          );
+                          showToast(
+                            checked
+                              ? "Vista previa activada"
+                              : "Vista previa desactivada",
+                          );
+                        } catch (error) {
+                          console.error("[showPreviewInCard] Failed:", error);
+                          showToast("Error al actualizar preferencia");
+                        }
+                      }}
+                      className="w-4 h-4 rounded"
+                      style={{ accentColor: "var(--text-link)" }}
+                    />
+                    <span
+                      className="text-xs"
+                      style={{ color: "var(--text-secondary)" }}
                     >
-                      Subiendo archivos...
-                    </p>
-                    {Object.entries(uploadProgress).map(
-                      ([fileId, progress]) => {
-                        const [fileName] = fileId.split("-").slice(0, -1);
-                        return (
-                          <div
-                            key={fileId}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg"
-                            style={{
-                              backgroundColor: "var(--bg-secondary)",
-                              border: "1px solid var(--border-color)",
-                            }}
-                          >
-                            <Loader2
-                              size={14}
-                              className="animate-spin"
-                              style={{ color: "var(--text-secondary)" }}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p
-                                className="text-sm truncate"
-                                style={{ color: "var(--text-primary)" }}
-                              >
-                                {fileName}
-                              </p>
-                              <div
-                                className="h-1 rounded-full mt-1"
-                                style={{
-                                  backgroundColor: "var(--bg-hover)",
-                                  width: "100%",
-                                }}
-                              >
-                                <div
-                                  className="h-full rounded-full transition-all"
-                                  style={{
-                                    backgroundColor: "var(--text-link)",
-                                    width: `${progress}%`,
-                                  }}
-                                />
-                              </div>
-                            </div>
-                            <p
-                              className="text-xs"
-                              style={{ color: "var(--text-tertiary)" }}
-                            >
-                              {Math.round(progress)}%
-                            </p>
-                          </div>
-                        );
-                      },
-                    )}
-                  </div>
+                      Mostrar vista previa en la tarjeta
+                    </span>
+                  </label>
                 )}
 
                 {/* Images */}
@@ -2500,48 +2388,19 @@ export default function TaskDetailPanel({
             selectedDate={task.dueDate}
           />
 
-          {/* Delete confirm modal */}
-          <Modal
+          {/* Delete confirm (compact) */}
+          <ConfirmDeleteDialog
             isOpen={showDeleteConfirm}
             onClose={() => setShowDeleteConfirm(false)}
-            title="¿Eliminar tarea?"
-            description="Esta acción no se puede deshacer."
-            size="sm"
-            icon={<Trash2 size={18} style={{ color: "var(--text-error)" }} />}
-            footer={
-              <div className="flex items-center justify-end gap-3">
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="min-w-[96px] h-10"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={handleDelete}
-                  className="min-w-[110px] h-10"
-                >
-                  Eliminar
-                </Button>
-              </div>
+            onConfirm={handleDelete}
+            loading={isDeleting}
+            title="Eliminar tarea"
+            message={
+              <>
+                ¿Eliminar &quot;{task.title}&quot;? Esta acción no se puede deshacer.
+              </>
             }
-          >
-            <div className="px-5 sm:px-6 py-5">
-              <div
-                className="flex items-start gap-3 p-3 rounded-[var(--radius-lg)] text-[var(--text-sm)]"
-                style={{
-                  backgroundColor: "var(--bg-error)",
-                  color: "var(--text-error)",
-                }}
-              >
-                <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-                <p className="break-words min-w-0">
-                  Se eliminará permanentemente &quot;{task.title}&quot;.
-                </p>
-              </div>
-            </div>
-          </Modal>
+          />
         </>
       )}
     </AnimatePresence>,

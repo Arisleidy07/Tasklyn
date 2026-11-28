@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/stores/authStore";
 import { useListStore } from "@/stores/listStore";
@@ -12,23 +12,26 @@ import TaskItem from "@/components/tasks/TaskItem";
 import ArchivedTaskItem from "@/components/tasks/ArchivedTaskItem";
 import EmptyState from "@/components/ui/EmptyState";
 import Button from "@/components/ui/Button";
+import ConfirmDeleteDialog from "@/components/ui/ConfirmDeleteDialog";
 import Modal from "@/components/ui/Modal";
 import AutoResizeTextarea from "@/components/ui/AutoResizeTextarea";
 import PremiumMembersPanel from "@/components/members/PremiumMembersPanel";
 import MembersPanel from "@/components/members/MembersPanel";
 import EditListModal from "@/components/members/EditListModal";
 import { SortableTaskContainer } from "@/components/tasks/SortableTaskContainer";
+import FilePickerButtons from "@/components/attachments/FilePickerButtons";
 import PendingFilesGrid, {
   pendingFileId,
   type PendingFileItem,
 } from "@/components/attachments/PendingFilesGrid";
-import { useToastStore } from "@/stores/toastStore";
+import { useToastStore, showToast } from "@/stores/toastStore";
 import QuickAddTask, {
   useQuickAddMembers,
 } from "@/components/tasks/QuickAddTask";
 import {
   Plus,
   Trash2,
+  CheckSquare,
   CheckCircle2,
   Clock,
   AlertCircle,
@@ -44,9 +47,6 @@ import {
   Flag,
   ListChecks,
   Paperclip,
-  Image as ImageIcon,
-  Video,
-  FileText,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -73,6 +73,13 @@ export default function ListDetailPage() {
   const [showSharePanel, setShowSharePanel] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Multi-select ("Seleccionar") + bulk delete
+  // Selection is tied to the list it was started in (switching lists ends it)
+  const [selectionListId, setSelectionListId] = useState<string | null>(null);
+  const selectionMode = selectionListId === listId;
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [showBulkDelete, setShowBulkDelete] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [showMembersPanel, setShowMembersPanel] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [showCompleted, setShowCompleted] = useState(true);
@@ -96,9 +103,6 @@ export default function ListDetailPage() {
   const [createTaskError, setCreateTaskError] = useState<string | null>(null);
   const [bgError, setBgError] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
-  const videoInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const list = getList(listId);
 
@@ -252,6 +256,67 @@ export default function ListDetailPage() {
   );
   const quickAddMembers = useQuickAddMembers(quickAddMemberIds, memberNames);
 
+  const toggleSelect = useCallback((taskId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  }, []);
+
+  // Drop ids that disappeared (deleted elsewhere / archived) from the selection
+  const visibleSelectedIds = useMemo(() => {
+    const present = new Set(filteredTasks.map((t) => t.id));
+    return Array.from(selectedIds).filter((id) => present.has(id));
+  }, [selectedIds, filteredTasks]);
+
+  const startSelection = () => {
+    setSelectedIds(new Set());
+    setSelectionListId(listId);
+  };
+  const cancelSelection = () => {
+    setSelectionListId(null);
+    setSelectedIds(new Set());
+    setShowBulkDelete(false);
+  };
+  const selectAllVisible = () =>
+    setSelectedIds(new Set(filteredTasks.map((t) => t.id)));
+  const clearSelected = () => setSelectedIds(new Set());
+
+  const handleBulkDelete = async () => {
+    if (bulkDeleting || visibleSelectedIds.length === 0) return;
+    setBulkDeleting(true);
+    try {
+      const { deleted, failed } = await useTaskStore
+        .getState()
+        .deleteTasks(visibleSelectedIds, listId);
+      setShowBulkDelete(false);
+      if (failed.length === 0) {
+        showToast({
+          variant: "success",
+          message:
+            deleted.length === 1
+              ? "Se eliminó 1 tarea"
+              : `Se eliminaron ${deleted.length} tareas`,
+        });
+        cancelSelection();
+      } else {
+        // Keep only the ones that failed selected so the user can retry
+        setSelectedIds(new Set(failed.map((f) => f.id)));
+        showToast({
+          variant: deleted.length ? "warning" : "error",
+          message: deleted.length
+            ? `Se eliminaron ${deleted.length} de ${deleted.length + failed.length} tareas`
+            : "No se pudo eliminar ninguna tarea",
+          description: failed[0].message,
+        });
+      }
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   if (!user || !list) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -305,9 +370,6 @@ export default function ListDetailPage() {
     setShowMoreFields(false);
     setNewTaskFiles([]);
     setCreateTaskError(null);
-    if (imageInputRef.current) imageInputRef.current.value = "";
-    if (videoInputRef.current) videoInputRef.current.value = "";
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const closeTaskModal = () => {
@@ -446,18 +508,13 @@ export default function ListDetailPage() {
 
   // All pickers append (multiple files, any mix); the input is reset so the
   // same file can be picked again after removing it.
-  const addPickedFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    e.target.value = "";
+  const addPickedFiles = (files: File[]) => {
     if (!files.length) return;
     setNewTaskFiles((prev) => [
       ...prev,
       ...files.map((file) => ({ id: pendingFileId(), file })),
     ]);
   };
-  const handleImageSelect = addPickedFiles;
-  const handleVideoSelect = addPickedFiles;
-  const handleFileSelect = addPickedFiles;
 
   const handleRemoveFile = (id: string) => {
     setNewTaskFiles((prev) => prev.filter((f) => f.id !== id));
@@ -620,15 +677,91 @@ export default function ListDetailPage() {
             </div>
 
             {canEdit && (
-              <Button
-                onClick={() => setShowAddTask(true)}
-                icon={<Plus size={16} />}
-                className="w-full sm:w-auto h-10 flex-shrink-0"
-              >
-                Añadir tarea
-              </Button>
+              <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
+                {activeTasks.length > 0 && (
+                  <Button
+                    variant="secondary"
+                    onClick={selectionMode ? cancelSelection : startSelection}
+                    icon={<CheckSquare size={16} />}
+                    className="h-10 flex-shrink-0"
+                    aria-pressed={selectionMode}
+                  >
+                    {selectionMode ? "Cancelar" : "Seleccionar"}
+                  </Button>
+                )}
+                <Button
+                  onClick={() => setShowAddTask(true)}
+                  icon={<Plus size={16} />}
+                  className="flex-1 sm:flex-none h-10"
+                >
+                  Añadir tarea
+                </Button>
+              </div>
             )}
           </div>
+
+          {/* Barra de selección múltiple */}
+          {selectionMode && canEdit ? (
+            <div
+              className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-xl px-3 py-2 shadow-sm"
+              style={{
+                backgroundColor: "var(--bg-card)",
+                border: "1px solid var(--border-color)",
+              }}
+              role="toolbar"
+              aria-label="Selección de tareas"
+            >
+              <span
+                className="text-sm font-semibold mr-auto tabular-nums"
+                style={{ color: "var(--text-primary)" }}
+                aria-live="polite"
+              >
+                {visibleSelectedIds.length === 1
+                  ? "1 seleccionada"
+                  : `${visibleSelectedIds.length} seleccionadas`}
+              </span>
+              {visibleSelectedIds.length < filteredTasks.length ? (
+                <button
+                  type="button"
+                  onClick={selectAllVisible}
+                  className="h-9 px-3 rounded-lg text-sm font-medium hover:bg-[var(--bg-hover)]"
+                  style={{ color: "var(--text-link)" }}
+                >
+                  Seleccionar todas
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={clearSelected}
+                  className="h-9 px-3 rounded-lg text-sm font-medium hover:bg-[var(--bg-hover)]"
+                  style={{ color: "var(--text-link)" }}
+                >
+                  Deseleccionar todas
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowBulkDelete(true)}
+                disabled={visibleSelectedIds.length === 0}
+                className="h-9 px-3 rounded-lg text-sm font-semibold text-white flex items-center gap-1.5 disabled:opacity-40"
+                style={{ backgroundColor: "#dc2626" }}
+              >
+                <Trash2 size={15} />
+                Eliminar
+              </button>
+              <button
+                type="button"
+                onClick={cancelSelection}
+                className="h-9 px-3 rounded-lg text-sm font-medium hover:bg-[var(--bg-hover)]"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                Cancelar
+              </button>
+            </div>
+          ) : (
+            /* Creación rápida: siempre arriba, antes de las tareas */
+            quickAdd && <div className="mb-4">{quickAdd}</div>
+          )}
 
           {/* Tareas */}
           <div className="space-y-2">
@@ -651,7 +784,6 @@ export default function ListDetailPage() {
                     )
                   }
                 />
-                {quickAdd}
                 </>
               ) : (
                 <div className="space-y-6">
@@ -715,6 +847,9 @@ export default function ListDetailPage() {
                               dragHandleProps={dragHandleProps}
                               isDragging={isDragging}
                               justDraggedRef={justDraggedRef}
+                              selectionMode={selectionMode}
+                              selected={selectionMode && selectedIds.has(task.id)}
+                              onToggleSelect={toggleSelect}
                             />
                           )}
                         </SortableTaskContainer>
@@ -727,7 +862,6 @@ export default function ListDetailPage() {
                         No hay tareas pendientes.
                       </p>
                     )}
-                    {quickAdd}
                   </section>
 
                   {/* Bloque de completadas — expandido por defecto, colapsable */}
@@ -820,6 +954,9 @@ export default function ListDetailPage() {
                                     dragHandleProps={dragHandleProps}
                                     isDragging={isDragging}
                                     justDraggedRef={justDraggedRef}
+                                    selectionMode={selectionMode}
+                                    selected={selectionMode && selectedIds.has(task.id)}
+                                    onToggleSelect={toggleSelect}
                                   />
                                 )}
                               </SortableTaskContainer>
@@ -849,6 +986,9 @@ export default function ListDetailPage() {
                       dragHandleProps={dragHandleProps}
                       isDragging={isDragging}
                       justDraggedRef={justDraggedRef}
+                      selectionMode={selectionMode}
+                      selected={selectionMode && selectedIds.has(task.id)}
+                      onToggleSelect={toggleSelect}
                     />
                   )}
                 </SortableTaskContainer>
@@ -879,7 +1019,6 @@ export default function ListDetailPage() {
                     }
                   />
                 )}
-                {filter === "pending" && quickAdd}
               </>
             )}
           </div>
@@ -1411,77 +1550,13 @@ export default function ListDetailPage() {
                         Archivos adjuntos
                       </label>
 
-                      {/* Hidden file inputs */}
-                      <input
-                        ref={imageInputRef}
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        onChange={handleImageSelect}
-                        className="hidden"
+                      {/* Device-adapted picker: Galería / Cámara / Archivos on
+                          phones and tablets, "Adjuntar archivos" on computers */}
+                      <FilePickerButtons
+                        onFiles={addPickedFiles}
+                        disabled={isCreatingTask}
+                        heightClassName="h-10"
                       />
-                      <input
-                        ref={videoInputRef}
-                        type="file"
-                        multiple
-                        accept="video/*"
-                        onChange={handleVideoSelect}
-                        className="hidden"
-                      />
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.rar,.json,image/*,video/*"
-                        onChange={handleFileSelect}
-                        className="hidden"
-                      />
-
-                      {/* Action buttons */}
-                      <div className="grid grid-cols-3 gap-2">
-                        <button
-                          type="button"
-                          onClick={() => imageInputRef.current?.click()}
-                          className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
-                          style={{
-                            backgroundColor: "var(--bg-secondary)",
-                            color: "var(--text-secondary)",
-                            border: "1px solid var(--border-color)",
-                          }}
-                        >
-                          <ImageIcon size={16} />
-                          <span className="hidden sm:inline">Fotos</span>
-                          <span className="sm:hidden">Fotos</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => videoInputRef.current?.click()}
-                          className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
-                          style={{
-                            backgroundColor: "var(--bg-secondary)",
-                            color: "var(--text-secondary)",
-                            border: "1px solid var(--border-color)",
-                          }}
-                        >
-                          <Video size={16} />
-                          <span className="hidden sm:inline">Videos</span>
-                          <span className="sm:hidden">Videos</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="h-10 px-3 rounded-lg text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
-                          style={{
-                            backgroundColor: "var(--bg-secondary)",
-                            color: "var(--text-secondary)",
-                            border: "1px solid var(--border-color)",
-                          }}
-                        >
-                          <FileText size={16} />
-                          <span className="hidden sm:inline">Archivos</span>
-                          <span className="sm:hidden">Archivos</span>
-                        </button>
-                      </div>
 
                       {/* Selected files preview (real thumbnails) */}
                       {newTaskFiles.length > 0 && (
@@ -1525,50 +1600,35 @@ export default function ListDetailPage() {
           onClose={() => setShowEditModal(false)}
         />
 
-        {/* Confirmar Eliminación */}
-        <Modal
+        {/* Eliminación masiva */}
+        <ConfirmDeleteDialog
+          isOpen={showBulkDelete}
+          onClose={() => setShowBulkDelete(false)}
+          onConfirm={handleBulkDelete}
+          loading={bulkDeleting}
+          title={
+            visibleSelectedIds.length === 1 ? "Eliminar tarea" : "Eliminar tareas"
+          }
+          message={
+            visibleSelectedIds.length === 1
+              ? "Se eliminará 1 tarea de esta lista. Esta acción no se puede deshacer."
+              : `Se eliminarán ${visibleSelectedIds.length} tareas de esta lista. Esta acción no se puede deshacer.`
+          }
+        />
+
+        {/* Confirmar Eliminación (compacto) */}
+        <ConfirmDeleteDialog
           isOpen={showDeleteConfirm}
           onClose={() => setShowDeleteConfirm(false)}
-          title="¿Eliminar lista?"
-          description="Esta acción no se puede deshacer."
-          size="sm"
-          icon={<Trash2 size={18} />}
-          footer={
-            <div className="flex items-center justify-end gap-3">
-              <Button
-                variant="ghost"
-                onClick={() => setShowDeleteConfirm(false)}
-                className="min-w-[96px] h-10"
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="danger"
-                onClick={handleDeleteList}
-                className="min-w-[110px] h-10"
-              >
-                Eliminar
-              </Button>
-            </div>
+          onConfirm={handleDeleteList}
+          title="Eliminar lista"
+          message={
+            <>
+              Se eliminará permanentemente &quot;{list.name}&quot; y todas sus
+              tareas. Esta acción no se puede deshacer.
+            </>
           }
-        >
-          <div className="px-5 sm:px-6 py-5">
-            <div
-              className="flex items-start gap-3 p-3 rounded-xl text-sm"
-              style={{
-                backgroundColor: "rgba(239,68,68,0.08)",
-                color: "var(--text-error)",
-                border: "1px solid rgba(239,68,68,0.2)",
-              }}
-            >
-              <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
-              <p className="break-words min-w-0">
-                Se eliminará permanentemente &quot;{list.name}&quot; y todas sus
-                tareas.
-              </p>
-            </div>
-          </div>
-        </Modal>
+        />
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import {
   subscribeToListTasks,
   verifyTechnicianReportSaved,
 } from "@/lib/firestore";
+import FilePickerButtons, { useIsTouchDevice } from "@/components/attachments/FilePickerButtons";
 import PendingFilesGrid, {
   type PendingFileItem,
 } from "@/components/attachments/PendingFilesGrid";
@@ -187,6 +188,7 @@ export default function CreateReportForm({
   const clearFieldError = (key: string) =>
     setValidationErrors((v) => (v[key] ? { ...v, [key]: "" } : v));
 
+  const isTouch = useIsTouchDevice();
   const locationPhotoRef = useRef<HTMLInputElement>(null);
   const workEvidenceRef = useRef<HTMLInputElement>(null);
 
@@ -217,7 +219,7 @@ export default function CreateReportForm({
   }, [defaultTaskId, linkedTask]);
 
   // ---- File helpers ----
-  const makePendingFiles = (files: FileList | null, kind: "photo" | "work") => {
+  const makePendingFiles = (files: FileList | File[] | null, kind: "photo" | "work") => {
     if (!files?.length) return;
     const items: PendingFile[] = Array.from(files).map((file) => ({
       id: genFileId(),
@@ -864,31 +866,50 @@ export default function CreateReportForm({
               }}
               className="hidden"
             />
-            <button
-              type="button"
-              onClick={() => locationPhotoRef.current?.click()}
-              className="w-full h-28 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors"
-              style={{
-                borderColor: validationErrors.locationPhotos
-                  ? "var(--text-error)"
-                  : "var(--border-color)",
-                backgroundColor: "var(--bg-secondary)",
-              }}
-            >
-              <Camera size={24} style={{ color: "var(--text-tertiary)" }} />
-              <span
-                className="text-sm"
-                style={{ color: "var(--text-secondary)" }}
+            {isTouch ? (
+              <div
+                className="rounded-xl"
+                style={
+                  validationErrors.locationPhotos
+                    ? { outline: "1px dashed var(--text-error)", outlineOffset: 2 }
+                    : undefined
+                }
               >
-                Añadir fotografías del lugar
-              </span>
-              <span
-                className="text-xs"
-                style={{ color: "var(--text-tertiary)" }}
+                <FilePickerButtons
+                  onFiles={(picked) => makePendingFiles(picked, "photo")}
+                  allowDocuments={false}
+                  allowVideos={false}
+                  disabled={isSubmitting}
+                  heightClassName="h-12"
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => locationPhotoRef.current?.click()}
+                className="w-full h-28 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors"
+                style={{
+                  borderColor: validationErrors.locationPhotos
+                    ? "var(--text-error)"
+                    : "var(--border-color)",
+                  backgroundColor: "var(--bg-secondary)",
+                }}
               >
-                Puedes seleccionar varias imágenes
-              </span>
-            </button>
+                <Camera size={24} style={{ color: "var(--text-tertiary)" }} />
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Añadir fotografías del lugar
+                </span>
+                <span
+                  className="text-xs"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Puedes seleccionar varias imágenes
+                </span>
+              </button>
+            )}
             {renderFileGrid(locationPhotos, "photo", "locationPhotos")}
           </div>
         </div>
@@ -1197,31 +1218,50 @@ export default function CreateReportForm({
               }}
               className="hidden"
             />
-            <button
-              type="button"
-              onClick={() => workEvidenceRef.current?.click()}
-              className="w-full h-28 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors"
-              style={{
-                borderColor: validationErrors.workEvidence
-                  ? "var(--text-error)"
-                  : "var(--border-color)",
-                backgroundColor: "var(--bg-secondary)",
-              }}
-            >
-              <Upload size={24} style={{ color: "var(--text-tertiary)" }} />
-              <span
-                className="text-sm"
-                style={{ color: "var(--text-secondary)" }}
+            {isTouch ? (
+              <div
+                className="rounded-xl"
+                style={
+                  validationErrors.workEvidence
+                    ? { outline: "1px dashed var(--text-error)", outlineOffset: 2 }
+                    : undefined
+                }
               >
-                Añadir fotos y videos del trabajo
-              </span>
-              <span
-                className="text-xs"
-                style={{ color: "var(--text-tertiary)" }}
+                <FilePickerButtons
+                  onFiles={(picked) => makePendingFiles(picked, "work")}
+                  allowDocuments={false}
+                  allowVideos={true}
+                  disabled={isSubmitting}
+                  heightClassName="h-12"
+                />
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => workEvidenceRef.current?.click()}
+                className="w-full h-28 rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-colors"
+                style={{
+                  borderColor: validationErrors.workEvidence
+                    ? "var(--text-error)"
+                    : "var(--border-color)",
+                  backgroundColor: "var(--bg-secondary)",
+                }}
               >
-                Puedes seleccionar varios archivos
-              </span>
-            </button>
+                <Upload size={24} style={{ color: "var(--text-tertiary)" }} />
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--text-secondary)" }}
+                >
+                  Añadir fotos y videos del trabajo
+                </span>
+                <span
+                  className="text-xs"
+                  style={{ color: "var(--text-tertiary)" }}
+                >
+                  Puedes seleccionar varios archivos
+                </span>
+              </button>
+            )}
             {renderFileGrid(workFiles, "work", "workEvidence")}
           </div>
         </div>

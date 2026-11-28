@@ -294,7 +294,7 @@ export default function QuickAddTask({
   const canSubmit = value.trim().length > 0 && !saving;
 
   return (
-    <div className="mt-3" data-quick-add>
+    <div data-quick-add>
       <form
         onSubmit={(e) => {
           e.preventDefault();

@@ -2338,6 +2338,41 @@ export const addTaskAttachment = async (
   return ref.id;
 };
 
+/**
+ * Step 1 of an upload: create the metadata doc with status "uploading".
+ * Firestore rules check full task permissions here; Storage rules then only
+ * need this one document (they may read at most two per request).
+ */
+export const reserveTaskAttachment = async (
+  taskId: string,
+  data: Pick<TaskAttachment, "name" | "type" | "size" | "category" | "uploadedBy" | "uploadedByName">,
+): Promise<string> => {
+  const ref = doc(collection(db, "tasks", taskId, "attachments"));
+  await setDoc(ref, {
+    ...stripUndefined({ ...data, taskId }),
+    url: "",
+    storagePath: "",
+    status: "uploading",
+    createdAt: serverTimestamp(),
+  });
+  return ref.id;
+};
+
+/** Step 3 of an upload: store the final URLs and mark it complete. */
+export const completeTaskAttachment = async (
+  taskId: string,
+  attachmentId: string,
+  data: Partial<Pick<TaskAttachment, "url" | "storagePath" | "thumbUrl" | "thumbStoragePath" | "type" | "category">>,
+): Promise<void> => {
+  await updateDoc(doc(db, "tasks", taskId, "attachments", attachmentId), {
+    ...stripUndefined(data),
+    status: "complete",
+  });
+};
+
+const isVisibleAttachment = (a: { status?: string; url?: string }) =>
+  a.status !== "uploading" && !!a.url;
+
 export const deleteTaskAttachmentMetadata = async (
   taskId: string,
   attachmentId: string,
@@ -2352,11 +2387,11 @@ export const getTaskAttachments = async (
   const snap = await getDocs(
     query(collection(db, "tasks", taskId, "attachments"), orderBy("createdAt", "asc")),
   );
-  return snap.docs.map((d) => ({
+  return (snap.docs.map((d) => ({
     ...d.data(),
     id: d.id,
     createdAt: toDate(d.data().createdAt),
-  })) as unknown as TaskAttachment[];
+  })) as unknown as TaskAttachment[]).filter(isVisibleAttachment);
 };
 
 /**
@@ -2397,11 +2432,11 @@ export const subscribeToTaskAttachments = (
   return onSnapshot(
     q,
     (snap) => {
-      const attachments = snap.docs.map((d) => ({
+      const attachments = (snap.docs.map((d) => ({
         ...d.data(),
         id: d.id,
         createdAt: toDate(d.data().createdAt),
-      })) as unknown as TaskAttachment[];
+      })) as unknown as TaskAttachment[]).filter(isVisibleAttachment);
       callback(attachments);
     },
     () => callback([]),

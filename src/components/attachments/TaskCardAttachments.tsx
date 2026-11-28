@@ -8,7 +8,7 @@
 // ============================================
 
 import React, { useEffect, useRef, useState } from "react";
-import { Play } from "lucide-react";
+import { Paperclip, Play } from "lucide-react";
 import type { Task, TaskAttachment, TaskAttachmentPreview } from "@/types";
 import { getTaskAttachments } from "@/lib/firestore";
 import AttachmentViewer, { DocumentIcon, type ViewerItem } from "./AttachmentViewer";
@@ -125,6 +125,38 @@ export default function TaskCardAttachments({ task }: { task: Task }) {
   if (total === 0 || previews.length === 0) return <div ref={rootRef} aria-hidden className="h-0" />;
 
   const extra = total - previews.length;
+
+  // "Mostrar vista previa en la tarjeta" turned off → compact counter only
+  if (task.showPreviewInCard === false) {
+    return (
+      <div ref={rootRef} className="sm:pl-7 mt-1">
+        <button
+          type="button"
+          className="inline-flex items-center gap-1 h-6 px-2 rounded-md text-[11px] font-medium"
+          style={{
+            backgroundColor: "var(--bg-secondary)",
+            border: "1px solid var(--border-color)",
+            color: "var(--text-secondary)",
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            void openAt(null, 0);
+          }}
+          aria-label={`Ver los ${total} archivos adjuntos`}
+        >
+          <Paperclip size={11} />
+          {total}
+        </button>
+        <AttachmentViewer
+          open={!!viewer}
+          items={viewer?.items || []}
+          index={viewer?.index || 0}
+          loading={viewer?.loading}
+          onClose={() => setViewer(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div ref={rootRef} className="sm:pl-7 mt-1.5">

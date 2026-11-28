@@ -1,5 +1,7 @@
 "use client";
 
+import ConfirmDeleteDialog from "@/components/ui/ConfirmDeleteDialog";
+import { showToast } from "@/stores/toastStore";
 import React, { useState } from "react";
 import { Task, MemberRole } from "@/types";
 import { useTaskStore } from "@/stores/taskStore";
@@ -49,9 +51,22 @@ export default function ArchivedTaskItem({
     unarchiveTask(task.id, user.id);
   };
 
-  const handleConfirmDelete = () => {
-    deleteTask(task.id);
-    setShowDeleteConfirm(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const handleConfirmDelete = async () => {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await deleteTask(task.id);
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      console.error("[ArchivedTaskItem] delete failed:", error);
+      showToast({
+        variant: "error",
+        message: "No se pudo eliminar la tarea. Inténtalo nuevamente.",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const hasMeta = task.archivedAt || task.archivedBy;
@@ -170,44 +185,19 @@ export default function ArchivedTaskItem({
         )}
       </motion.div>
 
-      {/* Delete Confirmation */}
-      <Modal
+      {/* Delete Confirmation (compact) */}
+      <ConfirmDeleteDialog
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleConfirmDelete}
+        loading={isDeleting}
         title="Eliminar tarea archivada"
-      >
-        <div className="space-y-3">
-          <div
-            className="flex items-start gap-3 p-3 rounded-[var(--radius-lg)] text-[var(--text-sm)]"
-            style={{
-              backgroundColor: "var(--bg-error)",
-              color: "var(--text-error)",
-            }}
-          >
-            <AlertTriangle size={15} className="flex-shrink-0 mt-0.5" />
-            <p>
-              ¿Eliminar &quot;<strong>{task.title}</strong>&quot;? No se puede
-              deshacer.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => setShowDeleteConfirm(false)}
-              className="flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="danger"
-              onClick={handleConfirmDelete}
-              className="flex-1"
-            >
-              Eliminar
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        message={
+          <>
+            ¿Eliminar &quot;{task.title}&quot;? Esta acción no se puede deshacer.
+          </>
+        }
+      />
     </>
   );
 }
